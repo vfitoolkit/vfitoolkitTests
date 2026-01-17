@@ -18,6 +18,14 @@ addpath('./CoreFHorzTPathTests_subcodes/CrossTests/')
 %% Setup so that use the same d,a,z,e,semiz in all the models that use them
 CoreFHorzTPath_setup
 
+%%
+z_grid=z_grid.*ones(1,N_j,'gpuArray');
+pi_z=pi_z.*ones(1,1,N_j,'gpuArray');
+vfoptionsbaseline.pi_e=vfoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
+vfoptionsbaseline.e_grid=vfoptionsbaseline.e_grid.*ones(1,N_j,'gpuArray');
+simoptionsbaseline.pi_e=simoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
+simoptionsbaseline.pi_e=simoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
+
 %% without d, without z, without e, without semiz
 figure_c=1;
 output=CoreFHorzTPath_nod_noz_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
