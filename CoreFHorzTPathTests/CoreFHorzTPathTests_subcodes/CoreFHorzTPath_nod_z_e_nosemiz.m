@@ -43,7 +43,6 @@ transpathoptionsslow.fastOLG=0;
 vfoptions1=vfoptions;
 simoptions1=simoptions;
 [VPath1slow,PolicyPath1slow]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions1);
-
 [VPath1fast,PolicyPath1fast]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
 
 
@@ -194,11 +193,17 @@ AgentDist1=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy1,
 PricePathConstant.r=Params.r*ones(1,T);
 ParamPathConstant.sigma=Params.sigma*ones(1,T);
 [VPath1,PolicyPath1]=ValueFnOnTransPath_Case1_FHorz(PricePathConstant, ParamPathConstant, T, V1, Policy1, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+transpathoptionsbaseline.fastOLG=0;
+simoptions1.fastOLG=0;
+AgentDistPath1B=AgentDistOnTransPath_Case1_FHorz(AgentDist1, jequaloneDist, PricePathConstant, ParamPathConstant, PolicyPath1, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions1);
+transpathoptionsbaseline.fastOLG=1;
+simoptions1.fastOLG=1;
 AgentDistPath1=AgentDistOnTransPath_Case1_FHorz(AgentDist1, jequaloneDist, PricePathConstant, ParamPathConstant, PolicyPath1, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions1);
 
 fprintf('Do nothing TPath, this should be zero, V: %2.8f \n',max(max(max(max(max(abs(VPath1-repmat(V1,1,1,1,1,T))))))))
 fprintf('Do nothing TPath, this should be zero, Policy: %2.8f \n',max(max(max(max(max(abs(PolicyPath1-repmat(Policy1,1,1,1,1,1,T))))))))
 fprintf('Do nothing TPath, this should be zero, AgentDist: %2.8f \n',max(max(max(max(max(abs(AgentDistPath1-repmat(AgentDist1,1,1,1,1,T))))))))
+fprintf('Do nothing TPath, this should be zero, AgentDistB: %2.8f \n',max(max(max(max(max(abs(AgentDistPath1B-repmat(AgentDist1,1,1,1,1,T))))))))
 
 clear V1 Policy1 VPath1 PolicyPath1
 
