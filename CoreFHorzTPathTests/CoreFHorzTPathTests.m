@@ -18,13 +18,13 @@ addpath('./CoreFHorzTPathTests_subcodes/CrossTests/')
 %% Setup so that use the same d,a,z,e,semiz in all the models that use them
 CoreFHorzTPath_setup
 
-%%
-z_grid=z_grid.*ones(1,N_j,'gpuArray');
-pi_z=pi_z.*ones(1,1,N_j,'gpuArray');
-vfoptionsbaseline.pi_e=vfoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
-vfoptionsbaseline.e_grid=vfoptionsbaseline.e_grid.*ones(1,N_j,'gpuArray');
-simoptionsbaseline.pi_e=simoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
-simoptionsbaseline.pi_e=simoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
+%% Uncomment to test with age-dependent shocks
+% z_grid=z_grid.*ones(1,N_j,'gpuArray');
+% pi_z=pi_z.*ones(1,1,N_j,'gpuArray');
+% vfoptionsbaseline.pi_e=vfoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
+% vfoptionsbaseline.e_grid=vfoptionsbaseline.e_grid.*ones(1,N_j,'gpuArray');
+% simoptionsbaseline.pi_e=simoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
+% simoptionsbaseline.pi_e=simoptionsbaseline.pi_e.*ones(1,N_j,'gpuArray');
 
 %% without d, without z, without e, without semiz
 figure_c=1;
