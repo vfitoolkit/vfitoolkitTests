@@ -23,7 +23,7 @@ vfoptions1=vfoptions;
 simoptions1=simoptions;
 [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
 
-PolicyVals1=PolicyInd2Val_Case1_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions1);
+PolicyVals1=PolicyInd2Val_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions1);
 
 % Solve with divide-and-conquer, should give same answer
 vfoptions2=vfoptions;
@@ -46,7 +46,7 @@ simoptions3.gridinterplayer=vfoptions3.gridinterplayer;
 simoptions3.ngridinterp=vfoptions3.ngridinterp;
 [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
 
-PolicyVals3=PolicyInd2Val_Case1_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions3);
+PolicyVals3=PolicyInd2Val_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions3);
 
 % Solve with divide-and-conquer, should give same answer
 vfoptions4=vfoptions;
