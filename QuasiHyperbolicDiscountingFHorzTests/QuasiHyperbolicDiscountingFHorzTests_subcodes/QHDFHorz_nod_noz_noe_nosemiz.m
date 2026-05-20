@@ -62,8 +62,8 @@ simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
 [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
 
 %%
 clear V3 V4 Policy3 Policy4
@@ -168,8 +168,8 @@ simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
 [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
 
 %%
 clear V3 V4 Policy3 Policy4

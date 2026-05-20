@@ -25,6 +25,9 @@ simoptions1=simoptions;
 
 PolicyVals1=PolicyInd2Val_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions1);
 
+V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+fprintf('ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+
 % Solve with divide-and-conquer, should give same answer
 vfoptions2=vfoptions;
 vfoptions2.divideandconquer=1;
@@ -35,7 +38,7 @@ fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))
 fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
 
 %%
-clear V1 V2 Policy1 Policy2 PolicyVals1
+clear V1 V2 Policy1 Policy2 PolicyVals1 V1fromPolicy
 
 %% Solve with grid-interpolation
 vfoptions3=vfoptions;
@@ -48,6 +51,9 @@ simoptions3.ngridinterp=vfoptions3.ngridinterp;
 
 PolicyVals3=PolicyInd2Val_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions3);
 
+V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
+fprintf('ValueFnFromPolicy with grid interp, this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+
 % Solve with divide-and-conquer, should give same answer
 vfoptions4=vfoptions;
 vfoptions4.divideandconquer=1;
@@ -58,11 +64,11 @@ simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
 [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
 
 %%
-clear V3 V4 Policy3 Policy4 PolicyVals3
+clear V3 V4 Policy3 Policy4 PolicyVals3 V3fromPolicy
 
 %% Use a really big a_grid, then the moments should be essentially the same with/without grid interpolation
 
