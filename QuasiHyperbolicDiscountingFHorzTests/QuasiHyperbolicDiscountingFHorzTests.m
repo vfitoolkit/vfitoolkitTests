@@ -76,10 +76,8 @@ output=QHDFHorz_d_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z
 % looks good
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
-% Note: These are likely redundant, as already compared them all to
-% exponential discounting and did these cross-tests for exponentinal
-% discounting. But it is going to test the very unlikely case that they
-% still somehow manage to differ when beta0 is involved
+% Note: These are likely redundant, as already compared them all to exponential discounting and did these cross-tests for exponentinal
+% discounting. But it is going to test the very unlikely case that they still somehow manage to differ when beta0 is involved
 
 output=QHDFHorz_CrossTests_nod_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
@@ -113,68 +111,62 @@ CoreFHorz_setup
 % For models with d1, use:
 % n_d_semiz and d_grid_semiz (as n_d and d_grid)
 
-warning(' And will need to rewrite all files in ./QuasiHyperbolicDiscountingFHorzTests_subcodes/Semiz_subcodes/')
-error('Have not dones semiz yet for Quasi-Hyperbolic discounting')
 
+%% without d1, without z, without e, with semiz
+figure_c=9;
+output=QHDFHorz_nod1_noz_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
-% %% without d1, without z, without e, with semiz
-% figure_c=9;
-% output=QHDFHorz_nod1_noz_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% with d1, without z, without e, with semiz
-% figure_c=10;
-% output=QHDFHorz_d1_noz_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% without d1, with z, without e, with semiz
-% figure_c=11;
-% output=QHDFHorz_nod1_z_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good :)
-% 
-% %% with d1, with z, without e, with semiz
-% figure_c=12;
-% output=QHDFHorz_d1_z_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% without d1, without z, with e, with semiz
-% figure_c=13;
-% output=QHDFHorz_nod1_noz_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% with d1, without z, with e, with semiz
-% figure_c=14;
-% output=QHDFHorz_d1_noz_e_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% without d1, with z, with e, with semiz
-% figure_c=15;
-% output=QHDFHorz_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% with d1, with z, with e, with semiz
-% figure_c=16;
-% output=QHDFHorz_d1_z_e_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
-% output=QHDFHorz_CrossTests_nod1_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-% 
-% output=QHDFHorz_CrossTests_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-% 
-% % All looks good!
-% 
-% %% Now some further cross-tests, using a semi-exo that is really just a markov
-% 
-% output=QHDFHorz_CrossTests2_nod1_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-% 
-% output=QHDFHorz_CrossTests2_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-% 
-% % All looks good!
+%% with d1, without z, without e, with semiz
+figure_c=10;
+output=QHDFHorz_d1_noz_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
+%% without d1, with z, without e, with semiz
+figure_c=11;
+output=QHDFHorz_nod1_z_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good :)
 
+%% with d1, with z, without e, with semiz
+figure_c=12;
+output=QHDFHorz_d1_z_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
-%% THINGS NOT CHECKED
-% Check using two decision variables in the semiz codes (both for d1 and for d2, and without d1)
+%% without d1, without z, with e, with semiz
+figure_c=13;
+output=QHDFHorz_nod1_noz_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
+%% with d1, without z, with e, with semiz
+figure_c=14;
+output=QHDFHorz_d1_noz_e_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
+
+%% without d1, with z, with e, with semiz
+figure_c=15;
+output=QHDFHorz_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
+
+%% with d1, with z, with e, with semiz
+figure_c=16;
+output=QHDFHorz_d1_z_e_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
+
+%% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
+% Note: These are likely redundant, as already compared them all to exponential discounting and did these cross-tests for exponentinal
+% discounting. But it is going to test the very unlikely case that they still somehow manage to differ when beta0 is involved
+
+output=QHDFHorz_CrossTests_nod1_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+output=QHDFHorz_CrossTests_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% All looks good!
+
+%% Now some further cross-tests, using a semi-exo that is really just a markov
+
+output=QHDFHorz_CrossTests2_nod1_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+output=QHDFHorz_CrossTests2_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% All looks good!
 

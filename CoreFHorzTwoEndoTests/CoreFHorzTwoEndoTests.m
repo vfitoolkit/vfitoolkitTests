@@ -148,9 +148,6 @@ output=CoreFHorzTwoEndo_CrossTests_nod1_semiz(n_d_semiz,n_d2_semiz,n_a,n_a_big,n
 output=CoreFHorzTwoEndo_CrossTests_d1_semiz(n_d_semiz,n_d2_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 
-%% Done! Damn that was a lot of tests. Glad that is over.
-
-
 
 
 %% THINGS NOT CHECKED

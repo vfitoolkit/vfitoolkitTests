@@ -52,6 +52,11 @@ ReturnFn_ze=@(aprime,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension)...
 % FnsToEvaluate_e.assets=@(aprime,a,e) a;
 % FnsToEvaluate_e.earnings=@(aprime,a,e,w,kappa_j) w*kappa_j*e;
 
+
+%% Quasi-Hyperbolic Discounting
+% vfoptions.exoticpreferences='QuasiHyperbolic';
+%% Naive
+% vfoptions.quasi_hyperbolic='Naive';
 %% Solving for model with one markov
 jequaloneDist1=zeros([n_a,n_semiz],'gpuArray');
 jequaloneDist1(1,ceil(n_semiz/2))=1; % no assets
@@ -59,6 +64,9 @@ jequaloneDist1(1,ceil(n_semiz/2))=1; % no assets
 % First, just use z (without semiz). Note no d variable.
 vfoptions1A.divideandconquer=0;
 simoptions1A=struct();
+vfoptions1A.exoticpreferences='QuasiHyperbolic';
+vfoptions1A.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
+vfoptions1A.quasi_hyperbolic='Naive';
 [V1A,Policy1A]=ValueFnIter_Case1_FHorz(0,n_a,n_z,N_j,[],a_grid,z_grid,pi_z,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptions1A);
 % Uses: ValueFnIter_FHorz_nod_raw()
 StationaryDist1A=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,Policy1A,0,n_a,n_z,N_j,pi_z,Params,simoptions1A);
@@ -72,6 +80,9 @@ simoptions1B.n_semiz=simoptions.n_semiz;
 simoptions1B.semiz_grid=simoptions.semiz_grid;
 simoptions1B.SemiExoStateFn=simoptions.SemiExoStateFn;
 simoptions1B.d_grid=simoptions.d_grid;
+vfoptions1B.exoticpreferences='QuasiHyperbolic';
+vfoptions1B.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
+vfoptions1B.quasi_hyperbolic='Naive';
 [V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_semiz,Params,DiscountFactorParamNames,[],vfoptions1B);
 % Uses: ValueFnIter_FHorz_SemiExo_nod1_noz_raw()
 StationaryDist1B=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,Policy1B,n_d,n_a,0,N_j,[],Params,simoptions1B);
@@ -98,6 +109,9 @@ vfoptions2A.pi_e=vfoptions.pi_e;
 simoptions2A.n_e=simoptions.n_e;
 simoptions2A.e_grid=simoptions.e_grid;
 simoptions2A.pi_e=simoptions.pi_e;
+vfoptions2A.exoticpreferences='QuasiHyperbolic';
+vfoptions2A.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
+vfoptions2A.quasi_hyperbolic='Naive';
 [V2A,Policy2A]=ValueFnIter_Case1_FHorz(0,n_a,n_z,N_j,[],a_grid,z_grid,pi_z,ReturnFn_ze,Params,DiscountFactorParamNames,[],vfoptions2A);
 StationaryDist2A=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,Policy2A,0,n_a,n_z,N_j,pi_z,Params,simoptions2A);
 
@@ -115,6 +129,105 @@ vfoptions2B.pi_e=vfoptions.pi_e;
 simoptions2B.n_e=simoptions.n_e;
 simoptions2B.e_grid=simoptions.e_grid;
 simoptions2B.pi_e=simoptions.pi_e;
+vfoptions2B.exoticpreferences='QuasiHyperbolic';
+vfoptions2B.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
+vfoptions2B.quasi_hyperbolic='Naive';
+[V2B,Policy2B]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_semize,Params,DiscountFactorParamNames,[],vfoptions2B);
+StationaryDist2B=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,Policy2B,n_d,n_a,0,N_j,[],Params,simoptions2B);
+
+Policy2Bshort=Policy2B(2,:,:,:,:); % remove the d2 policy (as it is not relevant, and is not in Policy2A)
+
+% size(Policy2A)
+% size(Policy2B)
+
+fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(V2A(:)-V2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
+
+% squeeze(abs(sum(StationaryDist2A(:,1,:,:),1)-sum(StationaryDist2B(:,1,:,:),1))) % Directly check shocks without Policy.
+% squeeze(abs(sum(StationaryDist2A(:,2,:,:),1)-sum(StationaryDist2B(:,2,:,:),1))) % Directly check shocks without Policy.
+
+
+
+
+
+%% Sophisticated
+% vfoptions.quasi_hyperbolic='Sophisticated';
+%% Solving for model with one markov
+jequaloneDist1=zeros([n_a,n_semiz],'gpuArray');
+jequaloneDist1(1,ceil(n_semiz/2))=1; % no assets
+
+% First, just use z (without semiz). Note no d variable.
+vfoptions1A.divideandconquer=0;
+simoptions1A=struct();
+vfoptions1A.exoticpreferences='QuasiHyperbolic';
+vfoptions1A.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
+vfoptions1A.quasi_hyperbolic='Sophisticated';
+[V1A,Policy1A]=ValueFnIter_Case1_FHorz(0,n_a,n_z,N_j,[],a_grid,z_grid,pi_z,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptions1A);
+% Uses: ValueFnIter_FHorz_nod_raw()
+StationaryDist1A=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,Policy1A,0,n_a,n_z,N_j,pi_z,Params,simoptions1A);
+
+% Second, use semiz (without z)
+vfoptions1B.divideandconquer=0;
+vfoptions1B.n_semiz=vfoptions.n_semiz;
+vfoptions1B.semiz_grid=vfoptions.semiz_grid;
+vfoptions1B.SemiExoStateFn=vfoptions.SemiExoStateFn;
+simoptions1B.n_semiz=simoptions.n_semiz;
+simoptions1B.semiz_grid=simoptions.semiz_grid;
+simoptions1B.SemiExoStateFn=simoptions.SemiExoStateFn;
+simoptions1B.d_grid=simoptions.d_grid;
+vfoptions1B.exoticpreferences='QuasiHyperbolic';
+vfoptions1B.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
+vfoptions1B.quasi_hyperbolic='Sophisticated';
+[V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_semiz,Params,DiscountFactorParamNames,[],vfoptions1B);
+% Uses: ValueFnIter_FHorz_SemiExo_nod1_noz_raw()
+StationaryDist1B=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,Policy1B,n_d,n_a,0,N_j,[],Params,simoptions1B);
+
+Policy1Bshort=Policy1B(2,:,:,:); % remove the d2 policy  (as it is not relevant, and is not in Policy1A)
+
+% size(Policy1A)
+% size(Policy1B)
+
+fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(V1A(:)-V1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
+fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
+
+% squeeze(abs(sum(StationaryDist1A,1)-sum(StationaryDist1B,1))) % Directly check shocks without Policy.
+
+%% Solving for model with one markov and one e
+jequaloneDist1=zeros([n_a,n_semiz,vfoptions.n_e],'gpuArray');
+jequaloneDist1(1,ceil(n_semiz/2),ceil(vfoptions.n_e/2))=1; % no assets
+
+% First, just use z and e (without semiz). Note no d variable.
+vfoptions2A.n_e=vfoptions.n_e;
+vfoptions2A.e_grid=vfoptions.e_grid;
+vfoptions2A.pi_e=vfoptions.pi_e;
+simoptions2A.n_e=simoptions.n_e;
+simoptions2A.e_grid=simoptions.e_grid;
+simoptions2A.pi_e=simoptions.pi_e;
+vfoptions2A.exoticpreferences='QuasiHyperbolic';
+vfoptions2A.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
+vfoptions2A.quasi_hyperbolic='Sophisticated';
+[V2A,Policy2A]=ValueFnIter_Case1_FHorz(0,n_a,n_z,N_j,[],a_grid,z_grid,pi_z,ReturnFn_ze,Params,DiscountFactorParamNames,[],vfoptions2A);
+StationaryDist2A=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,Policy2A,0,n_a,n_z,N_j,pi_z,Params,simoptions2A);
+
+% Second, use semiz and e (without z)
+vfoptions2B.n_semiz=vfoptions.n_semiz;
+vfoptions2B.semiz_grid=vfoptions.semiz_grid;
+vfoptions2B.SemiExoStateFn=vfoptions.SemiExoStateFn;
+simoptions2B.n_semiz=simoptions.n_semiz;
+simoptions2B.semiz_grid=simoptions.semiz_grid;
+simoptions2B.SemiExoStateFn=simoptions.SemiExoStateFn;
+simoptions2B.d_grid=simoptions.d_grid;
+vfoptions2B.n_e=vfoptions.n_e;
+vfoptions2B.e_grid=vfoptions.e_grid;
+vfoptions2B.pi_e=vfoptions.pi_e;
+simoptions2B.n_e=simoptions.n_e;
+simoptions2B.e_grid=simoptions.e_grid;
+simoptions2B.pi_e=simoptions.pi_e;
+vfoptions2B.exoticpreferences='QuasiHyperbolic';
+vfoptions2B.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
+vfoptions2B.quasi_hyperbolic='Sophisticated';
 [V2B,Policy2B]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_semize,Params,DiscountFactorParamNames,[],vfoptions2B);
 StationaryDist2B=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,Policy2B,n_d,n_a,0,N_j,[],Params,simoptions2B);
 

@@ -1,25 +1,39 @@
-function output=QHDFHorz_d_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+function output=QHDFHorz_nod1_noz_e_semiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+
+% n_d=n_d2_semiz;
+% d_grid=d2_grid_semiz;
 
 % Setup vfoptions and simoptions
+vfoptions.n_semiz=vfoptionsbaseline.n_semiz;
+vfoptions.semiz_grid=vfoptionsbaseline.semiz_grid;
+vfoptions.SemiExoStateFn=vfoptionsbaseline.SemiExoStateFn;
+vfoptions.n_semiz=vfoptionsbaseline.n_semiz;
+simoptions.n_semiz=simoptionsbaseline.n_semiz;
+simoptions.semiz_grid=simoptionsbaseline.semiz_grid;
+simoptions.SemiExoStateFn=simoptionsbaseline.SemiExoStateFn;
+simoptions.n_semiz=simoptionsbaseline.n_semiz;
+simoptions.d_grid=d_grid;
+
 vfoptions.n_e=vfoptionsbaseline.n_e;
 vfoptions.e_grid=vfoptionsbaseline.e_grid;
 vfoptions.pi_e=vfoptionsbaseline.pi_e;
 simoptions.n_e=simoptionsbaseline.n_e;
 simoptions.e_grid=simoptionsbaseline.e_grid;
 simoptions.pi_e=simoptionsbaseline.pi_e;
+
 % Do the current setup
 n_z=0;
 z_grid=[];
 pi_z=[];
 % zeros assets, mid points for any shocks
-jequaloneDist=zeros(n_a_big,vfoptions.n_e,'gpuArray'); % Note: based on n_a_big, not n_a
-jequaloneDist(1,ceil(vfoptions.n_e/2))=1;
+jequaloneDist=zeros(n_a_big,vfoptions.n_semiz,vfoptions.n_e,'gpuArray'); % Note: based on n_a_big, not n_a
+jequaloneDist(1,ceil(vfoptions.n_semiz/2),ceil(vfoptions.n_e/2))=1;
 
-ReturnFn=@(d,aprime,a,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_noz_e_nosemiz(d,aprime,a,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+ReturnFn=@(d2,aprime,a,semiz,e,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_nod1_noz_e_semiz(d2,aprime,a,semiz,e,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost);
 
 % Setup some FnsToEvaluate
-FnsToEvaluate.assets=@(d,aprime,a,e) a;
-FnsToEvaluate.earnings=@(d,aprime,a,e,w,kappa_j) w*kappa_j*e*d;
+FnsToEvaluate.assets=@(d2,aprime,a,semiz,e) a;
+FnsToEvaluate.earnings=@(d2,aprime,a,semiz,e,w,kappa_j) w*kappa_j*e*semiz;
 
 
 %% Quasi-Hyperbolic Discounting
@@ -316,7 +330,6 @@ fprintf('QH with beta0=1: should give zero: %2.8f \n',max(abs(V3a(:)-V3b(:))))
 fprintf('QH with beta0=1: should give zero: %2.8f \n',max(abs(V3a(:)-V3c(:))))
 fprintf('QH with beta0=1: should give zero: %2.8f \n',max(abs(Policy3a(:)-Policy3b(:))))
 fprintf('QH with beta0=1: should give zero: %2.8f \n',max(abs(Policy3a(:)-Policy3c(:))))
-
 
 
 %% Since alternative preferences have no impact beyond the contents of Policy there is not point testing the EvalOnAgentDist functions.
