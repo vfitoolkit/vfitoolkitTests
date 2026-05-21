@@ -267,6 +267,8 @@ fprintf('QH with beta0=1: should give zero: %2.8f \n',max(abs(Policy3a(:)-Policy
 
 
 
+%% Since alternative preferences have no impact beyond the contents of Policy there is not point testing the EvalOnAgentDist functions.
+
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.
 

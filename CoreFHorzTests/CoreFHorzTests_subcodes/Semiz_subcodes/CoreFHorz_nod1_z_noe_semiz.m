@@ -166,6 +166,22 @@ fprintf('With grid interp, sim panel data should give roughly the same age condi
 [AgeConditionalStats4.earnings.Mean; mean(SimPanelValues4.earnings,2)']
 [AgeConditionalStats4.assets.Mean; mean(SimPanelValues4.assets,2)']
 
+%% Check the various other commands run without issue
+% with grid options is likely a touch trickier
+vfoptions5=vfoptions;
+vfoptions5.gridinterplayer=1;
+vfoptions5.ngridinterp=5;
+simoptions5=simoptions;
+simoptions5.gridinterplayer=vfoptions5.gridinterplayer;
+simoptions5.ngridinterp=vfoptions5.ngridinterp;
+[V5,Policy5]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions5);
+jequaloneDist5=zeros(n_a,vfoptions.n_semiz,n_z,'gpuArray'); % small-grid init for Policy5
+jequaloneDist5(1,ceil(vfoptions.n_semiz/2),ceil(n_z/2))=1;
+StationaryDist5=StationaryDist_FHorz_Case1(jequaloneDist5,AgeWeightParamNames,Policy5,n_d,n_a,n_z,N_j,pi_z,Params,simoptions5);
+% AllStats and LifeCycleProfiles were already used
+AggVars=EvalFnOnAgentDist_AggVars_FHorz_Case1(StationaryDist5,Policy5,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions5);
+ValuesOnGrid=EvalFnOnAgentDist_ValuesOnGrid_FHorz_Case1(Policy5, FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions5);
+
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.
 

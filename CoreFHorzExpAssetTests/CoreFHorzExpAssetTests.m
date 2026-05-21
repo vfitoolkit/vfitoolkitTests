@@ -33,7 +33,7 @@ output=CoreFHorzExpAsset_d1_noz_noe_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_gri
 %% without d1, with z, without e, without semiz
 figure_c=3;
 output=CoreFHorzExpAsset_nod1_z_noe_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good 
+% looks good
 
 %% with d1, with z, without e, without semiz
 n_a_notsobig=[301,13]; % To avoid out-of-memory errors

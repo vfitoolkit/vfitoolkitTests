@@ -85,81 +85,68 @@ output=CoreFHorzTwoEndo_CrossTests_d_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_gr
 %% Worth doing a 'clear all' here, but not necessary.
 % Mainly is so you can run second half independent of first half
 
-% %% That is all the without semiz, now with semiz
-% % From here on, it is the eight with semiz
-% % From here on, use n_d_semiz and d_grid_semiz as the inputs (instead of n_d and d_grid)
-% 
-% % d1 is a decision variable that is not in the SemiExoStateFn
-% 
-% addpath('./CoreFHorzTwoEndo_subcodes/')
-% addpath('./CoreFHorzTwoEndo_Setup/')
-% addpath('./CoreFHorzTwoEndo_ReturnFns/')
-% addpath('./CoreFHorzTwoEndo_subcodes/CrossTests/')
-% 
-% addpath('./CoreFHorzTwoEndo_subcodes/Semiz_subcodes/')
-% addpath('./CoreFHorzTwoEndo_ReturnFns/Semiz_ReturnFns/')
-% % Uses the same setup, which already had a semi-exogenous state, just that it wasn't used.
-% CoreFHorzTwoEndo_setup
-% 
-% % For models without d1, use:
-% % n_d2_semiz and d2_grid_semiz (as n_d and d_grid)
-% % For models with d1, use:
-% % n_d_semiz and d_grid_semiz (as n_d and d_grid)
-% 
-% %% without d1, without z, without e, with semiz
-% figure_c=9;
-% output=CoreFHorzTwoEndo_nod1_noz_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% with d1, without z, without e, with semiz
-% figure_c=10;
-% output=CoreFHorzTwoEndo_d1_noz_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% without d1, with z, without e, with semiz
-% figure_c=11;
-% output=CoreFHorzTwoEndo_nod1_z_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good :)
-% 
-% %% with d1, with z, without e, with semiz
-% figure_c=12;
-% output=CoreFHorzTwoEndo_d1_z_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% without d1, without z, with e, with semiz
-% figure_c=13;
-% output=CoreFHorzTwoEndo_nod1_noz_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% with d1, without z, with e, with semiz
-% figure_c=14;
-% output=CoreFHorzTwoEndo_d1_noz_e_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% without d1, with z, with e, with semiz
-% figure_c=15;
-% output=CoreFHorzTwoEndo_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% with d1, with z, with e, with semiz
-% figure_c=16;
-% output=CoreFHorzTwoEndo_d1_z_e_semiz(n_d_semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% % looks good
-% 
-% %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
-% output=CoreFHorzTwoEndo_CrossTests_nod1_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-% 
-% output=CoreFHorzTwoEndo_CrossTests_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-% 
-% % All looks good!
-% 
-% %% Now some further cross-tests, using a semi-exo that is really just a markov
-% 
-% output=CoreFHorzTwoEndo_CrossTests2_nod1_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-% 
-% output=CoreFHorzTwoEndo_CrossTests2_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-% 
-% % All looks good!
+%% That is all the without semiz, now with semiz
+% From here on, it is the eight with semiz
+% From here on, use n_d_semiz and d_grid_semiz as the inputs (instead of n_d and d_grid)
+
+% d1 is a decision variable that is not in the SemiExoStateFn
+
+addpath('./CoreFHorzTwoEndo_subcodes/Semiz_subcodes/')
+addpath('./CoreFHorzTwoEndo_ReturnFns/Semiz_ReturnFns/')
+% Uses the same setup, which already had a semi-exogenous state, just that it wasn't used.
+CoreFHorzTwoEndo_setup
+
+% For models without d1, use:
+% n_d2_semiz and d2_grid_semiz (as n_d and d_grid)
+% For models with d1, use:
+% n_d_semiz and d_grid_semiz (as n_d and d_grid)
+
+%% without d1, without z, without e, with semiz
+figure_c=9;
+output=CoreFHorzTwoEndo_nod1_noz_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% with d1, without z, without e, with semiz
+figure_c=10;
+output=CoreFHorzTwoEndo_d1_noz_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% without d1, with z, without e, with semiz
+figure_c=11;
+output=CoreFHorzTwoEndo_nod1_z_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% with d1, with z, without e, with semiz
+figure_c=12;
+n_a_notsobig=[501,4];
+a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
+a_grid_notsobig=[a1_grid_notsobig; a2_grid];
+output=CoreFHorzTwoEndo_d1_z_noe_semiz(n_d_semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% without d1, without z, with e, with semiz
+figure_c=13;
+output=CoreFHorzTwoEndo_nod1_noz_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% with d1, without z, with e, with semiz
+figure_c=14;
+n_a_notsobig=[501,4];
+a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
+a_grid_notsobig=[a1_grid_notsobig; a2_grid];
+output=CoreFHorzTwoEndo_d1_noz_e_semiz(n_d_semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% without d1, with z, with e, with semiz
+figure_c=15;
+output=CoreFHorzTwoEndo_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% with d1, with z, with e, with semiz
+figure_c=16;
+n_a_notsobig=[301,4];
+a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
+a_grid_notsobig=[a1_grid_notsobig; a2_grid];
+output=CoreFHorzTwoEndo_d1_z_e_semiz(n_d_semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% Cross-tests for semiz
+output=CoreFHorzTwoEndo_CrossTests_nod1_semiz(n_d_semiz,n_d2_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+output=CoreFHorzTwoEndo_CrossTests_d1_semiz(n_d_semiz,n_d2_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 

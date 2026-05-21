@@ -164,6 +164,8 @@ fprintf('With grid interp, sim panel data should give roughly the same age condi
 [AgeConditionalStats4.assets.Mean; mean(SimPanelValues4.assets,2)']
 
 
+%% Since alternative preferences have no impact beyond the contents of Policy there is not point testing the EvalOnAgentDist functions.
+
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.
 
