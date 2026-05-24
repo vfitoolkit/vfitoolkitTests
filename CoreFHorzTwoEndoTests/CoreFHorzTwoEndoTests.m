@@ -133,7 +133,10 @@ output=CoreFHorzTwoEndo_d1_noz_e_semiz(n_d_semiz,n_a,n_a_notsobig,n_z,N_j,d_grid
 
 %% without d1, with z, with e, with semiz
 figure_c=15;
-output=CoreFHorzTwoEndo_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+n_a_notsobig=[501,4];
+a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
+a_grid_notsobig=[a1_grid_notsobig; a2_grid];
+output=CoreFHorzTwoEndo_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_notsobig,n_z,N_j,d2_grid_semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 %% with d1, with z, with e, with semiz
 figure_c=16;
