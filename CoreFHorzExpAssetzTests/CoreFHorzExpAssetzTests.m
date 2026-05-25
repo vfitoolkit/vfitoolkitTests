@@ -3,7 +3,7 @@
 % with/without d1
 % with/without e
 % with/without divide-and-conquer
-% with/without grid interpolation (NOT YET IMPLEMENTED in toolkit -- tests will throw)
+% with/without grid interpolation
 % with/without low memory (where appropriate)
 %
 % This is all done with a1 (standard endogenous state alongside the experienceassetz)

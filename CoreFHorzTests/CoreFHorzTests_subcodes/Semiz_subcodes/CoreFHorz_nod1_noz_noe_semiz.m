@@ -56,8 +56,8 @@ vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=1;
 [V2B,Policy2B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(V2(:)-V2B(:))))
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2B(:))))
 vfoptions2.lowmemory=0;
 
 %%
@@ -93,14 +93,14 @@ fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f
 % lowmemory
 vfoptions3.lowmemory=1;
 [V3B,Policy3B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(V3(:)-V3B(:))))
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3B(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=1;
 [V4B,Policy4B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(V4(:)-V4B(:))))
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4B(:))))
+fprintf('lowmemory=1  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4B(:))))
+fprintf('lowmemory=1  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4B(:))))
 vfoptions4.lowmemory=0;
 
 %%

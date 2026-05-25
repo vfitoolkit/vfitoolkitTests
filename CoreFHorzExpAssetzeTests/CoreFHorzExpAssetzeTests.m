@@ -2,7 +2,7 @@
 % experienceassetze: aprime depends on (d2,a2,z,e), so z and e are always present
 % with/without d1
 % with/without divide-and-conquer
-% with/without grid interpolation (NOT YET IMPLEMENTED in toolkit -- tests will throw)
+% with/without grid interpolation
 % with/without low memory (where appropriate)
 %
 % This is all done with a1 (standard endogenous state alongside the experienceassetze)

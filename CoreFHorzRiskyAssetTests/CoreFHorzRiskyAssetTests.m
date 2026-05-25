@@ -1,5 +1,5 @@
 % Implement core tests of the VFI Toolkit FHorz RiskyAsset commands.
-% Phase 1: foundation + 4 sample subcodes (with/without d1, with/without semiz; all noz/noe).
+% Full 16-subcode matrix: {nod1,d1} x {noz,z} x {noe,e} x {nosemiz,semiz}.
 %
 % Riskyasset notes:
 %   - aprimeFn(d2, d3, u, ...) — uses iid u shock, NOT current a
@@ -43,4 +43,62 @@ output=CoreFHorzRiskyAsset_d1_noz_noe_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,
 % should run cleanly
 
 
-%% Phase 1 done. Phase 2 (when ready): expand to full 16-subcode matrix (add z, e variants) + cross-tests.
+%% without d1, with z, without e, without semiz
+figure_c=5;
+output=CoreFHorzRiskyAsset_nod1_z_noe_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% with d1, with z, without e, without semiz
+figure_c=6;
+output=CoreFHorzRiskyAsset_d1_z_noe_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% without d1, without z, with e, without semiz
+figure_c=7;
+output=CoreFHorzRiskyAsset_nod1_noz_e_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% with d1, without z, with e, without semiz
+figure_c=8;
+output=CoreFHorzRiskyAsset_d1_noz_e_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% without d1, with z, with e, without semiz
+figure_c=9;
+output=CoreFHorzRiskyAsset_nod1_z_e_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% with d1, with z, with e, without semiz
+figure_c=10;
+output=CoreFHorzRiskyAsset_d1_z_e_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% without d1, with z, without e, with semiz
+figure_c=11;
+output=CoreFHorzRiskyAsset_nod1_z_noe_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% with d1, with z, without e, with semiz
+figure_c=12;
+output=CoreFHorzRiskyAsset_d1_z_noe_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% without d1, without z, with e, with semiz
+figure_c=13;
+output=CoreFHorzRiskyAsset_nod1_noz_e_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% with d1, without z, with e, with semiz
+figure_c=14;
+output=CoreFHorzRiskyAsset_d1_noz_e_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% without d1, with z, with e, with semiz
+figure_c=15;
+output=CoreFHorzRiskyAsset_nod1_z_e_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly
+
+%% with d1, with z, with e, with semiz
+figure_c=16;
+output=CoreFHorzRiskyAsset_d1_z_e_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% should run cleanly

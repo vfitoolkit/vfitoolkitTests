@@ -86,7 +86,6 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 figure_c=8;
 output=CoreFHorzExpAssetU_d1_z_e_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% THIS ONE RAN OUT OF MEMORY
 % looks good
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
