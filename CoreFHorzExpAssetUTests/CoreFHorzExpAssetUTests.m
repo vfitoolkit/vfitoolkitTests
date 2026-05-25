@@ -32,7 +32,7 @@ a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolati
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 output=CoreFHorzExpAssetU_d1_noz_noe_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% without d1, with z, without e, without semiz
 figure_c=3;
@@ -41,7 +41,7 @@ a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolati
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 output=CoreFHorzExpAssetU_nod1_z_noe_nosemiz(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% with d1, with z, without e, without semiz
 n_a_notsobig=[201,13]; % To avoid out-of-memory errors
@@ -50,7 +50,7 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 figure_c=4;
 output=CoreFHorzExpAssetU_d1_z_noe_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% without d1, without z, with e, without semiz
 figure_c=5;
@@ -59,7 +59,7 @@ a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolati
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 output=CoreFHorzExpAssetU_nod1_noz_e_nosemiz(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% with d1, without z, with e, without semiz
 n_a_notsobig=[201,13]; % To avoid out-of-memory errors
@@ -77,7 +77,7 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 figure_c=7;
 output=CoreFHorzExpAssetU_nod1_z_e_nosemiz(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% with d1, with z, with e, without semiz
 n_a_notsobig=[201,13]; % To avoid out-of-memory errors
@@ -86,7 +86,7 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 figure_c=8;
 output=CoreFHorzExpAssetU_d1_z_e_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
 output=CoreFHorzExpAssetU_CrossTests_nod1_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
@@ -94,13 +94,18 @@ output=CoreFHorzExpAssetU_CrossTests_nod1_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,
 output=CoreFHorzExpAssetU_CrossTests_d1_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 % all looking good :)
 
-%% Do a test with a 'fake experience asset' and compare to a standard endogneous asset
+%% Do a test with a 'fake experienceassetu' and compare to experienceasset
 output=CoreFHorzExpAssetU_CrossTests3_nod1_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 output=CoreFHorzExpAssetU_CrossTests3_d1_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 % all looking good :)
 
-%% Should I add a test where an experienceassetu is just an experienceasset (n_u=1, u_grid=1, pi_u=1) and see they give same result?
+
+
+
+
+
+
 
 
 %% Worth doing a 'clear all' here, but not necessary.
@@ -132,7 +137,7 @@ a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolati
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 output=CoreFHorzExpAssetU_nod1_noz_noe_semiz(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% with d1, without z, without e, with semiz
 n_a_notsobig=[201,13]; % To avoid out-of-memory errors
@@ -142,7 +147,7 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 figure_c=10;
 output=CoreFHorzExpAssetU_d1_noz_noe_semiz(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% without d1, with z, without e, with semiz
 n_a_notsobig=[301,13]; % To avoid out-of-memory errors
@@ -152,7 +157,7 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 figure_c=11;
 output=CoreFHorzExpAssetU_nod1_z_noe_semiz(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% with d1, with z, without e, with semiz
 n_a_notsobig=[151,13]; % To avoid out-of-memory errors
@@ -162,7 +167,7 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 figure_c=12;
 output=CoreFHorzExpAssetU_d1_z_noe_semiz(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% good until runs out of memory
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% without d1, without z, with e, with semiz
 n_a_notsobig=[301,13]; % To avoid out-of-memory errors
@@ -172,7 +177,7 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 figure_c=13;
 output=CoreFHorzExpAssetU_nod1_noz_e_semiz(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% with d1, without z, with e, with semiz
 n_a_notsobig=[201,13]; % To avoid out-of-memory errors
@@ -182,23 +187,27 @@ a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 figure_c=14;
 output=CoreFHorzExpAssetU_d1_noz_e_semiz(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% good until runs out of memory
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% without d1, with z, with e, with semiz
-n_a_notsobig=[301,13]; % To avoid out-of-memory errors
+n_a_notsobig=[151,13]; % To avoid out-of-memory errors
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
 figure_c=15;
 output=CoreFHorzExpAssetU_nod1_z_e_semiz(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% with d1, with z, with e, with semiz
-figure_c=16;
-output=CoreFHorzExpAssetU_d1_z_e_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+n_a_notsobig=[151,13]; % To avoid out-of-memory errors
+a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-% good until runs out of memory
+figure_c=16;
+output=CoreFHorzExpAssetU_d1_z_e_semiz(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+% looks good (as good as it can be expected to given the n_a_notsobig)
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
 output=CoreFHorzExpAssetU_CrossTests_nod1_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
@@ -212,7 +221,7 @@ output=CoreFHorzExpAssetU_CrossTests2_nod1_semiz(n_d_withoutd1semiz,n_a,n_a_big,
 output=CoreFHorzExpAssetU_CrossTests2_d1_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 % all looking good :)
 
-%% Do a test with a 'fake experience asset' and compare to a standard endogneous asset
+%% Do a test with a 'fake experienceassetu' and compare to experienceasset
 output=CoreFHorzExpAssetU_CrossTests3_nod1_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 output=CoreFHorzExpAssetU_CrossTests3_d1_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
