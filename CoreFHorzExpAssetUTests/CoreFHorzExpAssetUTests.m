@@ -155,7 +155,7 @@ output=CoreFHorzExpAssetU_nod1_z_noe_semiz(n_d_withoutd1semiz,n_a,n_a_notsobig,n
 % looks good
 
 %% with d1, with z, without e, with semiz
-n_a_notsobig=[301,13]; % To avoid out-of-memory errors
+n_a_notsobig=[151,13]; % To avoid out-of-memory errors
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
@@ -175,8 +175,12 @@ output=CoreFHorzExpAssetU_nod1_noz_e_semiz(n_d_withoutd1semiz,n_a,n_a_notsobig,n
 % looks good
 
 %% with d1, without z, with e, with semiz
+n_a_notsobig=[201,13]; % To avoid out-of-memory errors
+a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+
 figure_c=14;
-output=CoreFHorzExpAssetU_d1_noz_e_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzExpAssetU_d1_noz_e_semiz(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 % good until runs out of memory
 
