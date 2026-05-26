@@ -23,6 +23,7 @@ simoptionsA.e_grid=vfoptionsA.e_grid;
 simoptionsA.pi_e=vfoptionsA.pi_e;
 simoptionsA.d_grid=d_grid;
 simoptionsA.a_grid=a_grid;
+simoptionsA.z_grid=z_grid;
 
 jequaloneDist=zeros([n_a,n_z,vfoptionsA.n_e],'gpuArray');
 jequaloneDist(1,1,ceil(n_z/2),ceil(vfoptionsA.n_e/2))=1;
@@ -45,6 +46,7 @@ simoptionsB.e_grid=vfoptionsB.e_grid;
 simoptionsB.pi_e=vfoptionsB.pi_e;
 simoptionsB.d_grid=d_grid;
 simoptionsB.a_grid=a_grid;
+simoptionsB.z_grid=z_grid;
 
 [V_B,Policy_B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy_B,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsB);

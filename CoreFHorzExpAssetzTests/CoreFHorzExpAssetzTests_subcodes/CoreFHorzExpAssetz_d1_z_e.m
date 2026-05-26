@@ -28,6 +28,7 @@ vfoptions.aprimeFn=vfoptionsbaseline.aprimeFn;
 simoptions.aprimeFn=vfoptions.aprimeFn;
 simoptions.d_grid=d_grid;
 simoptions.a_grid=a_grid;
+simoptions.z_grid=z_grid;
 
 
 %%

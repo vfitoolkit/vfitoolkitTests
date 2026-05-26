@@ -47,6 +47,7 @@ simoptionsB.experienceassetz=1;
 simoptionsB.aprimeFn=aprimeFn_z;
 simoptionsB.d_grid=d_grid;
 simoptionsB.a_grid=a_grid;
+simoptionsB.z_grid=z_grid;
 
 [V_B,Policy_B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_zside,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy_B,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsB);

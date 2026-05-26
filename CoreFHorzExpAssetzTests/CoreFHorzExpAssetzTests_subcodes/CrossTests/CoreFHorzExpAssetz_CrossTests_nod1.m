@@ -26,6 +26,7 @@ simoptionsA.experienceassetz=1;
 simoptionsA.aprimeFn=aprimeFn_z;
 simoptionsA.d_grid=d_grid;
 simoptionsA.a_grid=a_grid;
+simoptionsA.z_grid=z_grid;
 
 jequaloneDist=zeros([n_a,n_z],'gpuArray');
 jequaloneDist(1,1,ceil(n_z/2))=1;

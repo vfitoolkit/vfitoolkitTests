@@ -31,6 +31,7 @@ simoptionsA.e_grid=vfoptionsA.e_grid;
 simoptionsA.pi_e=vfoptionsA.pi_e;
 simoptionsA.d_grid=d_grid;
 simoptionsA.a_grid=a_grid;
+simoptionsA.z_grid=z_grid;
 
 jequaloneDist_A=zeros([n_a,n_z,n_e_orig],'gpuArray');
 jequaloneDist_A(1,1,ceil(n_z/2),ceil(n_e_orig/2))=1;
