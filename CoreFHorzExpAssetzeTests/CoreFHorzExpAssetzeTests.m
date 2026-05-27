@@ -7,6 +7,7 @@
 % with/without low memory (where appropriate)
 %
 % This is all done with a1 (standard endogenous state alongside the experienceassetze)
+% experienceassete without a1 is not supported by VFI Toolkit
 
 
 addpath('./CoreFHorzExpAssetzeTests_subcodes/')
@@ -101,5 +102,3 @@ output=CoreFHorzExpAssetze_CrossTests3_d1_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,
 output=CoreFHorzExpAssetze_CrossTests4_nod1_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetze_CrossTests4_d1_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-%% THINGS NOT CHECKED
-% Tests with the experienceassetze as the only asset (no a1)

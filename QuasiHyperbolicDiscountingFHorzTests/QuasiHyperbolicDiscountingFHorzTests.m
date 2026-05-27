@@ -86,6 +86,18 @@ output=QHDFHorz_CrossTests_d_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_gri
 % all looking good :)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 %% Worth doing a 'clear all' here, but not necessary.
 % Mainly is so you can run second half independent of first half
 

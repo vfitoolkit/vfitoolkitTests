@@ -65,7 +65,11 @@ fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:
 vfoptions2.lowmemory=0;
 
 %%
-clear V1 V2 V1B V2B V1C V2C Policy1 Policy2 Policy1B Policy2B Policy1C Policy2C
+% V from Policy
+V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+fprintf('ValueFnFromPolicy (Naive), this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+
+clear V1 V2 V1B V2B V1C V2C Policy1 Policy2 Policy1B Policy2B Policy1C Policy2C V1fromPolicy V2fromPolicy
 
 %% Solve with grid-interpolation
 vfoptions3=vfoptions;
@@ -116,7 +120,11 @@ fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(Polic
 vfoptions4.lowmemory=0;
 
 %%
-clear V3 V4 V3B V4B V3C V4C Policy3 Policy4 Policy3B Policy4B Policy3C Policy4C
+% V from Policy
+V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
+fprintf('ValueFnFromPolicy (GI, Naive), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+
+clear V3 V4 V3B V4B V3C V4C Policy3 Policy4 Policy3B Policy4B Policy3C Policy4C V3fromPolicy V4fromPolicy
 
 
 %% Use a really big a_grid, then the moments should be essentially the same with/without grid interpolation
@@ -222,7 +230,11 @@ fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:
 vfoptions2.lowmemory=0;
 
 %%
-clear V1 V2 V1B V2B V1C V2C Policy1 Policy2 Policy1B Policy2B Policy1C Policy2C
+% V from Policy
+V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+fprintf('ValueFnFromPolicy (Sophisticated), this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+
+clear V1 V2 V1B V2B V1C V2C Policy1 Policy2 Policy1B Policy2B Policy1C Policy2C V1fromPolicy V2fromPolicy
 
 %% Solve with grid-interpolation
 vfoptions3=vfoptions;
@@ -274,7 +286,11 @@ fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(Polic
 vfoptions4.lowmemory=0;
 
 %%
-clear V3 V4 V3B V4B V3C V4C Policy3 Policy4 Policy3B Policy4B Policy3C Policy4C
+% V from Policy
+V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
+fprintf('ValueFnFromPolicy (GI, Sophisticated), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+
+clear V3 V4 V3B V4B V3C V4C Policy3 Policy4 Policy3B Policy4B Policy3C Policy4C V3fromPolicy V4fromPolicy
 
 
 %% Use a really big a_grid, then the moments should be essentially the same with/without grid interpolation

@@ -3,7 +3,8 @@ function output=CoreFHorzExpAssetze_CrossTests4_d1(n_d,n_a,n_a_big,n_z,N_j,d_gri
 % Cross-test 4 for experienceassetze (d1 version): experienceassetze with iid-markov z + normal e,
 % compared to experienceassete with 2-dim e (e1=z values, e2=e values).
 
-pi_z_iid_row=ones(1,n_z)/n_z;
+pi_z_iid_row=rand(1,n_z); % random transition probabilites
+pi_z_iid_row=pi_z_iid_row./sum(pi_z_iid_row); % normalize to sum to one
 pi_z=repmat(pi_z_iid_row,n_z,1);
 
 n_e_orig=vfoptionsbaseline.n_e;

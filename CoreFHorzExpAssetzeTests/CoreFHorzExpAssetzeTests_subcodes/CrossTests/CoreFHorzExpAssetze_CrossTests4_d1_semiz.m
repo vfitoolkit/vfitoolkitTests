@@ -7,7 +7,8 @@ function output=CoreFHorzExpAssetze_CrossTests4_d1_semiz(n_d,n_a,n_a_big,n_z,N_j
 % Pending toolkit support: requires BOTH experienceassetze+SemiExo AND experienceassete+SemiExo
 % dispatchers in ValueFnIter_Case1_FHorz (currently neither exists).
 
-pi_z_iid_row=ones(1,n_z)/n_z;
+pi_z_iid_row=rand(1,n_z); % random transition probabilites
+pi_z_iid_row=pi_z_iid_row./sum(pi_z_iid_row); % normalize to sum to one
 pi_z=repmat(pi_z_iid_row,n_z,1);
 
 n_e_orig=vfoptionsbaseline.n_e;

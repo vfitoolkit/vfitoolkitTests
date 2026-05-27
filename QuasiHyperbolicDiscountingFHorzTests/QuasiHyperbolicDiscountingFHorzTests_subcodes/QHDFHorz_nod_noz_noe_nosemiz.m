@@ -40,8 +40,12 @@ simoptions2=simoptions;
 fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
 fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
 
+% V from Policy
+V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+fprintf('ValueFnFromPolicy (Naive), this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+
 %%
-clear V1 V2 Policy1 Policy2
+clear V1 V2 Policy1 Policy2 V1fromPolicy V2fromPolicy
 
 %% Solve with grid-interpolation
 vfoptions3=vfoptions;
@@ -65,8 +69,12 @@ simoptions4.ngridinterp=vfoptions4.ngridinterp;
 fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
 fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
 
+% V from Policy
+V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
+fprintf('ValueFnFromPolicy (GI, Naive), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+
 %%
-clear V3 V4 Policy3 Policy4
+clear V3 V4 Policy3 Policy4 V3fromPolicy V4fromPolicy
 
 
 %% Use a really big a_grid, then the moments should be essentially the same with/without grid interpolation
@@ -145,8 +153,12 @@ simoptions2=simoptions;
 fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
 fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
 
+% V from Policy
+V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+fprintf('ValueFnFromPolicy (Sophisticated), this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+
 %%
-clear V1 V2 Policy1 Policy2
+clear V1 V2 Policy1 Policy2 V1fromPolicy V2fromPolicy
 
 %% Solve with grid-interpolation
 vfoptions3=vfoptions;
@@ -171,8 +183,12 @@ simoptions4.ngridinterp=vfoptions4.ngridinterp;
 fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
 fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
 
+% V from Policy
+V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
+fprintf('ValueFnFromPolicy (GI, Sophisticated), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+
 %%
-clear V3 V4 Policy3 Policy4
+clear V3 V4 Policy3 Policy4 V3fromPolicy V4fromPolicy
 
 
 %% Use a really big a_grid, then the moments should be essentially the same with/without grid interpolation

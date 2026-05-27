@@ -6,7 +6,7 @@
 % with/without grid interpolation
 % with/without low memory (where appropriate)
 %
-% with/without semiz [not yet implemented]
+% with/without semiz
 %
 % This is all done with a1, then rerun most of them without a1 (divide-and-conquer and grid interpolation layer no longer relevant)
 
@@ -15,9 +15,7 @@ addpath('./CoreFHorzExpAssetUTests_subcodes/')
 addpath('./CoreFHorzExpAssetUTests_Setup/')
 addpath('./CoreFHorzExpAssetU_ReturnFns/')
 addpath('./CoreFHorzExpAssetUTests_subcodes/CrossTests/')
-
-
-%% Setup so that use the same d,a,z,e,semiz in all the models that use them
+% Setup so that use the same d,a,z,e,semiz in all the models that use them
 CoreFHorzExpAssetU_setup
 
 %% without d1, without z, without e, without semiz
@@ -228,26 +226,6 @@ output=CoreFHorzExpAssetU_CrossTests3_d1_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N
 % all looking good :)
 
 
-%% THINGS NOT CHECKED
-% Check using two decision variables in any of d1 or d3 (the decision variables that are not in experience asset)
-% Stuff for when the experienceassetu is the only asset
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -272,6 +250,8 @@ addpath('./CoreFHorzExpAssetUTests_subcodes/Noa1_subcodes/')
 addpath('./CoreFHorzExpAssetUTests_subcodes/Noa1_subcodes/Semiz_subcodes/')
 addpath('./CoreFHorzExpAssetU_ReturnFns/Noa1_ReturnFns/')
 addpath('./CoreFHorzExpAssetU_ReturnFns/Noa1_ReturnFns/Semiz_ReturnFns/')
+% Setup so that use the same d,a,z,e,semiz in all the models that use them
+CoreFHorzExpAssetU_setup
 
 %% noa1 nosemiz (8 variants)
 
@@ -308,12 +288,13 @@ figure_c=24;
 output=CoreFHorzExpAssetU_d1_z_e_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 %% noa1 nosemiz cross-tests
+% Markov-as-iid equivalence cross-test
 output=CoreFHorzExpAssetU_CrossTests_nod1_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetU_CrossTests_d1_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-
+% 'fake' experienceassetu vs experienceasset
 output=CoreFHorzExpAssetU_CrossTests3_nod1_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetU_CrossTests3_d1_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-
+% no a1 vs model with a1 but where it is ignored
 output=CoreFHorzExpAssetU_CrossTests4_nod1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetU_CrossTests4_d1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
@@ -355,14 +336,22 @@ figure_c=32;
 output=CoreFHorzExpAssetU_d1_z_e_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 %% noa1 semiz cross-tests
+% Markov-as-iid equivalence cross-test
 output=CoreFHorzExpAssetU_CrossTests_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetU_CrossTests_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-
+% semiz state as a plain Markov should give same answer
 output=CoreFHorzExpAssetU_CrossTests2_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetU_CrossTests2_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-
+% 'fake' experienceassetu vs experienceasset
 output=CoreFHorzExpAssetU_CrossTests3_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetU_CrossTests3_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-
+% no a1 vs model with a1 but where it is ignored
 output=CoreFHorzExpAssetU_CrossTests4_nod1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetU_CrossTests4_d1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+
+
+
+
+%% THINGS NOT CHECKED
+% Check using two decision variables in any of d1 or d3 (the decision variables that are not in experience asset)

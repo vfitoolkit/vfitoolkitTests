@@ -20,6 +20,15 @@ n_d_withd1semiz=[n_d1,n_d2,n_d3,n_d4];
 n_a=51;     % single endogenous state (the riskyasset itself)
 n_a_big=201; % for more accurate StationaryDist moments
 
+% With-a1 variant: a=[a1,a2] where a1 is a standard (safe) asset and a2 is the riskyasset.
+% a1prime is chosen directly (Policy stores it); a2prime is set by aprimeFn(d2,d3,u).
+% a1 earns safe return r_a1 in the budget constraint.
+n_a1=21;
+n_a2=11;     % risky asset, smaller grid in the with-a1 case to keep total size manageable
+n_a1_big=51;
+n_a_withA1=[n_a1,n_a2];
+n_a_big_withA1=[n_a1_big,n_a2];
+
 n_z=5;
 n_e=3;
 n_u=3;     % iid between-period shock to risky-asset return
@@ -41,6 +50,13 @@ d_grid_withd1semiz=[d1_grid; d2_grid; d3_grid; d4_grid];
 % Asset grid (single endogenous state, the riskyasset)
 a_grid=10*linspace(0,1,n_a)'.^3;
 a_grid_big=10*linspace(0,1,n_a_big)'.^3;
+
+% With-a1 grids: a1 standard asset (cubic spacing, finer near zero), a2 risky asset (same as noa1 case)
+a1_grid=5*linspace(0,1,n_a1)'.^3;
+a1_grid_big=5*linspace(0,1,n_a1_big)'.^3;
+a2_grid=10*linspace(0,1,n_a2)'.^3;
+a_grid_withA1=[a1_grid;a2_grid];
+a_grid_big_withA1=[a1_grid_big;a2_grid];
 
 % setup z
 [z_grid,pi_z]=discretizeAR1_FarmerToda(0,0.9,0.03,n_z);
@@ -99,6 +115,7 @@ Params.varphi=0.8;
 % Prices
 Params.w=1;
 Params.r=0.05;
+Params.r_a1=0.02; % safe-asset return (only used in with-a1 variants)
 
 % Retirement
 Params.Jr=16;

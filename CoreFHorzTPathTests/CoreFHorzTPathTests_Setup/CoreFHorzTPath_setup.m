@@ -12,7 +12,7 @@ n_z=5;
 n_semiz=2; % hardcoded into SemiExoStateFn
 n_e=3;
 
-N_j=20;
+N_j=15; % Deliberately using a small number of periods to increase my ability to run the fastOLG codes
 
 d_grid=linspace(0,1,n_d)';
 d_grid_semiz=[linspace(0,1,n_d)'; 0;1]; % n_d for semiz models, binary d2, with d1
@@ -72,7 +72,7 @@ Params.pension=0.5;
 Params.agej=1:1:N_j;
 
 % Earings
-Params.kappa_j=[0.5:0.1:1,ones(1,9),zeros(1,5)];
+Params.kappa_j=[0.5:0.1:1,ones(1,4),zeros(1,5)];
 
 % When using semiz
 Params.uempbenefit=0.2;

@@ -2,7 +2,6 @@ function output=CoreFHorzExpAsset_CrossTests3_d1_noa1_semiz(n_d,n_a,n_a_big,n_z,
 % Cross-test 3 noa1+semiz d1: ExpAsset noa1+d1+semiz with degenerate aprimeFn(d2,a2)=d2 should match
 % standard 1-endo Case1 with d1+semiz (where aprime plays the role of d2).
 % n_d=[n_d1, n_d2, n_d3]; d_grid=[d1_grid; d2_grid; d3_grid].
-% PENDING TOOLKIT SUPPORT: side B errors at VFI call (ExpAsset+SemiExo+noa1 not implemented).
 
 n_d1_only=n_d(1);
 d1_grid_only=d_grid(1:n_d(1));

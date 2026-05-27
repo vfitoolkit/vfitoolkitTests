@@ -1,7 +1,6 @@
 function output=CoreFHorzExpAssetU_CrossTests2_nod1_noa1_semiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 % Cross-test 2 noa1+semiz nod1: semiz state as a plain Markov should give same answer as ExpAsset noa1 with z.
 % n_d=[n_d2, n_d3]; d_grid=[d2_grid; d3_grid].
-% PENDING TOOLKIT SUPPORT: side B (semiz) errors at VFI call because ExpAssetU+SemiExo+noa1 not implemented.
 
 % Pieces used by both sides
 n_d_withoutsemiz=n_d(1); % drop d3
@@ -50,8 +49,8 @@ jequaloneDist(1,ceil(n_semiz/2))=1;
 
 vfoptionsA=struct();
 simoptionsA=struct();
-vfoptionsA.experienceasset=vfoptions.experienceasset;
-simoptionsA.experienceasset=simoptions.experienceasset;
+vfoptionsA.experienceassetu=vfoptions.experienceassetu;
+simoptionsA.experienceassetu=simoptions.experienceassetu;
 vfoptionsA.aprimeFn=vfoptions.aprimeFn;
 simoptionsA.aprimeFn=simoptions.aprimeFn;
 simoptionsA.d_grid=d_grid_withoutsemiz;

@@ -1,6 +1,5 @@
 function output=CoreFHorzExpAssetU_CrossTests_nod1_noa1_semiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 % Markov-as-iid cross-test, noa1 + semiz, nod1. n_d=[n_d2, n_d3]; d_grid=[d2_grid; d3_grid].
-% PENDING TOOLKIT SUPPORT: errors at first VFI call because ExpAsset+SemiExo+noa1 is not yet implemented.
 
 % Set up z to copy e
 n_z=vfoptionsbaseline.n_e;
