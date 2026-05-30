@@ -6,7 +6,7 @@
 % with/without grid interpolation
 % with/without low memory (where appropriate)
 %
-% with/without semiz
+% with/without semiz [NOT YET IMPLEMENTED]
 
 
 %%
@@ -14,8 +14,7 @@ addpath('./CoreFHorzTPathTests_subcodes/')
 addpath('./CoreFHorzTPathTests_Setup/')
 addpath('./CoreFHorzTPath_ReturnFns/')
 addpath('./CoreFHorzTPathTests_subcodes/CrossTests/')
-
-%% Setup so that use the same d,a,z,e,semiz in all the models that use them
+% Setup so that use the same d,a,z,e,semiz in all the models that use them
 CoreFHorzTPath_setup
 
 %% Uncomment to test with age-dependent shocks

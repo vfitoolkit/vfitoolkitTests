@@ -18,10 +18,8 @@
 % to all the other tests of non-standard endogenous states.
 
 addpath('./CoreFHorzRiskyAssetTests_subcodes/')
-addpath('./CoreFHorzRiskyAssetTests_subcodes/Semiz_subcodes/')
 addpath('./CoreFHorzRiskyAssetTests_Setup/')
 addpath('./CoreFHorzRiskyAsset_ReturnFns/')
-addpath('./CoreFHorzRiskyAsset_ReturnFns/Semiz_ReturnFns/')
 
 
 %% Setup
@@ -68,6 +66,26 @@ output=CoreFHorzRiskyAsset_nod1_noz_e_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,
 figure_c=8;
 output=CoreFHorzRiskyAsset_d1_noz_e_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 % should run cleanly
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% Now repeat with semi-exogenous shock
+
+%%
+addpath('./CoreFHorzRiskyAssetTests_subcodes/Semiz_subcodes/')
+addpath('./CoreFHorzRiskyAsset_ReturnFns/Semiz_ReturnFns/')
+
+
 
 %% without d1, with z, with e, without semiz
 figure_c=9;

@@ -32,10 +32,11 @@ jequaloneDist(1,ceil(n_z/2),ceil(vfoptions.n_e/2))=1;
 
 ReturnFn=@(h,savings,a,z,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d1_z_e_nosemiz(h,savings,a,z,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
 
-FnsToEvaluate.assets=@(h,savings,a,z,e) a;
-FnsToEvaluate.savings=@(h,savings,a,z,e) savings;
-FnsToEvaluate.hours=@(h,savings,a,z,e) h;
-FnsToEvaluate.earnings=@(h,savings,a,z,e,w,kappa_j) w*kappa_j*h*z*e;
+% With riskyasset, need to include all d in FnsToEvaluate, even if they are not in the ReturnFn
+FnsToEvaluate.assets=@(h,riskyshare,savings,a,z,e) a;
+FnsToEvaluate.savings=@(h,riskyshare,savings,a,z,e) savings;
+FnsToEvaluate.hours=@(h,riskyshare,savings,a,z,e) h;
+FnsToEvaluate.earnings=@(h,riskyshare,savings,a,z,e,w,kappa_j) w*kappa_j*h*z*e;
 
 %% Basic VFI
 vfoptions1=vfoptions;

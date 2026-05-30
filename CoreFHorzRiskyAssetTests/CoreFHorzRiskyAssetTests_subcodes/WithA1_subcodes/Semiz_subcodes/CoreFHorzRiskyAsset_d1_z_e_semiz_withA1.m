@@ -39,10 +39,11 @@ jequaloneDist(1,1,ceil(vfoptions.n_semiz/2),ceil(n_z/2),ceil(vfoptions.n_e/2))=1
 
 ReturnFn=@(h,savings,dsemiz,a1prime,a1,a2,semiz,z,e,r,w,kappa_j,sigma,eta,varphi,r_a1,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_z_e_semiz_withA1(h,savings,dsemiz,a1prime,a1,a2,semiz,z,e,r,w,kappa_j,sigma,eta,varphi,r_a1,agej,Jr,pension,uempbenefit,searcheffortcost);
 
-FnsToEvaluate.a1=@(h,savings,dsemiz,a1prime,a1,a2,semiz,z,e) a1;
-FnsToEvaluate.a2=@(h,savings,dsemiz,a1prime,a1,a2,semiz,z,e) a2;
-FnsToEvaluate.savings=@(h,savings,dsemiz,a1prime,a1,a2,semiz,z,e) savings;
-FnsToEvaluate.earnings=@(h,savings,dsemiz,a1prime,a1,a2,semiz,z,e,w,kappa_j) w*kappa_j*h;
+% With riskyasset, need to include all d in FnsToEvaluate, even if they are not in the ReturnFn
+FnsToEvaluate.a1=@(h,riskyshare,savings,dsemiz,a1prime,a1,a2,semiz,z,e) a1;
+FnsToEvaluate.a2=@(h,riskyshare,savings,dsemiz,a1prime,a1,a2,semiz,z,e) a2;
+FnsToEvaluate.savings=@(h,riskyshare,savings,dsemiz,a1prime,a1,a2,semiz,z,e) savings;
+FnsToEvaluate.earnings=@(h,riskyshare,savings,dsemiz,a1prime,a1,a2,semiz,z,e,w,kappa_j) w*kappa_j*h;
 
 %% Basic VFI
 vfoptions1=vfoptions;

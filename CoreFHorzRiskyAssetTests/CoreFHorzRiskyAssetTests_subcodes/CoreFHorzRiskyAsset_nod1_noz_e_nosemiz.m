@@ -35,9 +35,10 @@ jequaloneDist(1,ceil(vfoptions.n_e/2))=1;
 
 ReturnFn=@(savings,a,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_noz_e_nosemiz(savings,a,e,r,w,kappa_j,sigma,agej,Jr,pension);
 
-FnsToEvaluate.assets=@(savings,a,e) a;
-FnsToEvaluate.savings=@(savings,a,e) savings;
-FnsToEvaluate.earnings=@(savings,a,e,w,kappa_j) w*kappa_j*e;
+% With riskyasset, need to include all d in FnsToEvaluate, even if they are not in the ReturnFn
+FnsToEvaluate.assets=@(riskyshare,savings,a,e) a;
+FnsToEvaluate.savings=@(riskyshare,savings,a,e) savings;
+FnsToEvaluate.earnings=@(riskyshare,savings,a,e,w,kappa_j) w*kappa_j*e;
 
 %% Basic VFI
 vfoptions1=vfoptions;

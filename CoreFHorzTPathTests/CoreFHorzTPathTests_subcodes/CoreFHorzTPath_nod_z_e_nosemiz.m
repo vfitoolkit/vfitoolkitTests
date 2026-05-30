@@ -31,14 +31,14 @@ FnsToEvaluate.earnings=@(aprime,a,z,e,w,kappa_j) w*kappa_j*z*e;
 % Need period T for V and Policy
 V_final=zeros([n_a,n_z,vfoptions.n_e,N_j],'gpuArray');
 Policy_final=ones([1,n_a,n_z,vfoptions.n_e,N_j],'gpuArray');
-Policy_final_GI=ones([2,n_a,n_z,vfoptions.n_e,N_j],'gpuArray');
+Policy_final_GI=ones([3,n_a,n_z,vfoptions.n_e,N_j],'gpuArray');
 % need big versions
 V_final_big=zeros([n_a_big,n_z,vfoptions.n_e,N_j],'gpuArray');
 Policy_final_big=ones([1,n_a_big,n_z,vfoptions.n_e,N_j],'gpuArray');
-Policy_final_big_GI=ones([2,n_a_big,n_z,vfoptions.n_e,N_j],'gpuArray');
+Policy_final_big_GI=ones([3,n_a_big,n_z,vfoptions.n_e,N_j],'gpuArray');
 
 
-%% Without fastOLG, there is no implementation for divide-and-conquer, nor for grid interpolation layer
+%% With vs Without fastOLG
 transpathoptionsslow.fastOLG=0;
 vfoptions1=vfoptions;
 simoptions1=simoptions;
@@ -51,10 +51,8 @@ fprintf('fastOLG, this should be zero: %2.8f \n',max(abs(PolicyPath1slow(:)-Poli
 
 clear VPath1fast VPath1slow PolicyPath1fast PolicyPath1slow
 
-% Everything else uses fastOLG
-
-%% With and without divide-and-conquer (both with fastOLG)
-[VPath1,PolicyPath1]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+%% With and without divide-and-conquer (both with slowOLG)
+[VPath1,PolicyPath1]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions1);
 
 % PolicyVals1=PolicyInd2Val_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions1);
 
@@ -62,10 +60,24 @@ clear VPath1fast VPath1slow PolicyPath1fast PolicyPath1slow
 vfoptions2=vfoptions;
 vfoptions2.divideandconquer=1;
 simoptions2=simoptions;
+[VPath2,PolicyPath2]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions2);
+
+fprintf('Divide-and-conquer (slowOLG), this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
+fprintf('Divide-and-conquer (slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
+
+clear VPath1 VPath2 PolicyPath1 PolicyPath2 % PolicyVals1
+
+
+%% With and without divide-and-conquer (both with fastOLG)
+[VPath1,PolicyPath1]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+
+% PolicyVals1=PolicyInd2Val_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions1);
+
+% Solve with divide-and-conquer, should give same answer
 [VPath2,PolicyPath2]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
+fprintf('Divide-and-conquer (fastOLG), this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
+fprintf('Divide-and-conquer (fastOLG), this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
 
 % lowmemory should give same answer
 vfoptions1.lowmemory=1;
@@ -100,14 +112,14 @@ fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(PolicyPath2(:)-Pol
 clear VPath1 VPath2 PolicyPath1 PolicyPath2 VPath1B VPath2B PolicyPath1B PolicyPath2B VPath1C VPath2C PolicyPath1C PolicyPath2C % PolicyVals1
 
 
-%% Solve with grid-interpolation. With and without divide-and-conquer (both with fastOLG)
+%% Solve with grid-interpolation. With and without divide-and-conquer (both with slowOLG)
 vfoptions3=vfoptions;
 vfoptions3.gridinterplayer=1;
 vfoptions3.ngridinterp=5;
 simoptions3=simoptions;
 simoptions3.gridinterplayer=vfoptions3.gridinterplayer;
 simoptions3.ngridinterp=vfoptions3.ngridinterp;
-[VPath3,PolicyPath3]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions3);
+[VPath3,PolicyPath3]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions3);
 
 % PolicyVals3=PolicyInd2Val_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions3);
 
@@ -119,10 +131,24 @@ vfoptions4.ngridinterp=5;
 simoptions4=simoptions;
 simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
+[VPath4,PolicyPath4]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions4);
+
+fprintf('Divide-and-conquer (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath4(:))))
+fprintf('Divide-and-conquer (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
+
+clear VPath3 VPath4 PolicyPath3 PolicyPath4 % PolicyVals3
+
+
+%% Solve with grid-interpolation. With and without divide-and-conquer (both with fastOLG)
+[VPath3,PolicyPath3]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions3);
+
+% PolicyVals3=PolicyInd2Val_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions3);
+
+% Solve with divide-and-conquer, should give same answer
 [VPath4,PolicyPath4]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath4(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
+fprintf('Divide-and-conquer (with GI, fastOLG), this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath4(:))))
+fprintf('Divide-and-conquer (with GI, fastOLG), this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
 
 % lowmemory should give same answer
 vfoptions3.lowmemory=1;

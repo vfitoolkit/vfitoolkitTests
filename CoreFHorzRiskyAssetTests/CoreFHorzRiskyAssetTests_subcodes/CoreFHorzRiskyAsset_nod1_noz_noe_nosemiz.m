@@ -31,9 +31,10 @@ jequaloneDist(1)=1;
 
 ReturnFn=@(savings,a,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_noz_noe_nosemiz(savings,a,r,w,kappa_j,sigma,agej,Jr,pension);
 
-FnsToEvaluate.assets=@(savings,a) a;
-FnsToEvaluate.savings=@(savings,a) savings;
-FnsToEvaluate.earnings=@(savings,a,w,kappa_j) w*kappa_j;
+% With riskyasset, need to include all d in FnsToEvaluate, even if they are not in the ReturnFn
+FnsToEvaluate.assets=@(riskyshare,savings,a) a;
+FnsToEvaluate.savings=@(riskyshare,savings,a) savings;
+FnsToEvaluate.earnings=@(riskyshare,savings,a,w,kappa_j) w*kappa_j;
 
 %% Basic VFI
 vfoptions1=vfoptions;
@@ -47,6 +48,7 @@ fprintf('ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(
 
 %%
 clear V1 Policy1 PolicyVals1 V1fromPolicy
+
 %% Use a really big a_grid for more accurate moments
 % Riskyasset doesn't support DC or grid interpolation layer, so there's just the one path here.
 simoptions1.a_grid=a_grid_big;

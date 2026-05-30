@@ -69,6 +69,7 @@ simoptions4.ngridinterp=vfoptions4.ngridinterp;
 fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
 fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
 
+
 %%
 clear V3 V4 Policy3 Policy4 PolicyVals3 V3fromPolicy
 
