@@ -55,7 +55,21 @@ simoptions2=simoptions;
 fprintf('Divide-and-conquer (slowOLG), this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
 fprintf('Divide-and-conquer (slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
 
-clear VPath1 VPath2 PolicyPath1 PolicyPath2 % PolicyVals1
+% lowmemory should give same answer
+vfoptions1.lowmemory=1;
+[VPath1B,PolicyPath1B]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions1);
+vfoptions1.lowmemory=0;
+
+vfoptions2.lowmemory=1;
+[VPath2B,PolicyPath2B]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions2);
+vfoptions2.lowmemory=0;
+
+fprintf('low memory (slowOLG), this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath1B(:))))
+fprintf('low memory (slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath1B(:))))
+fprintf('low memory (slowOLG), this should be zero: %2.8f \n',max(abs(VPath2(:)-VPath2B(:))))
+fprintf('low memory (slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath2(:)-PolicyPath2B(:))))
+
+clear VPath1 VPath2 PolicyPath1 PolicyPath2 VPath1B VPath2B PolicyPath1B PolicyPath2B % PolicyVals1
 
 
 %% With and without divide-and-conquer (both with fastOLG)
@@ -78,10 +92,10 @@ vfoptions2.lowmemory=1;
 [VPath2B,PolicyPath2B]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 vfoptions2.lowmemory=0;
 
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath1B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath1B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(VPath2(:)-VPath2B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(PolicyPath2(:)-PolicyPath2B(:))))
+fprintf('low memory (fastOLG), this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath1B(:))))
+fprintf('low memory (fastOLG), this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath1B(:))))
+fprintf('low memory (fastOLG), this should be zero: %2.8f \n',max(abs(VPath2(:)-VPath2B(:))))
+fprintf('low memory (fastOLG), this should be zero: %2.8f \n',max(abs(PolicyPath2(:)-PolicyPath2B(:))))
 
 
 %%
@@ -112,7 +126,21 @@ simoptions4.ngridinterp=vfoptions4.ngridinterp;
 fprintf('Divide-and-conquer (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath4(:))))
 fprintf('Divide-and-conquer (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
 
-clear VPath3 VPath4 PolicyPath3 PolicyPath4 % PolicyVals3
+% lowmemory should give same answer
+vfoptions3.lowmemory=1;
+[VPath3B,PolicyPath3B]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions3);
+vfoptions3.lowmemory=0;
+
+vfoptions4.lowmemory=1;
+[VPath4B,PolicyPath4B]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions4);
+vfoptions4.lowmemory=0;
+
+fprintf('low memory (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath3B(:))))
+fprintf('low memory (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath3B(:))))
+fprintf('low memory (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(VPath4(:)-VPath4B(:))))
+fprintf('low memory (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath4(:)-PolicyPath4B(:))))
+
+clear VPath3 VPath4 PolicyPath3 PolicyPath4 VPath3B VPath4B PolicyPath3B PolicyPath4B % PolicyVals3
 
 
 %% Solve with grid-interpolation. With and without divide-and-conquer (both with fastOLG)
@@ -135,10 +163,10 @@ vfoptions4.lowmemory=1;
 [VPath4B,PolicyPath4B]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
 vfoptions4.lowmemory=0;
 
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath3B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath3B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(VPath4(:)-VPath4B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(PolicyPath4(:)-PolicyPath4B(:))))
+fprintf('low memory (with GI, fastOLG), this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath3B(:))))
+fprintf('low memory (with GI, fastOLG), this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath3B(:))))
+fprintf('low memory (with GI, fastOLG), this should be zero: %2.8f \n',max(abs(VPath4(:)-VPath4B(:))))
+fprintf('low memory (with GI, fastOLG), this should be zero: %2.8f \n',max(abs(PolicyPath4(:)-PolicyPath4B(:))))
 
 
 %%
