@@ -1,0 +1,19 @@
+CoreFHorzPTypeTests
+
+Tests for the FHorz Case1 PType commands (ValueFnIter_Case1_FHorz_PType,
+StationaryDist_Case1_FHorz_PType, EvalFnOnAgentDist_AllStats_FHorz_Case1_PType).
+
+Driver: CoreFHorzPTypeTests.m
+
+Tests:
+  1. N_i (numeric) vs Names_i (cell) — identical output
+  2. PType N_i vs no-PType with z having an identity transition matrix
+  3. PType with all types identical vs a single no-PType solve
+  4. PType with two genuinely different types vs two no-PType solves stacked
+  5. ShockTests: one PType solve with 8 types covering every (z,e,semiz)
+     combination, vs 8 separate no-PType solves
+
+Tests 1-4 use only z (no e, no semiz) and a single vfoptions/simoptions
+broadcast to all types. The ShockTests requires Names_i with per-type
+structures because n_z/z_grid/pi_z and the e/semiz pieces of vfoptions
+differ across types.
