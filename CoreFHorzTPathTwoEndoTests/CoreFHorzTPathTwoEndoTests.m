@@ -47,4 +47,6 @@ output=CoreFHorzTPathTwoEndo_nod_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_b
 
 %% with d, with z, with e, without semiz
 figure_c=8;
-output=CoreFHorzTPathTwoEndo_d_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+n_a_notsobig=[251,4];
+a_grid_notsobig=[a_grid_big(round(linspace(1,n_a_big(1),n_a_notsobig(1)))'); a_grid_big(n_a_big(1)+1:end)];
+output=CoreFHorzTPathTwoEndo_d_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_notsobig,n_z,N_j,d_grid,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
