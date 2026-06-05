@@ -34,6 +34,9 @@ output=CoreFHorzPType_NiTwoTypes_vsTwoSolves(n_d,n_a,n_z,N_j,d_grid,a_grid,z_gri
 %% 5. jequaloneDist accepted three ways: [n_a,n_z], [n_a,n_z,N_i], struct
 output=CoreFHorzPType_jequaloneDist_3ways(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i,Names_i);
 
+%% 6. Per-type N_j (different lifespans) — PType as struct ≡ stacked solo solves
+output=CoreFHorzPType_PerTypeNj(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,PTypeDistParamNames);
+
 %% ShockTests: one PType solve with 8 different (z,e,semiz) combos
 % Requires Names_i (per-type structures) because n_z/z_grid/pi_z and the e/semiz
 % pieces of vfoptions differ across types.

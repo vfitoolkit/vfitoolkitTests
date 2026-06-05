@@ -22,7 +22,7 @@ simoptions=struct();
 ptw=Params.(PTypeDistParamNames{:}); % [0.6; 0.4] from setup
 
 %% Solve V/Policy once (independent of jequaloneDist)
-[~,Policy]=ValueFnIter_Case1_FHorz_PType(n_d,n_a,n_z,N_j,N_i,d_grid,a_grid,z_grid,pi_z,ReturnFn_PT,Params,DiscountFactorParamNames,vfoptions);
+[~,Policy]=ValueFnIter_Case1_FHorz_PType(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn_PT,Params,DiscountFactorParamNames,vfoptions);
 
 %% Part A: three semantically identical jequaloneDists (same dist for every type)
 jd_base=zeros(n_a,n_z,'gpuArray');
@@ -44,13 +44,13 @@ for ii=1:N_i
     jd_iii.(Names_i{ii})=jd_base;
 end
 
-Dist_i  =StationaryDist_Case1_FHorz_PType(jd_i,  AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,N_i,pi_z,Params,simoptions);
-Dist_ii =StationaryDist_Case1_FHorz_PType(jd_ii, AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,N_i,pi_z,Params,simoptions);
-Dist_iii=StationaryDist_Case1_FHorz_PType(jd_iii,AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,N_i,pi_z,Params,simoptions);
+Dist_i  =StationaryDist_Case1_FHorz_PType(jd_i,  AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,Names_i,pi_z,Params,simoptions);
+Dist_ii =StationaryDist_Case1_FHorz_PType(jd_ii, AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,Names_i,pi_z,Params,simoptions);
+Dist_iii=StationaryDist_Case1_FHorz_PType(jd_iii,AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,Names_i,pi_z,Params,simoptions);
 
-AllStats_i  =EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_i,  Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,N_i,d_grid,a_grid,z_grid,simoptions);
-AllStats_ii =EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_ii, Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,N_i,d_grid,a_grid,z_grid,simoptions);
-AllStats_iii=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_iii,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,N_i,d_grid,a_grid,z_grid,simoptions);
+AllStats_i  =EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_i,  Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
+AllStats_ii =EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_ii, Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
+AllStats_iii=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_iii,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
 
 for ii=1:N_i
     nA=Names_i{ii};
@@ -75,11 +75,11 @@ jd_iii_diff=struct();
 jd_iii_diff.(Names_i{1})=jdA;
 jd_iii_diff.(Names_i{2})=jdB;
 
-Dist_ii_d =StationaryDist_Case1_FHorz_PType(jd_ii_diff, AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,N_i,pi_z,Params,simoptions);
-Dist_iii_d=StationaryDist_Case1_FHorz_PType(jd_iii_diff,AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,N_i,pi_z,Params,simoptions);
+Dist_ii_d =StationaryDist_Case1_FHorz_PType(jd_ii_diff, AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,Names_i,pi_z,Params,simoptions);
+Dist_iii_d=StationaryDist_Case1_FHorz_PType(jd_iii_diff,AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,Names_i,pi_z,Params,simoptions);
 
-AllStats_ii_d =EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_ii_d, Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,N_i,d_grid,a_grid,z_grid,simoptions);
-AllStats_iii_d=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_iii_d,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,N_i,d_grid,a_grid,z_grid,simoptions);
+AllStats_ii_d =EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_ii_d, Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
+AllStats_iii_d=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_iii_d,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
 
 for ii=1:N_i
     nA=Names_i{ii};
