@@ -16,7 +16,7 @@ FnsToEvaluate.earnings=@(aprime,a,w) w;
 %% Period-0 VFI: gives the final-step V/Policy (used as both V_final for TPath and the steady state to compare against)
 vfoptions1=vfoptions;
 simoptions1=simoptions;
-[V_final,Policy_final]=ValueFnIter_Case1(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+[V_final,Policy_final]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
 
 % GI variant of Policy_final shape (extra L2 channels)
 vfoptions1_GI=vfoptions;
@@ -25,11 +25,11 @@ vfoptions1_GI.ngridinterp=5;
 simoptions1_GI=simoptions;
 simoptions1_GI.gridinterplayer=vfoptions1_GI.gridinterplayer;
 simoptions1_GI.ngridinterp=vfoptions1_GI.ngridinterp;
-[V_final_GI,Policy_final_GI]=ValueFnIter_Case1(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1_GI);
+[V_final_GI,Policy_final_GI]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1_GI);
 
 % Big-grid versions
-[V_final_big,Policy_final_big]=ValueFnIter_Case1(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-[V_final_big_GI,Policy_final_big_GI]=ValueFnIter_Case1(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1_GI);
+[V_final_big,Policy_final_big]=ValueFnIter_InfHorz(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+[V_final_big_GI,Policy_final_big_GI]=ValueFnIter_InfHorz(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1_GI);
 
 % Stationary dist under period-0 prices (used as initial dist for TPath)
 AgentDist_initial=StationaryDist_InfHorz(Policy_final,n_d,n_a,n_z,pi_z,simoptions1,Params,[]);
@@ -99,7 +99,7 @@ fprintf('Constant TPath, this should be zero, V: %2.8f \n',max(abs(VPath1(:)-Vfi
 Polfin_rep=repmat(Policy_final,1,1,1,T);
 fprintf('Constant TPath, this should be zero, Policy: %2.8f \n',max(abs(PolicyPath1(:)-Polfin_rep(:))))
 AD_rep=repmat(AgentDist_initial,1,1,T);
-fprintf('Constant TPath, this should be zero, AgentDist: %2.8f \n',max(abs(AgentDistPath1(:)-AD_rep(:))))
+fprintf('Constant TPath, this should be zero, AgentDist (note: tolerance=1e-6): %2.8f \n',max(abs(AgentDistPath1(:)-AD_rep(:))))
 
 clear VPath1 PolicyPath1 AgentDistPath1
 
