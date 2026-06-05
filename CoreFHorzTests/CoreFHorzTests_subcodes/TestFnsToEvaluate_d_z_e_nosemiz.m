@@ -1,0 +1,308 @@
+function output=TestFnsToEvaluate_d_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+% Test every FHorz FnsToEvaluate consumer + cross-validations + analytical-truth tests.
+% Config: with d, with z, with e, without semiz
+
+fprintf('\n========== TestFnsToEvaluate_d_z_e_nosemiz ==========\n')
+
+%% Setup vfoptions / simoptions
+vfoptions=struct();
+vfoptions.n_e=vfoptionsbaseline.n_e;
+vfoptions.e_grid=vfoptionsbaseline.e_grid;
+vfoptions.pi_e=vfoptionsbaseline.pi_e;
+simoptions=struct();
+simoptions.n_e=simoptionsbaseline.n_e;
+simoptions.e_grid=simoptionsbaseline.e_grid;
+simoptions.pi_e=simoptionsbaseline.pi_e;
+
+% J1 for the at-age-J1 indicator function
+Params.J1=floor(N_j/2);
+
+jequaloneDist=zeros(n_a,n_z,vfoptions.n_e,'gpuArray');
+jequaloneDist(1,ceil(n_z/2),ceil(vfoptions.n_e/2))=1;
+
+ReturnFn=@(d,aprime,a,z,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_z_e_nosemiz(d,aprime,a,z,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+
+%% FnsToEvaluate (struct form; covers age-dependent params, constants, derived values, indicators)
+FnsToEvaluate.assets=@(d,aprime,a,z,e) a;                                                  % no params
+FnsToEvaluate.earnings=@(d,aprime,a,z,e,w,kappa_j) w*kappa_j*z*e*d;                        % constants + age-dep
+FnsToEvaluate.consumption=@(d,aprime,a,z,e,r,w,kappa_j) (1+r)*a + w*kappa_j*z*e*d - aprime; % derived (uses aprime)
+FnsToEvaluate.one=@(d,aprime,a,z,e) 1;                                                     % constant
+FnsToEvaluate.Jnumbers=@(d,aprime,a,z,e,agej) agej;                                        % depends only on age
+FnsToEvaluate.retired=@(d,aprime,a,z,e,agej,Jr) (agej>=Jr);                                % age-indicator
+FnsToEvaluate.atJ1=@(d,aprime,a,z,e,agej,J1) (agej==J1);                                   % single-age indicator
+FnNames=fieldnames(FnsToEvaluate);
+
+% Counter incremented for every test that exceeds its tolerance (reported at end of subcode)
+fail_count=0;
+TOL_EXACT=1e-10;     % consumer-vs-consumer arithmetic identities + analytical-exact moments
+TOL_GINI=1e-6;       % Lorenz-curve interpolation in StatsFromWeightedGrid
+TOL_SIM=0.2;         % SimPanelValues sampling noise (loose)
+
+%% Solve VFI + StationaryDist (small grid, no GI)
+[~,Policy]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions);
+StationaryDist=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy,n_d,n_a,n_z,N_j,pi_z,Params,simoptions);
+
+%% Call every consumer
+AggVars=EvalFnOnAgentDist_AggVars_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions);
+AllStats=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions);
+ValuesOnGrid=EvalFnOnAgentDist_ValuesOnGrid_FHorz_Case1(Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions);
+LifeCycle=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions);
+CovarCorr=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions);
+AgeCondCovarCorr=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions);
+SimPanel=SimPanelValues_FHorz_Case1(jequaloneDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions);
+fprintf('-- All 7 consumers ran without error.\n')
+
+AgeMass=Params.mewj(:)'; % 1 x N_j row of age weights (CPU)
+
+%% ===== Section D: Consumer cross-checks =====
+fprintf('\n-- Section D: consumer cross-checks --\n')
+
+% (25) Mean agreement: AggVars == AllStats == sum_j LifeCycle.Mean(j)*AgeMass(j) == CovarCorr.Mean
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    m_agg=gather(AggVars.(fn).Mean);
+    m_all=gather(AllStats.(fn).Mean);
+    m_lcj=gather(LifeCycle.(fn).Mean);
+    m_lc=sum(m_lcj.*AgeMass);
+    m_cc=gather(CovarCorr.(fn).Mean);
+    err=max(abs([m_all, m_lc, m_cc]-m_agg));
+    fprintf('Mean(%-11s) AggVars vs AllStats vs LifeCycle vs CovarCorr, should be zero: %2.10f\n', fn, err)
+    fail_count=fail_count+(err>TOL_EXACT);
+end
+
+% (26) Variance/StdDev agreement: AllStats.Variance == CovarCorr.StdDev^2 == CovarCorr.CovarianceMatrix(diag)
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    var_all=gather(AllStats.(fn).Variance);
+    sd_cc=gather(CovarCorr.(fn).StdDeviation);
+    var_diag=gather(CovarCorr.CovarianceMatrix(ff,ff));
+    err1=abs(var_all - sd_cc^2);
+    err2=abs(var_all - var_diag);
+    fprintf('Var(%-11s) AllStats vs CovarCorr.StdDev^2 vs diag(CovMat), should be zero: %2.10f / %2.10f\n', fn, err1, err2)
+    fail_count=fail_count+(err1>TOL_EXACT)+(err2>TOL_EXACT);
+end
+
+% (27) Age-conditional Mean/StdDev: LifeCycle == AgeCondCovarCorr per age
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    lcj_mean=gather(LifeCycle.(fn).Mean);
+    acc_mean=gather(AgeCondCovarCorr.(fn).Mean);
+    lcj_sd=gather(LifeCycle.(fn).StdDeviation);
+    acc_sd=gather(AgeCondCovarCorr.(fn).StdDeviation);
+    err_m=max(abs(lcj_mean-acc_mean));
+    err_s=max(abs(lcj_sd-acc_sd));
+    fprintf('LifeCycle vs AgeCondCovarCorr Mean(%-11s)/StdDev, should be zero: %2.10f / %2.10f\n', fn, err_m, err_s)
+    fail_count=fail_count+(err_m>TOL_EXACT)+(err_s>TOL_EXACT);
+end
+
+% (28) Law of total covariance: Cov_pool == E[Cov(X,Y|j)] + Cov(E[X|j],E[Y|j])
+for ff1=1:length(FnNames)
+    for ff2=ff1+1:length(FnNames)
+        fn1=FnNames{ff1}; fn2=FnNames{ff2};
+        cov_pool=gather(CovarCorr.(fn1).CovarianceWith.(fn2));
+        cov_kj=gather(reshape(AgeCondCovarCorr.CovarianceMatrix(ff1,ff2,:),1,[]));
+        m1_kj=gather(LifeCycle.(fn1).Mean);
+        m2_kj=gather(LifeCycle.(fn2).Mean);
+        E_cov=sum(cov_kj.*AgeMass);
+        E_m1=sum(m1_kj.*AgeMass);
+        E_m2=sum(m2_kj.*AgeMass);
+        cov_m=sum((m1_kj-E_m1).*(m2_kj-E_m2).*AgeMass);
+        err=abs(cov_pool-(E_cov+cov_m));
+        fprintf('Law-of-total-cov %s,%s, should be zero: %2.10f\n', fn1, fn2, err)
+        fail_count=fail_count+(err>TOL_EXACT);
+    end
+end
+
+% (31) SimPanelValues mean per age ~ LifeCycle.Mean (sampling noise, loose)
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    sim_mean=mean(gather(SimPanel.(fn)),2)';
+    lc_mean=gather(LifeCycle.(fn).Mean);
+    err=max(abs(sim_mean-lc_mean));
+    fprintf('SimPanel mean vs LifeCycle mean (%-11s), loose: %2.6f\n', fn, err)
+    fail_count=fail_count+(err>TOL_SIM);
+end
+
+% (32) ValuesOnGrid consistency: sum(VOG .* StationaryDist) == AggVars.Mean
+SDvec=reshape(StationaryDist,[],1);
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    vogvec=reshape(ValuesOnGrid.(fn),[],1);
+    pooled=gather(sum(SDvec.*vogvec));
+    err=abs(pooled-gather(AggVars.(fn).Mean));
+    fprintf('ValuesOnGrid pooled vs AggVars.Mean (%-11s), should be zero: %2.10f\n', fn, err)
+    fail_count=fail_count+(err>TOL_EXACT);
+end
+
+% (33) Trivial conditional restriction recovers unrestricted moments
+simoptions_TR=simoptions;
+simoptions_TR.conditionalrestrictions.always=@(d,aprime,a,z,e) 1;
+AllStats_TR=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_TR);
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    err=abs(gather(AllStats.(fn).Mean)-gather(AllStats_TR.always.(fn).Mean));
+    fprintf('Trivial-restriction Mean(%-11s), should be zero: %2.10f\n', fn, err)
+    fail_count=fail_count+(err>TOL_EXACT);
+end
+
+%% ===== Section E: Analytical-truth checks =====
+fprintf('\n-- Section E: analytical-truth checks --\n')
+
+agej_vec=1:N_j;
+
+% T1. Jnumbers
+EJ_an=sum(agej_vec.*AgeMass);
+VarJ_an=sum((agej_vec-EJ_an).^2.*AgeMass);
+SDJ_an=sqrt(VarJ_an);
+% Discrete-distribution Gini via trapezoidal Lorenz
+val=agej_vec.*AgeMass; totalval=sum(val);
+P_cum=cumsum(AgeMass); L_cum=cumsum(val)/totalval;
+P_aug=[0,P_cum]; L_aug=[0,L_cum];
+area=sum(diff(P_aug).*(L_aug(1:end-1)+L_aug(2:end))/2);
+Gini_an=1-2*area;
+err=abs(EJ_an-gather(AllStats.Jnumbers.Mean));
+fprintf('T1 Jnumbers Mean analytical vs AllStats, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+err=abs(SDJ_an-gather(AllStats.Jnumbers.StdDeviation));
+fprintf('T1 Jnumbers StdDev analytical vs AllStats, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+err=abs(Gini_an-gather(AllStats.Jnumbers.Gini));
+fprintf('T1 Jnumbers Gini analytical vs AllStats, should be near-zero: %2.6f\n',err); fail_count=fail_count+(err>TOL_GINI);
+err=max(abs(gather(LifeCycle.Jnumbers.Mean)-agej_vec));
+fprintf('T1 LifeCycle.Jnumbers.Mean - agej, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+err=max(abs(gather(LifeCycle.Jnumbers.StdDeviation)));
+fprintf('T1 LifeCycle.Jnumbers.StdDev, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+idx_J=find(strcmp(FnNames,'Jnumbers'));
+diag_var=gather(reshape(AgeCondCovarCorr.CovarianceMatrix(idx_J,idx_J,:),1,[]));
+err=max(abs(diag_var));
+fprintf('T1 AgeCond CovMat(Jnumbers,Jnumbers,kk), should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+
+% T2. one is constant 1
+err=abs(gather(AggVars.one.Mean)-1);
+fprintf('T2 AggVars.one.Mean - 1, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+err=abs(gather(AllStats.one.Variance));
+fprintf('T2 AllStats.one.Variance, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+err=abs(gather(AllStats.one.Gini));
+fprintf('T2 AllStats.one.Gini, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+idx_one=find(strcmp(FnNames,'one'));
+cov_one_row=gather(reshape(CovarCorr.CovarianceMatrix(idx_one,:),1,[]));
+err=max(abs(cov_one_row));
+fprintf('T2 CovarCorr.CovarianceMatrix(one,:), should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+
+% T3. retired Mean = sum AgeMass(Jr:N_j); Var = p(1-p)
+p_ret=sum(AgeMass(Params.Jr:N_j));
+err=abs(p_ret-gather(AggVars.retired.Mean));
+fprintf('T3 retired Mean analytical vs AggVars, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+err=abs(p_ret*(1-p_ret)-gather(AllStats.retired.Variance));
+fprintf('T3 retired Var analytical vs AllStats, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+
+% T4. atJ1 Mean = AgeMass(J1)
+err=abs(AgeMass(Params.J1)-gather(AggVars.atJ1.Mean));
+fprintf('T4 atJ1 Mean - AgeMass(J1), should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+
+% Also: an "at age J1" conditional restriction makes the restricted moments == LifeCycle moments at J1.
+% Name the restriction condJ1 (not atJ1) to avoid the name collision with the atJ1 FnsToEvaluate field
+% (otherwise the per-fn loop's AllStats.atJ1 = stats(...) would overwrite the restricted-output struct).
+simoptions_J1=simoptions;
+simoptions_J1.conditionalrestrictions.condJ1=@(d,aprime,a,z,e,agej,J1) (agej==J1);
+AllStats_J1=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_J1);
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    if strcmp(fn,'one') || strcmp(fn,'atJ1') % constant or zero/one indicator — moments still defined
+        continue
+    end
+    m_res=gather(AllStats_J1.condJ1.(fn).Mean);
+    m_lcJ1=gather(LifeCycle.(fn).Mean(Params.J1));
+    err=abs(m_res-m_lcJ1);
+    fprintf('T4 ConditionalRestriction at age J1 vs LifeCycle.Mean(J1) for %-11s, should be zero: %2.10f\n', fn, err)
+    fail_count=fail_count+(err>TOL_EXACT);
+end
+
+% T5. Law of total covariance for (Jnumbers, assets): within-age Cov=0 (J is constant), so Cov_pool == Cov(j, E[a|j])
+m_a_kj=gather(LifeCycle.assets.Mean);
+EJ=sum(agej_vec.*AgeMass); Ea=sum(m_a_kj.*AgeMass);
+cov_an=sum((agej_vec-EJ).*(m_a_kj-Ea).*AgeMass);
+cov_num=gather(CovarCorr.Jnumbers.CovarianceWith.assets);
+err=abs(cov_an-cov_num);
+fprintf('T5 Cov(Jnumbers,assets) law of total cov, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+
+%% ===== Section F: agegroupings tests =====
+fprintf('\n-- Section F: agegroupings --\n')
+
+% T6: single-bin AgeCond CovarCorr == pooled CovarCorr (exact, since within-bin mass is full mass)
+simoptions_1bin=simoptions;
+simoptions_1bin.agegroupings=[1];
+AgeCond_1bin=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_1bin);
+err_cov=max(abs(gather(AgeCond_1bin.CovarianceMatrix(:))-gather(CovarCorr.CovarianceMatrix(:))));
+err_cor=max(abs(gather(AgeCond_1bin.CorrelationMatrix(:))-gather(CovarCorr.CorrelationMatrix(:))));
+fprintf('T6 single-bin AgeCond CovMat vs pooled, should be zero: %2.10f\n',err_cov); fail_count=fail_count+(err_cov>TOL_EXACT);
+fprintf('T6 single-bin AgeCond CorrMat vs pooled, should be zero: %2.10f\n',err_cor); fail_count=fail_count+(err_cor>TOL_EXACT);
+
+% 5-period bins: check shapes match
+simoptions_5bin=simoptions;
+simoptions_5bin.agegroupings=1:5:N_j;
+AgeCond_5bin=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_5bin);
+LC_5bin=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_5bin);
+n_bins=length(1:5:N_j);
+fprintf('5-period agegroupings AgeCond CovMat third-dim, expected %d got %d\n',n_bins,size(AgeCond_5bin.CovarianceMatrix,3)); fail_count=fail_count+(size(AgeCond_5bin.CovarianceMatrix,3)~=n_bins);
+fprintf('5-period LifeCycle.assets.Mean length, expected %d got %d\n',n_bins,length(LC_5bin.assets.Mean)); fail_count=fail_count+(length(LC_5bin.assets.Mean)~=n_bins);
+
+%% ===== Section G: nquantiles / npoints / tolerance =====
+fprintf('\n-- Section G: nquantiles / npoints / tolerance --\n')
+
+simoptions_q=simoptions;
+simoptions_q.nquantiles=4;
+simoptions_q.npoints=50;
+simoptions_q.tolerance=1e-9;
+AllStats_q=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_q);
+fprintf('nquantiles=4: QuantileCutoffs length=%d (expected 5)\n',length(AllStats_q.assets.QuantileCutoffs)); fail_count=fail_count+(length(AllStats_q.assets.QuantileCutoffs)~=5);
+fprintf('npoints=50: LorenzCurve length=%d (expected 50)\n',length(AllStats_q.assets.LorenzCurve)); fail_count=fail_count+(length(AllStats_q.assets.LorenzCurve)~=50);
+
+%% ===== Section H: outputasstructure (AggVars) =====
+fprintf('\n-- Section H: outputasstructure --\n')
+
+simoptions_oas=simoptions;
+simoptions_oas.outputasstructure=1;
+simoptions_oas.AggVarNames=FnNames;
+AggVars_oas=EvalFnOnAgentDist_AggVars_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_oas);
+err=abs(gather(AggVars_oas.assets.Mean)-gather(AggVars.assets.Mean));
+fprintf('outputasstructure=1 AggVars.assets.Mean unchanged, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+
+%% ===== Section I: Gridinterplayer (big grid) =====
+fprintf('\n-- Section I: gridinterplayer --\n')
+
+vfoptions_gi=vfoptions;
+vfoptions_gi.gridinterplayer=1; vfoptions_gi.ngridinterp=5;
+simoptions_gi=simoptions;
+simoptions_gi.gridinterplayer=1; simoptions_gi.ngridinterp=5;
+
+jequaloneDist_big=zeros(n_a_big,n_z,vfoptions.n_e,'gpuArray');
+jequaloneDist_big(1,ceil(n_z/2),ceil(vfoptions.n_e/2))=1;
+
+[~,Policy_big_nogi]=ValueFnIter_Case1_FHorz(n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions);
+SD_big_nogi=StationaryDist_FHorz_Case1(jequaloneDist_big,AgeWeightParamNames,Policy_big_nogi,n_d,n_a_big,n_z,N_j,pi_z,Params,simoptions);
+[~,Policy_big_gi]=ValueFnIter_Case1_FHorz(n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions_gi);
+SD_big_gi=StationaryDist_FHorz_Case1(jequaloneDist_big,AgeWeightParamNames,Policy_big_gi,n_d,n_a_big,n_z,N_j,pi_z,Params,simoptions_gi);
+
+AggVars_big_nogi=EvalFnOnAgentDist_AggVars_FHorz_Case1(SD_big_nogi,Policy_big_nogi,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions);
+AggVars_big_gi=EvalFnOnAgentDist_AggVars_FHorz_Case1(SD_big_gi,Policy_big_gi,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions_gi);
+fprintf('GI big-grid assets.Mean diff (nogi vs gi), loose: %2.6f\n',abs(gather(AggVars_big_nogi.assets.Mean)-gather(AggVars_big_gi.assets.Mean)))
+fprintf('GI big-grid earnings.Mean diff (nogi vs gi), loose: %2.6f\n',abs(gather(AggVars_big_nogi.earnings.Mean)-gather(AggVars_big_gi.earnings.Mean)))
+
+% Confirm CovarCorr and AgeCondCovarCorr also run with GI
+EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(SD_big_gi,Policy_big_gi,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions_gi);
+EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(SD_big_gi,Policy_big_gi,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions_gi);
+fprintf('GI: CovarCorr and AgeCondCovarCorr ran without error\n')
+
+%% ===== Section J: AutoCorrTransProbs_FHorz error path (e disallowed) =====
+fprintf('\n-- Section J: AutoCorrTransProbs_FHorz error path (e shocks) --\n')
+try
+    EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions);
+    fprintf('ERROR: AutoCorrTransProbs_FHorz should have errored on e shocks but did not\n'); fail_count=fail_count+1;
+catch ME
+    fprintf('Expected error from AutoCorrTransProbs_FHorz on e shocks: %s\n', ME.message)
+end
+
+%% Summary for this subcode
+fprintf('\nTestFnsToEvaluate_d_z_e_nosemiz: %d tests outside tolerance.\n', fail_count)
+output=struct();
+output.fail_count=fail_count;
+end

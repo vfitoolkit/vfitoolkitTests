@@ -152,6 +152,18 @@ output=CoreFHorz_CrossTests2_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz
 
 % All looks good!
 
+
+
+
+
+
+
+
+
+
+%% FnsToEvaluate-focused tests (covers every FHorz FnsToEvaluate consumer + cross-validations + analytical-truth tests)
+TestFnsToEvaluate
+
 %% Done! Damn that was a lot of tests. Glad that is over.
 
 
