@@ -123,6 +123,9 @@ CoreFHorz_setup
 % For models with d1, use:
 % n_d_semiz and d_grid_semiz (as n_d and d_grid)
 
+Params.beta0=0.9; % additional today-tomorrow discount factor
+vfoptionsbaseline.QHadditionaldiscount={'beta0'};
+
 
 %% without d1, without z, without e, with semiz
 figure_c=9;
