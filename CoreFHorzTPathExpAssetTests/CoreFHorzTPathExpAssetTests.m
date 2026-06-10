@@ -20,31 +20,47 @@ CoreFHorzTPathExpAsset_setup
 %% without d1, without z, without e, without semiz
 figure_c=1;
 output=CoreFHorzTPathExpAsset_nod1_noz_noe_nosemiz(T,PricePath,ParamPath,n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
 %% with d1, without z, without e, without semiz
 figure_c=2;
 output=CoreFHorzTPathExpAsset_d1_noz_noe_nosemiz(T,PricePath,ParamPath,n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% RUNS BUT: Policy differs by 2, Claude claims it is just about how DC handles indifferent policies different from without DC
 
 %% without d1, with z, without e, without semiz
 figure_c=3;
 output=CoreFHorzTPathExpAsset_nod1_z_noe_nosemiz(T,PricePath,ParamPath,n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
 %% with d1, with z, without e, without semiz
 figure_c=4;
-output=CoreFHorzTPathExpAsset_d1_z_noe_nosemiz(T,PricePath,ParamPath,n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% RAN OUT OF MEMORY, So
+n_a_notsobig=[501,n_a_justexpasset]; % to test Grid Interpolation
+a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+output=CoreFHorzTPathExpAsset_d1_z_noe_nosemiz(T,PricePath,ParamPath,n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% RUNS BUT: Policy differs by 2, Claude claims it is just about how DC handles indifferent policies different from without DC
 
 %% without d1, without z, with e, without semiz
 figure_c=5;
 output=CoreFHorzTPathExpAsset_nod1_noz_e_nosemiz(T,PricePath,ParamPath,n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
 %% with d1, without z, with e, without semiz
 figure_c=6;
 output=CoreFHorzTPathExpAsset_d1_noz_e_nosemiz(T,PricePath,ParamPath,n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
 %% without d1, with z, with e, without semiz
 figure_c=7;
 output=CoreFHorzTPathExpAsset_nod1_z_e_nosemiz(T,PricePath,ParamPath,n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
 %% with d1, with z, with e, without semiz
 figure_c=8;
-output=CoreFHorzTPathExpAsset_d1_z_e_nosemiz(T,PricePath,ParamPath,n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% RAN OUT OF MEMORY, So
+n_a_notsobig=[501,n_a_justexpasset]; % to test Grid Interpolation
+a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+output=CoreFHorzTPathExpAsset_d1_z_e_nosemiz(T,PricePath,ParamPath,n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good

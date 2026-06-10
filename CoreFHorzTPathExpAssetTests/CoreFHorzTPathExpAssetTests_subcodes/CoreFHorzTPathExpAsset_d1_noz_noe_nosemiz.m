@@ -62,6 +62,83 @@ simoptions2=simoptions;
 fprintf('Divide-and-conquer (slowOLG), this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
 fprintf('Divide-and-conquer (slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
 
+% Trying to understand the difference of 2 in the PolicyPath1-PolicyPath2
+% Claude asked for all the following, and based on that concluded it was
+% about how with and without DC meant that Policy is different for
+% decisions where the agent is indifferent. I am not yet 100% convinced, so
+% leaving this here until I am.
+m = squeeze(any(abs(PolicyPath1 - PolicyPath2) > 0, 1));   % [N_a, N_j, T]
+[a_idx, j_idx, t_idx] = ind2sub(size(m), find(m, 1, 'first'));
+fprintf('First diff at (a=%d, j=%d, t=%d):\n  nonDC=[%s]  DC=[%s]\n', ...
+    a_idx, j_idx, t_idx, ...
+    num2str(PolicyPath1(:,a_idx,j_idx,t_idx)'), ...
+    num2str(PolicyPath2(:,a_idx,j_idx,t_idx)'));
+fprintf('  V: nonDC=%.15g  DC=%.15g  (eq=%d)\n', ...
+    VPath1(a_idx,j_idx,t_idx), VPath2(a_idx,j_idx,t_idx), ...
+    VPath1(a_idx,j_idx,t_idx)==VPath2(a_idx,j_idx,t_idx));
+
+fprintf('\nDiff counts by j (age):\n');
+for jj=1:size(m,2)
+    c = nnz(m(:,jj,:));
+    if c>0, fprintf('  j=%2d: %d\n', jj, c); end
+end
+fprintf('\nDiff counts by t:\n');
+for tt=1:size(m,3)
+    c = nnz(m(:,:,tt));
+    if c>0, fprintf('  t=%3d: %d\n', tt, c); end
+end
+
+% Distinct (d2_nonDC, d2_DC) value pairs at diffs:
+diffmask = squeeze(PolicyPath1(2,:,:,:)) ~= squeeze(PolicyPath2(2,:,:,:));
+pairs = [reshape(squeeze(PolicyPath1(2,:,:,:)),[],1) reshape(squeeze(PolicyPath2(2,:,:,:)),[],1)];
+pairs = pairs(diffmask(:),:);
+[uniq, ~, ic] = unique(pairs, 'rows');
+counts = accumarray(ic, 1);
+fprintf('\n(d2_nonDC, d2_DC) -> count:\n');
+for k=1:size(uniq,1)
+    fprintf('  (%d, %d) -> %d\n', uniq(k,1), uniq(k,2), counts(k));
+end
+
+
+m = squeeze(any(abs(PolicyPath1 - PolicyPath2) > 0, 1));   % [N_a, N_j, T]
+
+% How many j have diffs, and which?
+fprintf('j values with diffs: ');
+for jj=1:size(m,2)
+    if nnz(m(:,jj,:)) > 0, fprintf('%d ', jj); end
+end
+fprintf('\n');
+
+% How many t have diffs?
+fprintf('t values with diffs (count): %d distinct\n', ...
+        nnz(squeeze(sum(sum(m,1),2)) > 0));
+
+% What d2 pair is being swapped?
+diffmask = squeeze(PolicyPath1(2,:,:,:)) ~= squeeze(PolicyPath2(2,:,:,:));
+p1 = squeeze(PolicyPath1(2,:,:,:)); p2 = squeeze(PolicyPath2(2,:,:,:));
+fprintf('d2 pairs at diffs: ');
+disp(unique([p1(diffmask) p2(diffmask)], 'rows'));
+
+
+% 
+% % Which row of Policy has the diff?
+% d = abs(PolicyPath1 - PolicyPath2);
+% for r = 1:size(d,1)
+%     fprintf('Policy row %d: max abs diff = %g (count = %d)\n', r, ...
+%             max(d(r,:),[],'all'), nnz(d(r,:)>0));
+% end
+% % At first differing state, show both
+% mask = any(d>0,1);
+% [a_idx,j_idx,t_idx] = ind2sub(size(mask), find(mask,1,'first'));
+% fprintf('First diff at (a=%d, j=%d, t=%d, age=%d): nonDC=[%s] DC=[%s]\n', ...
+%     a_idx, j_idx, t_idx, j_idx, ...
+%     num2str(squeeze(PolicyPath1(:,a_idx,j_idx,t_idx))'), ...
+%     num2str(squeeze(PolicyPath2(:,a_idx,j_idx,t_idx))'));
+% % And V at the same state (should be ~equal):
+% fprintf('V at same state: nonDC=%.15g DC=%.15g\n', ...
+%     VPath1(a_idx,j_idx,t_idx), VPath2(a_idx,j_idx,t_idx));
+
+
 clear VPath1 VPath2 PolicyPath1 PolicyPath2 % PolicyVals1
 
 
@@ -117,6 +194,8 @@ fprintf('Divide-and-conquer (with GI, fastOLG), this should be zero: %2.8f \n',m
 clear VPath3 VPath4 PolicyPath3 PolicyPath4
 
 %% Use a really big a_grid, then the moments should be essentially the same with/without grid interpolation
+simoptions2.a_grid=a_grid_big; % ExpAsset codes slice a2_grid out of simoptions.a_grid using n_a1, so must match n_a_big
+simoptions4.a_grid=a_grid_big;
 [VPath2b,PolicyPath2b]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final_big, Policy_final_big, Params, n_d, n_a_big, n_z, N_j, d_grid, a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 AgentDist_initial_big=StationaryDist_FHorz_Case1(jequaloneDist_big,AgeWeightParamNames,PolicyPath2b(:,:,:,:,1),n_d,n_a_big,n_z,N_j,pi_z,Params,simoptions2);
 AgentDistPath2=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial_big, jequaloneDist_big, PricePath, ParamPath, PolicyPath2b, AgeWeightParamNames,n_d,n_a_big,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions2);
@@ -125,6 +204,8 @@ AggVarsPath2=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPath2
 [VPath4b,PolicyPath4b]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final_big, Policy_final_big_GI, Params, n_d, n_a_big, n_z, N_j, d_grid, a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
 AgentDistPath4=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial_big, jequaloneDist_big, PricePath, ParamPath, PolicyPath4b, AgeWeightParamNames,n_d,n_a_big,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions4);
 AggVarsPath4=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPath4, PolicyPath4b, PricePath, ParamPath, Params, T, n_d, n_a_big, n_z, N_j, d_grid, a_grid_big,z_grid, transpathoptionsbaseline, simoptions4);
+simoptions2.a_grid=a_grid; % restore for the small-grid section below
+simoptions4.a_grid=a_grid;
 
 fprintf('With/without grid interp, should get much the same moments (for big a_grid) \n')
 fprintf('StationaryDist with/without grid interp, this should be close to zero: %2.8f \n',max(abs(AgentDistPath2(:)-AgentDistPath4(:))))
