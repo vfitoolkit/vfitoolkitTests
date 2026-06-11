@@ -1,0 +1,55 @@
+CoreFHorzTPathPTypeTests
+
+Tests for the FHorz TPath PType commands (ValueFnOnTransPath_Case1_FHorz_PType,
+AgentDistOnTransPath_Case1_FHorz_PType, EvalFnOnTransPath_AggVars_Case1_FHorz_PType,
+TransitionPath_Case1_FHorz_PType).
+
+Driver: CoreFHorzTPathPTypeTests.m
+
+Tests:
+  1. N_i (numeric) vs Names_i (cell) — identical output (also tests
+     jequaloneDist broadcast vs Names_i-keyed struct)
+  2. PType with all types identical vs a single no-PType TPath solve
+  3. PType with two genuinely different types vs two no-PType TPath solves
+     stacked; aggregated AggVarsPath equals the ptypeweights-weighted
+     combination of the two solo AggVars paths
+  4. GE transition path (TransitionPath_Case1_FHorz_PType) with maxiter=1
+     and identical types vs the no-PType TransitionPath_Case1_FHorz, with
+     fastOLG=1 and fastOLG=0
+  5. Two identical types: single FnsToEvaluate (returning the endogenous
+     state a) vs per-type FnsToEvaluate (struct-of-structs, one sub-entry
+     per type, each returning a) — identical AggVarsPath (aggregate and
+     per-type breakdowns) and identical one-iteration GE price path.
+     AllStats and AgeConditionalStats on the transition path are not yet
+     implemented for PType; commented-out blocks in the subcode await
+     EvalFnOnTransPath_AllStats_Case1_FHorz_PType and
+     LifeCycleProfiles_TransPath_FHorz_Case1_PType.
+  6. ShockTests: one PType solve with 4 types covering every (z,e)
+     combination, vs 4 separate no-PType TPath solves
+  7. General eqm by ptype (GEptype): a 'bequests left equal bequests
+     received' GE condition holding conditional on ptype, with two types
+     differing by a fixed effect fe in earnings. Bequests stay within type,
+     so the PType+GEptype solve (HeteroAgentStationaryEqm_Case1_FHorz_PType
+     with heteroagentoptions.GEptype for the endpoints,
+     TransitionPath_Case1_FHorz_PType with transpathoptions.GEptype for the
+     transition) must equal two independent one-type GE solves. Also checks
+     directly that bequests left equal bequests received at the stationary
+     eqms and along the converged path. The transition is run twice, written
+     out in full: fastOLG=1 first, then fastOLG=0. Uses this suite's own
+     return function (CoreFHorzTPathPType_ReturnFns/), as the model has a
+     fixed effect and a bequest transfer. Checks are 'close to zero'
+     (solver tolerances), not machine zero. This is the slow test.
+
+Tests 1-5 use only z (no e, no semiz) and a single vfoptions/simoptions
+broadcast to all types. The ShockTests requires Names_i with per-type
+structures because n_z/z_grid/pi_z and the e pieces of vfoptions/simoptions
+differ across types.
+
+The non-PType TPath commands themselves (fastOLG, divide-and-conquer, grid
+interpolation, lowmemory) are tested in CoreFHorzTPathTests; these tests
+focus on the PType layer. Return functions are reused from
+CoreFHorzTPathTests/CoreFHorzTPath_ReturnFns/.
+
+Note: per-type N_j is not allowed for TPath (unlike the core FHorz PType
+commands), so there is no PerTypeNj test. semiz is not yet part of the
+TPath tests, so it is not included here either.

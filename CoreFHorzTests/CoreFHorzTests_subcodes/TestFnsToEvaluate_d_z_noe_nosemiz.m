@@ -1,6 +1,6 @@
 function output=TestFnsToEvaluate_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
-% Pure markov-z config -- the only one of the three TestFnsToEvaluate configs that
-% supports EvalFnOnAgentDist_AutoCorrTransProbs_FHorz (semiz and e both error out).
+% Pure markov-z config -- exercises EvalFnOnAgentDist_AutoCorrTransProbs_FHorz in most
+% detail (quantile TransitionProbs, deferred-error guards); e and semiz configs have their own Section J.
 % Focus: smoke-test the 7 consumers on this third config, then exercise AutoCorrTransProbs_FHorz in detail.
 
 fprintf('\n========== TestFnsToEvaluate_d_z_noe_nosemiz ==========\n')

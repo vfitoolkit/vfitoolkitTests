@@ -137,11 +137,15 @@ clear V1b V3b Policy1b Policy3b StationaryDist1 StationaryDist3
 StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy2b,n_d,n_a_big,n_z,N_j,pi_z,Params,simoptions2);
 AllStats2=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist2,Policy2b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions2);
 AgeConditionalStats2=LifeCycleProfiles_FHorz_Case1(StationaryDist2,Policy2b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions2);
+AutoCorrTransProbs2=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist2,Policy2b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,pi_z,simoptions2);
+CrossSectionCorr2=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(StationaryDist2,Policy2b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions2);
 
 [V4b,Policy4b]=ValueFnIter_Case1_FHorz(n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 StationaryDist4=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy4b,n_d,n_a_big,n_z,N_j,pi_z,Params,simoptions4);
 AllStats4=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist4,Policy4b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions4);
 AgeConditionalStats4=LifeCycleProfiles_FHorz_Case1(StationaryDist4,Policy4b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions4);
+AutoCorrTransProbs4=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist4,Policy4b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,pi_z,simoptions4);
+CrossSectionCorr4=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(StationaryDist4,Policy4b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions4);
 
 fprintf('With/without grid interp, should get much the same moments (for big a_grid; with divide-and-conquer) \n')
 [AllStats2.assets.Mean,AllStats4.assets.Mean]
@@ -172,6 +176,67 @@ fprintf('Without grid interp, sim panel data should give roughly the same age co
 fprintf('With grid interp, sim panel data should give roughly the same age conditional stats \n')
 [AgeConditionalStats4.earnings.Mean; mean(SimPanelValues4.earnings,2)']
 [AgeConditionalStats4.assets.Mean; mean(SimPanelValues4.assets,2)']
+
+%% Compare AllStats, AutoCorrTransProbs, CrossSectionCovarCorr to the panel data simulation
+% Note: mewj is uniform, so pooling all panel observations uses the same age-weighting as the stationary dist
+
+% AllStats vs pooled panel data
+fprintf('Without grid interp, sim panel data should give roughly the same AllStats \n')
+[AllStats2.earnings.Mean, mean(SimPanelValues2.earnings(:))]
+[AllStats2.assets.Mean, mean(SimPanelValues2.assets(:))]
+[AllStats2.earnings.StdDeviation, std(SimPanelValues2.earnings(:),1)]
+[AllStats2.assets.StdDeviation, std(SimPanelValues2.assets(:),1)]
+fprintf('With grid interp, sim panel data should give roughly the same AllStats \n')
+[AllStats4.earnings.Mean, mean(SimPanelValues4.earnings(:))]
+[AllStats4.assets.Mean, mean(SimPanelValues4.assets(:))]
+[AllStats4.earnings.StdDeviation, std(SimPanelValues4.earnings(:),1)]
+[AllStats4.assets.StdDeviation, std(SimPanelValues4.assets(:),1)]
+
+% AutoCorrTransProbs vs panel data autocovariance/autocorrelation (index jj is the transition from age jj to jj+1)
+PanelAutoCovar2_earnings=zeros(1,N_j-1); PanelAutoCorr2_earnings=zeros(1,N_j-1);
+PanelAutoCovar2_assets=zeros(1,N_j-1); PanelAutoCorr2_assets=zeros(1,N_j-1);
+PanelAutoCovar4_earnings=zeros(1,N_j-1); PanelAutoCorr4_earnings=zeros(1,N_j-1);
+PanelAutoCovar4_assets=zeros(1,N_j-1); PanelAutoCorr4_assets=zeros(1,N_j-1);
+for jj=1:N_j-1
+    temp=cov(SimPanelValues2.earnings(jj,:)',SimPanelValues2.earnings(jj+1,:)',1);
+    PanelAutoCovar2_earnings(jj)=temp(1,2);
+    temp=corrcoef(SimPanelValues2.earnings(jj,:)',SimPanelValues2.earnings(jj+1,:)');
+    PanelAutoCorr2_earnings(jj)=temp(1,2);
+    temp=cov(SimPanelValues2.assets(jj,:)',SimPanelValues2.assets(jj+1,:)',1);
+    PanelAutoCovar2_assets(jj)=temp(1,2);
+    temp=corrcoef(SimPanelValues2.assets(jj,:)',SimPanelValues2.assets(jj+1,:)');
+    PanelAutoCorr2_assets(jj)=temp(1,2);
+    temp=cov(SimPanelValues4.earnings(jj,:)',SimPanelValues4.earnings(jj+1,:)',1);
+    PanelAutoCovar4_earnings(jj)=temp(1,2);
+    temp=corrcoef(SimPanelValues4.earnings(jj,:)',SimPanelValues4.earnings(jj+1,:)');
+    PanelAutoCorr4_earnings(jj)=temp(1,2);
+    temp=cov(SimPanelValues4.assets(jj,:)',SimPanelValues4.assets(jj+1,:)',1);
+    PanelAutoCovar4_assets(jj)=temp(1,2);
+    temp=corrcoef(SimPanelValues4.assets(jj,:)',SimPanelValues4.assets(jj+1,:)');
+    PanelAutoCorr4_assets(jj)=temp(1,2);
+end
+fprintf('Without grid interp, sim panel data should give roughly the same autocovariance/autocorrelation \n')
+[AutoCorrTransProbs2.earnings.AutoCovariance; PanelAutoCovar2_earnings]
+[AutoCorrTransProbs2.assets.AutoCovariance; PanelAutoCovar2_assets]
+[AutoCorrTransProbs2.earnings.AutoCorrelation; PanelAutoCorr2_earnings]
+[AutoCorrTransProbs2.assets.AutoCorrelation; PanelAutoCorr2_assets]
+fprintf('With grid interp, sim panel data should give roughly the same autocovariance/autocorrelation \n')
+[AutoCorrTransProbs4.earnings.AutoCovariance; PanelAutoCovar4_earnings]
+[AutoCorrTransProbs4.assets.AutoCovariance; PanelAutoCovar4_assets]
+[AutoCorrTransProbs4.earnings.AutoCorrelation; PanelAutoCorr4_earnings]
+[AutoCorrTransProbs4.assets.AutoCorrelation; PanelAutoCorr4_assets]
+
+% CrossSectionCovarCorr vs pooled panel data
+fprintf('Without grid interp, sim panel data should give roughly the same cross-section covariance/correlation \n')
+temp=cov(SimPanelValues2.earnings(:),SimPanelValues2.assets(:),1);
+[CrossSectionCorr2.earnings.CovarianceWith.assets, temp(1,2)]
+temp=corrcoef(SimPanelValues2.earnings(:),SimPanelValues2.assets(:));
+[CrossSectionCorr2.earnings.CorrelationWith.assets, temp(1,2)]
+fprintf('With grid interp, sim panel data should give roughly the same cross-section covariance/correlation \n')
+temp=cov(SimPanelValues4.earnings(:),SimPanelValues4.assets(:),1);
+[CrossSectionCorr4.earnings.CovarianceWith.assets, temp(1,2)]
+temp=corrcoef(SimPanelValues4.earnings(:),SimPanelValues4.assets(:));
+[CrossSectionCorr4.earnings.CorrelationWith.assets, temp(1,2)]
 
 
 %% Check the various other commands run without issue

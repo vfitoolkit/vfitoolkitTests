@@ -288,14 +288,77 @@ EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(SD_big_gi,Policy_big_gi,FnsToEvalu
 EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(SD_big_gi,Policy_big_gi,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions_gi);
 fprintf('GI: CovarCorr and AgeCondCovarCorr ran without error\n')
 
-%% ===== Section J: AutoCorrTransProbs_FHorz error path (semiz disallowed) =====
-fprintf('\n-- Section J: AutoCorrTransProbs_FHorz error path (semiz shocks) --\n')
-try
-    EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions);
-    fprintf('ERROR: AutoCorrTransProbs_FHorz should have errored on semiz shocks but did not\n'); fail_count=fail_count+1;
-catch ME
-    fprintf('Expected error from AutoCorrTransProbs_FHorz on semiz shocks: %s\n', ME.message)
+%% ===== Section J: AutoCorrTransProbs_FHorz with semiz shocks =====
+fprintf('\n-- Section J: AutoCorrTransProbs_FHorz (semiz shocks) --\n')
+TOL_TP=1e-8;     % TransitionProbs row-sum precision
+
+% Add the raw shock values as extra FnsToEvaluate (used only in this section)
+FnsToEvaluate_acp=FnsToEvaluate;
+FnsToEvaluate_acp.zvar=@(d2,aprime,a,semiz,z) z;
+FnsToEvaluate_acp.semizvar=@(d2,aprime,a,semiz,z) semiz;
+ACPNames=fieldnames(FnsToEvaluate_acp);
+
+simoptions_acp=simoptions;
+simoptions_acp.transprobs={'assets'};
+ACP=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist,Policy,FnsToEvaluate_acp,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions_acp);
+fprintf('AutoCorrTransProbs_FHorz ran without error.\n')
+
+% Shape checks
+fprintf('Shape: Mean length=%d (expected %d)\n',length(ACP.assets.Mean),N_j); fail_count=fail_count+(length(ACP.assets.Mean)~=N_j);
+fprintf('Shape: StdDeviation length=%d (expected %d)\n',length(ACP.assets.StdDeviation),N_j); fail_count=fail_count+(length(ACP.assets.StdDeviation)~=N_j);
+fprintf('Shape: AutoCovariance length=%d (expected %d)\n',length(ACP.assets.AutoCovariance),N_j-1); fail_count=fail_count+(length(ACP.assets.AutoCovariance)~=N_j-1);
+fprintf('Shape: AutoCorrelation length=%d (expected %d)\n',length(ACP.assets.AutoCorrelation),N_j-1); fail_count=fail_count+(length(ACP.assets.AutoCorrelation)~=N_j-1);
+
+% Mean and StdDeviation should equal LifeCycleProfiles (original FnsToEvaluate only)
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    err_m=max(abs(gather(ACP.(fn).Mean)-gather(LifeCycle.(fn).Mean)));
+    err_s=max(abs(gather(ACP.(fn).StdDeviation)-gather(LifeCycle.(fn).StdDeviation)));
+    fprintf('AutoCorr Mean vs LifeCycle Mean (%-11s), should be zero: %2.10f\n', fn, err_m); fail_count=fail_count+(err_m>TOL_EXACT);
+    fprintf('AutoCorr StdDev vs LifeCycle StdDev (%-11s), should be zero: %2.10f\n', fn, err_s); fail_count=fail_count+(err_s>TOL_EXACT);
 end
+
+% AutoCorrelation values should lie in [-1, 1] (or be NaN when StdDev=0)
+for ff=1:length(ACPNames)
+    fn=ACPNames{ff};
+    ac=gather(ACP.(fn).AutoCorrelation);
+    nan_mask=isnan(ac);
+    in_range=all(ac(~nan_mask)>=-1-1e-10 & ac(~nan_mask)<=1+1e-10);
+    fprintf('AutoCorrelation(%-11s) in [-1,1] (NaN where StdDev=0): %d\n', fn, in_range); fail_count=fail_count+(~in_range);
+end
+
+% T1 (Jnumbers): constant within age -> AutoCov = 0 exactly, AutoCorr = NaN
+err=max(abs(gather(ACP.Jnumbers.AutoCovariance)));
+fprintf('T1 Jnumbers AutoCovariance per-age, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+allNaN=all(isnan(gather(ACP.Jnumbers.AutoCorrelation)));
+fprintf('T1 Jnumbers AutoCorrelation should be all NaN: %d\n',allNaN); fail_count=fail_count+(~allNaN);
+
+% T2 (one): constant 1 -> AutoCov = 0 exactly, AutoCorr = NaN
+err=max(abs(gather(ACP.one.AutoCovariance)));
+fprintf('T2 one AutoCovariance per-age, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+allNaN=all(isnan(gather(ACP.one.AutoCorrelation)));
+fprintf('T2 one AutoCorrelation should be all NaN: %d\n',allNaN); fail_count=fail_count+(~allNaN);
+
+% Sanity: zvar (the markov z value) should have AutoCorrelation close to AR(1) rho (here 0.9)
+ac_z=gather(ACP.zvar.AutoCorrelation);
+fprintf('zvar AutoCorrelation (loose sanity, AR(0.9) -> near 0.9 on interior ages):\n')
+fprintf('   median(ac_z) = %2.4f, min = %2.4f, max = %2.4f\n', median(ac_z(~isnan(ac_z))), min(ac_z(~isnan(ac_z))), max(ac_z(~isnan(ac_z))))
+
+% Sanity: semizvar autocorrelation (semiz transitions depend on d2, so no analytic value; loose print)
+ac_s=gather(ACP.semizvar.AutoCorrelation);
+fprintf('semizvar AutoCorrelation (loose sanity, persistent semi-exo employment state):\n')
+fprintf('   median(ac_s) = %2.4f, min = %2.4f, max = %2.4f\n', median(ac_s(~isnan(ac_s))), min(ac_s(~isnan(ac_s))), max(ac_s(~isnan(ac_s))))
+
+% TransitionProbs(assets): row sums should be 1 where there is positive mass
+tp_a=ACP.assets.TransitionProbs;
+fprintf('TransitionProbs(assets): cell length %d (expected %d)\n', length(tp_a), N_j-1); fail_count=fail_count+(length(tp_a)~=N_j-1);
+worst_rowsum_err=0;
+for jj=1:N_j-1
+    if isempty(tp_a{jj}); continue; end
+    rs=sum(tp_a{jj},2);
+    worst_rowsum_err=max(worst_rowsum_err,max(abs(rs(rs>0.5)-1)));
+end
+fprintf('TransitionProbs(assets) worst row-sum |err-1| across ages: %2.10f\n', worst_rowsum_err); fail_count=fail_count+(worst_rowsum_err>TOL_TP);
 
 %% Summary for this subcode
 fprintf('\nTestFnsToEvaluate_nod1_z_noe_semiz: %d tests outside tolerance.\n', fail_count)

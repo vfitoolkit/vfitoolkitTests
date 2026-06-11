@@ -13,8 +13,7 @@ addpath('./CoreFHorzTests_subcodes/')
 addpath('./CoreFHorzTests_Setup/')
 addpath('./CoreFHorz_ReturnFns/')
 addpath('./CoreFHorzTests_subcodes/CrossTests/')
-
-%% Setup so that use the same d,a,z,e,semiz in all the models that use them
+% Setup so that use the same d,a,z,e,semiz in all the models that use them
 CoreFHorz_setup
 
 %% without d, without z, without e, without semiz
