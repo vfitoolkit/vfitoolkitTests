@@ -67,4 +67,7 @@ output3ptype=CoreStationaryGE_FHorz_PType_fminalgo(jequaloneDist,AgeWeightParamN
 %% (ii) parameter-constraint invariance
 output4ptype=CoreStationaryGE_FHorz_PType_constraints(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
 
-%% Done!
+
+
+% I want to next redo all these tests, but using ptype and with GEbyptype.
+% This remains to be built.

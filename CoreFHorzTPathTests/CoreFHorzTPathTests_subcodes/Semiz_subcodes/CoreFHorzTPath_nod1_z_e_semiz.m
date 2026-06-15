@@ -234,7 +234,7 @@ simoptions1.fastOLG=1;
 AgentDistPath1=AgentDistOnTransPath_Case1_FHorz(AgentDist1, jequaloneDist, PricePathConstant, ParamPathConstant, PolicyPath1, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions1);
 
 fprintf('Do nothing TPath, this should be zero, V: %2.8f \n',max(max(max(max(max(max(abs(VPath1-repmat(V1,1,1,1,1,1,T)))))))))
-fprintf('Do nothing TPath, this should be zero, Policy: %2.8f \n',max(max(max(max(max(max(abs(PolicyPath1-repmat(Policy1,1,1,1,1,1,1,T)))))))))
+fprintf('Do nothing TPath, this should be zero, Policy: %2.8f \n',max(max(max(max(max(max(max(abs(PolicyPath1-repmat(Policy1,1,1,1,1,1,1,T))))))))))
 fprintf('Do nothing TPath, this should be zero, AgentDist: %2.8f \n',max(max(max(max(max(max(abs(AgentDistPath1-repmat(AgentDist1,1,1,1,1,1,T)))))))))
 fprintf('Do nothing TPath, this should be zero, AgentDistB: %2.8f \n',max(max(max(max(max(max(abs(AgentDistPath1B-repmat(AgentDist1,1,1,1,1,1,T)))))))))
 

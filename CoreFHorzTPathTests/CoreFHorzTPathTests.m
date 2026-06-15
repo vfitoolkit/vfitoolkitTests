@@ -122,22 +122,22 @@ output=CoreFHorzTPath_d1_z_noe_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big
 %% without d1, without z, with e, with semiz
 figure_c=13;
 output=CoreFHorzTPath_nod1_noz_e_semiz(T,PricePath,ParamPath,n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% UP TO HERE
+% looks good
 
 %% with d1, without z, with e, with semiz
 figure_c=14;
 output=CoreFHorzTPath_d1_noz_e_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
 %% without d1, with z, with e, with semiz
 figure_c=15;
 output=CoreFHorzTPath_nod1_z_e_semiz(T,PricePath,ParamPath,n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
 %% with d1, with z, with e, with semiz
 figure_c=16;
-% n_a_notsobig=751; % To avoid out-of-memory errors
-% a_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-
-output=CoreFHorzTPath_d1_z_e_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzTPath_d1_z_e_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% looks good
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
 % [Cross-test subcodes not yet built; build these once the toolkit semiz TPath commands exist]

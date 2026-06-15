@@ -83,6 +83,6 @@ vfoptionsbaseline.ngridinterp=20;
 simoptionsbaseline.gridinterplayer=vfoptionsbaseline.gridinterplayer;
 simoptionsbaseline.ngridinterp=vfoptionsbaseline.ngridinterp;
 
-heteroagentoptionsbaseline.verbose=1;
+% heteroagentoptionsbaseline.verbose=1;
 heteroagentoptionsbaseline.toleranceGEprices=1e-5;
 heteroagentoptionsbaseline.toleranceGEcondns=1e-5;
