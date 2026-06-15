@@ -1,0 +1,35 @@
+Core Stationary General Eqm tests.
+
+Baseline model: Aiyagari-style incomplete-markets economy with endogenous
+labor and a government. Household state (a,z), decision d=hours, choice
+aprime. Firm is Cobb-Douglas. The wage w is hardcoded from r via the firm FOC
+(w=(1-alpha)*A*((r+delta)/(alpha*A))^(alpha/(alpha-1))) wherever it is needed,
+so w is NOT a GE price. The government has two budgets: a fixed labor income
+tax rate tau funds a lump-sum transfer Tr (Tr adjusts), and a consumption tax
+tau_c funds exogenous spending G (tau_c adjusts).
+
+Three general eqm prices: r, Tr, tau_c.
+Three general eqm eqns:
+  CapitalMarket: r = alpha*A*(K/N)^(alpha-1) - delta
+  GovBudget:     tau*w*N = Tr
+  ConsTax:       tau_c*C = G
+
+Tests, run for both InfHorz and FHorz (two halves of CoreStationaryGeneralEqmTests.m):
+  (ii)  solve with fminalgo=1 (fminsearch), 5 (shooting), 8 (lsqnonlin),
+        4 (CMA-ES); confirm all give the same equilibrium prices (CMA-ES is
+        stochastic/lower-accuracy, so a looser match). After the fminalgo=1
+        solve, also compute V and the StationaryDist and plot the cumulative
+        distribution over the asset grid.
+  (iii) re-solve applying each of the three parameter-constraint kinds, one per
+        price: constrain0to1 on r, constrainpositive on Tr, constrainAtoB on
+        tau_c (limits [0,1]), and then all three at once; confirm each
+        reproduces the unconstrained equilibrium (all equilibria are interior,
+        so the constraints are slack).
+
+The same four tests are then repeated with permanent types (PType): N_i=2 types
+that differ in the value of sigma (2.2 and 1.8), equal mass 0.5 each. The GE
+prices (r,Tr,tau_c) remain economy-wide. Outputs: output1..output4 for the
+non-PType tests, output1ptype..output4ptype for the PType ones.
+
+Commands exercised: HeteroAgentStationaryEqm_InfHorz, HeteroAgentStationaryEqm_Case1_FHorz,
+HeteroAgentStationaryEqm_InfHorz_PType, HeteroAgentStationaryEqm_Case1_FHorz_PType.
