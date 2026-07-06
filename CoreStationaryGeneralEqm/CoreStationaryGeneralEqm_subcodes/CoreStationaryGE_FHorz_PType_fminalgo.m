@@ -7,6 +7,7 @@ function output=CoreStationaryGE_FHorz_PType_fminalgo(jequaloneDist,AgeWeightPar
 % These are economy-wide (not ptype-dependent). w is hardcoded from r.
 
 n_p=0;
+vfoptions.divideandconquer=1; % finite-horizon tests use divide-and-conquer
 
 % Permanent types: two types differing in sigma
 N_i=2;
@@ -52,10 +53,10 @@ title('FHorz PType: cumulative distribution over asset grid'); xlabel('assets');
 heteroagentoptions5=heteroagentoptions;
 heteroagentoptions5.fminalgo=5;
 heteroagentoptions5.fminalgo5.howtoupdate={...
-    'CapitalMarket','r',0,0.01;    % r_new = r - factor*(r-MPK)
-    'GovBudget','Tr',1,0.1;        % Tr_new = Tr + factor*(tau*w*N-Tr)
-    'ConsTax','tau_c',0,0.1};      % tau_c_new = tau_c - factor*(tau_c*C-G)
-heteroagentoptions5.maxiter=1000;
+    'CapitalMarket','r',0,0.005;   % r_new = r - factor*(r-MPK)
+    'GovBudget','Tr',1,0.05;        % Tr_new = Tr + factor*(tau*w*N-Tr)
+    'ConsTax','tau_c',0,0.05};      % tau_c_new = tau_c - factor*(tau_c*C-G)
+heteroagentoptions5.maxiter=1e4;
 [p_eqm5,GEcondns5]=HeteroAgentStationaryEqm_Case1_FHorz_PType(n_d, n_a, n_z, N_j, Names_i, n_p, pi_z, d_grid, a_grid, z_grid, jequaloneDist, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, GEPriceParamNames,heteroagentoptions5, simoptions, vfoptions);
 
 %% fminalgo=8 (lsqnonlin)

@@ -11,6 +11,7 @@ function output=CoreStationaryGE_FHorz_PType_constraints(jequaloneDist,AgeWeight
 % unconstrained answer.
 
 n_p=0;
+vfoptions.divideandconquer=1; % finite-horizon tests use divide-and-conquer
 
 % Permanent types: two types differing in sigma
 N_i=2;

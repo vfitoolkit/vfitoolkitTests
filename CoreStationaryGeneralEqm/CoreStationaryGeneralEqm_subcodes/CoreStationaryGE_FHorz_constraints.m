@@ -11,6 +11,7 @@ function output=CoreStationaryGE_FHorz_constraints(jequaloneDist,AgeWeightParamN
 % w is hardcoded from r via the firm FOC, so it is NOT a GE price.
 
 n_p=0;
+vfoptions.divideandconquer=1; % finite-horizon tests use divide-and-conquer
 
 ReturnFn=@(d,aprime,a,z,r,tau,Tr,tau_c,kappa_j,alpha,delta,A,sigma,eta,varphi) ...
     ReturnFn_FHorz(d,aprime,a,z,r,tau,Tr,tau_c,kappa_j,alpha,delta,A,sigma,eta,varphi);

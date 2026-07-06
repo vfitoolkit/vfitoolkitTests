@@ -32,12 +32,39 @@ CoreStationaryGE_setup
 %% (i)  fminalgo agreement
 output1=CoreStationaryGE_InfHorz_fminalgo(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
 
+% fprintf('\n=== InfHorz: fminalgo agreement (r,Tr,tau_c) ===\n')
+% fprintf('fminalgo=1: r=%.6f Tr=%.6f tau_c=%.6f \n',output1.p_eqm1.r,output1.p_eqm1.Tr,output1.p_eqm1.tau_c)
+% fprintf('fminalgo=5: r=%.6f Tr=%.6f tau_c=%.6f \n',output1.p_eqm5.r,output1.p_eqm5.Tr,output1.p_eqm5.tau_c)
+% fprintf('fminalgo=8: r=%.6f Tr=%.6f tau_c=%.6f \n',output1.p_eqm8.r,output1.p_eqm8.Tr,output1.p_eqm8.tau_c)
+% fprintf('fminalgo=4: r=%.6f Tr=%.6f tau_c=%.6f \n',output1.p_eqm4.r,output1.p_eqm4.Tr,output1.p_eqm4.tau_c)
+% d15=max(abs([output1.p_eqm1.r-output1.p_eqm5.r,output1.p_eqm1.Tr-output1.p_eqm5.Tr,output1.p_eqm1.tau_c-output1.p_eqm5.tau_c]));
+% d18=max(abs([output1.p_eqm1.r-output1.p_eqm8.r,output1.p_eqm1.Tr-output1.p_eqm8.Tr,output1.p_eqm1.tau_c-output1.p_eqm8.tau_c]));
+% d14=max(abs([output1.p_eqm1.r-output1.p_eqm4.r,output1.p_eqm1.Tr-output1.p_eqm4.Tr,output1.p_eqm1.tau_c-output1.p_eqm4.tau_c]));
+% fprintf('fminalgo 1 vs 5, this should be near zero: %.8f \n',d15)
+% fprintf('fminalgo 1 vs 8, this should be near zero: %.8f \n',d18)
+% fprintf('fminalgo 1 vs 4, this should be near zero: %.8f \n',d14)
+
+
 %% (ii) parameter-constraint invariance
 output2=CoreStationaryGE_InfHorz_constraints(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
 
+% fprintf('\n=== InfHorz: parameter-constraint invariance ===\n')
+% fprintf('unconstrained:        r=%.6f Tr=%.6f tau_c=%.6f \n',output2.p_eqm0.r,output2.p_eqm0.Tr,output2.p_eqm0.tau_c)
+% fprintf('constrain0to1 on r:   r=%.6f Tr=%.6f tau_c=%.6f \n',output2.p_eqmA.r,output2.p_eqmA.Tr,output2.p_eqmA.tau_c)
+% fprintf('constrainpositive Tr: r=%.6f Tr=%.6f tau_c=%.6f \n',output2.p_eqmB.r,output2.p_eqmB.Tr,output2.p_eqmB.tau_c)
+% fprintf('constrainAtoB tau_c:  r=%.6f Tr=%.6f tau_c=%.6f \n',output2.p_eqmC.r,output2.p_eqmC.Tr,output2.p_eqmC.tau_c)
+% fprintf('constrain all three:  r=%.6f Tr=%.6f tau_c=%.6f \n',output2.p_eqmD.r,output2.p_eqmD.Tr,output2.p_eqmD.tau_c)
+% dA=max(abs([output2.p_eqm0.r-output2.p_eqmA.r,output2.p_eqm0.Tr-output2.p_eqmA.Tr,output2.p_eqm0.tau_c-output2.p_eqmA.tau_c]));
+% dB=max(abs([output2.p_eqm0.r-output2.p_eqmB.r,output2.p_eqm0.Tr-output2.p_eqmB.Tr,output2.p_eqm0.tau_c-output2.p_eqmB.tau_c]));
+% dC=max(abs([output2.p_eqm0.r-output2.p_eqmC.r,output2.p_eqm0.Tr-output2.p_eqmC.Tr,output2.p_eqm0.tau_c-output2.p_eqmC.tau_c]));
+% dD=max(abs([output2.p_eqm0.r-output2.p_eqmD.r,output2.p_eqm0.Tr-output2.p_eqmD.Tr,output2.p_eqm0.tau_c-output2.p_eqmD.tau_c]));
+% fprintf('constrain0to1 on r, this should be near zero: %.8f \n',dA)
+% fprintf('constrainpositive on Tr, this should be near zero: %.8f \n',dB)
+% fprintf('constrainAtoB on tau_c, this should be near zero: %.8f \n',dC)
+% fprintf('constrain all three, this should be near zero: %.8f \n',dD)
 
-%% Worth doing a 'clear all' here, but not necessary.
-% Mainly is so you can run the second half independent of the first half.
+
+
 
 
 %% ========================== FHorz ===========================
@@ -45,8 +72,37 @@ output2=CoreStationaryGE_InfHorz_constraints(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi
 %% (i)  fminalgo agreement
 output3=CoreStationaryGE_FHorz_fminalgo(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
 
+% fprintf('\n=== InfHorz: fminalgo agreement (r,Tr,tau_c) ===\n')
+% fprintf('fminalgo=1: r=%.6f Tr=%.6f tau_c=%.6f \n',output3.p_eqm1.r,output3.p_eqm1.Tr,output3.p_eqm1.tau_c)
+% fprintf('fminalgo=5: r=%.6f Tr=%.6f tau_c=%.6f \n',output3.p_eqm5.r,output3.p_eqm5.Tr,output3.p_eqm5.tau_c)
+% fprintf('fminalgo=8: r=%.6f Tr=%.6f tau_c=%.6f \n',output3.p_eqm8.r,output3.p_eqm8.Tr,output3.p_eqm8.tau_c)
+% fprintf('fminalgo=4: r=%.6f Tr=%.6f tau_c=%.6f \n',output3.p_eqm4.r,output3.p_eqm4.Tr,output3.p_eqm4.tau_c)
+% d15=max(abs([output3.p_eqm1.r-output3.p_eqm5.r,output3.p_eqm1.Tr-output3.p_eqm5.Tr,output3.p_eqm1.tau_c-output3.p_eqm5.tau_c]));
+% d18=max(abs([output3.p_eqm1.r-output3.p_eqm8.r,output3.p_eqm1.Tr-output3.p_eqm8.Tr,output3.p_eqm1.tau_c-output3.p_eqm8.tau_c]));
+% d14=max(abs([output3.p_eqm1.r-output3.p_eqm4.r,output3.p_eqm1.Tr-output3.p_eqm4.Tr,output3.p_eqm1.tau_c-output3.p_eqm4.tau_c]));
+% fprintf('fminalgo 1 vs 5, this should be near zero: %.8f \n',d15)
+% fprintf('fminalgo 1 vs 8, this should be near zero: %.8f \n',d18)
+% fprintf('fminalgo 1 vs 4, this should be near zero: %.8f \n',d14)
+
 %% (ii) parameter-constraint invariance
 output4=CoreStationaryGE_FHorz_constraints(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+
+% fprintf('\n=== FHorz: parameter-constraint invariance ===\n')
+% fprintf('unconstrained:        r=%.6f Tr=%.6f tau_c=%.6f \n',output4.p_eqm0.r,output4.p_eqm0.Tr,output4.p_eqm0.tau_c)
+% fprintf('constrain0to1 on r:   r=%.6f Tr=%.6f tau_c=%.6f \n',output4.p_eqmA.r,output4.p_eqmA.Tr,output4.p_eqmA.tau_c)
+% fprintf('constrainpositive Tr: r=%.6f Tr=%.6f tau_c=%.6f \n',output4.p_eqmB.r,output4.p_eqmB.Tr,output4.p_eqmB.tau_c)
+% fprintf('constrainAtoB tau_c:  r=%.6f Tr=%.6f tau_c=%.6f \n',output4.p_eqmC.r,output4.p_eqmC.Tr,output4.p_eqmC.tau_c)
+% fprintf('constrain all three:  r=%.6f Tr=%.6f tau_c=%.6f \n',output4.p_eqmD.r,output4.p_eqmD.Tr,output4.p_eqmD.tau_c)
+% dA=max(abs([output4.p_eqm0.r-output4.p_eqmA.r,output4.p_eqm0.Tr-output4.p_eqmA.Tr,output4.p_eqm0.tau_c-output4.p_eqmA.tau_c]));
+% dB=max(abs([output4.p_eqm0.r-output4.p_eqmB.r,output4.p_eqm0.Tr-output4.p_eqmB.Tr,output4.p_eqm0.tau_c-output4.p_eqmB.tau_c]));
+% dC=max(abs([output4.p_eqm0.r-output4.p_eqmC.r,output4.p_eqm0.Tr-output4.p_eqmC.Tr,output4.p_eqm0.tau_c-output4.p_eqmC.tau_c]));
+% dD=max(abs([output4.p_eqm0.r-output4.p_eqmD.r,output4.p_eqm0.Tr-output4.p_eqmD.Tr,output4.p_eqm0.tau_c-output4.p_eqmD.tau_c]));
+% fprintf('constrain0to1 on r, this should be near zero: %.8f \n',dA)
+% fprintf('constrainpositive on Tr, this should be near zero: %.8f \n',dB)
+% fprintf('constrainAtoB on tau_c, this should be near zero: %.8f \n',dC)
+% fprintf('constrain all three, this should be near zero: %.8f \n',dD)
+
+
 
 
 %% ===================== InfHorz with PType ===================
@@ -59,7 +115,11 @@ output1ptype=CoreStationaryGE_InfHorz_PType_fminalgo(n_d,n_a,n_z,d_grid,a_grid,z
 output2ptype=CoreStationaryGE_InfHorz_PType_constraints(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
 
 
+
+
+
 %% ====================== FHorz with PType ====================
+% Same tests again, but with N_i=2 permanent types differing in sigma (2.2 and 1.8).
 
 %% (i)  fminalgo agreement
 output3ptype=CoreStationaryGE_FHorz_PType_fminalgo(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);

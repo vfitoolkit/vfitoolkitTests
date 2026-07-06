@@ -19,8 +19,8 @@
 % non-binding (r in (0,1), Tr>0, tau_c in [0,1]).
 
 %% Grids
-n_d=101;    % hours of labor
-n_a=501;   % assets
+n_d=51;    % hours of labor
+n_a=351;   % assets
 n_z=5;     % productivity shock
 
 % setup z (AR(1) labor productivity)
@@ -79,10 +79,10 @@ jequaloneDist(1,:)=shiftdim(pi_z_stat,-1);
 
 %% Baseline options
 vfoptionsbaseline.gridinterplayer=1;
-vfoptionsbaseline.ngridinterp=20;
+vfoptionsbaseline.ngridinterp=25;
 simoptionsbaseline.gridinterplayer=vfoptionsbaseline.gridinterplayer;
 simoptionsbaseline.ngridinterp=vfoptionsbaseline.ngridinterp;
 
-% heteroagentoptionsbaseline.verbose=1;
+heteroagentoptionsbaseline.verbose=1;
 heteroagentoptionsbaseline.toleranceGEprices=1e-5;
 heteroagentoptionsbaseline.toleranceGEcondns=1e-5;
