@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetz_d1_z_noe_semiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+function output=CoreFHorzExpAssetz_d1_z_noe_semiz_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
 
 % Setup vfoptions and simoptions
 vfoptions=struct();
@@ -54,12 +54,20 @@ vfoptions1.lowmemory=1;
 [V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
 fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(V1(:)-V1B(:))))
 fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1B(:))))
+vfoptions1.lowmemory=2;
+[V1C,Policy1C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(V1(:)-V1C(:))))
+fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1C(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=1;
 [V2B,Policy2B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
 fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2B(:))))
 fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2B(:))))
+vfoptions2.lowmemory=2;
+[V2C,Policy2C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2C(:))))
 vfoptions2.lowmemory=0;
 
 %%
@@ -96,12 +104,20 @@ vfoptions3.lowmemory=1;
 [V3B,Policy3B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
 fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3B(:))))
 fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3B(:))))
+vfoptions3.lowmemory=2;
+[V3C,Policy3C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3C(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=1;
 [V4B,Policy4B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 fprintf('lowmemory=1  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4B(:))))
 fprintf('lowmemory=1  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4B(:))))
+vfoptions4.lowmemory=2;
+[V4C,Policy4C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4C(:))))
+fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4C(:))))
 vfoptions4.lowmemory=0;
 
 

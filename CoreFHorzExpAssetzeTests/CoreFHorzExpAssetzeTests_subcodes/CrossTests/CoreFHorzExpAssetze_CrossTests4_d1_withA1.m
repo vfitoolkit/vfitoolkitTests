@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetze_CrossTests4_d1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+function output=CoreFHorzExpAssetze_CrossTests4_d1_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 
 % Cross-test 4 for experienceassetze (d1 version): experienceassetze with iid-markov z + normal e,
 % compared to experienceassete with 2-dim e (e1=z values, e2=e values).

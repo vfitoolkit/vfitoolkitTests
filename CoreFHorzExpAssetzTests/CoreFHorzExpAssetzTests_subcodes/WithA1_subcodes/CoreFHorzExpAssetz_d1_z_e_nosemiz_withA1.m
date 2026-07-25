@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetz_d1_z_e(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+function output=CoreFHorzExpAssetz_d1_z_e_nosemiz_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
 
 % Setup vfoptions and simoptions
 vfoptions=struct();

@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetz_CrossTests_d1_semiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+function output=CoreFHorzExpAssetz_CrossTests_d1_semiz_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 
 % Cross-test 1 for experienceassetz+semiz (d1 version): compare experienceassetz+semiz (with z that
 % is iid-markov; transition matrix has all rows identical) to experienceassete+semiz (with normal iid e).

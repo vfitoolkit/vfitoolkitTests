@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetz_CrossTests2_d1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+function output=CoreFHorzExpAssetz_CrossTests2_d1_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 
 % Cross-test 2 for experienceassetz (d1 version): 'fake' experienceassetz whose aprimeFn ignores z,
 % vs plain experienceasset. Both have z present in the model. Should give same V, Policy, StationaryDist.

@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetze_CrossTests3_nod1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+function output=CoreFHorzExpAssetze_CrossTests3_nod1_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 
 % Cross-test 3 for experienceassetze: 'fake' experienceassetze whose aprimeFn ignores both z and e
 % (becomes effectively plain experienceasset), vs actual experienceasset. Both have z+e shocks.

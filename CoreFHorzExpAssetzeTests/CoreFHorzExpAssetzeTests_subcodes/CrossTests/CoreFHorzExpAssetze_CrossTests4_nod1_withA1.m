@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetze_CrossTests4_nod1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+function output=CoreFHorzExpAssetze_CrossTests4_nod1_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 
 % Cross-test 4 for experienceassetze: experienceassetze where z is iid-markov (transition matrix has all rows identical)
 % compared to experienceassete with a 2-dim e (n_e=[n_z, n_e_orig]) where e1 takes the z values and e2 takes the original e values.

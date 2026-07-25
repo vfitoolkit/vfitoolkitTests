@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetz_CrossTests2_nod1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+function output=CoreFHorzExpAssetz_CrossTests2_nod1_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 
 % Cross-test 2 for experienceassetz: 'fake' experienceassetz whose aprimeFn ignores z, vs plain experienceasset.
 % Both models have z as an ordinary Markov shock (used in the ReturnFn) -- only the asset-type machinery differs.

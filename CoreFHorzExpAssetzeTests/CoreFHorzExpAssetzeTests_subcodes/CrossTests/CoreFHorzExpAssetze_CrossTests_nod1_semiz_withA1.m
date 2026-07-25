@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetze_CrossTests_nod1_semiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+function output=CoreFHorzExpAssetze_CrossTests_nod1_semiz_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 
 % Cross-test 1 for experienceassetze+semiz: 'fake' experienceassetze+semiz whose aprimeFn ignores e
 % (becomes effectively experienceassetz+semiz), vs actual experienceassetz+semiz.

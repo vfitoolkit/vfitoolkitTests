@@ -1,4 +1,4 @@
-function output=CoreFHorzExpAssetz_CrossTests_d1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+function output=CoreFHorzExpAssetz_CrossTests_d1_withA1(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 
 % Cross-test 1 for experienceassetz (d1 version): compare experienceassetz (with z that is iid-markov)
 % to experienceassete (with normal iid e). Should give same V, Policy, StationaryDist.
