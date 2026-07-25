@@ -13,11 +13,11 @@
 
 
 %%
-addpath('../CoreFHorzTPathTests/CoreFHorzTPathTests_Setup/')
-addpath('../CoreFHorzTPathTests/CoreFHorzTPath_ReturnFns/')
+addpath('../CoreFHorzTPathTests_Setup/')
+addpath('../CoreFHorzTPath_ReturnFns/')
 
-addpath('./QuasiHyperbolicDiscountingFHorzTPathTests_subcodes/')
-addpath('./QuasiHyperbolicDiscountingFHorzTPathTests_subcodes/CrossTests/')
+addpath('./withQuasiHyperbolicDiscounting_subcodes/')
+addpath('./withQuasiHyperbolicDiscounting_subcodes/CrossTests/')
 % Setup so that use the same d,a,z,e,semiz in all the models that use them
 CoreFHorzTPath_setup
 

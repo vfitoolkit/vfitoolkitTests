@@ -9,11 +9,11 @@
 % with/without semiz
 
 
-addpath('../CoreFHorzTests/CoreFHorzTests_Setup/')
-addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/')
+addpath('../CoreFHorzTests_Setup/')
+addpath('../CoreFHorz_ReturnFns/')
 
-addpath('./QuasiHyperbolicDiscountingFHorzTests_subcodes/')
-addpath('./QuasiHyperbolicDiscountingFHorzTests_subcodes/CrossTests/')
+addpath('./withQuasiHyperbolicDiscounting_subcodes/')
+addpath('./withQuasiHyperbolicDiscounting_subcodes/CrossTests/')
 
 %% Setup so that use the same d,a,z,e,semiz in all the models that use them
 CoreFHorz_setup
@@ -107,14 +107,14 @@ output=QHDFHorz_CrossTests_d_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_gri
 
 % d1 is a decision variable that is not in the SemiExoStateFn
 
-addpath('../CoreFHorzTests/CoreFHorzTests_Setup/')
-addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/')
+addpath('../CoreFHorzTests_Setup/')
+addpath('../CoreFHorz_ReturnFns/')
 
-addpath('./QuasiHyperbolicDiscountingFHorzTests_subcodes/')
-addpath('./QuasiHyperbolicDiscountingFHorzTests_subcodes/CrossTests/')
+addpath('./withQuasiHyperbolicDiscounting_subcodes/')
+addpath('./withQuasiHyperbolicDiscounting_subcodes/CrossTests/')
 
-addpath('./QuasiHyperbolicDiscountingFHorzTests_subcodes/Semiz_subcodes/')
-addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/Semiz_ReturnFns/')
+addpath('./withQuasiHyperbolicDiscounting_subcodes/Semiz_subcodes/')
+addpath('../CoreFHorz_ReturnFns/Semiz_ReturnFns/')
 % Uses the same setup, which already had a semi-exogenous state, just that it wasn't used.
 CoreFHorz_setup
 
