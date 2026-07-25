@@ -137,6 +137,16 @@ AggVarsPath2=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPath2, Po
 AgentDistPath4=AgentDistOnTransPath_InfHorz(AgentDist_initial_big, PricePath, ParamPath, PolicyPath4b, n_d, n_a_big, n_z, pi_z, T, Params, simoptions4);
 AggVarsPath4=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPath4, PolicyPath4b, PricePath, ParamPath, Params, T, n_d, n_a_big, n_z, d_grid, a_grid_big, z_grid, simoptions4);
 
+%% SimPanel along the path: per-period panel mean should reproduce the AggVars along the path
+% (Monte Carlo simulation, so this is a roughly-equal check, not machine precision)
+simoptionsSP=simoptions2;
+simoptionsSP.numbersims=10^4;
+simoptionsSP.simperiods=T;
+SimPanelTPath=SimPanelValues_TransPath_InfHorz(PolicyPath2b, PricePath, ParamPath, T, AgentDist_initial_big, n_d, n_a_big, n_z, pi_z, d_grid, a_grid_big, z_grid, FnsToEvaluate, Params, simoptionsSP);
+fprintf('SimPanel along TPath: per-period panel mean should roughly match AggVarsPath (Monte Carlo) \n')
+[AggVarsPath2.earnings.Mean; mean(SimPanelTPath.earnings,2)']
+[AggVarsPath2.assets.Mean;   mean(SimPanelTPath.assets,2)']
+
 fprintf('With/without grid interp, should get much the same moments (for big a_grid) \n')
 fprintf('AgentDist along TPath with/without grid interp, this should be close to zero: %2.8f \n',max(abs(AgentDistPath2(:)-AgentDistPath4(:))))
 [AggVarsPath2.earnings.Mean; AggVarsPath4.earnings.Mean]

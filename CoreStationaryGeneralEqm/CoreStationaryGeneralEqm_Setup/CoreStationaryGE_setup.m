@@ -19,8 +19,8 @@
 % non-binding (r in (0,1), Tr>0, tau_c in [0,1]).
 
 %% Grids
-n_d=51;    % hours of labor
-n_a=351;   % assets
+n_d=75;    % hours of labor
+n_a=451;   % assets
 n_z=5;     % productivity shock
 
 % setup z (AR(1) labor productivity)
