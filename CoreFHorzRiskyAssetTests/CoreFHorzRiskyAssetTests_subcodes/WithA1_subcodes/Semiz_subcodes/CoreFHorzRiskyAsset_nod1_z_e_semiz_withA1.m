@@ -132,6 +132,10 @@ vfoptions3.lowmemory=2;
 [V3C,Policy3C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
 fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3C(:))))
 fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3C(:))))
+vfoptions3.lowmemory=3;
+[V3D,Policy3D]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('lowmemory=3 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3D(:))))
+fprintf('lowmemory=3 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3D(:))))
 vfoptions3.lowmemory=0;
 
 % lowmemory tests
@@ -143,6 +147,10 @@ vfoptions4.lowmemory=2;
 [V4C,Policy4C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4C(:))))
 fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4C(:))))
+vfoptions4.lowmemory=3;
+[V4D,Policy4D]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('lowmemory=3  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4D(:))))
+fprintf('lowmemory=3  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4D(:))))
 vfoptions4.lowmemory=0;
 
 %%

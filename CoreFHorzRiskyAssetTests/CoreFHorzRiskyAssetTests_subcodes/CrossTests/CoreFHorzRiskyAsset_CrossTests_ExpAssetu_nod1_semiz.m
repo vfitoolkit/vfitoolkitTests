@@ -48,6 +48,7 @@ vfoptionsE.semiz_grid=vfoptionsbaseline.semiz_grid;
 vfoptionsE.SemiExoStateFn=vfoptionsbaseline.SemiExoStateFn;
 simoptionsE=struct();
 simoptionsE.experienceassetu=1;
+simoptionsE.l_dexperienceassetu=vfoptionsE.l_dexperienceassetu; % StationaryDist needs this too (mirrors VFI); default 1 is only right for single-decision experience assets
 simoptionsE.aprimeFn=vfoptionsE.aprimeFn;
 simoptionsE.n_u=vfoptionsE.n_u;
 simoptionsE.u_grid=vfoptionsE.u_grid;
