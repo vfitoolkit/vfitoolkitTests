@@ -34,6 +34,16 @@ a_grid=[a1_grid;a2_grid];
 a_grid_big=[a1_grid_big;a2_grid];
 a_grid_justexpasset=a2_grid;
 
+% with2A1: a genuine SECOND standard endogenous asset a1_2 (multi-point), inserted between the
+% liquid asset a1 and the experience asset a2. Two standard assets -> length(n_a1)>1 -> the
+% dispatcher routes to DC2A / GI2A / DC2A_GI2A. Grid layout: a = [a1, a1_2, a2].
+n_a1_2=4; % multi-point second standard asset (a genuine grid, not binary)
+a1_2_grid=2*linspace(0,1,n_a1_2)'.^2; % capped at 2; return r2>r so it gets used up to the cap
+n_a_2A1=[n_a(1),n_a1_2,n_a_justexpasset];                       % [a1 (divide-conquered), a1_2 (folded), a2 (experience)]
+a_grid_2A1=[a1_grid;a1_2_grid;a2_grid];
+n_a_2A1_notsobig=[151,n_a1_2,n_a_justexpasset];                 % 2-asset 'big' a1 grid for the moment comparison. The GI fine-grid solve builds an a1 x a1prime(fine) matrix scaling ~N_a1^2 (OOM at 201); still meaningfully finer than the coarse 101. Tune down to 126 if a given GPU still OOMs.
+a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
+a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
 % setup z
 [z_grid,pi_z]=discretizeAR1_FarmerToda(0,0.9,0.03,n_z);
@@ -91,6 +101,7 @@ Params.varphi=0.8; % relative weight of leisure in utility
 % Prices
 Params.w=1;
 Params.r=0.05;
+Params.r2=0.06; % return on the second standard asset a1_2 (with2A1 tests); slightly higher than r
 
 % Retirement
 Params.Jr=16;

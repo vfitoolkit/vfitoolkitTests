@@ -49,7 +49,14 @@ simoptionsB.a_grid=a_grid;
 [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d_expasset,n_a,0,N_j,d_grid_expasset,a_grid,[],[],ReturnFn_expasset,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy1,n_d_expasset,n_a,0,N_j,1,Params,simoptionsB);
 
-fprintf('Cross test 3 (noa1+d1+semiz): expasset noa1+d1+semiz is just a standard 1-endo+d1+semiz state, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V0(:)-V1(:))),max(abs(Policy0(:)-Policy1(:))),max(abs(StationaryDist0(:)-StationaryDist1(:))))
+% Side A stores Policy rows as (d1, d3, aprime); Side B (expasset) stores them as (d1, d2, d3),
+% where d2 is the a_grid choice that plays aprime's role via aprimeFn=@(d2,a2)d2. The two
+% formulations thus put the same decisions in different rows, so reorder Side B to
+% (d1, d3, d2=aprime) before comparing -- otherwise the raw element-wise diff is n_a-1 (=12
+% here), from lining d3 (1..2) up against aprime (1..n_a). (V and Dist already confirm the two
+% models coincide.)
+Policy1_aligned=Policy1([1 3 2],:,:,:); % (d1,d2,d3) -> (d1,d3,d2=aprime), matching Policy0's (d1,d3,aprime)
+fprintf('Cross test 3 (noa1+d1+semiz): expasset noa1+d1+semiz is just a standard 1-endo+d1+semiz state, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V0(:)-V1(:))),max(abs(Policy0(:)-Policy1_aligned(:))),max(abs(StationaryDist0(:)-StationaryDist1(:))))
 
 output=struct();
 

@@ -42,7 +42,18 @@ for qhcase=1:2
 
     % Base (2 standard assets -> combined N_a1)
     vfoptions1=vfoptions;
-    [V1,Policy1,V1alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    if qhcase==1 % Naive also returns Policyalt (4th output), needed by the ValueFnFromPolicy oracle below
+        [V1,Policy1,V1alt,Policy1alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    else
+        [V1,Policy1,V1alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    end
+
+    % ValueFnFromPolicy oracle on the base method (exercises QH+experienceassetz reconstruction with two standard assets; GI2A/DC2A_GI2A not checked -- QH ValueFnFromPolicy has no gridinterplayer variant yet)
+    vfoptionsVFP=vfoptions1; vfoptionsVFP.lowmemory=0;
+    if qhcase==1, vfoptionsVFP.Policyalt=Policy1alt; end
+    [V1fromPolicy,V1altfromPolicy]=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP);
+    fprintf('%s ValueFnFromPolicy, this should be zero: %2.8f \n',qh,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('%s ValueFnFromPolicy (Valt), this should be zero: %2.8f \n',qh,max(abs(V1altfromPolicy(:)-V1alt(:))))
 
     % Divide-and-conquer -> DC2A, should give same answer
     vfoptions2=vfoptions; vfoptions2.divideandconquer=1;
@@ -66,7 +77,17 @@ for qhcase=1:2
 
     % Grid interpolation -> GI2A
     vfoptions3=vfoptions; vfoptions3.gridinterplayer=1; vfoptions3.ngridinterp=5;
-    [V3,Policy3,V3alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+    if qhcase==1 % Naive also returns Policyalt (4th output), needed by the ValueFnFromPolicy oracle below
+        [V3,Policy3,V3alt,Policy3alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+    else
+        [V3,Policy3,V3alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+    end
+    % ValueFnFromPolicy oracle on GI2A
+    vfoptionsVFP3=vfoptions3; vfoptionsVFP3.lowmemory=0;
+    if qhcase==1, vfoptionsVFP3.Policyalt=Policy3alt; end
+    [V3fromPolicy,V3altfromPolicy]=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP3);
+    fprintf('%s ValueFnFromPolicy (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3fromPolicy(:)-V3(:))))
+    fprintf('%s ValueFnFromPolicy (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3altfromPolicy(:)-V3alt(:))))
     % DC + GI -> DC2A_GI2A, should match GI2A
     vfoptions4=vfoptions; vfoptions4.divideandconquer=1; vfoptions4.gridinterplayer=1; vfoptions4.ngridinterp=5;
     [V4,Policy4,V4alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);

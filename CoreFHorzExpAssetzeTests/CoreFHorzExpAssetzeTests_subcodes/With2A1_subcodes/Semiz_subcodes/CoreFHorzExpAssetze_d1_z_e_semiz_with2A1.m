@@ -3,8 +3,7 @@ function output=CoreFHorzExpAssetze_d1_z_e_semiz_with2A1(n_d,n_a,n_a_big,n_z,N_j
 % states + semiz). The second standard endogenous state a1_2 is BINARY: a capped
 % high-return asset (return r2>r, holdings in {0,1}). The experienceassetze a2 is
 % unchanged. a = [a1_1 (liquid, divide-conquered), a1_2 (binary, folded), a2 (exp asset)]
-% NOTE: as of writing, ExpAssetzeSemiExo DC2A/GI2A raws are not yet implemented, so
-% this subcode is (deliberately) not called from the main test file yet.
+% Exercises the ExpAssetzeSemiExo DC2A/GI2A/DC2A_GI2A raws.
 
 % Build the binary second standard endogenous asset a1_2, inserted between a1_1 and a2
 n_a1_1=n_a(1); n_a2exp=n_a(2);

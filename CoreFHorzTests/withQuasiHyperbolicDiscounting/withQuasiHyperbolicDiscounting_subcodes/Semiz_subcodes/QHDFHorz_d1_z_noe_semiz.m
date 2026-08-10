@@ -60,6 +60,21 @@ fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:
 fprintf('lowmemory=1 (with DC) (Valt, Naive), this should be zero: %2.8f \n',max(abs(V2alt(:)-V2Balt(:))))
 vfoptions2.lowmemory=0;
 
+% lowmemory2
+vfoptions1.lowmemory=2;
+[V1C,Policy1C,V1Calt,Policy1Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(V1(:)-V1C(:))))
+fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1C(:))))
+fprintf('lowmemory=2 (Valt, Naive), this should be zero: %2.8f \n',max(abs(V1alt(:)-V1Calt(:))))
+vfoptions1.lowmemory=0;
+
+vfoptions2.lowmemory=2;
+[V2C,Policy2C,V2Calt,Policy2Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2C(:))))
+fprintf('lowmemory=2 (with DC) (Valt, Naive), this should be zero: %2.8f \n',max(abs(V2alt(:)-V2Calt(:))))
+vfoptions2.lowmemory=0;
+
 %%
 % V from Policy
 vfoptions1.Policyalt=Policy1alt; % Naive QH ValueFnFromPolicy requires the exp-discounter argmax
@@ -67,7 +82,7 @@ vfoptions1.Policyalt=Policy1alt; % Naive QH ValueFnFromPolicy requires the exp-d
 fprintf('ValueFnFromPolicy (Naive), this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
 fprintf('ValueFnFromPolicy (Valt, Naive), this should be zero: %2.8f \n',max(abs(V1altfromPolicy(:)-V1alt(:))))
 
-clear V1 V2 V1B V2B Policy1 Policy2 Policy1B Policy2B V1fromPolicy V2fromPolicy V1alt V2alt V1Balt V2Balt Policy1alt Policy2alt Policy1Balt Policy2Balt V1altfromPolicy V2altfromPolicy
+clear V1 V2 V1B V2B V1C V2C Policy1 Policy2 Policy1B Policy2B Policy1C Policy2C V1fromPolicy V2fromPolicy V1alt V2alt V1Balt V2Balt V1Calt V2Calt Policy1alt Policy2alt Policy1Balt Policy2Balt Policy1Calt Policy2Calt V1altfromPolicy V2altfromPolicy
 
 %% Solve with grid-interpolation
 vfoptions3=vfoptions;
@@ -107,6 +122,21 @@ fprintf('lowmemory=1  (with DC+GI), this should be zero: %2.8f \n',max(abs(Polic
 fprintf('lowmemory=1  (with DC+GI) (Valt, Naive), this should be zero: %2.8f \n',max(abs(V4alt(:)-V4Balt(:))))
 vfoptions4.lowmemory=0;
 
+% lowmemory2
+vfoptions3.lowmemory=2;
+[V3C,Policy3C,V3Calt,Policy3Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3C(:))))
+fprintf('lowmemory=2 (with GI) (Valt, Naive), this should be zero: %2.8f \n',max(abs(V3alt(:)-V3Calt(:))))
+vfoptions3.lowmemory=0;
+
+vfoptions4.lowmemory=2;
+[V4C,Policy4C,V4Calt,Policy4Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4C(:))))
+fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4C(:))))
+fprintf('lowmemory=2  (with DC+GI) (Valt, Naive), this should be zero: %2.8f \n',max(abs(V4alt(:)-V4Calt(:))))
+vfoptions4.lowmemory=0;
+
 %%
 % V from Policy
 vfoptions3.Policyalt=Policy3alt; % Naive QH ValueFnFromPolicy requires the exp-discounter argmax
@@ -114,7 +144,7 @@ vfoptions3.Policyalt=Policy3alt; % Naive QH ValueFnFromPolicy requires the exp-d
 fprintf('ValueFnFromPolicy (GI, Naive), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
 fprintf('ValueFnFromPolicy (Valt, GI, Naive), this should be zero: %2.8f \n',max(abs(V3altfromPolicy(:)-V3alt(:))))
 
-clear V3 V4 V3B V4B Policy3 Policy4 Policy3B Policy4B V3fromPolicy V4fromPolicy V3alt V4alt V3Balt V4Balt Policy3alt Policy4alt Policy3Balt Policy4Balt V3altfromPolicy V4altfromPolicy
+clear V3 V4 V3B V4B V3C V4C Policy3 Policy4 Policy3B Policy4B Policy3C Policy4C V3fromPolicy V4fromPolicy V3alt V4alt V3Balt V4Balt V3Calt V4Calt Policy3alt Policy4alt Policy3Balt Policy4Balt Policy3Calt Policy4Calt V3altfromPolicy V4altfromPolicy
 
 
 %% Use a really big a_grid, then the moments should be essentially the same with/without grid interpolation
@@ -209,13 +239,28 @@ fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:
 fprintf('lowmemory=1 (with DC) (Valt, Sophisticated), this should be zero: %2.8f \n',max(abs(V2alt(:)-V2Balt(:))))
 vfoptions2.lowmemory=0;
 
+% lowmemory2
+vfoptions1.lowmemory=2;
+[V1C,Policy1C,V1Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(V1(:)-V1C(:))))
+fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1C(:))))
+fprintf('lowmemory=2 (Valt, Sophisticated), this should be zero: %2.8f \n',max(abs(V1alt(:)-V1Calt(:))))
+vfoptions1.lowmemory=0;
+
+vfoptions2.lowmemory=2;
+[V2C,Policy2C,V2Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2C(:))))
+fprintf('lowmemory=2 (with DC) (Valt, Sophisticated), this should be zero: %2.8f \n',max(abs(V2alt(:)-V2Calt(:))))
+vfoptions2.lowmemory=0;
+
 %%
 % V from Policy
 [V1fromPolicy,V1altfromPolicy]=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
 fprintf('ValueFnFromPolicy (Sophisticated), this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
 fprintf('ValueFnFromPolicy (Valt, Sophisticated), this should be zero: %2.8f \n',max(abs(V1altfromPolicy(:)-V1alt(:))))
 
-clear V1 V2 V1B V2B Policy1 Policy2 Policy1B Policy2B V1fromPolicy V2fromPolicy V1alt V2alt V1Balt V2Balt V1altfromPolicy V2altfromPolicy
+clear V1 V2 V1B V2B V1C V2C Policy1 Policy2 Policy1B Policy2B Policy1C Policy2C V1fromPolicy V2fromPolicy V1alt V2alt V1Balt V2Balt V1Calt V2Calt V1altfromPolicy V2altfromPolicy
 
 %% Solve with grid-interpolation
 vfoptions3=vfoptions;
@@ -256,13 +301,28 @@ fprintf('lowmemory=1  (with DC+GI), this should be zero: %2.8f \n',max(abs(Polic
 fprintf('lowmemory=1  (with DC+GI) (Valt, Sophisticated), this should be zero: %2.8f \n',max(abs(V4alt(:)-V4Balt(:))))
 vfoptions4.lowmemory=0;
 
+% lowmemory2
+vfoptions3.lowmemory=2;
+[V3C,Policy3C,V3Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3C(:))))
+fprintf('lowmemory=2 (with GI) (Valt, Sophisticated), this should be zero: %2.8f \n',max(abs(V3alt(:)-V3Calt(:))))
+vfoptions3.lowmemory=0;
+
+vfoptions4.lowmemory=2;
+[V4C,Policy4C,V4Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4C(:))))
+fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4C(:))))
+fprintf('lowmemory=2  (with DC+GI) (Valt, Sophisticated), this should be zero: %2.8f \n',max(abs(V4alt(:)-V4Calt(:))))
+vfoptions4.lowmemory=0;
+
 %%
 % V from Policy
 [V3fromPolicy,V3altfromPolicy]=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
 fprintf('ValueFnFromPolicy (GI, Sophisticated), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
 fprintf('ValueFnFromPolicy (Valt, GI, Sophisticated), this should be zero: %2.8f \n',max(abs(V3altfromPolicy(:)-V3alt(:))))
 
-clear V3 V4 V3B V4B Policy3 Policy4 Policy3B Policy4B V3fromPolicy V4fromPolicy V3alt V4alt V3Balt V4Balt V3altfromPolicy V4altfromPolicy
+clear V3 V4 V3B V4B V3C V4C Policy3 Policy4 Policy3B Policy4B Policy3C Policy4C V3fromPolicy V4fromPolicy V3alt V4alt V3Balt V4Balt V3Calt V4Calt V3altfromPolicy V4altfromPolicy
 
 
 %% Use a really big a_grid, then the moments should be essentially the same with/without grid interpolation

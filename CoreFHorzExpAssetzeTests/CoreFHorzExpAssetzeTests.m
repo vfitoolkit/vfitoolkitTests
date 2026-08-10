@@ -6,17 +6,19 @@
 % with/without grid interpolation
 % with/without low memory (where appropriate)
 %
-% NOTE ON NAMING: Every subcode here is run WITH a1 (a standard endogenous state
-% alongside the experienceassetze), and so carries the '_withA1' suffix, following the
-% naming convention of the neighbouring CoreFHorzRiskyAssetTests.
-% Unlike RiskyAsset, there is NO 'without a1' counterpart: experienceassetze without a1
-% has DELIBERATELY NOT been implemented in VFI Toolkit (an experience asset is only
-% meaningful alongside a standard endogenous asset). Hence there is nothing to
-% distinguish against, but the '_withA1' suffix is kept to make this explicit.
+% NOTE ON NAMING: Every subcode carries an explicit tag saying how many standard
+% endogenous states sit alongside the experienceassetze: '_noa1' (none: the
+% experience asset a2 is the only endogenous state), '_withA1' (one), or
+% '_with2A1' (two). This follows the naming convention of the neighbouring
+% CoreFHorzExpAssetTests/CoreFHorzRiskyAssetTests.
+% (An earlier version of this suite deliberately did not implement the noa1 tier,
+% on the view that an experience asset is only meaningful alongside a standard
+% endogenous asset; that decision has been reversed.)
+% Layout: noa1 (figs 1-4) -> withA1 (figs 5-8) -> with2A1 (figs 9-12).
 
 
 addpath('./CoreFHorzExpAssetzeTests_subcodes/')
-addpath('./CoreFHorzExpAssetzeTests_subcodes/WithA1_subcodes/') % all subcodes are 'with a1' (see note above)
+addpath('./CoreFHorzExpAssetzeTests_subcodes/WithA1_subcodes/')
 addpath('./CoreFHorzExpAssetzeTests_Setup/')
 addpath('./CoreFHorzExpAssetze_ReturnFns/')
 addpath('./CoreFHorzExpAssetzeTests_subcodes/CrossTests/')
@@ -24,12 +26,55 @@ addpath('./CoreFHorzExpAssetzeTests_subcodes/CrossTests/')
 % Setup so that use the same d,a,z,e in all the models that use them
 CoreFHorzExpAssetze_setup
 
+%% ================= NOA1 (figs 1-4): experience asset is the only endogenous state =================
+% No DC/GI/DC+GI blocks (irrelevant without a1).
+% Pass n_a_justexpasset as n_a, a_grid_justexpasset as a_grid. n_a_big/a_grid_big slots unused.
+addpath('./CoreFHorzExpAssetzeTests_subcodes/Noa1_subcodes/')
+addpath('./CoreFHorzExpAssetzeTests_subcodes/Noa1_subcodes/Semiz_subcodes/')
+addpath('./CoreFHorzExpAssetze_ReturnFns/Noa1_ReturnFns/')
+addpath('./CoreFHorzExpAssetze_ReturnFns/Noa1_ReturnFns/Semiz_ReturnFns/')
+
+%% noa1, without d1, with z, with e
+figure_c=1;
+output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% noa1, with d1, with z, with e
+figure_c=2;
+output=CoreFHorzExpAssetze_d1_z_e_nosemiz_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% noa1 nosemiz cross-tests
+% CrossTest 5: noa1 vs withA1 model with n_a1=1 where a1 is ignored (should match bit-exact)
+output=CoreFHorzExpAssetze_CrossTests5_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetze_CrossTests5_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+%% noa1 semiz
+% PENDING TOOLKIT SUPPORT: these error at the ValueFnIter call until the
+% ExpAssetzeSemiExo noa1 raws exist (test-first: written ahead of the toolkit code)
+
+%% noa1, without d1, with z, with e, with semiz
+figure_c=3;
+output=CoreFHorzExpAssetze_nod1_z_e_semiz_noa1(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% noa1, with d1, with z, with e, with semiz
+figure_c=4;
+output=CoreFHorzExpAssetze_d1_z_e_semiz_noa1(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% noa1 semiz cross-tests
+% CrossTest 5 + semiz: noa1 vs withA1 model with n_a1=1 where a1 is ignored (should match bit-exact)
+output=CoreFHorzExpAssetze_CrossTests5_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetze_CrossTests5_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+
+
+
+%% ================= WITH a1 (figs 5-8) =================
+
 %% without d1, with z, with e
 n_a_notsobig=[301,13]; % To avoid out-of-memory errors
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=1;
+figure_c=5;
 output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_withA1(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 %% with d1, with z, with e
@@ -37,7 +82,7 @@ n_a_notsobig=[201,13]; % To avoid out-of-memory errors
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=2;
+figure_c=6;
 output=CoreFHorzExpAssetze_d1_z_e_nosemiz_withA1(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 
@@ -71,7 +116,7 @@ n_a_notsobig=[201,13]; % To avoid out-of-memory errors
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=3;
+figure_c=7;
 output=CoreFHorzExpAssetze_nod1_z_e_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 %% with d1, with z, with e, with semiz
@@ -79,7 +124,7 @@ n_a_notsobig=[151,13];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=4;
+figure_c=8;
 output=CoreFHorzExpAssetze_d1_z_e_semiz_withA1(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 %% Semiz cross-tests
@@ -103,7 +148,7 @@ output=CoreFHorzExpAssetze_CrossTests4_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_b
 
 
 
-%% With TWO standard endogenous assets: a = [a1_1, a1_2 (binary), a2 (experienceassetze)]
+%% ================= With TWO standard endogenous assets (figs 9-12): a = [a1_1, a1_2 (binary), a2 (experienceassetze)] =================
 addpath('./CoreFHorzExpAssetzeTests_subcodes/With2A1_subcodes/')
 addpath('./CoreFHorzExpAssetzeTests_subcodes/With2A1_subcodes/Semiz_subcodes/')
 
@@ -118,17 +163,23 @@ n_a_2A1_notsobig=[151,13];
 a_grid_2A1_notsobig=[5*linspace(0,1,n_a_2A1_notsobig(1))'.^3; a2_grid];
 
 %% with2A1, without d1, with z, with e
-figure_c=5;
+figure_c=9;
 output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 %% with2A1, with d1, with z, with e
-figure_c=6;
+figure_c=10;
 output=CoreFHorzExpAssetze_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with2A1 + semiz --- COMMENTED OUT AS NOT YET BUILD
+%% with2A1 + semiz
 
-% figure_c=7;
-% output=CoreFHorzExpAssetze_nod1_z_e_semiz_with2A1(n_d_withoutd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% figure_c=8;
-% output=CoreFHorzExpAssetze_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+%% with2A1, without d1, with z, with e, with semiz
+figure_c=11;
+output=CoreFHorzExpAssetze_nod1_z_e_semiz_with2A1(n_d_withoutd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+%% with2A1, with d1, with z, with e, with semiz
+
+% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+figure_c=12;
+output=CoreFHorzExpAssetze_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
 

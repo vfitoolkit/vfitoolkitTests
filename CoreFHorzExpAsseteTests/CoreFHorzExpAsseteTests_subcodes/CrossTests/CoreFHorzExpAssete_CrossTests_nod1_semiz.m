@@ -3,9 +3,6 @@ function output=CoreFHorzExpAssete_CrossTests_nod1_semiz(n_d,n_a,n_a_big,n_z,N_j
 % Cross-test 1 for experienceassete+semiz: compare experienceassete+semiz (with normal iid e) to
 % experienceassetz+semiz (with z that is iid-markov; transition matrix has all rows identical).
 % Should give same V, Policy, StationaryDist.
-%
-% Pending toolkit support: requires BOTH experienceassete+SemiExo AND experienceassetz+SemiExo
-% dispatchers in ValueFnIter_Case1_FHorz (currently neither exists).
 
 % Override z to be iid-markov matching e setup
 n_z=vfoptionsbaseline.n_e;

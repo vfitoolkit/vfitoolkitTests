@@ -34,6 +34,7 @@ fprintf('Naive lowmemory=1 (Valt), this should be zero: %2.8f \n',max(abs(V1alt(
 fprintf('Naive lowmemory=1 (Policy), this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1B(:))))
 vfoptions1.lowmemory=0;
 
+vfoptions1.Policyalt=Policy1alt; % Naive QH: ValueFnFromPolicy reconstructs V from the exponential-discounter argmax (the 4th output of the Naive solve)
 [V1fromPolicy,V1altfromPolicy]=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
 fprintf('Naive ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
 fprintf('Naive ValueFnFromPolicy (Valt), this should be zero: %2.8f \n',max(abs(V1altfromPolicy(:)-V1alt(:))))

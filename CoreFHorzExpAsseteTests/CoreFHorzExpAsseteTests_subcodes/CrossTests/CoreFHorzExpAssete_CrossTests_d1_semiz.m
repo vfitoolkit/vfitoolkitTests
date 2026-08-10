@@ -2,8 +2,6 @@ function output=CoreFHorzExpAssete_CrossTests_d1_semiz(n_d,n_a,n_a_big,n_z,N_j,d
 
 % Cross-test 1 for experienceassete+semiz (d1 version): compare experienceassete+semiz (iid e) to
 % experienceassetz+semiz (iid-markov z). Should give same V, Policy, StationaryDist.
-%
-% Pending toolkit support: requires BOTH experienceassete+SemiExo AND experienceassetz+SemiExo.
 
 % Override z to be iid-markov matching e setup
 n_z=vfoptionsbaseline.n_e;

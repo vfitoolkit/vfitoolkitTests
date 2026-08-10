@@ -3,9 +3,6 @@ function output=CoreFHorzExpAssete_CrossTests2_nod1_semiz(n_d,n_a,n_a_big,n_z,N_
 % Cross-test 2 for experienceassete+semiz: 'fake' experienceassete+semiz whose aprimeFn ignores e,
 % vs plain experienceasset+semiz. Both have e as an ordinary iid shock (used in the ReturnFn) and
 % semiz on both sides. Should give same V, Policy, StationaryDist.
-%
-% Pending toolkit support: requires experienceassete+SemiExo (side A). Side B (experienceasset+semiz)
-% is already supported, so this test becomes runnable once side A is added.
 
 ReturnFn=@(d2,d3,a1prime,a1,a2,semiz,e,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_ExpAssete_nod1_noz_e_semiz(d2,d3,a1prime,a1,a2,semiz,e,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost);
 

@@ -1,0 +1,31 @@
+This is a collection of codes that tests the core VFI Toolkit value function iteration ALGORITHMS for InfHorz.
+It tests with/without d, with/without z, with/without e (8 models).
+
+Only ValueFnIter_InfHorz is being tested (not StationaryDist or the statistics commands).
+
+InfHorz has several value-function-iteration algorithm options. They all solve the same Bellman
+equation, so should give the same V and Policy. For each model we check:
+ Part 1: WITHOUT grid interpolation (GI), all give the same V and Policy:
+          - howardsgreedy=0,1 (iterated vs greedy Howards) and howardssparse=0,1 (indexed vs sparse Howards)
+          - howards=0 (pure value function iteration, i.e. Howards acceleration turned off)
+          - lowmemory=1 (recompute return matrix each iteration; and sparse under lowmemory)
+ Part 2: WITH GI, all (implemented) give the same V and Policy:
+          - howardsgreedy=0,1, and 2,3 (HowardMix: greedy on one grid, iterated on the other)
+          - howardssparse=1 with lowmemory=1 (sparse Howards under GI)
+ Part 3: WITH GI, preGI and postGI give the same V and Policy (greedy=0,1,2).
+ Part 4: with a big n_a (=1500), with and without GI give very similar V (not exactly equal: GI
+         refines the choice between grid points, so V_GI is slightly higher; with 1500 points the
+         difference is tiny).
+
+The algorithm-comparison logic lives in one shared engine, CoreInfHorzVFIAlgo_algocompare.m, which
+each of the 8 per-model subcodes calls.
+
+Some (option x GI) combinations are not yet implemented in the toolkit and would error; per request
+those lines are included in the engine but commented out, so the intended coverage is documented:
+ - howardssparse=1 with GI and lowmemory=0 (sparse under GI is only implemented for lowmemory=1).
+ - preGI with howardsgreedy=3 (HowardMix2 is postGI only).
+ - preGI with howardssparse=1 (sparse under GI is postGI+lowmemory=1 only).
+
+NOT tested here:
+ - divide-and-conquer: not usable for InfHorz (too slow); it is tested in the InfHorz-TPath test bank (CoreInfHorzTPathTests).
+ - semiz: not implemented for InfHorz value function iteration.

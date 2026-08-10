@@ -1,0 +1,19 @@
+This is a collection of codes that tests the core VFI Toolkit features for InfHorz (stationary infinite-horizon).
+It tests with/without d, and with/without z.
+It tests that with/without GI (grid interpolation layer) you get the same model stats.
+It tests that lowmemory=1 gives the same answer as lowmemory=0 (in the z cases; lowmemory=1 loops over z, so it is not relevant in the noz cases).
+It also checks that ValueFnFromPolicy_InfHorz reproduces the value function, and that all the InfHorz EvalFnOnAgentDist commands (AllStats, AggVars, AutoCorrTransProbs, CrossSectionCovarCorr, ValuesOnGrid, ProbDensityFn) run, and that a long SimTimeSeries reproduces the AgentDist statistics.
+
+There are also some 'cross-tests' (in CoreInfHorzTests_subcodes/CrossTests/) which run things that should give the same answer, disguised in different ways, and check that they do:
+ A: a single trivial z point (value 1, prob 1) reproduces the noz code path (V, Policy, StationaryDist).
+ B: an iid disguised as a markov (identical rows in pi_z) gives a stationary marginal over z equal to that row (and, for nod, earnings mean = w*E[z]).
+ C: relabelling (permuting) the z states leaves all aggregate statistics unchanged.
+(The FHorz cross-tests disguise a markov-z as the native iid e; this bank has no e, so the cross-tests use only d and z.)
+
+The tests are largely based on running lots of different things that should give the same answer, and then checking that they do.
+
+NOT tested here:
+ - divide-and-conquer: it is not usable for InfHorz (too slow); it is tested in the InfHorz-TPath test bank (CoreInfHorzTPathTests) instead.
+ - e/semiz: out of scope for this bank.
+
+Note: in the noz cases there is no exogenous shock, so the InfHorz stationary distribution collapses to a single mass point and the distribution/statistics are degenerate; for those cases the stats commands are run as 'executes without error' checks, and the z cases provide the meaningful cross-validation of the statistics.
