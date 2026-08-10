@@ -1,3 +1,6 @@
 # CMA-ES (fminalgo=4) run artifacts, written to the working directory
 outcmaes*.dat
 variablescmaes.mat
+
+# MATLAB editor autosave files
+*.asv
