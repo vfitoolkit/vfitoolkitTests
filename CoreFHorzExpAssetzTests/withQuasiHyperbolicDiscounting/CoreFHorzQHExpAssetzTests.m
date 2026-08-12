@@ -13,6 +13,17 @@
 %  - withA1 subcodes (single a1): baseline + lowmemory, Naive & Sophisticated;
 %  - with2A1 subcodes (two a1, a binary a1_2 spliced in): base + DC2A + GI2A + DC2A_GI2A + lowmemory.
 % No semiz variants.
+%
+% The subcodes here take figure_c but draw no figures, so only the diary is saved.
+
+%% Diary of the command window output (written to the parent bank's TestOutput folder)
+if ~exist('../TestOutput','dir')
+    mkdir('../TestOutput')
+end
+if exist('../TestOutput/CoreFHorzQHExpAssetzTestsdiary.txt','file')
+    delete('../TestOutput/CoreFHorzQHExpAssetzTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ../TestOutput/CoreFHorzQHExpAssetzTestsdiary.txt
 
 % This suite lives in the parent CoreFHorzExpAssetzTests/ folder and reuses its setup and
 % ReturnFns (same models -- QH only changes discounting), so those are one level up ('../').
@@ -70,3 +81,5 @@ output=CoreFHorzQHExpAssetz_nod1_z_e_nosemiz_with2A1(n_d_withoutd1,n_a_2A1,n_a_2
 %% with2A1, with d1, with z, with e
 figure_c=8;
 output=CoreFHorzQHExpAssetz_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+diary off

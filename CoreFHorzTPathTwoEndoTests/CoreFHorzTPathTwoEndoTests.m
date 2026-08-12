@@ -9,6 +9,15 @@
 % with/without semiz [NOT YET IMPLEMENTED]
 
 
+%% Diary of the command window output (figures are saved into the same folder as they are created)
+if ~exist('./TestOutput','dir')
+    mkdir('./TestOutput')
+end
+if exist('./TestOutput/CoreFHorzTPathTwoEndoTestsdiary.txt','file')
+    delete('./TestOutput/CoreFHorzTPathTwoEndoTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ./TestOutput/CoreFHorzTPathTwoEndoTestsdiary.txt
+
 %%
 addpath('./CoreFHorzTPathTwoEndoTests_subcodes/')
 addpath('./CoreFHorzTPathTwoEndoTests_Setup/')
@@ -20,33 +29,43 @@ CoreFHorzTPathTwoEndo_setup
 %% without d, without z, without e, without semiz
 figure_c=1;
 output=CoreFHorzTPathTwoEndo_nod_noz_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTwoEndoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d, without z, without e, without semiz
 figure_c=2;
 output=CoreFHorzTPathTwoEndo_d_noz_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTwoEndoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% without d, with z, without e, without semiz
 figure_c=3;
 output=CoreFHorzTPathTwoEndo_nod_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTwoEndoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d, with z, without e, without semiz
 figure_c=4;
 output=CoreFHorzTPathTwoEndo_d_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTwoEndoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% without d, without z, with e, without semiz
 figure_c=5;
 output=CoreFHorzTPathTwoEndo_nod_noz_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTwoEndoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d, without z, with e, without semiz
 figure_c=6;
 output=CoreFHorzTPathTwoEndo_d_noz_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTwoEndoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% without d, with z, with e, without semiz
 figure_c=7;
 output=CoreFHorzTPathTwoEndo_nod_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTwoEndoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d, with z, with e, without semiz
 figure_c=8;
 n_a_notsobig=[251,4];
 a_grid_notsobig=[a_grid_big(round(linspace(1,n_a_big(1),n_a_notsobig(1)))'); a_grid_big(n_a_big(1)+1:end)];
 output=CoreFHorzTPathTwoEndo_d_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_notsobig,n_z,N_j,d_grid,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTwoEndoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+diary off

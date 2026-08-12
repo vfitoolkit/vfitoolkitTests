@@ -12,6 +12,17 @@
 % x {d1,nod1} x {Naive,Sophisticated}, also with the full lowmemory ladder.
 %
 % This suite lives in the parent CoreFHorzExpAssetzeTests/ folder and reuses its setup and ReturnFns.
+%
+% The subcodes here take figure_c but draw no figures, so only the diary is saved.
+
+%% Diary of the command window output (written to the parent bank's TestOutput folder)
+if ~exist('../TestOutput','dir')
+    mkdir('../TestOutput')
+end
+if exist('../TestOutput/CoreFHorzQHExpAssetzeTestsdiary.txt','file')
+    delete('../TestOutput/CoreFHorzQHExpAssetzeTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ../TestOutput/CoreFHorzQHExpAssetzeTestsdiary.txt
 
 addpath('../CoreFHorzExpAssetzeTests_Setup/')
 addpath('../CoreFHorzExpAssetze_ReturnFns/')
@@ -90,3 +101,5 @@ output=CoreFHorzQHExpAssetze_nod1_z_e_semiz_with2A1(n_d_withoutd1semiz,n_a_2A1,n
 %% with2A1, with d1, with z, with e, with semiz
 figure_c=8;
 output=CoreFHorzQHExpAssetze_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+diary off

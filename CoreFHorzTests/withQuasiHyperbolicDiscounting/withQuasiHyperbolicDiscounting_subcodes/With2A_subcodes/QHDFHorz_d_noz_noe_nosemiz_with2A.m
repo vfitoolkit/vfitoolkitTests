@@ -236,7 +236,7 @@ fprintf('With/without grid interp, should get much the same moments (for big a_g
 clear V2b V4b Policy2b Policy4b StationaryDist2 StationaryDist4 V2balt V4balt
 
 %% Do some graphs of the age-conditional to see them
-fig=figure(figure_c);
+fig=figure(100+figure_c); % Sophisticated (Naive is figure_c)
 subplot(3,1,1); plot(1:1:N_j,AgeConditionalStats1.earnings.Mean, 1:1:N_j,AgeConditionalStats2.earnings.Mean, 1:1:N_j,AgeConditionalStats3.earnings.Mean, 1:1:N_j,AgeConditionalStats4.earnings.Mean)
 title('Earnings Mean')
 legend('1','2','3','4')

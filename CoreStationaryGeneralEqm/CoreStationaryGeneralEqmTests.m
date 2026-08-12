@@ -18,6 +18,17 @@
 % (PType, N_i=2 types differing in sigma=2.2 and 1.8). Outputs: output1..output4
 % for the non-PType tests, output1ptype..output4ptype for the PType ones.
 
+% No figures are drawn anywhere in this bank, so only the diary is saved.
+
+%% Diary of the command window output
+if ~exist('./TestOutput','dir')
+    mkdir('./TestOutput')
+end
+if exist('./TestOutput/CoreStationaryGeneralEqmTestsdiary.txt','file')
+    delete('./TestOutput/CoreStationaryGeneralEqmTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ./TestOutput/CoreStationaryGeneralEqmTestsdiary.txt
+
 %%
 addpath('./CoreStationaryGeneralEqm_subcodes/')
 addpath('./CoreStationaryGeneralEqm_Setup/')
@@ -131,3 +142,5 @@ output4ptype=CoreStationaryGE_FHorz_PType_constraints(jequaloneDist,AgeWeightPar
 
 % I want to next redo all these tests, but using ptype and with GEbyptype.
 % This remains to be built.
+
+diary off

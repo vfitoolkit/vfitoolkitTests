@@ -4,3 +4,6 @@ variablescmaes.mat
 
 # MATLAB editor autosave files
 *.asv
+
+# Test run output (diary txt and figure pngs)
+TestOutput/

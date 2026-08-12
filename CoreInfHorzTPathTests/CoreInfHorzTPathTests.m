@@ -9,6 +9,15 @@
 % No semiz (skipped intentionally for this build).
 
 
+%% Diary of the command window output (figures are saved into the same folder as they are created)
+if ~exist('./TestOutput','dir')
+    mkdir('./TestOutput')
+end
+if exist('./TestOutput/CoreInfHorzTPathTestsdiary.txt','file')
+    delete('./TestOutput/CoreInfHorzTPathTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ./TestOutput/CoreInfHorzTPathTestsdiary.txt
+
 %%
 addpath('./CoreInfHorzTPathTests_subcodes/')
 addpath('./CoreInfHorzTPathTests_Setup/')
@@ -28,10 +37,12 @@ CoreInfHorzTPath_setup
 %% without d, with z, without e
 figure_c=3;
 output=CoreInfHorzTPath_nod_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d, with z, without e
 figure_c=4;
 output=CoreInfHorzTPath_d_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% without d, without z, with e
 % figure_c=5;
@@ -48,3 +59,5 @@ output=CoreInfHorzTPath_d_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_
 % %% with d, with z, with e
 % figure_c=8;
 % output=CoreInfHorzTPath_d_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+
+diary off

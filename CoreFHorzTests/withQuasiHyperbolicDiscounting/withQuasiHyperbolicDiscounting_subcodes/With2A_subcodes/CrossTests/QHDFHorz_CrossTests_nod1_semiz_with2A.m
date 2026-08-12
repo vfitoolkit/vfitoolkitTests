@@ -45,7 +45,7 @@ vfopts_z.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfopts_z.quasi_hyperbolic='Naive';
 [Vz,Polz]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z2,N_j,d_grid,a_grid,z_grid2,pi_z_J,ReturnFn_z_test2,Params,DiscountFactorParamNames,[],vfopts_z);
 
-semiz model (n_d2=2, d2_grid=[1;2]); ReturnFn forces d2 by age parity
+% semiz model (n_d2=2, d2_grid=[1;2]); ReturnFn forces d2 by age parity
 n_d2_t2=2;
 d2_grid_t2=[1;2];
 vfopts_sz=struct();
@@ -66,8 +66,8 @@ fprintf('Test 1 (d2-driven semiz vs alternating pi_z_J), should be zero: %2.8f \
 
 
 %% Test 2: collapse z to 1pt in (semiz+z+e) -> matches (semiz+e)
-Run nod1_z_e_semiz with n_z=1, z_grid=1, pi_z=1; compare to nod1_noz_e_semiz.
-Consumption: w*kappa_j*semiz*z*e + uempbenefit*(1-semiz). With z=1, this is
+% Run nod1_z_e_semiz with n_z=1, z_grid=1, pi_z=1; compare to nod1_noz_e_semiz.
+% Consumption: w*kappa_j*semiz*z*e + uempbenefit*(1-semiz). With z=1, this is
 % w*kappa_j*semiz*e + uempbenefit*(1-semiz), matching nod1_noz_e_semiz.
 
 vfopts5=struct();
@@ -107,7 +107,7 @@ vfopts5b.quasi_hyperbolic='Naive';
 
 ReturnFn_5_noe=@(d2,a1prime,a2prime,a1,a2,semiz,z,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2) ReturnFn_nod1_z_noe_semiz_with2A(d2,a1prime,a2prime,a1,a2,semiz,z,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2);
 
-e collapsed to 1pt (n_e=1, e_grid=1, pi_e=1)
+% e collapsed to 1pt (n_e=1, e_grid=1, pi_e=1)
 vfopts5b_efull=vfopts5b;
 vfopts5b_efull.n_e=1; vfopts5b_efull.e_grid=1; vfopts5b_efull.pi_e=1;
 [V5b_efull,~]=ValueFnIter_Case1_FHorz(n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,ReturnFn_5_zfull,Params,DiscountFactorParamNames,[],vfopts5b_efull);
@@ -144,7 +144,7 @@ vfopts_z.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfopts_z.quasi_hyperbolic='Sophisticated';
 [Vz,Polz]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z2,N_j,d_grid,a_grid,z_grid2,pi_z_J,ReturnFn_z_test2,Params,DiscountFactorParamNames,[],vfopts_z);
 
-semiz model (n_d2=2, d2_grid=[1;2]); ReturnFn forces d2 by age parity
+% semiz model (n_d2=2, d2_grid=[1;2]); ReturnFn forces d2 by age parity
 n_d2_t2=2;
 d2_grid_t2=[1;2];
 vfopts_sz=struct();
@@ -202,7 +202,7 @@ vfopts5b.quasi_hyperbolic='Sophisticated';
 
 ReturnFn_5_noe=@(d2,a1prime,a2prime,a1,a2,semiz,z,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2) ReturnFn_nod1_z_noe_semiz_with2A(d2,a1prime,a2prime,a1,a2,semiz,z,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2);
 
-e collapsed to 1pt (n_e=1, e_grid=1, pi_e=1)
+% e collapsed to 1pt (n_e=1, e_grid=1, pi_e=1)
 vfopts5b_efull=vfopts5b;
 vfopts5b_efull.n_e=1; vfopts5b_efull.e_grid=1; vfopts5b_efull.pi_e=1;
 [V5b_efull,~]=ValueFnIter_Case1_FHorz(n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,ReturnFn_5_zfull,Params,DiscountFactorParamNames,[],vfopts5b_efull);

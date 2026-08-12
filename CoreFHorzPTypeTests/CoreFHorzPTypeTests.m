@@ -6,6 +6,17 @@
 % The ShockTests test at the end uses all 8 (z,e,semiz) combinations across 8
 % PTypes and must be set up via Names_i + per-type structures, because the
 % n_z, z_grid, pi_z and vfoptions pieces differ across types.
+%
+% No figures are drawn anywhere in this bank, so only the diary is saved.
+
+%% Diary of the command window output
+if ~exist('./TestOutput','dir')
+    mkdir('./TestOutput')
+end
+if exist('./TestOutput/CoreFHorzPTypeTestsdiary.txt','file')
+    delete('./TestOutput/CoreFHorzPTypeTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ./TestOutput/CoreFHorzPTypeTestsdiary.txt
 
 addpath('./CoreFHorzPTypeTests_subcodes/')
 addpath('./CoreFHorzPTypeTests_subcodes/ShockTests/')
@@ -43,3 +54,5 @@ output=CoreFHorzPType_PerTypeNj(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params
 output=CoreFHorzPType_ShockTests_8types(n_d,n_a,n_z,n_d_semiz,d_grid_semiz,n_d2_semiz,d2_grid_semiz,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 % All looks good!
+
+diary off

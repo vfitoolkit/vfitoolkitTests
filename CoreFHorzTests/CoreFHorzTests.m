@@ -8,6 +8,14 @@
 %
 % with/without semiz
 
+%% Diary of the command window output (figures are saved into the same folder as they are created)
+if ~exist('./TestOutput','dir')
+    mkdir('./TestOutput')
+end
+if exist('./TestOutput/CoreFHorzTestsdiary.txt','file')
+    delete('./TestOutput/CoreFHorzTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ./TestOutput/CoreFHorzTestsdiary.txt
 
 addpath('./CoreFHorzTests_subcodes/')
 addpath('./CoreFHorzTests_Setup/')
@@ -19,6 +27,7 @@ CoreFHorz_setup
 %% without d, without z, without e, without semiz
 figure_c=1;
 output=CoreFHorz_nod_noz_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 % Figure can appear to have an issue with std dev of assets, but if you look at the y-axis it is
@@ -28,6 +37,7 @@ output=CoreFHorz_nod_noz_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_gri
 %% with d, without z, without e, without semiz
 figure_c=2;
 output=CoreFHorz_d_noz_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 % Figure can appear to have an issue with std dev of assets, but if you look at the y-axis it is
@@ -37,31 +47,37 @@ output=CoreFHorz_d_noz_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_
 %% without d, with z, without e, without semiz
 figure_c=3;
 output=CoreFHorz_nod_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, with z, without e, without semiz
 figure_c=4;
 output=CoreFHorz_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d, without z, with e, without semiz
 figure_c=5;
 output=CoreFHorz_nod_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, without z, with e, without semiz
 figure_c=6;
 output=CoreFHorz_d_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d, with z, with e, without semiz
 figure_c=7;
 output=CoreFHorz_nod_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, with z, with e, without semiz
 figure_c=8;
 output=CoreFHorz_d_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
@@ -100,41 +116,49 @@ CoreFHorz_setup
 %% without d1, without z, without e, with semiz
 figure_c=9;
 output=CoreFHorz_nod1_noz_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, without z, without e, with semiz
 figure_c=10;
 output=CoreFHorz_d1_noz_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, with z, without e, with semiz
 figure_c=11;
 output=CoreFHorz_nod1_z_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good :)
 
 %% with d1, with z, without e, with semiz
 figure_c=12;
 output=CoreFHorz_d1_z_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, without z, with e, with semiz
 figure_c=13;
 output=CoreFHorz_nod1_noz_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, without z, with e, with semiz
 figure_c=14;
 output=CoreFHorz_d1_noz_e_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, with z, with e, with semiz
 figure_c=15;
 output=CoreFHorz_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, with z, with e, with semiz
 figure_c=16;
 output=CoreFHorz_d1_z_e_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
@@ -182,6 +206,7 @@ Params.phi2=0.1;
 %% without d, without z, without e, without semiz
 figure_c=17;
 output=CoreFHorz_nod_noz_noe_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 % Figure can appear to have an issue with std dev of assets, but if you look at the y-axis it is
@@ -191,6 +216,7 @@ output=CoreFHorz_nod_noz_noe_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid
 %% with d, without z, without e, without semiz
 figure_c=18;
 output=CoreFHorz_d_noz_noe_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 % Figure can appear to have an issue with std dev of assets, but if you look at the y-axis it is
@@ -200,6 +226,7 @@ output=CoreFHorz_d_noz_noe_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a
 %% without d, with z, without e, without semiz
 figure_c=19;
 output=CoreFHorz_nod_z_noe_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, with z, without e, without semiz
@@ -208,11 +235,13 @@ n_a_notsobig=[501,4]; % to test Grid Interpolation
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=CoreFHorz_d_z_noe_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d, without z, with e, without semiz
 figure_c=21;
 output=CoreFHorz_nod_noz_e_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, without z, with e, without semiz
@@ -221,11 +250,13 @@ n_a_notsobig=[501,4]; % to test Grid Interpolation
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=CoreFHorz_d_noz_e_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d, with z, with e, without semiz
 figure_c=23;
 output=CoreFHorz_nod_z_e_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, with z, with e, without semiz
@@ -234,6 +265,7 @@ n_a_notsobig=[301,4]; % to test Grid Interpolation
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=CoreFHorz_d_z_e_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
@@ -260,14 +292,17 @@ output=CoreFHorz_CrossTests_d_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_gri
 %% without d1, without z, without e, with semiz
 figure_c=25;
 output=CoreFHorz_nod1_noz_noe_semiz_with2A(n_d2_semiz,n_a_2A,n_a_2A_big,n_z,N_j,d2_grid_semiz,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d1, without z, without e, with semiz
 figure_c=26;
 output=CoreFHorz_d1_noz_noe_semiz_with2A(n_d_semiz,n_a_2A,n_a_2A_big,n_z,N_j,d_grid_semiz,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% without d1, with z, without e, with semiz
 figure_c=27;
 output=CoreFHorz_nod1_z_noe_semiz_with2A(n_d2_semiz,n_a_2A,n_a_2A_big,n_z,N_j,d2_grid_semiz,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d1, with z, without e, with semiz
 figure_c=28;
@@ -275,10 +310,12 @@ n_a_notsobig=[501,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=CoreFHorz_d1_z_noe_semiz_with2A(n_d_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% without d1, without z, with e, with semiz
 figure_c=29;
 output=CoreFHorz_nod1_noz_e_semiz_with2A(n_d2_semiz,n_a_2A,n_a_2A_big,n_z,N_j,d2_grid_semiz,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d1, without z, with e, with semiz
 figure_c=30;
@@ -286,6 +323,7 @@ n_a_notsobig=[501,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=CoreFHorz_d1_noz_e_semiz_with2A(n_d_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% without d1, with z, with e, with semiz
 figure_c=31;
@@ -293,6 +331,7 @@ n_a_notsobig=[501,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=CoreFHorz_nod1_z_e_semiz_with2A(n_d2_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d2_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d1, with z, with e, with semiz
 figure_c=32;
@@ -300,6 +339,7 @@ n_a_notsobig=[301,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=CoreFHorz_d1_z_e_semiz_with2A(n_d_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% Cross-tests for semiz
 output=CoreFHorz_CrossTests_nod1_semiz_with2A(n_d_semiz,n_d2_semiz,n_a_2A,n_a_2A_big,n_z,N_j,d_grid_semiz,d2_grid_semiz,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
@@ -323,6 +363,7 @@ output=CoreFHorz_CrossTests_d1_semiz_with2A(n_d_semiz,n_d2_semiz,n_a_2A,n_a_2A_b
 TestFnsToEvaluate
 
 %% Done! Damn that was a lot of tests. Glad that is over.
+diary off
 
 
 

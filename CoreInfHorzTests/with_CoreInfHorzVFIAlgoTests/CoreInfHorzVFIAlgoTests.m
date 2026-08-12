@@ -19,6 +19,17 @@
 %   - semiz: not implemented for InfHorz value function iteration
 % Some (option x GI) combinations are not yet implemented in the toolkit; those
 % lines are included but commented out (see CoreInfHorzVFIAlgo_algocompare.m).
+%
+% No figures are drawn anywhere in this bank, so only the diary is saved.
+
+%% Diary of the command window output (written to the parent bank's TestOutput folder)
+if ~exist('../TestOutput','dir')
+    mkdir('../TestOutput')
+end
+if exist('../TestOutput/CoreInfHorzVFIAlgoTestsdiary.txt','file')
+    delete('../TestOutput/CoreInfHorzVFIAlgoTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ../TestOutput/CoreInfHorzVFIAlgoTestsdiary.txt
 
 addpath('./CoreInfHorzVFIAlgoTests_subcodes/')
 addpath('./CoreInfHorzVFIAlgoTests_Setup/')
@@ -50,3 +61,5 @@ output=CoreInfHorzVFIAlgo_CrossTest_dummyd(n_a,n_a_big,n_z,a_grid,a_grid_big,z_g
 % things could be, but trying to set something large enough tn ensure that it always converges.
 output=CoreInfHorzVFIAlgo_ScanMaxaprimediff(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
 output=CoreInfHorzVFIAlgo_ScanPostGIrepeat(n_z,z_grid,pi_z,Params,DiscountFactorParamNames);
+
+diary off

@@ -9,6 +9,15 @@
 % with/without semiz [tests built; toolkit does not yet implement FHorz TPath with semiz]
 
 
+%% Diary of the command window output (figures are saved into the same folder as they are created)
+if ~exist('./TestOutput','dir')
+    mkdir('./TestOutput')
+end
+if exist('./TestOutput/CoreFHorzTPathTestsdiary.txt','file')
+    delete('./TestOutput/CoreFHorzTPathTestsdiary.txt') % otherwise diary just appends to the previous run
+end
+diary ./TestOutput/CoreFHorzTPathTestsdiary.txt
+
 %%
 addpath('./CoreFHorzTPathTests_subcodes/')
 addpath('./CoreFHorzTPathTests_Setup/')
@@ -28,41 +37,49 @@ CoreFHorzTPath_setup
 %% without d, without z, without e, without semiz
 figure_c=1;
 output=CoreFHorzTPath_nod_noz_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, without z, without e, without semiz
 figure_c=2;
 output=CoreFHorzTPath_d_noz_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d, with z, without e, without semiz
 figure_c=3;
 output=CoreFHorzTPath_nod_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, with z, without e, without semiz
 figure_c=4;
 output=CoreFHorzTPath_d_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d, without z, with e, without semiz
 figure_c=5;
 output=CoreFHorzTPath_nod_noz_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, without z, with e, without semiz
 figure_c=6;
 output=CoreFHorzTPath_d_noz_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d, with z, with e, without semiz
 figure_c=7;
 output=CoreFHorzTPath_nod_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d, with z, with e, without semiz
 figure_c=8;
 output=CoreFHorzTPath_d_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
@@ -102,41 +119,49 @@ CoreFHorzTPath_setup
 %% without d1, without z, without e, with semiz
 figure_c=9;
 output=CoreFHorzTPath_nod1_noz_noe_semiz(T,PricePath,ParamPath,n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, without z, without e, with semiz
 figure_c=10;
 output=CoreFHorzTPath_d1_noz_noe_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, with z, without e, with semiz
 figure_c=11;
 output=CoreFHorzTPath_nod1_z_noe_semiz(T,PricePath,ParamPath,n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, with z, without e, with semiz
 figure_c=12;
 output=CoreFHorzTPath_d1_z_noe_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, without z, with e, with semiz
 figure_c=13;
 output=CoreFHorzTPath_nod1_noz_e_semiz(T,PricePath,ParamPath,n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, without z, with e, with semiz
 figure_c=14;
 output=CoreFHorzTPath_d1_noz_e_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, with z, with e, with semiz
 figure_c=15;
 output=CoreFHorzTPath_nod1_z_e_semiz(T,PricePath,ParamPath,n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, with z, with e, with semiz
 figure_c=16;
 output=CoreFHorzTPath_d1_z_e_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
@@ -154,7 +179,7 @@ output=CoreFHorzTPath_CrossTests2_d1_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n
 
 
 
+diary off
+
 %% THINGS NOT CHECKED
 % Check using two decision variables in the semiz codes (both for d1 and for d2, and without d1)
-
-
