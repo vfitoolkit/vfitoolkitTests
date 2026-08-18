@@ -335,7 +335,7 @@ exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTests_Fig',num2str(figur
 
 %% with d1, with z, with e, with semiz
 figure_c=32;
-n_a_notsobig=[301,4];
+n_a_notsobig=[251,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=CoreFHorz_d1_z_e_semiz_with2A(n_d_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);

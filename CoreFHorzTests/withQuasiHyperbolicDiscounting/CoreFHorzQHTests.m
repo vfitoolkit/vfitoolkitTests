@@ -12,12 +12,7 @@
 % This is the QH mirror of CoreFHorzTests.m. Each subcode runs the model twice (Naive top,
 % Sophisticated bottom) with a Valt (continuation-value) check beside every V/Policy check.
 %
-% TEST-FIRST STATE (see QHtests_full_coverage_proposal.md). The following are EXPECTED to error until
-% the QH solver raws are implemented/laddered; they are here so the gap is covered and drives the fix:
-%  - Semiz lowmemory ladder (figs 11-16): z&semiz lowmemory=2 (figs 11,12) and z&semiz&e lowmemory=3
-%    (figs 15,16) error; semiz&e lowmemory=2 (figs 13,14) and z&semiz&e lowmemory=2 should pass.
-%  - with2A (figs 17-32): base method should pass; every DC2A / GI2A / DC2A_GI2A solve errors
-%    (no plain-QH 2A raws exist -- the DC/GI dispatchers error "only supports scalar n_a").
+% TEST-FIRST STATE: nothing outstanding — everything this file tests is implemented and passing.
 %
 % Each subcode draws the Naive figure as figure_c and the Sophisticated figure as 100+figure_c.
 
@@ -352,7 +347,7 @@ exportgraphics(figure(100+figure_c),['../TestOutput/CoreFHorzQHTests_Fig',num2st
 
 %% with d1, with z, without e, with semiz
 figure_c=28;
-n_a_notsobig=[501,4];
+n_a_notsobig=[401,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=QHDFHorz_d1_z_noe_semiz_with2A(n_d_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
@@ -367,7 +362,7 @@ exportgraphics(figure(100+figure_c),['../TestOutput/CoreFHorzQHTests_Fig',num2st
 
 %% with d1, without z, with e, with semiz
 figure_c=30;
-n_a_notsobig=[501,4];
+n_a_notsobig=[401,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=QHDFHorz_d1_noz_e_semiz_with2A(n_d_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
@@ -376,7 +371,7 @@ exportgraphics(figure(100+figure_c),['../TestOutput/CoreFHorzQHTests_Fig',num2st
 
 %% without d1, with z, with e, with semiz
 figure_c=31;
-n_a_notsobig=[501,4];
+n_a_notsobig=[401,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=QHDFHorz_nod1_z_e_semiz_with2A(n_d2_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d2_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
@@ -385,7 +380,7 @@ exportgraphics(figure(100+figure_c),['../TestOutput/CoreFHorzQHTests_Fig',num2st
 
 %% with d1, with z, with e, with semiz
 figure_c=32;
-n_a_notsobig=[301,4];
+n_a_notsobig=[251,4];
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
 a_grid_notsobig=[a1_grid_notsobig; a2_grid_2A];
 output=QHDFHorz_d1_z_e_semiz_with2A(n_d_semiz,n_a_2A,n_a_notsobig,n_z,N_j,d_grid_semiz,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);

@@ -51,214 +51,263 @@ vfoptions.exoticpreferences='QuasiHyperbolic';
 vfoptions.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 
 %% Naive then Sophisticated: base / DC2A / GI2A / DC2A_GI2A
-for qhcase=1:2
-    if qhcase==1
-        qh='Naive';
-    else
-        qh='Sophisticated';
-    end
-    vfoptions.quasi_hyperbolic=qh;
+%% Naive
+qh='Naive';
+vfoptions.quasi_hyperbolic=qh;
 
-    % Base (2 standard assets -> combined N_a1)
-    vfoptions1=vfoptions;
-    if qhcase==1 % Naive also returns Policyalt (4th output), needed by the ValueFnFromPolicy oracle below
-        [V1,Policy1,V1alt,Policy1alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    else
-        [V1,Policy1,V1alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    end
+% Base (2 standard assets -> combined N_a1)
+vfoptions1=vfoptions;
+[V1,Policy1,V1alt,Policy1alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
 
-    % SemiExo ValueFnFromPolicy oracle on the base method (QH->SemiExo->ExpAssetze_SemiExo routing, now with two standard assets)
-    vfoptionsVFP=vfoptions1;
-    vfoptionsVFP.lowmemory=0;
-    if qhcase==1
-        vfoptionsVFP.Policyalt=Policy1alt; % Naive QH: ValueFnFromPolicy reconstructs V from the exponential-discounter argmax (4th output of the Naive solve)
-    end
-    [V1fromPolicy,V1altfromPolicy]=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP);
-    fprintf('%s ValueFnFromPolicy, this should be zero: %2.8f \n',qh,max(abs(V1fromPolicy(:)-V1(:))))
-    fprintf('%s ValueFnFromPolicy (Valt), this should be zero: %2.8f \n',qh,max(abs(V1altfromPolicy(:)-V1alt(:))))
+% SemiExo ValueFnFromPolicy oracle on the base method (QH->SemiExo->ExpAssetze_SemiExo routing, now with two standard assets)
+vfoptionsVFP=vfoptions1;
+vfoptionsVFP.lowmemory=0;
+vfoptionsVFP.Policyalt=Policy1alt; % Naive QH: ValueFnFromPolicy reconstructs V from the exponential-discounter argmax (4th output of the Naive solve)
+[V1fromPolicy,V1altfromPolicy]=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP);
+fprintf('%s ValueFnFromPolicy, this should be zero: %2.8f \n',qh,max(abs(V1fromPolicy(:)-V1(:))))
+fprintf('%s ValueFnFromPolicy (Valt), this should be zero: %2.8f \n',qh,max(abs(V1altfromPolicy(:)-V1alt(:))))
 
-    % lowmemory on base
-    vfoptions1.lowmemory=1;
-    if qhcase==1
-        [V1B,Policy1B,V1Balt,Policy1Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    else
-        [V1B,Policy1B,V1Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    end
-    fprintf('%s lowmemory=1 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1B(:))))
-    fprintf('%s lowmemory=1 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Balt(:))))
-    fprintf('%s lowmemory=1 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1B(:))))
-    if qhcase==1, fprintf('%s lowmemory=1 (base, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy1alt(:)-Policy1Balt(:)))); end
-    vfoptions1.lowmemory=2;
-    if qhcase==1
-        [V1C,Policy1C,V1Calt,Policy1Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    else
-        [V1C,Policy1C,V1Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    end
-    fprintf('%s lowmemory=2 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1C(:))))
-    fprintf('%s lowmemory=2 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Calt(:))))
-    fprintf('%s lowmemory=2 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1C(:))))
-    if qhcase==1, fprintf('%s lowmemory=2 (base, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy1alt(:)-Policy1Calt(:)))); end
-    vfoptions1.lowmemory=3;
-    if qhcase==1
-        [V1D,Policy1D,V1Dalt,Policy1Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    else
-        [V1D,Policy1D,V1Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    end
-    fprintf('%s lowmemory=3 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1D(:))))
-    fprintf('%s lowmemory=3 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Dalt(:))))
-    fprintf('%s lowmemory=3 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1D(:))))
-    if qhcase==1, fprintf('%s lowmemory=3 (base, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy1alt(:)-Policy1Dalt(:)))); end
-    vfoptions1.lowmemory=0;
+% lowmemory on base
+vfoptions1.lowmemory=1;
+[V1B,Policy1B,V1Balt,Policy1Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('%s lowmemory=1 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1B(:))))
+fprintf('%s lowmemory=1 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Balt(:))))
+fprintf('%s lowmemory=1 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1B(:))))
+fprintf('%s lowmemory=1 (base, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy1alt(:)-Policy1Balt(:))));
+vfoptions1.lowmemory=2;
+[V1C,Policy1C,V1Calt,Policy1Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('%s lowmemory=2 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1C(:))))
+fprintf('%s lowmemory=2 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Calt(:))))
+fprintf('%s lowmemory=2 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1C(:))))
+fprintf('%s lowmemory=2 (base, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy1alt(:)-Policy1Calt(:))));
+vfoptions1.lowmemory=3;
+[V1D,Policy1D,V1Dalt,Policy1Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('%s lowmemory=3 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1D(:))))
+fprintf('%s lowmemory=3 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Dalt(:))))
+fprintf('%s lowmemory=3 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1D(:))))
+fprintf('%s lowmemory=3 (base, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy1alt(:)-Policy1Dalt(:))));
+vfoptions1.lowmemory=0;
 
-    % Divide-and-conquer -> DC2A, should give same answer as base
-    vfoptions2=vfoptions; vfoptions2.divideandconquer=1;
-    if qhcase==1 % Naive also returns Policyalt (4th output), needed by the ValueFnFromPolicy oracle below
-        [V2,Policy2,V2alt,Policy2alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    else
-        [V2,Policy2,V2alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    end
-    fprintf('%s DC2A, this should be zero: %2.8f \n',qh,max(abs(V1(:)-V2(:))))
-    fprintf('%s DC2A (Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V2alt(:))))
-    fprintf('%s DC2A (Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy2(:))))
-    if qhcase==1, fprintf('%s DC2A (Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy1alt(:)-Policy2alt(:)))); end
-    % ValueFnFromPolicy oracle on DC2A (non-GI SemiExo VFP)
-    vfoptionsVFP2=vfoptions2; vfoptionsVFP2.lowmemory=0;
-    if qhcase==1, vfoptionsVFP2.Policyalt=Policy2alt; end
-    [V2fromPolicy,V2altfromPolicy]=ValueFnFromPolicy_FHorz(Policy2,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP2);
-    fprintf('%s ValueFnFromPolicy (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2fromPolicy(:)-V2(:))))
-    fprintf('%s ValueFnFromPolicy (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2altfromPolicy(:)-V2alt(:))))
+% Divide-and-conquer -> DC2A, should give same answer as base
+vfoptions2=vfoptions; vfoptions2.divideandconquer=1;
+[V2,Policy2,V2alt,Policy2alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('%s DC2A, this should be zero: %2.8f \n',qh,max(abs(V1(:)-V2(:))))
+fprintf('%s DC2A (Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V2alt(:))))
+fprintf('%s DC2A (Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy2(:))))
+fprintf('%s DC2A (Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy1alt(:)-Policy2alt(:))));
+% ValueFnFromPolicy oracle on DC2A (non-GI SemiExo VFP)
+vfoptionsVFP2=vfoptions2; vfoptionsVFP2.lowmemory=0;
+vfoptionsVFP2.Policyalt=Policy2alt;
+[V2fromPolicy,V2altfromPolicy]=ValueFnFromPolicy_FHorz(Policy2,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP2);
+fprintf('%s ValueFnFromPolicy (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2fromPolicy(:)-V2(:))))
+fprintf('%s ValueFnFromPolicy (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2altfromPolicy(:)-V2alt(:))))
 
-    % lowmemory on DC2A
-    vfoptions2.lowmemory=1;
-    if qhcase==1
-        [V2B,Policy2B,V2Balt,Policy2Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    else
-        [V2B,Policy2B,V2Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    end
-    fprintf('%s lowmemory=1 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2B(:))))
-    fprintf('%s lowmemory=1 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Balt(:))))
-    fprintf('%s lowmemory=1 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2B(:))))
-    if qhcase==1, fprintf('%s lowmemory=1 (DC2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy2alt(:)-Policy2Balt(:)))); end
-    vfoptions2.lowmemory=2;
-    if qhcase==1
-        [V2C,Policy2C,V2Calt,Policy2Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    else
-        [V2C,Policy2C,V2Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    end
-    fprintf('%s lowmemory=2 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2C(:))))
-    fprintf('%s lowmemory=2 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Calt(:))))
-    fprintf('%s lowmemory=2 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2C(:))))
-    if qhcase==1, fprintf('%s lowmemory=2 (DC2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy2alt(:)-Policy2Calt(:)))); end
-    vfoptions2.lowmemory=3;
-    if qhcase==1
-        [V2D,Policy2D,V2Dalt,Policy2Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    else
-        [V2D,Policy2D,V2Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    end
-    fprintf('%s lowmemory=3 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2D(:))))
-    fprintf('%s lowmemory=3 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Dalt(:))))
-    fprintf('%s lowmemory=3 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2D(:))))
-    if qhcase==1, fprintf('%s lowmemory=3 (DC2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy2alt(:)-Policy2Dalt(:)))); end
-    vfoptions2.lowmemory=0;
+% lowmemory on DC2A
+vfoptions2.lowmemory=1;
+[V2B,Policy2B,V2Balt,Policy2Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('%s lowmemory=1 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2B(:))))
+fprintf('%s lowmemory=1 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Balt(:))))
+fprintf('%s lowmemory=1 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2B(:))))
+fprintf('%s lowmemory=1 (DC2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy2alt(:)-Policy2Balt(:))));
+vfoptions2.lowmemory=2;
+[V2C,Policy2C,V2Calt,Policy2Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('%s lowmemory=2 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2C(:))))
+fprintf('%s lowmemory=2 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Calt(:))))
+fprintf('%s lowmemory=2 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2C(:))))
+fprintf('%s lowmemory=2 (DC2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy2alt(:)-Policy2Calt(:))));
+vfoptions2.lowmemory=3;
+[V2D,Policy2D,V2Dalt,Policy2Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('%s lowmemory=3 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2D(:))))
+fprintf('%s lowmemory=3 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Dalt(:))))
+fprintf('%s lowmemory=3 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2D(:))))
+fprintf('%s lowmemory=3 (DC2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy2alt(:)-Policy2Dalt(:))));
+vfoptions2.lowmemory=0;
 
-    % Grid interpolation -> GI2A (GI changes the solution slightly vs base, so no direct base equality check)
-    vfoptions3=vfoptions; vfoptions3.gridinterplayer=1; vfoptions3.ngridinterp=5;
-    if qhcase==1 % Naive also returns Policyalt (4th output), needed by the ValueFnFromPolicy oracle below
-        [V3,Policy3,V3alt,Policy3alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-    else
-        [V3,Policy3,V3alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-    end
-    % ValueFnFromPolicy oracle on GI2A (routes to the SemiExo-GI VFP via vfoptions.gridinterplayer)
-    vfoptionsVFP3=vfoptions3; vfoptionsVFP3.lowmemory=0;
-    if qhcase==1, vfoptionsVFP3.Policyalt=Policy3alt; end
-    [V3fromPolicy,V3altfromPolicy]=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP3);
-    fprintf('%s ValueFnFromPolicy (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3fromPolicy(:)-V3(:))))
-    fprintf('%s ValueFnFromPolicy (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3altfromPolicy(:)-V3alt(:))))
+% Grid interpolation -> GI2A (GI changes the solution slightly vs base, so no direct base equality check)
+vfoptions3=vfoptions; vfoptions3.gridinterplayer=1; vfoptions3.ngridinterp=5;
+[V3,Policy3,V3alt,Policy3alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+% ValueFnFromPolicy oracle on GI2A (routes to the SemiExo-GI VFP via vfoptions.gridinterplayer)
+vfoptionsVFP3=vfoptions3; vfoptionsVFP3.lowmemory=0;
+vfoptionsVFP3.Policyalt=Policy3alt;
+[V3fromPolicy,V3altfromPolicy]=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP3);
+fprintf('%s ValueFnFromPolicy (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3fromPolicy(:)-V3(:))))
+fprintf('%s ValueFnFromPolicy (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3altfromPolicy(:)-V3alt(:))))
 
-    % lowmemory on GI2A
-    vfoptions3.lowmemory=1;
-    if qhcase==1
-        [V3B,Policy3B,V3Balt,Policy3Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-    else
-        [V3B,Policy3B,V3Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-    end
-    fprintf('%s lowmemory=1 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3B(:))))
-    fprintf('%s lowmemory=1 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Balt(:))))
-    fprintf('%s lowmemory=1 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3B(:))))
-    if qhcase==1, fprintf('%s lowmemory=1 (GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy3alt(:)-Policy3Balt(:)))); end
-    vfoptions3.lowmemory=2;
-    if qhcase==1
-        [V3C,Policy3C,V3Calt,Policy3Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-    else
-        [V3C,Policy3C,V3Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-    end
-    fprintf('%s lowmemory=2 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3C(:))))
-    fprintf('%s lowmemory=2 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Calt(:))))
-    fprintf('%s lowmemory=2 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3C(:))))
-    if qhcase==1, fprintf('%s lowmemory=2 (GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy3alt(:)-Policy3Calt(:)))); end
-    vfoptions3.lowmemory=3;
-    if qhcase==1
-        [V3D,Policy3D,V3Dalt,Policy3Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-    else
-        [V3D,Policy3D,V3Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-    end
-    fprintf('%s lowmemory=3 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3D(:))))
-    fprintf('%s lowmemory=3 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Dalt(:))))
-    fprintf('%s lowmemory=3 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3D(:))))
-    if qhcase==1, fprintf('%s lowmemory=3 (GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy3alt(:)-Policy3Dalt(:)))); end
-    vfoptions3.lowmemory=0;
+% lowmemory on GI2A
+vfoptions3.lowmemory=1;
+[V3B,Policy3B,V3Balt,Policy3Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('%s lowmemory=1 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3B(:))))
+fprintf('%s lowmemory=1 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Balt(:))))
+fprintf('%s lowmemory=1 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3B(:))))
+fprintf('%s lowmemory=1 (GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy3alt(:)-Policy3Balt(:))));
+vfoptions3.lowmemory=2;
+[V3C,Policy3C,V3Calt,Policy3Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('%s lowmemory=2 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3C(:))))
+fprintf('%s lowmemory=2 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Calt(:))))
+fprintf('%s lowmemory=2 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3C(:))))
+fprintf('%s lowmemory=2 (GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy3alt(:)-Policy3Calt(:))));
+vfoptions3.lowmemory=3;
+[V3D,Policy3D,V3Dalt,Policy3Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('%s lowmemory=3 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3D(:))))
+fprintf('%s lowmemory=3 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Dalt(:))))
+fprintf('%s lowmemory=3 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3D(:))))
+fprintf('%s lowmemory=3 (GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy3alt(:)-Policy3Dalt(:))));
+vfoptions3.lowmemory=0;
 
-    % DC + GI -> DC2A_GI2A, should match GI2A
-    vfoptions4=vfoptions; vfoptions4.divideandconquer=1; vfoptions4.gridinterplayer=1; vfoptions4.ngridinterp=5;
-    if qhcase==1 % Naive also returns Policyalt (4th output), needed by the ValueFnFromPolicy oracle below
-        [V4,Policy4,V4alt,Policy4alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    else
-        [V4,Policy4,V4alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    end
-    fprintf('%s DC2A_GI2A vs GI2A, this should be zero: %2.8f \n',qh,max(abs(V3(:)-V4(:))))
-    fprintf('%s DC2A_GI2A vs GI2A (Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V4alt(:))))
-    fprintf('%s DC2A_GI2A vs GI2A (Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy4(:))))
-    if qhcase==1, fprintf('%s DC2A_GI2A vs GI2A (Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy3alt(:)-Policy4alt(:)))); end
-    % ValueFnFromPolicy oracle on DC2A_GI2A (routes to the SemiExo-GI VFP via vfoptions.gridinterplayer)
-    vfoptionsVFP4=vfoptions4; vfoptionsVFP4.lowmemory=0;
-    if qhcase==1, vfoptionsVFP4.Policyalt=Policy4alt; end
-    [V4fromPolicy,V4altfromPolicy]=ValueFnFromPolicy_FHorz(Policy4,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP4);
-    fprintf('%s ValueFnFromPolicy (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4fromPolicy(:)-V4(:))))
-    fprintf('%s ValueFnFromPolicy (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4altfromPolicy(:)-V4alt(:))))
+% DC + GI -> DC2A_GI2A, should match GI2A
+vfoptions4=vfoptions; vfoptions4.divideandconquer=1; vfoptions4.gridinterplayer=1; vfoptions4.ngridinterp=5;
+[V4,Policy4,V4alt,Policy4alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('%s DC2A_GI2A vs GI2A, this should be zero: %2.8f \n',qh,max(abs(V3(:)-V4(:))))
+fprintf('%s DC2A_GI2A vs GI2A (Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V4alt(:))))
+fprintf('%s DC2A_GI2A vs GI2A (Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy4(:))))
+fprintf('%s DC2A_GI2A vs GI2A (Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy3alt(:)-Policy4alt(:))));
+% ValueFnFromPolicy oracle on DC2A_GI2A (routes to the SemiExo-GI VFP via vfoptions.gridinterplayer)
+vfoptionsVFP4=vfoptions4; vfoptionsVFP4.lowmemory=0;
+vfoptionsVFP4.Policyalt=Policy4alt;
+[V4fromPolicy,V4altfromPolicy]=ValueFnFromPolicy_FHorz(Policy4,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP4);
+fprintf('%s ValueFnFromPolicy (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4fromPolicy(:)-V4(:))))
+fprintf('%s ValueFnFromPolicy (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4altfromPolicy(:)-V4alt(:))))
 
-    % lowmemory on DC2A_GI2A
-    vfoptions4.lowmemory=1;
-    if qhcase==1
-        [V4B,Policy4B,V4Balt,Policy4Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    else
-        [V4B,Policy4B,V4Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    end
-    fprintf('%s lowmemory=1 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4B(:))))
-    fprintf('%s lowmemory=1 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Balt(:))))
-    fprintf('%s lowmemory=1 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4B(:))))
-    if qhcase==1, fprintf('%s lowmemory=1 (DC2A_GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy4alt(:)-Policy4Balt(:)))); end
-    vfoptions4.lowmemory=2;
-    if qhcase==1
-        [V4C,Policy4C,V4Calt,Policy4Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    else
-        [V4C,Policy4C,V4Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    end
-    fprintf('%s lowmemory=2 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4C(:))))
-    fprintf('%s lowmemory=2 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Calt(:))))
-    fprintf('%s lowmemory=2 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4C(:))))
-    if qhcase==1, fprintf('%s lowmemory=2 (DC2A_GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy4alt(:)-Policy4Calt(:)))); end
-    vfoptions4.lowmemory=3;
-    if qhcase==1
-        [V4D,Policy4D,V4Dalt,Policy4Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    else
-        [V4D,Policy4D,V4Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    end
-    fprintf('%s lowmemory=3 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4D(:))))
-    fprintf('%s lowmemory=3 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Dalt(:))))
-    fprintf('%s lowmemory=3 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4D(:))))
-    if qhcase==1, fprintf('%s lowmemory=3 (DC2A_GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy4alt(:)-Policy4Dalt(:)))); end
-    vfoptions4.lowmemory=0;
-end
+% lowmemory on DC2A_GI2A
+vfoptions4.lowmemory=1;
+[V4B,Policy4B,V4Balt,Policy4Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('%s lowmemory=1 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4B(:))))
+fprintf('%s lowmemory=1 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Balt(:))))
+fprintf('%s lowmemory=1 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4B(:))))
+fprintf('%s lowmemory=1 (DC2A_GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy4alt(:)-Policy4Balt(:))));
+vfoptions4.lowmemory=2;
+[V4C,Policy4C,V4Calt,Policy4Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('%s lowmemory=2 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4C(:))))
+fprintf('%s lowmemory=2 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Calt(:))))
+fprintf('%s lowmemory=2 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4C(:))))
+fprintf('%s lowmemory=2 (DC2A_GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy4alt(:)-Policy4Calt(:))));
+vfoptions4.lowmemory=3;
+[V4D,Policy4D,V4Dalt,Policy4Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('%s lowmemory=3 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4D(:))))
+fprintf('%s lowmemory=3 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Dalt(:))))
+fprintf('%s lowmemory=3 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4D(:))))
+fprintf('%s lowmemory=3 (DC2A_GI2A, Policyalt), this should be zero: %2.8f \n',qh,max(abs(Policy4alt(:)-Policy4Dalt(:))));
+vfoptions4.lowmemory=0;
+
+%% Sophisticated
+qh='Sophisticated';
+vfoptions.quasi_hyperbolic=qh;
+
+% Base (2 standard assets -> combined N_a1)
+vfoptions1=vfoptions;
+[V1,Policy1,V1alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+
+% SemiExo ValueFnFromPolicy oracle on the base method (QH->SemiExo->ExpAssetze_SemiExo routing, now with two standard assets)
+vfoptionsVFP=vfoptions1;
+vfoptionsVFP.lowmemory=0;
+[V1fromPolicy,V1altfromPolicy]=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP);
+fprintf('%s ValueFnFromPolicy, this should be zero: %2.8f \n',qh,max(abs(V1fromPolicy(:)-V1(:))))
+fprintf('%s ValueFnFromPolicy (Valt), this should be zero: %2.8f \n',qh,max(abs(V1altfromPolicy(:)-V1alt(:))))
+
+% lowmemory on base
+vfoptions1.lowmemory=1;
+[V1B,Policy1B,V1Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('%s lowmemory=1 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1B(:))))
+fprintf('%s lowmemory=1 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Balt(:))))
+fprintf('%s lowmemory=1 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1B(:))))
+vfoptions1.lowmemory=2;
+[V1C,Policy1C,V1Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('%s lowmemory=2 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1C(:))))
+fprintf('%s lowmemory=2 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Calt(:))))
+fprintf('%s lowmemory=2 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1C(:))))
+vfoptions1.lowmemory=3;
+[V1D,Policy1D,V1Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+fprintf('%s lowmemory=3 (base), this should be zero: %2.8f \n',qh,max(abs(V1(:)-V1D(:))))
+fprintf('%s lowmemory=3 (base, Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V1Dalt(:))))
+fprintf('%s lowmemory=3 (base, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy1D(:))))
+vfoptions1.lowmemory=0;
+
+% Divide-and-conquer -> DC2A, should give same answer as base
+vfoptions2=vfoptions; vfoptions2.divideandconquer=1;
+[V2,Policy2,V2alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('%s DC2A, this should be zero: %2.8f \n',qh,max(abs(V1(:)-V2(:))))
+fprintf('%s DC2A (Valt), this should be zero: %2.8f \n',qh,max(abs(V1alt(:)-V2alt(:))))
+fprintf('%s DC2A (Policy), this should be zero: %2.8f \n',qh,max(abs(Policy1(:)-Policy2(:))))
+% ValueFnFromPolicy oracle on DC2A (non-GI SemiExo VFP)
+vfoptionsVFP2=vfoptions2; vfoptionsVFP2.lowmemory=0;
+[V2fromPolicy,V2altfromPolicy]=ValueFnFromPolicy_FHorz(Policy2,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP2);
+fprintf('%s ValueFnFromPolicy (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2fromPolicy(:)-V2(:))))
+fprintf('%s ValueFnFromPolicy (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2altfromPolicy(:)-V2alt(:))))
+
+% lowmemory on DC2A
+vfoptions2.lowmemory=1;
+[V2B,Policy2B,V2Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('%s lowmemory=1 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2B(:))))
+fprintf('%s lowmemory=1 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Balt(:))))
+fprintf('%s lowmemory=1 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2B(:))))
+vfoptions2.lowmemory=2;
+[V2C,Policy2C,V2Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('%s lowmemory=2 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2C(:))))
+fprintf('%s lowmemory=2 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Calt(:))))
+fprintf('%s lowmemory=2 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2C(:))))
+vfoptions2.lowmemory=3;
+[V2D,Policy2D,V2Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+fprintf('%s lowmemory=3 (DC2A), this should be zero: %2.8f \n',qh,max(abs(V2(:)-V2D(:))))
+fprintf('%s lowmemory=3 (DC2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V2alt(:)-V2Dalt(:))))
+fprintf('%s lowmemory=3 (DC2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy2(:)-Policy2D(:))))
+vfoptions2.lowmemory=0;
+
+% Grid interpolation -> GI2A (GI changes the solution slightly vs base, so no direct base equality check)
+vfoptions3=vfoptions; vfoptions3.gridinterplayer=1; vfoptions3.ngridinterp=5;
+[V3,Policy3,V3alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+% ValueFnFromPolicy oracle on GI2A (routes to the SemiExo-GI VFP via vfoptions.gridinterplayer)
+vfoptionsVFP3=vfoptions3; vfoptionsVFP3.lowmemory=0;
+[V3fromPolicy,V3altfromPolicy]=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP3);
+fprintf('%s ValueFnFromPolicy (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3fromPolicy(:)-V3(:))))
+fprintf('%s ValueFnFromPolicy (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3altfromPolicy(:)-V3alt(:))))
+
+% lowmemory on GI2A
+vfoptions3.lowmemory=1;
+[V3B,Policy3B,V3Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('%s lowmemory=1 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3B(:))))
+fprintf('%s lowmemory=1 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Balt(:))))
+fprintf('%s lowmemory=1 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3B(:))))
+vfoptions3.lowmemory=2;
+[V3C,Policy3C,V3Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('%s lowmemory=2 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3C(:))))
+fprintf('%s lowmemory=2 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Calt(:))))
+fprintf('%s lowmemory=2 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3C(:))))
+vfoptions3.lowmemory=3;
+[V3D,Policy3D,V3Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+fprintf('%s lowmemory=3 (GI2A), this should be zero: %2.8f \n',qh,max(abs(V3(:)-V3D(:))))
+fprintf('%s lowmemory=3 (GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V3Dalt(:))))
+fprintf('%s lowmemory=3 (GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy3D(:))))
+vfoptions3.lowmemory=0;
+
+% DC + GI -> DC2A_GI2A, should match GI2A
+vfoptions4=vfoptions; vfoptions4.divideandconquer=1; vfoptions4.gridinterplayer=1; vfoptions4.ngridinterp=5;
+[V4,Policy4,V4alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('%s DC2A_GI2A vs GI2A, this should be zero: %2.8f \n',qh,max(abs(V3(:)-V4(:))))
+fprintf('%s DC2A_GI2A vs GI2A (Valt), this should be zero: %2.8f \n',qh,max(abs(V3alt(:)-V4alt(:))))
+fprintf('%s DC2A_GI2A vs GI2A (Policy), this should be zero: %2.8f \n',qh,max(abs(Policy3(:)-Policy4(:))))
+% ValueFnFromPolicy oracle on DC2A_GI2A (routes to the SemiExo-GI VFP via vfoptions.gridinterplayer)
+vfoptionsVFP4=vfoptions4; vfoptionsVFP4.lowmemory=0;
+[V4fromPolicy,V4altfromPolicy]=ValueFnFromPolicy_FHorz(Policy4,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP4);
+fprintf('%s ValueFnFromPolicy (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4fromPolicy(:)-V4(:))))
+fprintf('%s ValueFnFromPolicy (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4altfromPolicy(:)-V4alt(:))))
+
+% lowmemory on DC2A_GI2A
+vfoptions4.lowmemory=1;
+[V4B,Policy4B,V4Balt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('%s lowmemory=1 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4B(:))))
+fprintf('%s lowmemory=1 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Balt(:))))
+fprintf('%s lowmemory=1 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4B(:))))
+vfoptions4.lowmemory=2;
+[V4C,Policy4C,V4Calt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('%s lowmemory=2 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4C(:))))
+fprintf('%s lowmemory=2 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Calt(:))))
+fprintf('%s lowmemory=2 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4C(:))))
+vfoptions4.lowmemory=3;
+[V4D,Policy4D,V4Dalt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+fprintf('%s lowmemory=3 (DC2A_GI2A), this should be zero: %2.8f \n',qh,max(abs(V4(:)-V4D(:))))
+fprintf('%s lowmemory=3 (DC2A_GI2A, Valt), this should be zero: %2.8f \n',qh,max(abs(V4alt(:)-V4Dalt(:))))
+fprintf('%s lowmemory=3 (DC2A_GI2A, Policy), this should be zero: %2.8f \n',qh,max(abs(Policy4(:)-Policy4D(:))))
+vfoptions4.lowmemory=0;
 
 %% Versus exponential discounting (at baseline; DC2A already shown equal to base above)
 % (i) at the actual QH beta0, Naive's continuation value equals the exponential value function

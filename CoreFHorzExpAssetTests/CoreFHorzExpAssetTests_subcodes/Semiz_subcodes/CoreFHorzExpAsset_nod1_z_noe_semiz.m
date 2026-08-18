@@ -78,7 +78,7 @@ clear V1 V2 V1B V2B Policy1 Policy2 Policy1B Policy2B PolicyVals1 V1fromPolicy
 %% Solve with grid-interpolation
 vfoptions3=vfoptions;
 vfoptions3.gridinterplayer=1;
-vfoptions3.ngridinterp=1; % 5
+vfoptions3.ngridinterp=5;
 simoptions3=simoptions;
 simoptions3.gridinterplayer=vfoptions3.gridinterplayer;
 simoptions3.ngridinterp=vfoptions3.ngridinterp;
@@ -93,7 +93,7 @@ fprintf('ValueFnFromPolicy with grid interp, this should be zero: %2.8f \n',max(
 vfoptions4=vfoptions;
 vfoptions4.divideandconquer=1;
 vfoptions4.gridinterplayer=1;
-vfoptions4.ngridinterp=1; % 5
+vfoptions4.ngridinterp=5;
 simoptions4=simoptions;
 simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
