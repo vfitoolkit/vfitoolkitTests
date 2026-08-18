@@ -188,6 +188,12 @@ figure_c=10;
 output=CoreFHorzExpAssetze_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
+%% with2A1 nosemiz cross-tests
+% CrossTest 6: a degenerate second standard asset a1_2 (single point {0}) reduces the
+% two-standard-asset model back to the with-a1 model
+output=CoreFHorzExpAssetze_CrossTests6_nod1_with2A1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetze_CrossTests6_d1_with2A1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
 %% with2A1 + semiz
 
 %% with2A1, without d1, with z, with e, with semiz

@@ -30,6 +30,7 @@ addpath('./CoreFHorzExpAssete_ReturnFns/')
 addpath('./CoreFHorzExpAsseteTests_subcodes/CrossTests/')
 % Cross-tests compare against experienceassetz and experienceasset, so need their ReturnFns
 addpath('../CoreFHorzExpAssetzTests/CoreFHorzExpAssetz_ReturnFns/')
+addpath('../CoreFHorzExpAssetzTests/CoreFHorzExpAssetz_ReturnFns/Noa1_ReturnFns/')
 
 
 %% Setup so that use the same d,a,z,e in all the models that use them
@@ -70,6 +71,18 @@ exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2
 output=CoreFHorzExpAssete_CrossTests3_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssete_CrossTests3_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
+% CrossTest 3 at the leaner shock case (e only, no ordinary z)
+output=CoreFHorzExpAssete_CrossTests3_nod1_noz_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests3_d1_noz_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 1 at noa1: experienceassete iid-e vs experienceassetz iid-markov-z
+output=CoreFHorzExpAssete_CrossTests_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 2 at noa1: fake-e-ignored experienceassete vs plain experienceasset
+output=CoreFHorzExpAssete_CrossTests2_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests2_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
 
 %% noa1 semiz (4 variants)
 % PENDING TOOLKIT SUPPORT: ExpAssete+SemiExo+noa1 raws do not exist yet (being built
@@ -101,6 +114,18 @@ exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2
 % CrossTest3+semiz: noa1 vs model with a1 but where it is ignored (a1=1 degenerate)
 output=CoreFHorzExpAssete_CrossTests3_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssete_CrossTests3_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 3 at the leaner shock case (e only, no ordinary z)
+output=CoreFHorzExpAssete_CrossTests3_nod1_noz_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests3_d1_noz_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 1 at noa1: experienceassete iid-e vs experienceassetz iid-markov-z
+output=CoreFHorzExpAssete_CrossTests_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 2 at noa1: fake-e-ignored experienceassete vs plain experienceasset
+output=CoreFHorzExpAssete_CrossTests2_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests2_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 
 %% ================= WITH a1 (figs 9-16) =================

@@ -37,6 +37,7 @@ addpath('./CoreFHorzExpAssetz_ReturnFns/')
 addpath('./CoreFHorzExpAssetzTests_subcodes/CrossTests/')
 % Cross-tests compare against experienceassete and experienceasset, so need their ReturnFns
 addpath('../CoreFHorzExpAsseteTests/CoreFHorzExpAssete_ReturnFns/')
+addpath('../CoreFHorzExpAsseteTests/CoreFHorzExpAssete_ReturnFns/Noa1_ReturnFns/')
 
 
 % Setup so that use the same d,a,z,e in all the models that use them
@@ -75,9 +76,19 @@ exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzTests_Fig',num2
 % CrossTest 3: noa1 vs withA1 model where a1 (n_a1=1) is ignored (should match bit-exact)
 output=CoreFHorzExpAssetz_CrossTests3_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetz_CrossTests3_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+% and the same, but for the shock-leanest variant (z, without e)
+output=CoreFHorzExpAssetz_CrossTests3_nod1_noe_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetz_CrossTests3_d1_noe_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 1: noa1 experienceassetz with iid-markov z vs noa1 experienceassete with iid e (should match)
+output=CoreFHorzExpAssetz_CrossTests_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetz_CrossTests_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 2: noa1 'fake' experienceassetz that ignores z vs noa1 plain experienceasset (should match)
+output=CoreFHorzExpAssetz_CrossTests2_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetz_CrossTests2_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 %% noa1 semiz variants
-% TEST-FIRST: these error when run (ExpAssetzSemiExo noa1 raws do not exist in the toolkit yet)
 
 %% without d1, with z, without e, noa1, semiz
 figure_c=5;
@@ -99,10 +110,21 @@ figure_c=8;
 output=CoreFHorzExpAssetz_d1_z_e_semiz_noa1(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% noa1 semiz cross-tests (TEST-FIRST: error when run, same reason as above)
+%% noa1 semiz cross-tests
 % CrossTest 3 + semiz: noa1 vs withA1 model where a1 (n_a1=1) is ignored (should match bit-exact)
 output=CoreFHorzExpAssetz_CrossTests3_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetz_CrossTests3_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+% and the same, but for the shock-leanest variant (z, without e)
+output=CoreFHorzExpAssetz_CrossTests3_nod1_noe_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetz_CrossTests3_d1_noe_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 1 + semiz: noa1 experienceassetz+semiz iid-markov-z vs noa1 experienceassete+semiz iid-e (should match)
+output=CoreFHorzExpAssetz_CrossTests_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetz_CrossTests_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+% CrossTest 2 + semiz: noa1 'fake' experienceassetz+semiz that ignores z vs noa1 plain experienceasset+semiz (should match)
+output=CoreFHorzExpAssetz_CrossTests2_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetz_CrossTests2_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 
 %% ================= withA1 (figs 9-16) =================
@@ -230,12 +252,16 @@ figure_c=20;
 output=CoreFHorzExpAssetz_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
+%% with2A1 nosemiz cross-tests
+% CrossTest 4: a degenerate second standard asset a1_2 (single point {0}) reduces the
+% two-standard-asset model back to the with-a1 model (i.e. DC2A/GI2A vs the ordinary solvers)
+output=CoreFHorzExpAssetz_CrossTests4_nod1_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetz_CrossTests4_d1_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
 %% with2A1 + semiz (figs 21-24)
 addpath('./CoreFHorzExpAssetzTests_subcodes/With2A1_subcodes/Semiz_subcodes/')
 % (the semiz ReturnFns dir ./CoreFHorzExpAssetz_ReturnFns/Semiz_ReturnFns/ was already addpath-ed in the withA1 semiz section)
 % Reuses the 2A1 grids (n_a_2A1 etc.) from the nosemiz with2A1 section above, with the *semiz d-grids.
-% TEST-FIRST: these error when run, as the ExpAssetzSemiExo DC2A/GI2A/DC2A_GI2A raws
-% are being built in parallel and do not exist in the toolkit yet.
 
 %% with2A1, without d1, with z, without e, with semiz
 figure_c=21;
@@ -256,5 +282,11 @@ exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzTests_Fig',num2
 figure_c=24;
 output=CoreFHorzExpAssetz_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+%% with2A1 + semiz cross-tests
+% CrossTest 4 + semiz: a degenerate second standard asset a1_2 (single point {0}) reduces the
+% two-standard-asset model back to the with-a1 model (i.e. DC2A/GI2A vs the ordinary solvers)
+output=CoreFHorzExpAssetz_CrossTests4_nod1_semiz_with2A1(n_d_withoutd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetz_CrossTests4_d1_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 diary off

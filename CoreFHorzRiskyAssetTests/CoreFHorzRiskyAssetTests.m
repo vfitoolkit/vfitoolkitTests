@@ -24,7 +24,7 @@ if exist('./TestOutput/CoreFHorzRiskyAssetTestsdiary.txt','file')
 end
 diary ./TestOutput/CoreFHorzRiskyAssetTestsdiary.txt
 
-addpath('./CoreFHorzRiskyAssetTests_subcodes/')
+addpath('./CoreFHorzRiskyAssetTests_subcodes/Noa1_subcodes/')
 addpath('./CoreFHorzRiskyAssetTests_Setup/')
 addpath('./CoreFHorzRiskyAsset_ReturnFns/')
 
@@ -34,102 +34,102 @@ CoreFHorzRiskyAsset_setup
 
 %% without d1, without z, without e, without semiz
 figure_c=1;
-output=CoreFHorzRiskyAsset_nod1_noz_noe_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_nod1_noz_noe_nosemiz_noa1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, without z, without e, without semiz
 figure_c=2;
-output=CoreFHorzRiskyAsset_d1_noz_noe_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_d1_noz_noe_nosemiz_noa1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, with z, without e, without semiz
 figure_c=3;
-output=CoreFHorzRiskyAsset_nod1_z_noe_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_nod1_z_noe_nosemiz_noa1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, with z, without e, without semiz
 figure_c=4;
-output=CoreFHorzRiskyAsset_d1_z_noe_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_d1_z_noe_nosemiz_noa1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, without z, with e, without semiz
 figure_c=5;
-output=CoreFHorzRiskyAsset_nod1_noz_e_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_nod1_noz_e_nosemiz_noa1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, without z, with e, without semiz
 figure_c=6;
-output=CoreFHorzRiskyAsset_d1_noz_e_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_d1_noz_e_nosemiz_noa1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, with z, with e, without semiz
 figure_c=7;
-output=CoreFHorzRiskyAsset_nod1_z_e_nosemiz(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_nod1_z_e_nosemiz_noa1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, with z, with e, without semiz
 figure_c=8;
-output=CoreFHorzRiskyAsset_d1_z_e_nosemiz(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_d1_z_e_nosemiz_noa1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 
 %% Now repeat with semi-exogenous shock
-addpath('./CoreFHorzRiskyAssetTests_subcodes/Semiz_subcodes/')
+addpath('./CoreFHorzRiskyAssetTests_subcodes/Noa1_subcodes/Semiz_subcodes/')
 addpath('./CoreFHorzRiskyAsset_ReturnFns/Semiz_ReturnFns/')
 
 %% without d1, without z, without e, with semiz
 figure_c=9;
-output=CoreFHorzRiskyAsset_nod1_noz_noe_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_nod1_noz_noe_semiz_noa1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, without z, without e, with semiz
 figure_c=10;
-output=CoreFHorzRiskyAsset_d1_noz_noe_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_d1_noz_noe_semiz_noa1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, with z, without e, with semiz
 figure_c=11;
-output=CoreFHorzRiskyAsset_nod1_z_noe_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_nod1_z_noe_semiz_noa1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, with z, without e, with semiz
 figure_c=12;
-output=CoreFHorzRiskyAsset_d1_z_noe_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_d1_z_noe_semiz_noa1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, without z, with e, with semiz
 figure_c=13;
-output=CoreFHorzRiskyAsset_nod1_noz_e_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_nod1_noz_e_semiz_noa1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, without z, with e, with semiz
 figure_c=14;
-output=CoreFHorzRiskyAsset_d1_noz_e_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_d1_noz_e_semiz_noa1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% without d1, with z, with e, with semiz
 figure_c=15;
-output=CoreFHorzRiskyAsset_nod1_z_e_semiz(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_nod1_z_e_semiz_noa1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 
 %% with d1, with z, with e, with semiz
 figure_c=16;
-output=CoreFHorzRiskyAsset_d1_z_e_semiz(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+output=CoreFHorzRiskyAsset_d1_z_e_semiz_noa1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 % looks good
 

@@ -173,6 +173,40 @@ fprintf('StationaryDist with/without grid interp, this should be close to zero: 
 [AgeConditionalStats1.earnings.Mean; AgeConditionalStats3.earnings.Mean]
 [AgeConditionalStats1.assets.StdDeviation; AgeConditionalStats3.assets.StdDeviation]
 
+%% Sim panel and check it gives the same age conditional stats
+% With and without grid interpolation layer
+SimPanelValues1=SimPanelValues_FHorz_Case1(jequaloneDist,Policy1b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,pi_z, simoptions1);
+SimPanelValues3=SimPanelValues_FHorz_Case1(jequaloneDist,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,pi_z, simoptions3);
+
+% Do two comparisons to age conditional stats
+fprintf('Without grid interp, sim panel data should give roughly the same age conditional stats \n')
+[AgeConditionalStats1.earnings.Mean; mean(SimPanelValues1.earnings,2)']
+[AgeConditionalStats1.assets.Mean; mean(SimPanelValues1.assets,2)']
+[AgeConditionalStats1.assets2.Mean; mean(SimPanelValues1.assets2,2)']
+[AgeConditionalStats1.humancapital.Mean; mean(SimPanelValues1.humancapital,2)']
+fprintf('With grid interp, sim panel data should give roughly the same age conditional stats \n')
+[AgeConditionalStats3.earnings.Mean; mean(SimPanelValues3.earnings,2)']
+[AgeConditionalStats3.assets.Mean; mean(SimPanelValues3.assets,2)']
+[AgeConditionalStats3.assets2.Mean; mean(SimPanelValues3.assets2,2)']
+[AgeConditionalStats3.humancapital.Mean; mean(SimPanelValues3.humancapital,2)']
+
+%% Compare AllStats to the panel data simulation
+% Note: mewj is uniform, so pooling all panel observations uses the same age-weighting as the stationary dist
+fprintf('Without grid interp, sim panel data should give roughly the same AllStats \n')
+[AllStats1.earnings.Mean, mean(SimPanelValues1.earnings(:))]
+[AllStats1.assets.Mean, mean(SimPanelValues1.assets(:))]
+[AllStats1.assets2.Mean, mean(SimPanelValues1.assets2(:))]
+[AllStats1.humancapital.Mean, mean(SimPanelValues1.humancapital(:))]
+[AllStats1.earnings.StdDeviation, std(SimPanelValues1.earnings(:),1)]
+[AllStats1.assets.StdDeviation, std(SimPanelValues1.assets(:),1)]
+fprintf('With grid interp, sim panel data should give roughly the same AllStats \n')
+[AllStats3.earnings.Mean, mean(SimPanelValues3.earnings(:))]
+[AllStats3.assets.Mean, mean(SimPanelValues3.assets(:))]
+[AllStats3.assets2.Mean, mean(SimPanelValues3.assets2(:))]
+[AllStats3.humancapital.Mean, mean(SimPanelValues3.humancapital(:))]
+[AllStats3.earnings.StdDeviation, std(SimPanelValues3.earnings(:),1)]
+[AllStats3.assets.StdDeviation, std(SimPanelValues3.assets(:),1)]
+
 clear V1b V3b Policy1b Policy3b StationaryDist1 StationaryDist3
 
 %% Do some graphs of the age-conditional to see them
