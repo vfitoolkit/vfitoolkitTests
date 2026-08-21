@@ -15,9 +15,21 @@
 % Each subcode runs its methods at every valid lowmemory level (set by which shocks are
 % present: {e}->{0,1}, {z,e} or {semiz,e}->{0,1,2}, {semiz,z,e}->{0,1,2,3}).
 %
-% TEST-FIRST: the toolkit currently has NO quasi-hyperbolic support for experienceassete at
-% all, so EVERY subcode here errors at its first ValueFnIter call. That is expected and
-% intended: these tests are written ahead of the toolkit code.
+% STATUS (2026-08-19): the toolkit NOW HAS quasi-hyperbolic support for experienceassete. The
+% 128 QH raws live in ValueFnIter/FHorz/ExperienceAssete/QuasiHyperbolic/, and
+% ValueFnIter_Case1_FHorz routes to ValueFnIter_FHorz_QuasiHyperbolicExpAssete (nosemiz) and
+% ValueFnIter_FHorz_QuasiHyperbolicExpAsseteSemiExo (semiz). Committed in toolkit b6bc5acf.
+%
+% This bank was written test-first, but the solvers landed before it was last run: the
+% 2026-08-18 run is FULLY GREEN -- 1624 checks, every one zero, no errors. It covers Naive and
+% Sophisticated on V / Valt / Policy / Policyalt across each variant's lowmemory ladder, plus 24
+% ValueFnFromPolicy oracle checks (including the Valt reconstruction for Naive).
+%
+% One known toolkit limit, which does NOT affect any figure here:
+% ValueFnIter_FHorz_QuasiHyperbolicExpAsseteSemiExo_{DC,GI,DC_GI} still error on N_a1==0
+% ('Have not implemented experience assets with semi-exogenous shocks, without also having a
+% standard asset'). The noa1+semiz block (figs 5-8) is base-method only, so it never reaches
+% those dispatchers.
 %
 % This suite lives in the parent CoreFHorzExpAsseteTests/ folder and reuses its setup and ReturnFns.
 %

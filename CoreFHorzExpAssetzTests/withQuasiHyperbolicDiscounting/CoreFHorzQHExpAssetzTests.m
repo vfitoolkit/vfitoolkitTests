@@ -23,9 +23,15 @@
 %   withA1 semiz (13-16):  base + DC1 + GI1 + DC1_GI1
 %   with2A1 (17-24):       base + DC2A + GI2A + DC2A_GI2A
 %
-% TEST-FIRST: figs 1-8 (noa1) and figs 13-16 and 21-24 (semiz) ERROR when run -- the toolkit has no
-% QH+experienceassetz noa1 support and no QH+experienceassetz+semiz family yet. They are written
-% ahead of the toolkit code, as if it will solve them fine.
+% STATUS (2026-08-19): COMPLETE. This bank was written test-first; the toolkit has now caught up
+% on all of it. ExperienceAssetz carries 104 QH raws (40 nosemiz + 64 semiz), the
+% QuasiHyperbolicExpAssetzSemiExo dispatcher and its {DC,GI,DC_GI} sub-dispatchers all exist, and
+% no 'not yet implemented' error survives anywhere in the family.
+%
+% The 2026-08-19 run: 1268 checks, 24 of 24 figures, every one zero, no errors. That covers all
+% four solver tiers x nod1/with-d1 x no-e/with-e x Naive/Sophisticated, including the with-e 2A
+% paths at lowmemory 3 and the beta0=1 degeneracy checks that collapse QH onto the exponential.
+% (Toolkit commit 2f291d33.)
 %
 % The subcodes here take figure_c but draw no figures (alternative preferences change nothing beyond
 % Policy, so there are no StationaryDist/AllStats/LifeCycleProfiles/SimPanel blocks), so only the
@@ -66,7 +72,7 @@ vfoptionsbaseline.QHadditionaldiscount={'beta0'};
 %% ================= noa1 (figs 1-8): experience asset a2 is the ONLY endogenous state =================
 % Base method only (no DC/GI/DC+GI -- irrelevant without a1).
 % Pass n_a_justexpasset as n_a, a_grid_justexpasset as a_grid. n_a_big/a_grid_big slots unused.
-% TEST-FIRST: these error when run (no QH+experienceassetz noa1 support in the toolkit yet).
+% Previously test-first; the toolkit now supports QH+experienceassetz noa1, and these PASS.
 
 %% without d1, with z, without e, noa1, nosemiz
 figure_c=1;
@@ -121,7 +127,7 @@ figure_c=12;
 output=CoreFHorzQHExpAssetz_d1_z_e_nosemiz_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 %% withA1 + semiz (figs 13-16): base + DC1 + GI1 + DC1_GI1 + lowmemory, Naive & Sophisticated
-% TEST-FIRST: these error when run (no QH+experienceassetz+semiz family in the toolkit yet).
+% Previously test-first; the toolkit now supports QH+experienceassetz+semiz, and these PASS.
 
 %% without d1, with z, without e, with semiz
 figure_c=13;
@@ -166,7 +172,9 @@ output=CoreFHorzQHExpAssetz_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_no
 
 %% with2A1 + semiz (figs 21-24)
 % Reuses the 2A1 grids (n_a_2A1 etc.) from the nosemiz with2A1 section above, with the *semiz d-grids.
-% TEST-FIRST: these error when run (no QH+experienceassetz+semiz family in the toolkit yet).
+% Implemented and GPU-green as of 2026-08-19 (toolkit commit 2f291d33): the 24 semiz 2A raws
+% (DC2A / GI2A / DC2A_GI2A x nod1/with-d1 x no-e/with-e x Naive/Sophisticated) plus the 2A branch
+% of each of the three semiz sub-dispatchers.
 
 %% with2A1, without d1, with z, without e, with semiz
 figure_c=21;

@@ -41,13 +41,13 @@ exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(fig
 
 %% without d, with z
 figure_c=3;
-% output=CoreInfHorz_nod_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+output=CoreInfHorz_nod_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% with d, with z
 figure_c=4;
-% output=CoreInfHorz_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+output=CoreInfHorz_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
 %% without d, with e (iid), without z
 figure_c=5;
