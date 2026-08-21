@@ -123,12 +123,34 @@ fprintf('with2A(d): SimTimeSeries mean should roughly match AllStats/AggVars mea
 
 %% Plot
 fig=figure(figure_c);
-assetdist1=sum(sum(StationaryDist1,3),2);
-assetdist3=sum(sum(StationaryDist3,3),2);
+% marginal over assets: StationaryDist is [n_asset,n_e,n_eta,n_theta], so sum over dimensions 2,3,4
+assetdist1=sum(sum(sum(StationaryDist1,4),3),2);
+assetdist3=sum(sum(sum(StationaryDist3,4),3),2);
 subplot(2,1,1); plot(asset_grid_big,cumsum(assetdist1), asset_grid_big,cumsum(assetdist3))
 title('with2A(d): CDF of assets (without vs with grid interp)'); legend('1','3')
 subplot(2,1,2); plot(1:2,[AllStats1.laborsupply.Mean,AllStats3.laborsupply.Mean],'o')
 title('with2A(d): mean labor supply')
+
+%% Howards iteration
+% Howards improvement iterations are just an accelerator for the value function iteration, so
+% turning them off (vfoptions.howards=0, which is then pure value function iteration) must give
+% the same V and Policy.
+vfoptions1_noH=vfoptions1;
+vfoptions1_noH.howards=0;
+[V1,Policy1]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions1);
+[V1noH,Policy1noH]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions1_noH);
+fprintf('howards=0 (pure VFI), this should be zero: %2.8f \n',max(abs(V1(:)-V1noH(:))))
+fprintf('howards=0 (pure VFI), this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1noH(:))))
+
+% Same again, with the grid interpolation layer
+vfoptions3_noH=vfoptions3;
+vfoptions3_noH.howards=0;
+[V3,Policy3]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions3);
+[V3noH,Policy3noH]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions3_noH);
+fprintf('howards=0 (pure VFI, with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3noH(:))))
+fprintf('howards=0 (pure VFI, with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3noH(:))))
+
+clear V1 V3 V1noH V3noH Policy1 Policy3 Policy1noH Policy3noH
 
 %%
 output=struct();

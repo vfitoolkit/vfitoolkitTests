@@ -108,6 +108,27 @@ fig=figure(figure_c);
 plot(a_grid_big,cumsum(sum(StationaryDist1,2)), a_grid_big,cumsum(sum(StationaryDist3,2)))
 title('CDF of assets: without vs with grid interp'); legend('1','3')
 
+%% Howards iteration
+% Howards improvement iterations are just an accelerator for the value function iteration, so
+% turning them off (vfoptions.howards=0, which is then pure value function iteration) must give
+% the same V and Policy.
+vfoptions1_noH=vfoptions1;
+vfoptions1_noH.howards=0;
+[V1,Policy1]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+[V1noH,Policy1noH]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1_noH);
+fprintf('howards=0 (pure VFI), this should be zero: %2.8f \n',max(abs(V1(:)-V1noH(:))))
+fprintf('howards=0 (pure VFI), this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1noH(:))))
+
+% Same again, with the grid interpolation layer
+vfoptions3_noH=vfoptions3;
+vfoptions3_noH.howards=0;
+[V3,Policy3]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+[V3noH,Policy3noH]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3_noH);
+fprintf('howards=0 (pure VFI, with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3noH(:))))
+fprintf('howards=0 (pure VFI, with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3noH(:))))
+
+clear V1 V3 V1noH V3noH Policy1 Policy3 Policy1noH Policy3noH
+
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.
 

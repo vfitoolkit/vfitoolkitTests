@@ -1,15 +1,29 @@
-function output=CoreInfHorz_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+function output=CoreInfHorz_d_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+% Mirrors the 'with d, with z' test, but the exogenous shock is an iid e rather than a markov z.
+% There is no z at all here, so this is the noz+e tier.
+%
+% Note: unlike the noz+noe tests (figs 1 and 2), there is a genuine exogenous shock here, so the
+% stationary distribution is non-degenerate and all of the moment/autocorrelation/cross-section
+% statistics are meaningful.
 
 % Setup vfoptions and simoptions
 vfoptions=struct();
 simoptions=struct();
-% Do the current setup (d and z both present, nothing to zero out)
+% Do the current setup
+n_z=0; z_grid=[]; pi_z=[];
+% with e (iid), passed via vfoptions/simoptions
+vfoptions.n_e=vfoptionsbaseline.n_e;
+vfoptions.e_grid=vfoptionsbaseline.e_grid;
+vfoptions.pi_e=vfoptionsbaseline.pi_e;
+simoptions.n_e=simoptionsbaseline.n_e;
+simoptions.e_grid=simoptionsbaseline.e_grid;
+simoptions.pi_e=simoptionsbaseline.pi_e;
 
-ReturnFn=@(d,aprime,a,z,r,w,sigma,eta,varphi) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,sigma,eta,varphi);
+ReturnFn=@(d,aprime,a,e,r,w,sigma,eta,varphi) ReturnFn_d_noz_e_nosemiz(d,aprime,a,e,r,w,sigma,eta,varphi);
 
 % Setup some FnsToEvaluate
-FnsToEvaluate.assets=@(d,aprime,a,z) a;
-FnsToEvaluate.earnings=@(d,aprime,a,z,w) w*d*z;
+FnsToEvaluate.assets=@(d,aprime,a,e) a;
+FnsToEvaluate.earnings=@(d,aprime,a,e,w) w*d*e;
 
 %% Baseline VFI
 vfoptions1=vfoptions;
@@ -74,6 +88,11 @@ fprintf('StationaryDist with/without grid interp, this should be close to zero: 
 [AllStats1.earnings.Gini,AllStats3.earnings.Gini]
 [AllStats1.assets.StdDeviation,AllStats3.assets.StdDeviation]
 [AggVars1.assets.Mean,AggVars3.assets.Mean]
+
+%% Because e is iid, the stationary marginal over e must be exactly pi_e
+% (earnings=w*d*e is endogenous here, as d is chosen, so there is no analytic mean to check against)
+marginale=sum(StationaryDist1,1); % sum over a => marginal over e
+fprintf('e is iid, so the stationary marginal over e should equal pi_e, this should be zero: %2.8f \n',max(abs(marginale(:)-simoptions1.pi_e(:))))
 
 %% Check the remaining dist commands run without issue
 ValuesOnGrid1=EvalFnOnAgentDist_ValuesOnGrid_InfHorz(Policy1b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,simoptions1);

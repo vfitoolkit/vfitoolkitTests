@@ -1,15 +1,30 @@
-function output=CoreInfHorz_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+function output=CoreInfHorz_nod_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+% Mirrors the 'without d, with z' test, but the exogenous shock is an iid e rather than a markov z.
+% There is no z at all here, so this is the noz+e tier.
+%
+% Note: unlike the noz+noe tests (figs 1 and 2), there is a genuine exogenous shock here, so the
+% stationary distribution is non-degenerate and all of the moment/autocorrelation/cross-section
+% statistics are meaningful.
 
 % Setup vfoptions and simoptions
 vfoptions=struct();
 simoptions=struct();
-% Do the current setup (d and z both present, nothing to zero out)
+% Do the current setup
+n_d=0; d_grid=[];
+n_z=0; z_grid=[]; pi_z=[];
+% with e (iid), passed via vfoptions/simoptions
+vfoptions.n_e=vfoptionsbaseline.n_e;
+vfoptions.e_grid=vfoptionsbaseline.e_grid;
+vfoptions.pi_e=vfoptionsbaseline.pi_e;
+simoptions.n_e=simoptionsbaseline.n_e;
+simoptions.e_grid=simoptionsbaseline.e_grid;
+simoptions.pi_e=simoptionsbaseline.pi_e;
 
-ReturnFn=@(d,aprime,a,z,r,w,sigma,eta,varphi) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,sigma,eta,varphi);
+ReturnFn=@(aprime,a,e,r,w,sigma) ReturnFn_nod_noz_e_nosemiz(aprime,a,e,r,w,sigma);
 
 % Setup some FnsToEvaluate
-FnsToEvaluate.assets=@(d,aprime,a,z) a;
-FnsToEvaluate.earnings=@(d,aprime,a,z,w) w*d*z;
+FnsToEvaluate.assets=@(aprime,a,e) a;
+FnsToEvaluate.earnings=@(aprime,a,e,w) w*e;
 
 %% Baseline VFI
 vfoptions1=vfoptions;
@@ -75,6 +90,12 @@ fprintf('StationaryDist with/without grid interp, this should be close to zero: 
 [AllStats1.assets.StdDeviation,AllStats3.assets.StdDeviation]
 [AggVars1.assets.Mean,AggVars3.assets.Mean]
 
+%% Because e is iid, the stationary marginal over e must be exactly pi_e
+marginale=sum(StationaryDist1,1); % sum over a => marginal over e
+fprintf('e is iid, so the stationary marginal over e should equal pi_e, this should be zero: %2.8f \n',max(abs(marginale(:)-simoptions1.pi_e(:))))
+% earnings=w*e is exogenous here, so its mean is analytically w*E[e]
+fprintf('earnings mean should equal w*E[e], this should be zero: %2.8f \n',abs(AggVars1.earnings.Mean-Params.w*sum(simoptions1.e_grid(:).*simoptions1.pi_e(:))))
+
 %% Check the remaining dist commands run without issue
 ValuesOnGrid1=EvalFnOnAgentDist_ValuesOnGrid_InfHorz(Policy1b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,simoptions1);
 ProbDensityFns1=EvalFnOnAgentDist_ProbDensityFn_InfHorz(StationaryDist1,Policy1b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,simoptions1);
@@ -98,6 +119,8 @@ fprintf('SimTimeSeries lag-1 autocorrelation should roughly match AutoCorrTransP
 tempA=corrcoef(tsA(1:end-1),tsA(2:end)); tempE=corrcoef(tsE(1:end-1),tsE(2:end));
 [AutoCorr1.assets.AutoCorrelation, tempA(1,2)]
 [AutoCorr1.earnings.AutoCorrelation, tempE(1,2)]
+% earnings=w*e with e iid, so the earnings autocorrelation should be zero
+fprintf('earnings is iid here, so its autocorrelation should be zero: %2.8f \n',AutoCorr1.earnings.AutoCorrelation)
 fprintf('SimTimeSeries cross-section corr(earnings,assets) should roughly match CrossSectionCovarCorr \n')
 tempC=corrcoef(tsE,tsA);
 [CrossSectionCorr1.earnings.CorrelationWith.assets, tempC(1,2)]
