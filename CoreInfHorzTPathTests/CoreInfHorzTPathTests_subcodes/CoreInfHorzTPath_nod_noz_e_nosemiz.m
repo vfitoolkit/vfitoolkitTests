@@ -21,6 +21,7 @@ ReturnFn=@(aprime,a,e,r,w,sigma) ReturnFn_nod_noz_e_nosemiz(aprime,a,e,r,w,sigma
 FnsToEvaluate.assets=@(aprime,a,e) a;
 FnsToEvaluate.earnings=@(aprime,a,e,w) w*e;
 FnsToEvaluate.nextassets=@(aprime,a,e) aprime; % aprime-dependent, so it tests the policy decode directly
+FnsToEvaluate.eval=@(aprime,a,e) e; % the iid shock itself
 
 
 %% Period-0 VFI: gives the final-step V/Policy (used as both V_final for TPath and the steady state to compare against)
@@ -141,7 +142,7 @@ AggVarsPathFH=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathFH, 
 AllStatsPathFH=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathFH, PolicyPath2, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsFH);
 AgeCondStats_FH=LifeCycleProfiles_FHorz_Case1(StatDist_FH,Policy_FH,FnsToEvaluate,ParamsFH,[],n_d,n_a,n_z,N_jFH,d_grid,a_grid,z_grid,simoptionsFH);
 
-for fnname={'assets','earnings','nextassets'}
+for fnname={'assets','earnings','nextassets','eval'}
     dev=AggVarsPathFH.(fnname{1}).Mean(1:N_jFH)-AgeCondStats_FH.(fnname{1}).Mean;
     fprintf('TPath vs FHorz (with DC, no GI), this should be zero, AggVars %s Mean: %2.10f \n',fnname{1},max(abs(dev(:))))
 end
@@ -153,6 +154,11 @@ for statname={'Mean','Median','StdDeviation','Variance','Gini','LorenzCurve','Qu
 end
 
 clear V_FH Policy_FH ParamsFH vfoptionsFH temp1 temp2 dev AgentDistPathFH StatDist_FH AggVarsPathFH AllStatsPathFH AgeCondStats_FH simoptionsFH
+
+%% Cross-check against an FHorz solve, with a shock process that varies along the path
+% Skipped for this subcode: there is no markov z here, so transpathoptions.zpathtrivial has
+% nothing to vary. (epathtrivial, the iid-e analogue, is a separate flag and is not covered.)
+fprintf('TPath vs FHorz (path-varying z): skipped, this model has no markov z \n')
 
 %%
 clear VPath1 VPath2 PolicyPath1 PolicyPath2 VPath1B VPath2B PolicyPath1B PolicyPath2B
@@ -245,7 +251,7 @@ AggVarsPathFH=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathFH, 
 AllStatsPathFH=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathFH, PolicyPath4, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsFH);
 AgeCondStats_FH=LifeCycleProfiles_FHorz_Case1(StatDist_FH,Policy_FH,FnsToEvaluate,ParamsFH,[],n_d,n_a,n_z,N_jFH,d_grid,a_grid,z_grid,simoptionsFH);
 
-for fnname={'assets','earnings','nextassets'}
+for fnname={'assets','earnings','nextassets','eval'}
     dev=AggVarsPathFH.(fnname{1}).Mean(1:N_jFH)-AgeCondStats_FH.(fnname{1}).Mean;
     fprintf('TPath vs FHorz (with DC and GI), this should be zero, AggVars %s Mean: %2.10f \n',fnname{1},max(abs(dev(:))))
 end
@@ -306,6 +312,77 @@ fprintf('With/without grid interp, should get much the same moments (for big a_g
 fprintf('AgentDist along TPath with/without grid interp, this should be close to zero: %2.8f \n',max(abs(AgentDistPath2(:)-AgentDistPath4(:))))
 [AggVarsPath2.earnings.Mean; AggVarsPath4.earnings.Mean]
 [AggVarsPath2.assets.Mean; AggVarsPath4.assets.Mean]
+
+%% AutoCorrTransProbs along the path
+% EvalFnOnTransPath_AutoCorrTransProbs_InfHorz is the one TPath evaluation command the rest of this
+% bank never touches. It returns Mean and StdDeviation (which it has to compute anyway as
+% intermediates to the correlation), AutoCovariance, AutoCorrelation, and optionally a transition
+% probability matrix between the values of a FnToEvaluate.
+%
+% Mean and StdDeviation have exact references: the same two objects come out of
+% EvalFnOnTransPath_AggVars_InfHorz and EvalFnOnTransPath_AllStats_InfHorz, so three different
+% commands must agree to machine precision given the same agent distribution and policy path.
+%
+% AutoCovariance and AutoCorrelation have no independent reference here, so they are only checked
+% for internal consistency: the command sets Corr=Covar/(stddev_lag*stddev), and a correlation
+% cannot exceed one in absolute value. Both are written into entries 1:T-1 (entry tt-1 pairs
+% period tt with period tt-1) with the last entry left as zero, which is why the checks stop at T-1.
+%
+% TransitionProbs is asked for on assets and nextassets. It is meant to be a transition matrix
+% between consecutive periods' values, so each row should sum to one. Run on the small grid: the
+% command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and TransitionProbs is
+% (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
+%
+% Guarded: the command has no branch for N_z=0, and no e support at all (it defaults simoptions.n_e
+% but never reads it), so the noz and e subcodes would either error or silently return the wrong
+% thing. Remove the guard once the toolkit covers those cases.
+if prod(n_z)>0 && ~isfield(simoptions,'n_e')
+    simoptionsAC=simoptions2;
+    simoptionsAC.whichstats=ones(7,1); % pin, so AllStats and this command are asked for the same things
+    % assets only: nextassets is the chosen aprime set, whose number of distinct values changes
+    % along the path, and EvalFnOnTransPath_AutoCorrTransProbs_InfHorz preallocates
+    % TransitionProbs at a fixed size from the tt=2 slice, so it errors when that count moves.
+    simoptionsAC.transprobs={'assets'};
+    % PolicyPath2 was cleared further up, so re-solve the plain path here. Deliberately the small
+    % grid, not n_a_big: the command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and
+    % TransitionProbs is (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
+    [~,PolicyPathAC]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
+    AgentDistPathAC=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathAC, n_d, n_a, n_z, pi_z, T, Params, simoptionsAC);
+    AggVarsPathAC=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsAC);
+    AllStatsPathAC=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsAC);
+    CorrTransProbsPathAC=EvalFnOnTransPath_AutoCorrTransProbs_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, pi_z, simoptionsAC);
+
+    for fnname=fieldnames(FnsToEvaluate)'
+        dev=CorrTransProbsPathAC.(fnname{1}).Mean-AggVarsPathAC.(fnname{1}).Mean;
+        fprintf('AutoCorrTransProbs vs AggVars along TPath, this should be zero, Mean %s: %2.10f \n',fnname{1},max(abs(dev)))
+        dev=CorrTransProbsPathAC.(fnname{1}).StdDeviation-AllStatsPathAC.(fnname{1}).StdDeviation;
+        fprintf('AutoCorrTransProbs vs AllStats along TPath, this should be zero, StdDeviation %s: %2.10f \n',fnname{1},max(abs(dev)))
+    end
+
+    for fnname=fieldnames(FnsToEvaluate)'
+        sdthis=CorrTransProbsPathAC.(fnname{1}).StdDeviation(2:T);
+        sdlag=CorrTransProbsPathAC.(fnname{1}).StdDeviation(1:T-1);
+        dev=CorrTransProbsPathAC.(fnname{1}).AutoCorrelation(1:T-1)-CorrTransProbsPathAC.(fnname{1}).AutoCovariance(1:T-1)./(sdlag.*sdthis);
+        fprintf('AutoCorrTransProbs internal, corr=cov/(sd*sd), this should be zero, %s: %2.10f \n',fnname{1},max(abs(dev)))
+        fprintf('AutoCorrTransProbs internal, max abs AutoCorrelation (should be at most one), %s: %2.8f \n',fnname{1},max(abs(CorrTransProbsPathAC.(fnname{1}).AutoCorrelation(1:T-1))))
+    end
+
+    % The command only fills TransitionProbs in when the set of distinct values is the same in
+    % consecutive periods, so check the field is there before using it.
+    for fnname={'assets'}
+        if isfield(CorrTransProbsPathAC.(fnname{1}),'TransitionProbs')
+            TPac=CorrTransProbsPathAC.(fnname{1}).TransitionProbs;
+            fprintf('AutoCorrTransProbs TransitionProbs %s: size %s, smallest entry (should not be negative): %2.10f \n',fnname{1},mat2str(size(TPac)),min(TPac(:)))
+            fprintf('AutoCorrTransProbs TransitionProbs %s, row sums should be one, max abs deviation: %2.10f \n',fnname{1},max(abs(sum(TPac,2)-1),[],'all'))
+            fprintf('AutoCorrTransProbs TransitionProbs %s, column sums, max abs deviation from one: %2.10f \n',fnname{1},max(abs(sum(TPac,1)-1),[],'all'))
+        else
+            fprintf('AutoCorrTransProbs TransitionProbs %s: not returned, the distinct values are not the same in consecutive periods \n',fnname{1})
+        end
+    end
+    clear simoptionsAC PolicyPathAC AgentDistPathAC AggVarsPathAC AllStatsPathAC CorrTransProbsPathAC TPac sdthis sdlag dev
+else
+    fprintf('AutoCorrTransProbs along TPath: skipped, EvalFnOnTransPath_AutoCorrTransProbs_InfHorz has no N_z=0 branch and no e support \n')
+end
 
 %% Plots
 fig=figure(figure_c);

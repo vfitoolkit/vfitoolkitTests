@@ -42,6 +42,8 @@ ReturnFn=@(aprime,eprime,a,e,eta,theta,r,w,sigma,delta,upsilon1,upsilon2,leverag
 FnsToEvaluate.assets=@(aprime,eprime,a,e,eta,theta) a;
 FnsToEvaluate.entrepreneur=@(aprime,eprime,a,e,eta,theta) e; % fraction who are entrepreneurs
 FnsToEvaluate.nextassets=@(aprime,eprime,a,e,eta,theta) aprime; % aprime-dependent, so it tests the policy decode directly
+FnsToEvaluate.etaval=@(aprime,eprime,a,e,eta,theta) eta; % first markov shock, this is the one KFTT makes period-dependent
+FnsToEvaluate.thetaval=@(aprime,eprime,a,e,eta,theta) theta; % second markov shock, left alone, so it acts as a control
 
 
 %% Period-0 VFI: gives the final-step V/Policy (used as both V_final for TPath and the steady state to compare against)
@@ -143,7 +145,7 @@ AggVarsPathFH=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathFH, 
 AllStatsPathFH=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathFH, PolicyPath2, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsFH);
 AgeCondStats_FH=LifeCycleProfiles_FHorz_Case1(StatDist_FH,Policy_FH,FnsToEvaluate,ParamsFH,[],n_d,n_a,n_z,N_jFH,d_grid,a_grid,z_grid,simoptionsFH);
 
-for fnname={'assets','entrepreneur','nextassets'}
+for fnname={'assets','entrepreneur','nextassets','etaval','thetaval'}
     dev=AggVarsPathFH.(fnname{1}).Mean(1:N_jFH)-AgeCondStats_FH.(fnname{1}).Mean;
     fprintf('with2A: TPath vs FHorz (with DC, no GI), this should be zero, AggVars %s Mean: %2.10f \n',fnname{1},max(abs(dev(:))))
 end
@@ -154,6 +156,126 @@ for statname={'Mean','Median','StdDeviation','Variance','Gini','LorenzCurve','Qu
 end
 
 clear V_FH Policy_FH ParamsFH vfoptionsFH temp1 temp2 dev AgentDistPathFH StatDist_FH AggVarsPathFH AllStatsPathFH AgeCondStats_FH simoptionsFH
+
+%% Cross-check against an FHorz solve, with a shock process that varies along the path
+% Same construction as the block above, but now the exogenous process itself moves: z_grid and
+% pi_z are period dependent rather than fixed. This is the bank's only coverage of
+% transpathoptions.zpathtrivial=0, and it is checked the same way, against an FHorz solve of the
+% identical problem, which is what makes it an exact comparison rather than a plausibility check.
+%
+% Timing. discretizeLifeCycleAR1_KFTT returns pi_z_J with slice j the transition from period j to
+% j+1 (it shifts to that convention at the end of that file), which is also what
+% ValueFnOnTransPath_InfHorz uses (V_t is computed from pi_z_T(:,:,t), see the backward loop in
+% TransitionPath_InfHorz_substeps_Step1_ValueFnIter) and what ValueFnIter_Case1_FHorz documents.
+% So the two line up slice for slice, exactly as the price and param paths do.
+%
+% Why Jz=T and not N_jFH: KFTT fills its LAST slice with a uniform distribution, a placeholder for
+% the transition out of the final period. FHorz normally drops that slice, but not when
+% vfoptions.V_Jplus1 is in use, which is exactly what this cross-check relies on. Asking KFTT for
+% one period more than the FHorz model needs leaves the placeholder in slice T, which the TPath
+% never reads (VPath(:,:,T)=V_final is assigned, not computed) and which FHorz never sees.
+%
+% Note V_final is the stationary V under the ORIGINAL z_grid, whereas the KFTT grid at t=T holds
+% different values. Economically odd, but irrelevant to the comparison: both sides are handed the
+% identical array and index it by z-index, so the check stays exact.
+Jz=T;
+n_eta=n_z(1); n_theta=n_z(2);
+% pi_z was built as kron(pi_theta,pi_eta), and the rows of pi_eta sum to one, so each (ii,jj)
+% block row of pi_z sums to pi_theta(ii,jj). Recover pi_theta that way, so the joint can be
+% rebuilt period by period with only eta made period-dependent.
+pi_theta=zeros(n_theta,n_theta);
+for ii=1:n_theta
+    for jj=1:n_theta
+        pi_theta(ii,jj)=sum(pi_z(1+(ii-1)*n_eta,1+(jj-1)*n_eta:jj*n_eta));
+    end
+end
+pi_eta_base=pi_z(1:n_eta,1:n_eta)/pi_theta(1,1);
+fprintf('with2A: the kron decomposition of pi_z, this should be zero: %2.10f \n',max(abs(pi_z(:)-reshape(kron(pi_theta,pi_eta_base),[],1))))
+theta_grid=z_grid(n_eta+1:end);
+kfttmew=zeros(1,Jz);
+kfttrho=linspace(0.95,0.75,Jz);  % persistence falls along the path
+kfttsigma=0.2*linspace(1,2,Jz);  % innovation std deviation doubles along the path
+kfttoptions.nMoments=2; % the default of 4 cannot be hit with this few grid points, and the
+                        % unmet-moments warning is just noise here: any valid markov chain that
+                        % actually varies by period serves this test
+[eta_grid_KFTT,pi_eta_KFTT]=discretizeLifeCycleAR1_KFTT(kfttmew,kfttrho,kfttsigma,n_eta,Jz,kfttoptions);
+eta_grid_KFTT=exp(eta_grid_KFTT); % same exp() convention as the baseline eta_grid
+z_grid_KFTT=[eta_grid_KFTT; repmat(theta_grid,1,Jz)]; % [sum(n_z),T] stacked; only eta moves
+pi_z_KFTT=zeros(prod(n_z),prod(n_z),Jz);
+for tt=1:Jz
+    pi_z_KFTT(:,:,tt)=kron(pi_theta,pi_eta_KFTT(:,:,tt)); % eta varies fastest, as in the setup
+end
+
+[VPathZ,PolicyPathZ]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid_KFTT, pi_z_KFTT, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
+
+ParamsFHZ=Params;
+ParamsFHZ.r=PricePath.r(1:N_jFH);
+ParamsFHZ.w=ParamPath.w(1:N_jFH);
+vfoptionsFHZ=vfoptions2;
+vfoptionsFHZ.V_Jplus1=V_final;
+[V_FHZ,Policy_FHZ]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_jFH,d_grid,a_grid,z_grid_KFTT(:,1:N_jFH),pi_z_KFTT(:,:,1:N_jFH),ReturnFn,ParamsFHZ,DiscountFactorParamNames,[],vfoptionsFHZ);
+
+temp1=reshape(VPathZ,[],T); temp2=reshape(V_FHZ,[],N_jFH);
+dev=temp1(:,1:N_jFH)-temp2;
+fprintf('TPath vs FHorz (path-varying z), this should be zero, V: %2.10f \n',max(abs(dev(:))))
+temp1=reshape(PolicyPathZ,[],T); temp2=reshape(Policy_FHZ,[],N_jFH);
+dev=temp1(:,1:N_jFH)-temp2;
+fprintf('TPath vs FHorz (path-varying z), this should be zero, Policy: %2.10f \n',max(abs(dev(:))))
+temp1=reshape(PolicyInd2Val_InfHorz_TPath(PolicyPathZ,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions2),[],T);
+temp2=reshape(PolicyInd2Val_FHorz(Policy_FHZ,n_d,n_a,n_z,N_jFH,d_grid,a_grid,vfoptions2),[],N_jFH);
+dev=temp1(:,1:N_jFH)-temp2;
+fprintf('TPath vs FHorz (path-varying z), this should be zero, PolicyVals: %2.10f \n',max(abs(dev(:))))
+
+% Same age-weight handling as the fixed-process block above
+ParamsFHZ.mewjFH=ones(1,N_jFH)/N_jFH;
+ParamsFHZ.mewjFH(end)=1-sum(ParamsFHZ.mewjFH(1:end-1));
+simoptionsFHZ=simoptions2;
+simoptionsFHZ.npoints=100;
+simoptionsFHZ.nquantiles=20;
+simoptionsFHZ.whichstats=ones(7,1);
+
+AgentDistPathZ=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathZ, n_d, n_a, n_z, pi_z_KFTT, T, Params, simoptionsFHZ);
+StatDist_FHZ=StationaryDist_FHorz_Case1(AgentDist_initial,{'mewjFH'},Policy_FHZ,n_d,n_a,n_z,N_jFH,pi_z_KFTT(:,:,1:N_jFH),ParamsFHZ,simoptionsFHZ);
+temp1=reshape(AgentDistPathZ,[],T); temp2=reshape(StatDist_FHZ,[],N_jFH);
+temp2=temp2./sum(temp2,1); % undo the age weighting, so each age carries mass one like each TPath period
+dev=temp1(:,1:N_jFH)-temp2;
+fprintf('TPath vs FHorz (path-varying z), this should be zero, AgentDist: %2.10f \n',max(abs(dev(:))))
+
+AggVarsPathZ=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathZ, PolicyPathZ, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid_KFTT, simoptionsFHZ);
+AllStatsPathZ=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathZ, PolicyPathZ, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid_KFTT, simoptionsFHZ);
+AgeCondStats_FHZ=LifeCycleProfiles_FHorz_Case1(StatDist_FHZ,Policy_FHZ,FnsToEvaluate,ParamsFHZ,[],n_d,n_a,n_z,N_jFH,d_grid,a_grid,z_grid_KFTT(:,1:N_jFH),simoptionsFHZ);
+
+for fnname=fieldnames(FnsToEvaluate)'
+    dev=AggVarsPathZ.(fnname{1}).Mean(1:N_jFH)-AgeCondStats_FHZ.(fnname{1}).Mean;
+    fprintf('TPath vs FHorz (path-varying z), this should be zero, AggVars %s Mean: %2.10f \n',fnname{1},max(abs(dev(:))))
+end
+% The shock FnsToEvaluate, which is what this block is really about: with the process moving, the
+% mean and the std deviation of the shock both move, and the two solvers must agree on both.
+for fnname={'etaval','thetaval'}
+    for statname={'Mean','StdDeviation'}
+        temp1=AllStatsPathZ.(fnname{1}).(statname{1}); temp2=AgeCondStats_FHZ.(fnname{1}).(statname{1});
+        dev=temp1(:,1:N_jFH)-temp2;
+        fprintf('TPath vs FHorz (path-varying z), this should be zero, %s %s: %2.10f \n',fnname{1},statname{1},max(abs(dev(:))))
+    end
+end
+for statname={'Mean','Median','StdDeviation','Variance','Gini','LorenzCurve','QuantileCutoffs','QuantileMeans'}
+    temp1=AllStatsPathZ.assets.(statname{1}); temp2=AgeCondStats_FHZ.assets.(statname{1});
+    dev=temp1(:,1:N_jFH)-temp2;
+    fprintf('TPath vs FHorz (path-varying z), this should be zero, AllStats assets %s: %2.10f \n',statname{1},max(abs(dev(:))))
+end
+
+% Non-vacuity. If the time-varying z_grid/pi_z were silently ignored, everything above would still
+% agree -- both sides would just be solving the fixed-process model -- and the block would prove
+% nothing. Under a fixed process these ranges would be flat; here the KFTT innovation std
+% deviation doubles along the path, so the shock's own mean and std deviation must visibly move.
+for fnname={'etaval','thetaval'}
+    for statname={'Mean','StdDeviation'}
+        temp1=AllStatsPathZ.(fnname{1}).(statname{1});
+        fprintf('Path-varying z bit (range across periods, should be clearly non-zero), %s %s: %2.8f \n',fnname{1},statname{1},max(temp1(:))-min(temp1(:)))
+    end
+end
+
+clear Jz kfttoptions kfttmew kfttrho kfttsigma z_grid_KFTT pi_z_KFTT VPathZ PolicyPathZ ParamsFHZ vfoptionsFHZ V_FHZ Policy_FHZ simoptionsFHZ AgentDistPathZ StatDist_FHZ AggVarsPathZ AllStatsPathZ AgeCondStats_FHZ temp1 temp2 dev pi_theta pi_eta_base theta_grid n_eta n_theta eta_grid_KFTT pi_eta_KFTT
 
 %%
 clear VPath1 VPath2 PolicyPath1 PolicyPath2 VPath1B VPath2B PolicyPath1B PolicyPath2B
@@ -230,7 +352,7 @@ AggVarsPathFH=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathFH, 
 AllStatsPathFH=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathFH, PolicyPath4, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsFH);
 AgeCondStats_FH=LifeCycleProfiles_FHorz_Case1(StatDist_FH,Policy_FH,FnsToEvaluate,ParamsFH,[],n_d,n_a,n_z,N_jFH,d_grid,a_grid,z_grid,simoptionsFH);
 
-for fnname={'assets','entrepreneur','nextassets'}
+for fnname={'assets','entrepreneur','nextassets','etaval','thetaval'}
     dev=AggVarsPathFH.(fnname{1}).Mean(1:N_jFH)-AgeCondStats_FH.(fnname{1}).Mean;
     fprintf('with2A: TPath vs FHorz (with DC and GI), this should be zero, AggVars %s Mean: %2.10f \n',fnname{1},max(abs(dev(:))))
 end
@@ -285,6 +407,77 @@ fprintf('with2A: With/without grid interp, should get much the same moments (for
 fprintf('with2A: AgentDist along TPath with/without grid interp, this should be close to zero: %2.8f \n',max(abs(AgentDistPath2(:)-AgentDistPath4(:))))
 [AggVarsPath2.entrepreneur.Mean; AggVarsPath4.entrepreneur.Mean]
 [AggVarsPath2.assets.Mean; AggVarsPath4.assets.Mean]
+
+%% AutoCorrTransProbs along the path
+% EvalFnOnTransPath_AutoCorrTransProbs_InfHorz is the one TPath evaluation command the rest of this
+% bank never touches. It returns Mean and StdDeviation (which it has to compute anyway as
+% intermediates to the correlation), AutoCovariance, AutoCorrelation, and optionally a transition
+% probability matrix between the values of a FnToEvaluate.
+%
+% Mean and StdDeviation have exact references: the same two objects come out of
+% EvalFnOnTransPath_AggVars_InfHorz and EvalFnOnTransPath_AllStats_InfHorz, so three different
+% commands must agree to machine precision given the same agent distribution and policy path.
+%
+% AutoCovariance and AutoCorrelation have no independent reference here, so they are only checked
+% for internal consistency: the command sets Corr=Covar/(stddev_lag*stddev), and a correlation
+% cannot exceed one in absolute value. Both are written into entries 1:T-1 (entry tt-1 pairs
+% period tt with period tt-1) with the last entry left as zero, which is why the checks stop at T-1.
+%
+% TransitionProbs is asked for on assets and nextassets. It is meant to be a transition matrix
+% between consecutive periods' values, so each row should sum to one. Run on the small grid: the
+% command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and TransitionProbs is
+% (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
+%
+% Guarded: the command has no branch for N_z=0, and no e support at all (it defaults simoptions.n_e
+% but never reads it), so the noz and e subcodes would either error or silently return the wrong
+% thing. Remove the guard once the toolkit covers those cases.
+if prod(n_z)>0 && ~isfield(simoptions,'n_e')
+    simoptionsAC=simoptions2;
+    simoptionsAC.whichstats=ones(7,1); % pin, so AllStats and this command are asked for the same things
+    % assets only: nextassets is the chosen aprime set, whose number of distinct values changes
+    % along the path, and EvalFnOnTransPath_AutoCorrTransProbs_InfHorz preallocates
+    % TransitionProbs at a fixed size from the tt=2 slice, so it errors when that count moves.
+    simoptionsAC.transprobs={'assets'};
+    % PolicyPath2 was cleared further up, so re-solve the plain path here. Deliberately the small
+    % grid, not n_a_big: the command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and
+    % TransitionProbs is (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
+    [~,PolicyPathAC]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
+    AgentDistPathAC=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathAC, n_d, n_a, n_z, pi_z, T, Params, simoptionsAC);
+    AggVarsPathAC=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsAC);
+    AllStatsPathAC=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsAC);
+    CorrTransProbsPathAC=EvalFnOnTransPath_AutoCorrTransProbs_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, pi_z, simoptionsAC);
+
+    for fnname=fieldnames(FnsToEvaluate)'
+        dev=CorrTransProbsPathAC.(fnname{1}).Mean-AggVarsPathAC.(fnname{1}).Mean;
+        fprintf('AutoCorrTransProbs vs AggVars along TPath, this should be zero, Mean %s: %2.10f \n',fnname{1},max(abs(dev)))
+        dev=CorrTransProbsPathAC.(fnname{1}).StdDeviation-AllStatsPathAC.(fnname{1}).StdDeviation;
+        fprintf('AutoCorrTransProbs vs AllStats along TPath, this should be zero, StdDeviation %s: %2.10f \n',fnname{1},max(abs(dev)))
+    end
+
+    for fnname=fieldnames(FnsToEvaluate)'
+        sdthis=CorrTransProbsPathAC.(fnname{1}).StdDeviation(2:T);
+        sdlag=CorrTransProbsPathAC.(fnname{1}).StdDeviation(1:T-1);
+        dev=CorrTransProbsPathAC.(fnname{1}).AutoCorrelation(1:T-1)-CorrTransProbsPathAC.(fnname{1}).AutoCovariance(1:T-1)./(sdlag.*sdthis);
+        fprintf('AutoCorrTransProbs internal, corr=cov/(sd*sd), this should be zero, %s: %2.10f \n',fnname{1},max(abs(dev)))
+        fprintf('AutoCorrTransProbs internal, max abs AutoCorrelation (should be at most one), %s: %2.8f \n',fnname{1},max(abs(CorrTransProbsPathAC.(fnname{1}).AutoCorrelation(1:T-1))))
+    end
+
+    % The command only fills TransitionProbs in when the set of distinct values is the same in
+    % consecutive periods, so check the field is there before using it.
+    for fnname={'assets'}
+        if isfield(CorrTransProbsPathAC.(fnname{1}),'TransitionProbs')
+            TPac=CorrTransProbsPathAC.(fnname{1}).TransitionProbs;
+            fprintf('AutoCorrTransProbs TransitionProbs %s: size %s, smallest entry (should not be negative): %2.10f \n',fnname{1},mat2str(size(TPac)),min(TPac(:)))
+            fprintf('AutoCorrTransProbs TransitionProbs %s, row sums should be one, max abs deviation: %2.10f \n',fnname{1},max(abs(sum(TPac,2)-1),[],'all'))
+            fprintf('AutoCorrTransProbs TransitionProbs %s, column sums, max abs deviation from one: %2.10f \n',fnname{1},max(abs(sum(TPac,1)-1),[],'all'))
+        else
+            fprintf('AutoCorrTransProbs TransitionProbs %s: not returned, the distinct values are not the same in consecutive periods \n',fnname{1})
+        end
+    end
+    clear simoptionsAC PolicyPathAC AgentDistPathAC AggVarsPathAC AllStatsPathAC CorrTransProbsPathAC TPac sdthis sdlag dev
+else
+    fprintf('AutoCorrTransProbs along TPath: skipped, EvalFnOnTransPath_AutoCorrTransProbs_InfHorz has no N_z=0 branch and no e support \n')
+end
 
 %% Plots
 fig=figure(figure_c);

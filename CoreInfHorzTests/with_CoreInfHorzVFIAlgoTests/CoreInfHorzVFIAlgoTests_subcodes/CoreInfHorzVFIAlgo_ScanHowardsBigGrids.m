@@ -1,4 +1,4 @@
-function output=CoreInfHorzVFIAlgo_ScanHowardsBigGrids(Params,DiscountFactorParamNames)
+function output=CoreInfHorzVFIAlgo_ScanHowardsBigGrids(Params,DiscountFactorParamNames,whichcells)
 % SCAN 4: the Howards defaults on big grids.
 %
 % Purpose is narrow: decide whether the vfoptions.howardssparse default is set on the right rule.
@@ -33,6 +33,14 @@ DF=DiscountFactorParamNames;
 cells={[75,1000],[150,500],[150,1000],[75,1500],[150,1500]};
 howardslist=[40,80];
 
+% whichcells is optional and indexes into cells, so a single cell can be re-run on its own rather
+% than redoing the whole scan. Cell 4, [75,1500], is the only one where the Howards policies have
+% ever differed from the pure VFI reference, so it is the one to pass when chasing the POLDIFF
+% diagnostic below. Omit it, or pass [], for all five.
+if ~exist('whichcells','var') || isempty(whichcells)
+    whichcells=1:length(cells);
+end
+
 % Each config is {label, howardsgreedy, howardssparse, lowmemory}
 cfg_noGI={{'greedy0/sparse0     ',0,0,0},...
           {'greedy0/sparse1     ',0,1,0},...
@@ -48,7 +56,7 @@ cfg_GI  ={{'greedy0/sparse0/lm0 ',0,0,0},...
 
 fprintf('\n================ SCAN 4: Howards defaults on big grids ================\n');
 
-for cc_c=1:length(cells)
+for cc_c=whichcells
 n_z=cells{cc_c}(1);
 n_a=cells{cc_c}(2);
 [z_grid,pi_z]=discretizeAR1_FarmerToda(0,0.9,0.03,n_z); % same discretization as the bank setup
@@ -109,6 +117,34 @@ for mm=1:2
                         fprintf('%s %s howards=%3d runtime: %2.4f seconds (no OFF reference to compare against) \n',gistr,cfg{cc}{1},howardslist(hh),tc);
                     else
                         fprintf('%s %s howards=%3d vs OFF, V ~0: %2.8f, Pol 0: %2.8f, speedup >1: %2.2f \n',gistr,cfg{cc}{1},howardslist(hh),max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
+                        % A policy index difference is not by itself a fault. Where two choices are
+                        % worth the same to within the solver tolerance, Howards and pure VFI are
+                        % free to pick either, and the max-abs-difference above cannot tell that
+                        % apart from one of them being wrong. It also collapses the d row and the
+                        % aprime row together, so on its own it does not even say which choice moved.
+                        % So when the policies differ, report which row differs and then what the
+                        % difference is worth: evaluate both policies and compare the value each
+                        % delivers. That is the quantity with an economic meaning, and ~0 settles it
+                        % as a tie.
+                        if max(abs(Policyoff(:)-Policyc(:)))>0
+                            if prod(n_d)==0
+                                lrow=1; rowname={'aprime'};
+                            else
+                                lrow=2; rowname={'d','aprime'};
+                            end
+                            Poff=reshape(gather(Policyoff),[lrow,numel(Policyoff)/lrow]);
+                            Pc=reshape(gather(Policyc),[lrow,numel(Policyc)/lrow]);
+                            for rr=1:lrow
+                                rdiff=Pc(rr,:)-Poff(rr,:);
+                                if any(rdiff~=0)
+                                    fprintf('   POLDIFF %s: %d of %d states differ, max|diff|=%d, %d up / %d down \n',rowname{rr},sum(rdiff~=0),size(Poff,2),max(abs(rdiff)),sum(rdiff>0),sum(rdiff<0));
+                                end
+                            end
+                            VpOff=ValueFnFromPolicy_InfHorz(gpuArray(Policyoff),n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,vfo);
+                            VpC=ValueFnFromPolicy_InfHorz(Policyc,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,vfo);
+                            [vgap,vloc]=max(abs(VpOff(:)-VpC(:)));
+                            fprintf('   POLDIFF value cost: max|V(Poff)-V(Pc)| = %2.10f at state %d of %d (~0 => the two policies are worth the same, so this is a tie and not a fault) \n',vgap,vloc,numel(VpOff));
+                        end
                     end
                 catch ME
                     fprintf('%s %s howards=%3d not run: %s \n',gistr,cfg{cc}{1},howardslist(hh),ME.message(1:min(end,90)));

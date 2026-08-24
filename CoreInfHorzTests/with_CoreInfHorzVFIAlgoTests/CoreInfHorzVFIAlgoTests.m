@@ -70,10 +70,10 @@ output=CoreInfHorzVFIAlgo_CrossTest_dummyd(n_a,n_a_big,n_z,a_grid,a_grid_big,z_g
 % Based on these, I decided postGIrepeat is fairly useless
 % And set a conservatively large maxaprimediff, will be a bit slower than
 % things could be, but trying to set something large enough tn ensure that it always converges.
-% output=CoreInfHorzVFIAlgo_ScanMaxaprimediff(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
-% output=CoreInfHorzVFIAlgo_ScanPostGIrepeat(n_z,z_grid,pi_z,Params,DiscountFactorParamNames);
+output=CoreInfHorzVFIAlgo_ScanMaxaprimediff(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
+output=CoreInfHorzVFIAlgo_ScanPostGIrepeat(n_z,z_grid,pi_z,Params,DiscountFactorParamNames);
 % Same again but for a nod model (no n_d loop, and maxaprimediff centred on 5, which is the nod default)
-% output=CoreInfHorzVFIAlgo_ScanPostGIrepeat_nod(n_z,z_grid,pi_z,Params,DiscountFactorParamNames);
+output=CoreInfHorzVFIAlgo_ScanPostGIrepeat_nod(n_z,z_grid,pi_z,Params,DiscountFactorParamNames);
 
 %% Howards settings: do the Howards accelerators give the same answer as no Howards, and are they faster?
 % z (no e) models, with and without d, at n_z=5,15,25,75 and n_a=100,200,500.
