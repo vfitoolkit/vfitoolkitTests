@@ -21,8 +21,7 @@
 %         by V_EZ=((1-ezgamma)*V_vNM).^(1/(1-ezgamma)))
 %   (ii)  utility-units: EZriskaversion=0 collapses EZ to standard vNM (positive and negative cases)
 %   (iii) the same collapses under the grid interpolation layer
-%   (iv)  vfoptions.EZoneminusbeta=1 versus manually scaling the return fn [FLAGGED, may fail;
-%         see 'Open issues' in EZtests_full_coverage_proposal.md]
+%   (iv)  vfoptions.EZoneminusbeta=1 versus manually scaling the return fn
 %
 % TEST-FIRST STATE (see EZtests_full_coverage_proposal.md). The following are EXPECTED to error or
 % fail until the corresponding toolkit features are implemented; they are here so the gap is
@@ -68,6 +67,14 @@ Params.ezphi=0.5; % consumption-units elasticity of intertemporal substitution (
 Params.ezrisk=3; % utility-units additional risk aversion (vfoptions.EZriskaversion when EZutils=1)
 Params.ezsigma=2; % curvature of the positiveUtils/negativeUtils utility fns (>1; the positiveUtils
 % family uses a (1+x) shift so it stays strictly positive despite ezsigma>1)
+
+% Survival-probability and warm-glow parameters (special tests (vi)-(ix))
+Params.sj=[linspace(1,0.6,N_j-1),0]; % declining survival, sj(N_j)=0: warm-glow active at every age AND the terminal-age convention is exercised
+Params.oneminussj=1-Params.sj; % age-dependent ReturnFn parameter for the combined warm-glow reference wrappers
+Params.wg1=2; % De Nardi warm-glow: strength of the bequest motive (theta)
+Params.wg2=1; % De Nardi warm-glow: luxury-good shifter (kappa; bequests are luxury goods) (see LifeCycleModel12 of IntroToLifeCycleModels)
+Params.wg3=Params.ezsigma; % De Nardi warm-glow: curvature, set equal to the utility curvature (utility-units cases; the cons-units warm-glow fn is in consumption units and gets its curvature from the EZ preferences)
+Params.ezmrisk=5; % EZmortalityriskaversion for special test (viii) (mortality risk aversion, distinct from the within-period risk aversion)
 
 % vfoptions.exoticpreferences='EpsteinZin';
 % Case 1: vfoptions.EZutils=0; vfoptions.EZriskaversion='ezgamma'; vfoptions.EZeis='ezphi';
@@ -142,7 +149,7 @@ output=EZFHorz_CrossTests_nod_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_gr
 
 output=EZFHorz_CrossTests_d_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-%% CrossTests3 (NEW, EZ-specific, no QH analog): markov z plus iid e, versus the same two shocks
+%% CrossTests3 (EZ-specific, no QH analog): markov z plus iid e, versus the same two shocks
 % as a single joint (two-variable) markov. THE key test that the codes take one CE over the joint
 % distribution of (zprime,eprime) rather than nesting CEs (which only coincides when gamma=1/phi).
 
@@ -197,6 +204,14 @@ Params.ezgamma=3;
 Params.ezphi=0.5;
 Params.ezrisk=3;
 Params.ezsigma=2;
+
+% Survival-probability and warm-glow parameters (special tests (vi)-(ix))
+Params.sj=[linspace(1,0.6,N_j-1),0]; % declining survival, sj(N_j)=0: warm-glow active at every age AND the terminal-age convention is exercised
+Params.oneminussj=1-Params.sj; % age-dependent ReturnFn parameter for the combined warm-glow reference wrappers
+Params.wg1=2; % De Nardi warm-glow: strength of the bequest motive (theta)
+Params.wg2=1; % De Nardi warm-glow: luxury-good shifter (kappa; bequests are luxury goods) (see LifeCycleModel12 of IntroToLifeCycleModels)
+Params.wg3=Params.ezsigma; % De Nardi warm-glow: curvature, set equal to the utility curvature (utility-units cases; the cons-units warm-glow fn is in consumption units and gets its curvature from the EZ preferences)
+Params.ezmrisk=5; % EZmortalityriskaversion for special test (viii) (mortality risk aversion, distinct from the within-period risk aversion)
 
 %% without d1, without z, without e, with semiz
 figure_c=9;

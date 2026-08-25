@@ -5,6 +5,16 @@ function output=EZFHorz_nod_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,
 %   Case 2: utility-units, positive-valued utility fn (EZutils=1, EZpositiveutility=1)
 %   Case 3: utility-units, negative-valued utility fn (EZutils=1, EZpositiveutility=0)
 % followed by the EZ special tests (gamma=1/phi collapse; EZriskaversion=0 collapse; EZoneminusbeta=1).
+% plus special test (v): V_Jplus1 (V of period jstar as the terminal value fn of a shorter model).
+% plus special tests (vi)-(ix):
+%   (vi)   survival probabilities: sjones plumbing; the (i)/(ii) collapse oracles with declining sj
+%          (the vNM oracle discounts by DiscountFactorParamNames={'beta','sj'}); cross-method agreement with sj
+%   (vii)  warm-glow of bequests (De Nardi luxury-good form): terminal-only default and with declining sj;
+%          exact vNM collapse oracles with sj+warm-glow; a V_Jplus1 mini-leg; the N_j-1 terminal
+%          warm-glow identity (utility-units only)
+%   (viii) EZmortalityriskaversion: identity when set equal to the case's own risk aversion; cross-method
+%          agreement with a distinct mortality risk aversion
+%   (ix)   EZoneminusbeta=2 versus manually scaling the return fn by the age-dependent (1-sj*beta) factor
 % Two-endogenous-state (with2A) versions of these tests will be added later.
 
 % Setup vfoptions and simoptions
@@ -539,13 +549,10 @@ fprintf('EZ (negative utils) with EZriskaversion=0 (GI): should give zero: %2.8f
 Params.ezrisk=ezrisk_store;
 clear V1a V1b V1btransformed V2a V2b V3a V3b Policy1a Policy1b Policy2a Policy2b Policy3a Policy3b
 
-%% (iv) vfoptions.EZoneminusbeta=1, tested against the DOCUMENTED behaviour
-% FLAGGED, POSSIBLY-FAILING: reading the EZ raws, ezc1 is applied both to the this-period return
-% AND again to the whole aggregated RHS before the final root (e.g. lines 114 and 117 of
-% ValueFnIter_FHorz_EpsteinZin_nod_raw.m), i.e. an extra (1-beta) scaling beyond the documented
-% '(1-beta)* term on the this period return'. These tests are written against the DOCUMENTED
-% behaviour so a failure here drives a decision (fix the code, or document the normalization).
-% See 'Open issues' in EZtests_full_coverage_proposal.md. Details:
+%% (iv) vfoptions.EZoneminusbeta=1
+% (Flag retired 2026-08-25: these tests were originally flagged may-fail against an ezc1
+% double-application in the raws; that was resolved by removing the outer ezc1 from the raws
+% [2026-08-11], and the tests have passed exactly on GPU ever since.) Oracles:
 % - consumption-units: EZ is homogeneous of degree 1 in the return, so EZoneminusbeta=1 with
 %   return x should equal EZoneminusbeta=0 with return scaled by (1-beta)^(1/(1-1/ezphi)).
 % - utility-units: V=(1-beta)*u+beta*(CE) is the same recursion as default with u scaled by (1-beta).
@@ -565,8 +572,8 @@ vfoptions1.EZoneminusbeta=1;
 [V4a,Policy4a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V4b,Policy4b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons_scaled,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=1 (cons-units) vs manual scaling: should give zero (FLAGGED, may fail): %2.8f \n',max(abs(V4a(:)-V4b(:))))
-fprintf('EZoneminusbeta=1 (cons-units) vs manual scaling: should give zero (FLAGGED, may fail): %2.8f \n',max(abs(Policy4a(:)-Policy4b(:))))
+fprintf('EZoneminusbeta=1 (cons-units) vs manual scaling: should give zero: %2.8f \n',max(abs(V4a(:)-V4b(:))))
+fprintf('EZoneminusbeta=1 (cons-units) vs manual scaling: should give zero: %2.8f \n',max(abs(Policy4a(:)-Policy4b(:))))
 
 % utility-units, positive
 ReturnFn_posU_scaled=@(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension,ezscalefactoru) ezscalefactoru*EZReturnFn_positiveUtils_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension);
@@ -579,8 +586,8 @@ vfoptions1.EZoneminusbeta=1;
 [V5a,Policy5a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V5b,Policy5b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU_scaled,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=1 (positive utils) vs manual scaling: should give zero (FLAGGED, may fail): %2.8f \n',max(abs(V5a(:)-V5b(:))))
-fprintf('EZoneminusbeta=1 (positive utils) vs manual scaling: should give zero (FLAGGED, may fail): %2.8f \n',max(abs(Policy5a(:)-Policy5b(:))))
+fprintf('EZoneminusbeta=1 (positive utils) vs manual scaling: should give zero: %2.8f \n',max(abs(V5a(:)-V5b(:))))
+fprintf('EZoneminusbeta=1 (positive utils) vs manual scaling: should give zero: %2.8f \n',max(abs(Policy5a(:)-Policy5b(:))))
 
 % utility-units, negative
 ReturnFn_negU_scaled=@(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension,ezscalefactoru) ezscalefactoru*EZReturnFn_negativeUtils_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension);
@@ -593,8 +600,718 @@ vfoptions1.EZoneminusbeta=1;
 [V6a,Policy6a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V6b,Policy6b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU_scaled,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=1 (negative utils) vs manual scaling: should give zero (FLAGGED, may fail): %2.8f \n',max(abs(V6a(:)-V6b(:))))
-fprintf('EZoneminusbeta=1 (negative utils) vs manual scaling: should give zero (FLAGGED, may fail): %2.8f \n',max(abs(Policy6a(:)-Policy6b(:))))
+fprintf('EZoneminusbeta=1 (negative utils) vs manual scaling: should give zero: %2.8f \n',max(abs(V6a(:)-V6b(:))))
+fprintf('EZoneminusbeta=1 (negative utils) vs manual scaling: should give zero: %2.8f \n',max(abs(Policy6a(:)-Policy6b(:))))
+
+clear V4a V4b V5a V5b V6a V6b Policy4a Policy4b Policy5a Policy5b Policy6a Policy6b
+
+%% (v) V_Jplus1: use V of period jstar as the terminal value function of a shorter model
+% Solve the model, then solve a shorter model that runs only periods 1,...,jstar-1, giving it
+% vfoptions.V_Jplus1=V(:,:,jstar). V_Jplus1 is the value fn of period N_j+1 of the model being
+% solved, so the shorter model has Njs=jstar-1 periods, and the age-dependent parameters are
+% trimmed to length Njs. V and Policy must then be identical to the original model for periods
+% 1,...,jstar-1. Each of the four solution methods gets a different jstar (the last of them uses
+% jstar=N_j, so that one of them covers the retirement periods). Run for all three EZ cases.
+% Note: mewj is age-dependent, but is only used for the agent distribution, which is not
+% computed here, so it is left alone.
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+    end
+    % The four solution methods, composed with this case's EZ vfoptions
+    vfoptions1=vfoptionsv;
+    vfoptions2=vfoptionsv;
+    vfoptions2.divideandconquer=1;
+    vfoptions3=vfoptionsv;
+    vfoptions3.gridinterplayer=1;
+    vfoptions3.ngridinterp=5;
+    vfoptions4=vfoptionsv;
+    vfoptions4.divideandconquer=1;
+    vfoptions4.gridinterplayer=1;
+    vfoptions4.ngridinterp=5;
+
+    %% V_Jplus1, without divide-and-conquer, without grid interpolation
+    jstar=round(3*N_j/4);
+    Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+    Paramsjs=Params;
+    Paramsjs.agej=Params.agej(1:Njs);
+    Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    vfoptionsjs=vfoptions1;
+    vfoptionsjs.V_Jplus1=Vbase(:,:,jstar);
+    Vbase=Vbase(:,:,1:Njs);
+    Policybase=Policybase(:,:,:,1:Njs);
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1 (jstar=%i) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
+    vfoptionsjs.lowmemory=1;
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1, lowmemory=1 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    vfoptionsjs.lowmemory=0;
+
+    %% V_Jplus1, with divide-and-conquer
+    jstar=round(2*N_j/3);
+    Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+    Paramsjs=Params;
+    Paramsjs.agej=Params.agej(1:Njs);
+    Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+    vfoptionsjs=vfoptions2;
+    vfoptionsjs.V_Jplus1=Vbase(:,:,jstar);
+    Vbase=Vbase(:,:,1:Njs);
+    Policybase=Policybase(:,:,:,1:Njs);
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1 (jstar=%i, with DC) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with DC) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
+    vfoptionsjs.lowmemory=1;
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1, lowmemory=1 (with DC) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with DC) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    vfoptionsjs.lowmemory=0;
+
+    %% V_Jplus1, with grid interpolation
+    jstar=round(N_j/2);
+    Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+    Paramsjs=Params;
+    Paramsjs.agej=Params.agej(1:Njs);
+    Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+    vfoptionsjs=vfoptions3;
+    vfoptionsjs.V_Jplus1=Vbase(:,:,jstar);
+    Vbase=Vbase(:,:,1:Njs);
+    Policybase=Policybase(:,:,:,1:Njs);
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1 (jstar=%i, with GI) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with GI) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
+    vfoptionsjs.lowmemory=1;
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1, lowmemory=1 (with GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    vfoptionsjs.lowmemory=0;
+
+    %% V_Jplus1, with divide-and-conquer and grid interpolation
+    jstar=N_j;
+    Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+    Paramsjs=Params;
+    Paramsjs.agej=Params.agej(1:Njs);
+    Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+    vfoptionsjs=vfoptions4;
+    vfoptionsjs.V_Jplus1=Vbase(:,:,jstar);
+    Vbase=Vbase(:,:,1:Njs);
+    Policybase=Policybase(:,:,:,1:Njs);
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1 (jstar=%i, with DC+GI) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with DC+GI) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
+    vfoptionsjs.lowmemory=1;
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1, lowmemory=1 (with DC+GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with DC+GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    vfoptionsjs.lowmemory=0;
+end
+
+clear Vbase Vshort Policybase Policyshort
+
+%% (vi) Survival probabilities (vfoptions.survivalprobability)
+% Params.sj is declining with sj(N_j)=0 (set in CoreFHorzEZTests.m). When vfoptions.survivalprobability
+% is not set the EZ codes use sj=ones(N_j,1) internally, so survivalprobability='sjones' (all ones)
+% must reproduce the baseline solve exactly (pure plumbing). Then the (i)/(ii) collapse oracles are
+% repeated WITH the declining sj: once EZ collapses to vNM, the survival probability is just an
+% age-dependent discount factor, so the vNM oracle uses DiscountFactorParamNames={'beta','sj'}.
+Params2=Params;
+Params2.sjones=ones(1,N_j);
+DiscountFactorParamNames2={'beta','sj'}; % beta*sj: age-dependent discounting for the vNM oracles
+
+% (vi).1 plumbing: survivalprobability='sjones' vs not setting survivalprobability, all three EZ cases
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+    end
+    [V1a,Policy1a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptionsv);
+    vfoptionsv.survivalprobability='sjones';
+    [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptionsv);
+    fprintf('survivalprobability all-ones vs unset [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1a(:)-V1b(:))))
+    fprintf('survivalprobability all-ones vs unset [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1a(:)-Policy1b(:))))
+end
+clear V1a V1b Policy1a Policy1b
+
+% (vi).2 cons-units gamma=1/phi collapse WITH the declining sj (as (i), plus survivalprobability='sj';
+% the vNM oracle discounts by beta*sj). Policy exact; V via the usual transform. Also repeated under
+% the grid interpolation layer (linear interpolation commutes with the affine collapse transform,
+% so it should stay exact).
+ezphi_store=Params.ezphi;
+ezsigma_store=Params.ezsigma;
+Params.ezphi=1/Params.ezgamma;
+Params.ezsigma=Params.ezgamma;
+
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=0;
+vfoptions1.EZriskaversion='ezgamma';
+vfoptions1.EZeis='ezphi';
+vfoptions1.survivalprobability='sj';
+[V1a,Policy1a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1=rmfield(vfoptions1,'survivalprobability');
+vfoptions1.exoticpreferences='None';
+[V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames2,[],vfoptions1);
+V1btransformed=((1-Params.ezgamma)*V1b).^(1/(1-Params.ezgamma));
+fprintf('EZ gamma=1/phi collapse with sj, Policy [EZ cons-units]: should give zero: %2.8f \n',max(abs(Policy1a(:)-Policy1b(:))))
+fprintf('EZ gamma=1/phi collapse with sj, V after transform (relative) [EZ cons-units]: should be roughly 1e-13: %g \n',max(abs(V1a(:)-V1btransformed(:)))/max(abs(V1a(:))))
+% the same under the grid interpolation layer
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=0;
+vfoptions1.EZriskaversion='ezgamma';
+vfoptions1.EZeis='ezphi';
+vfoptions1.survivalprobability='sj';
+vfoptions1.gridinterplayer=1;
+vfoptions1.ngridinterp=5;
+[V1c,Policy1c]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1=rmfield(vfoptions1,'survivalprobability');
+vfoptions1.exoticpreferences='None';
+[V1d,Policy1d]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames2,[],vfoptions1);
+V1dtransformed=((1-Params.ezgamma)*V1d).^(1/(1-Params.ezgamma));
+fprintf('EZ gamma=1/phi collapse with sj (GI), Policy [EZ cons-units]: should give zero: %2.8f \n',max(abs(Policy1c(:)-Policy1d(:))))
+fprintf('EZ gamma=1/phi collapse with sj (GI), V after transform (relative) [EZ cons-units]: should be roughly 1e-13: %g \n',max(abs(V1c(:)-V1dtransformed(:)))/max(abs(V1c(:))))
+
+Params.ezphi=ezphi_store;
+Params.ezsigma=ezsigma_store;
+clear V1a V1b V1btransformed V1c V1d V1dtransformed Policy1a Policy1b Policy1c Policy1d
+
+% (vi).3 utility-units EZriskaversion=0 WITH the declining sj (as (ii), plus survivalprobability='sj';
+% the vNM oracle discounts by beta*sj). V and Policy exact, both signs of the utility fn.
+ezrisk_store=Params.ezrisk;
+Params.ezrisk=0;
+
+% positive-valued utility fn
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=1;
+vfoptions1.EZpositiveutility=1;
+vfoptions1.EZriskaversion='ezrisk';
+vfoptions1.survivalprobability='sj';
+[V2a,Policy2a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1=rmfield(vfoptions1,'survivalprobability');
+vfoptions1.exoticpreferences='None';
+[V2b,Policy2b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames2,[],vfoptions1);
+fprintf('EZ with EZriskaversion=0 and sj [EZ positive utils]: should give zero: %2.8f \n',max(abs(V2a(:)-V2b(:))))
+fprintf('EZ with EZriskaversion=0 and sj [EZ positive utils]: should give zero: %2.8f \n',max(abs(Policy2a(:)-Policy2b(:))))
+
+% negative-valued utility fn
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=1;
+vfoptions1.EZpositiveutility=0;
+vfoptions1.EZriskaversion='ezrisk';
+vfoptions1.survivalprobability='sj';
+[V3a,Policy3a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1=rmfield(vfoptions1,'survivalprobability');
+vfoptions1.exoticpreferences='None';
+[V3b,Policy3b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames2,[],vfoptions1);
+fprintf('EZ with EZriskaversion=0 and sj [EZ negative utils]: should give zero: %2.8f \n',max(abs(V3a(:)-V3b(:))))
+fprintf('EZ with EZriskaversion=0 and sj [EZ negative utils]: should give zero: %2.8f \n',max(abs(Policy3a(:)-Policy3b(:))))
+
+Params.ezrisk=ezrisk_store;
+clear V2a V2b V3a V3b Policy2a Policy2b Policy3a Policy3b
+
+% (vi).4 cross-method agreement with the declining sj, all three EZ cases: basic==DC, GI==DC+GI,
+% and ValueFnFromPolicy on the basic solve (the first exercise of the FromPolicy sj path).
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+    end
+    vfoptionsv.survivalprobability='sj';
+    vfoptions1=vfoptionsv;
+    vfoptions2=vfoptionsv;
+    vfoptions2.divideandconquer=1;
+    vfoptions3=vfoptionsv;
+    vfoptions3.gridinterplayer=1;
+    vfoptions3.ngridinterp=5;
+    vfoptions4=vfoptions3;
+    vfoptions4.divideandconquer=1;
+    [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+    [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+    [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+    V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+    fprintf('sj, ValueFnFromPolicy [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('sj, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V2(:))))
+    fprintf('sj, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
+    fprintf('sj, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
+    fprintf('sj, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+end
+clear V1 V2 V3 V4 Policy1 Policy2 Policy3 Policy4 V1fromPolicy
+
+%% (vii) Warm-glow of bequests (De Nardi luxury-good form), vfoptions.WarmGlowBequestsFn
+% Each EZ case gets a warm-glow fn matching its sign/units convention (see EZ_ReturnFns): cons-units
+% gets EZWarmGlowFn_cons (a consumption-equivalent, strictly positive; curvature comes from the EZ
+% preferences), positive/negative utils get EZWarmGlowFn_positiveUtils/EZWarmGlowFn_negativeUtils
+% (strictly positive/strictly negative, nonzero at aprime=0 so the WG==0 mask conventions are avoided).
+WGFn_cons=@(aprime,wg1,wg2) EZWarmGlowFn_cons(aprime,wg1,wg2);
+WGFn_posU=@(aprime,wg1,wg2,wg3) EZWarmGlowFn_positiveUtils(aprime,wg1,wg2,wg3);
+WGFn_negU=@(aprime,wg1,wg2,wg3) EZWarmGlowFn_negativeUtils(aprime,wg1,wg2,wg3);
+Params2.sjterm=[ones(1,N_j-1),0]; % the sj the toolkit defaults to when WarmGlowBequestsFn is set but survivalprobability is not
+
+% (vii).1 terminal-only warm-glow: WarmGlowBequestsFn set but NO survivalprobability, so the toolkit
+% defaults to warm-glow only at the end of the final period (each solve prints the expected warning).
+% All three EZ cases: FromPolicy, basic==DC, GI==DC+GI, and the identity with explicitly passing
+% survivalprobability='sjterm'.
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_cons;
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_posU;
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_negU;
+        ReturnFn=ReturnFn_negU;
+    end
+    vfoptions1=vfoptionsv;
+    vfoptions2=vfoptionsv;
+    vfoptions2.divideandconquer=1;
+    vfoptions3=vfoptionsv;
+    vfoptions3.gridinterplayer=1;
+    vfoptions3.ngridinterp=5;
+    vfoptions4=vfoptions3;
+    vfoptions4.divideandconquer=1;
+    [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptions1);
+    [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptions2);
+    [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptions3);
+    [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptions4);
+    V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,vfoptions1);
+    fprintf('warm-glow terminal-only, ValueFnFromPolicy [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('warm-glow terminal-only, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V2(:))))
+    fprintf('warm-glow terminal-only, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
+    fprintf('warm-glow terminal-only, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
+    fprintf('warm-glow terminal-only, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+    vfoptions5=vfoptions1;
+    vfoptions5.survivalprobability='sjterm';
+    [V5,Policy5]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptions5);
+    fprintf('warm-glow terminal-only vs explicit sjterm [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V5(:))))
+    fprintf('warm-glow terminal-only vs explicit sjterm [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy5(:))))
+end
+clear V1 V2 V3 V4 V5 Policy1 Policy2 Policy3 Policy4 Policy5 V1fromPolicy
+
+% (vii).2 warm-glow at every age: WarmGlowBequestsFn plus the declining sj (warm-glow weight 1-sj(j)
+% at every age, weight exactly one in the final period as sj(N_j)=0). All three EZ cases: FromPolicy,
+% basic==DC, GI==DC+GI.
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_cons;
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_posU;
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_negU;
+        ReturnFn=ReturnFn_negU;
+    end
+    vfoptionsv.survivalprobability='sj';
+    vfoptions1=vfoptionsv;
+    vfoptions2=vfoptionsv;
+    vfoptions2.divideandconquer=1;
+    vfoptions3=vfoptionsv;
+    vfoptions3.gridinterplayer=1;
+    vfoptions3.ngridinterp=5;
+    vfoptions4=vfoptions3;
+    vfoptions4.divideandconquer=1;
+    [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+    [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+    [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+    V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+    fprintf('warm-glow with sj, ValueFnFromPolicy [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('warm-glow with sj, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V2(:))))
+    fprintf('warm-glow with sj, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
+    fprintf('warm-glow with sj, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
+    fprintf('warm-glow with sj, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+end
+clear V1 V2 V3 V4 Policy1 Policy2 Policy3 Policy4 V1fromPolicy
+
+% (vii).3 exact collapse oracles with sj AND warm-glow.
+% (vii).3a cons-units gamma=1/phi: EXCLUDED. The toolkit's terminal-age warm-glow convention is
+% additive AFTER the ^ezc7 root, V_Nj=(ezc1*F^ezc2)^ezc7+ezc3*beta*((1-sj)*WG^ezc8)^ezc6, whereas
+% the combined-wrapper vNM oracle's W-recursion (W=F^x+beta*sj*E[W']+beta*(1-sj)*WG^x) implies
+% terminal V=(F^x+beta*(1-sj)*WG^x)^(1/x); these coincide only when ezc7==1, so for cons-units
+% (ezc7=1/(1-1/phi)~=1) the oracle cannot match at N_j and the difference propagates back to all
+% ages (the same reason cons-units is excluded from (vii).5). The utility-units legs (vii).3b
+% below have ezc7==1 and are unaffected.
+
+% (vii).3b utility-units EZriskaversion=0 with sj and warm-glow: the vNM oracle adds
+% beta*oneminussj*WG(aprime) to the return fn (the warm-glow is already in utility units).
+% V and Policy exact directly (no transform), both signs of the utility fn.
+ezrisk_store=Params.ezrisk;
+Params.ezrisk=0;
+ReturnFn_posUWGoracle=@(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension,beta,oneminussj,wg1,wg2,wg3) EZReturnFn_positiveUtils_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension)+beta*oneminussj*EZWarmGlowFn_positiveUtils(aprime,wg1,wg2,wg3);
+ReturnFn_negUWGoracle=@(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension,beta,oneminussj,wg1,wg2,wg3) EZReturnFn_negativeUtils_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension)+beta*oneminussj*EZWarmGlowFn_negativeUtils(aprime,wg1,wg2,wg3);
+% positive-valued utility fn
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=1;
+vfoptions1.EZpositiveutility=1;
+vfoptions1.EZriskaversion='ezrisk';
+vfoptions1.survivalprobability='sj';
+vfoptions1.WarmGlowBequestsFn=WGFn_posU;
+[V2a,Policy2a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1=struct();
+vfoptions1.exoticpreferences='None';
+[V2b,Policy2b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posUWGoracle,Params,DiscountFactorParamNames2,[],vfoptions1);
+fprintf('EZ with EZriskaversion=0, sj+warm-glow [EZ positive utils]: should give zero: %2.8f \n',max(abs(V2a(:)-V2b(:))))
+fprintf('EZ with EZriskaversion=0, sj+warm-glow [EZ positive utils]: should give zero: %2.8f \n',max(abs(Policy2a(:)-Policy2b(:))))
+% negative-valued utility fn
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=1;
+vfoptions1.EZpositiveutility=0;
+vfoptions1.EZriskaversion='ezrisk';
+vfoptions1.survivalprobability='sj';
+vfoptions1.WarmGlowBequestsFn=WGFn_negU;
+[V3a,Policy3a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1=struct();
+vfoptions1.exoticpreferences='None';
+[V3b,Policy3b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negUWGoracle,Params,DiscountFactorParamNames2,[],vfoptions1);
+fprintf('EZ with EZriskaversion=0, sj+warm-glow [EZ negative utils]: should give zero: %2.8f \n',max(abs(V3a(:)-V3b(:))))
+fprintf('EZ with EZriskaversion=0, sj+warm-glow [EZ negative utils]: should give zero: %2.8f \n',max(abs(Policy3a(:)-Policy3b(:))))
+Params.ezrisk=ezrisk_store;
+clear V2a V2b V3a V3b Policy2a Policy2b Policy3a Policy3b
+
+% (vii).4 V_Jplus1 mini-leg with sj and warm-glow on: as (v) but only one jstar and only the basic
+% and DC methods. The age-dependent sj and oneminussj are trimmed to the shorter horizon too (the
+% toolkit checks length(sj) against the N_j of the model being solved).
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_cons;
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_posU;
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        vfoptionsv.WarmGlowBequestsFn=WGFn_negU;
+        ReturnFn=ReturnFn_negU;
+    end
+    vfoptionsv.survivalprobability='sj';
+    vfoptions1=vfoptionsv;
+    vfoptions2=vfoptionsv;
+    vfoptions2.divideandconquer=1;
+    jstar=round(2*N_j/3);
+    Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+    Paramsjs=Params;
+    Paramsjs.agej=Params.agej(1:Njs);
+    Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+    Paramsjs.sj=Params.sj(1:Njs);
+    Paramsjs.oneminussj=Params.oneminussj(1:Njs);
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    vfoptionsjs=vfoptions1;
+    vfoptionsjs.V_Jplus1=Vbase(:,:,jstar);
+    Vbase=Vbase(:,:,1:Njs);
+    Policybase=Policybase(:,:,:,1:Njs);
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1 with sj+warm-glow (jstar=%i) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 with sj+warm-glow (jstar=%i) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    % with divide-and-conquer
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+    vfoptionsjs=vfoptions2;
+    vfoptionsjs.V_Jplus1=Vbase(:,:,jstar);
+    Vbase=Vbase(:,:,1:Njs);
+    Policybase=Policybase(:,:,:,1:Njs);
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1 with sj+warm-glow (jstar=%i, with DC) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 with sj+warm-glow (jstar=%i, with DC) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+end
+clear Vbase Vshort Policybase Policyshort
+
+% (vii).5 the N_j-1 terminal warm-glow identity, UTILITY-UNITS ONLY. Solve the full N_j model with
+% no warm-glow and no survival probability; then solve an N_j-1 model whose terminal-only warm-glow
+% (weight exactly 1, since with no survivalprobability the default sj=[ones,0] applies) is the
+% CLOSED FORM of the full model's terminal value fn: age N_j is retired, so the terminal budget
+% c=(1+r)*a+pension-aprime is z/e-independent, and the optimal terminal choices are aprime=0
+% (utility is increasing in c, and a_grid(1)=0). V and Policy at ages 1,...,N_j-1 must then
+% reproduce the full model's (the terminal V is shock-independent, so the certainty-equivalent the
+% full model takes over it is over a degenerate distribution).
+% cons-units excluded: the terminal warm-glow convention is additive AFTER the ^ezc7 root, whereas
+% an interior age composes inside the root — these coincide only when ezc7==1.
+WGterm_posU=@(aprime,ezsigma,r,pension) ((1+((1+r)*aprime+pension))^(1-ezsigma)-1)/(1-ezsigma);
+WGterm_negU=@(aprime,ezsigma,r,pension) (((1+r)*aprime+pension)^(1-ezsigma))/(1-ezsigma);
+Njs2=N_j-1;
+Paramsjs=Params;
+Paramsjs.agej=Params.agej(1:Njs2);
+Paramsjs.kappa_j=Params.kappa_j(1:Njs2);
+% positive-valued utility fn
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=1;
+vfoptions1.EZpositiveutility=1;
+vfoptions1.EZriskaversion='ezrisk';
+[Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
+Vbase=Vbase(:,:,1:Njs2);
+Policybase=Policybase(:,:,:,1:Njs2);
+vfoptions1.WarmGlowBequestsFn=WGterm_posU;
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs2,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Paramsjs,DiscountFactorParamNames,[],vfoptions1);
+fprintf('N_j-1 terminal warm-glow identity [EZ positive utils], this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('N_j-1 terminal warm-glow identity [EZ positive utils], this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+% negative-valued utility fn
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=1;
+vfoptions1.EZpositiveutility=0;
+vfoptions1.EZriskaversion='ezrisk';
+[Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
+Vbase=Vbase(:,:,1:Njs2);
+Policybase=Policybase(:,:,:,1:Njs2);
+vfoptions1.WarmGlowBequestsFn=WGterm_negU;
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs2,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Paramsjs,DiscountFactorParamNames,[],vfoptions1);
+fprintf('N_j-1 terminal warm-glow identity [EZ negative utils], this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('N_j-1 terminal warm-glow identity [EZ negative utils], this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+clear Vbase Vshort Policybase Policyshort
+
+%% (viii) vfoptions.EZmortalityriskaversion (double Epstein-Zin: separate mortality risk aversion)
+% Only meaningful together with survival probabilities, so survivalprobability='sj' throughout this
+% section (with sj==1 the ^ezc8 exactly cancels the ^ezc6 in the survival aggregator and the option
+% is vacuous).
+% (viii).1 identity: setting EZmortalityriskaversion EQUAL to the case's own risk aversion (ezgamma
+% for cons-units, ezrisk for utility-units) gives ezc8=1, which must reproduce the unset default
+% exactly.
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+    end
+    vfoptionsv.survivalprobability='sj';
+    if ezcase==1
+        Params2.ezmriskeq=Params.ezgamma; % the cons-units risk aversion
+    else
+        Params2.ezmriskeq=Params.ezrisk; % the utility-units risk aversion
+    end
+    [V1a,Policy1a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptionsv);
+    vfoptionsv.EZmortalityriskaversion='ezmriskeq';
+    [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptionsv);
+    fprintf('EZmortalityriskaversion equal to own risk aversion vs unset [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1a(:)-V1b(:))))
+    fprintf('EZmortalityriskaversion equal to own risk aversion vs unset [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1a(:)-Policy1b(:))))
+end
+clear V1a V1b Policy1a Policy1b
+
+% (viii).2 a DISTINCT mortality risk aversion (ezmrisk=5): the first nontrivial exercise of the
+% ^ezc8 sites. All three EZ cases: FromPolicy, basic==DC, GI==DC+GI.
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+    end
+    vfoptionsv.survivalprobability='sj';
+    vfoptionsv.EZmortalityriskaversion='ezmrisk';
+    vfoptions1=vfoptionsv;
+    vfoptions2=vfoptionsv;
+    vfoptions2.divideandconquer=1;
+    vfoptions3=vfoptionsv;
+    vfoptions3.gridinterplayer=1;
+    vfoptions3.ngridinterp=5;
+    vfoptions4=vfoptions3;
+    vfoptions4.divideandconquer=1;
+    [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
+    [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
+    [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
+    V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+    fprintf('EZmortalityriskaversion distinct, ValueFnFromPolicy [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('EZmortalityriskaversion distinct, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V2(:))))
+    fprintf('EZmortalityriskaversion distinct, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
+    fprintf('EZmortalityriskaversion distinct, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
+    fprintf('EZmortalityriskaversion distinct, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+end
+clear V1 V2 V3 V4 Policy1 Policy2 Policy3 Policy4 V1fromPolicy
+
+%% (ix) vfoptions.EZoneminusbeta=2
+% The (1-sj*beta) generalization of (iv): EZoneminusbeta=2 puts a (1-sj*beta)* term on the this
+% period return, an age-dependent factor since sj varies with age (survivalprobability='sj'
+% throughout; without it =2 is the same as =1). As in (iv):
+% - consumption-units: EZ is homogeneous of degree 1 in the return, so EZoneminusbeta=2 with return
+%   x should equal EZoneminusbeta=0 with return scaled by (1-sj*beta)^(1/(1-1/ezphi));
+% - utility-units: V=(1-sj*beta)*u+beta*(CE) is the same recursion as default with u scaled by (1-sj*beta).
+% The age-dependent scale factors enter the scaled return fns as trailing (age-dependent) parameters,
+% since GPU arrayfun does not support anonymous functions that capture workspace variables.
+Params2.ezscalefactor2=(1-Params.sj*Params.beta).^(1/(1-1/Params.ezphi));
+Params2.ezscalefactoru2=1-Params.sj*Params.beta;
+
+% consumption-units
+ReturnFn_cons_scaled2=@(aprime,a,z,r,w,kappa_j,agej,Jr,pension,ezscalefactor2) ezscalefactor2*EZReturnFn_cons_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,agej,Jr,pension);
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=0;
+vfoptions1.EZriskaversion='ezgamma';
+vfoptions1.EZeis='ezphi';
+vfoptions1.survivalprobability='sj';
+vfoptions1.EZoneminusbeta=2;
+[V4a,Policy4a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params2,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1.EZoneminusbeta=0;
+[V4b,Policy4b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons_scaled2,Params2,DiscountFactorParamNames,[],vfoptions1);
+fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ cons-units]: should give zero: %2.8f \n',max(abs(V4a(:)-V4b(:))))
+fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ cons-units]: should give zero: %2.8f \n',max(abs(Policy4a(:)-Policy4b(:))))
+
+% utility-units, positive
+ReturnFn_posU_scaled2=@(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension,ezscalefactoru2) ezscalefactoru2*EZReturnFn_positiveUtils_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension);
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=1;
+vfoptions1.EZpositiveutility=1;
+vfoptions1.EZriskaversion='ezrisk';
+vfoptions1.survivalprobability='sj';
+vfoptions1.EZoneminusbeta=2;
+[V5a,Policy5a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params2,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1.EZoneminusbeta=0;
+[V5b,Policy5b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU_scaled2,Params2,DiscountFactorParamNames,[],vfoptions1);
+fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ positive utils]: should give zero: %2.8f \n',max(abs(V5a(:)-V5b(:))))
+fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ positive utils]: should give zero: %2.8f \n',max(abs(Policy5a(:)-Policy5b(:))))
+
+% utility-units, negative
+ReturnFn_negU_scaled2=@(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension,ezscalefactoru2) ezscalefactoru2*EZReturnFn_negativeUtils_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,ezsigma,agej,Jr,pension);
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=1;
+vfoptions1.EZpositiveutility=0;
+vfoptions1.EZriskaversion='ezrisk';
+vfoptions1.survivalprobability='sj';
+vfoptions1.EZoneminusbeta=2;
+[V6a,Policy6a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params2,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1.EZoneminusbeta=0;
+[V6b,Policy6b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU_scaled2,Params2,DiscountFactorParamNames,[],vfoptions1);
+fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ negative utils]: should give zero: %2.8f \n',max(abs(V6a(:)-V6b(:))))
+fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ negative utils]: should give zero: %2.8f \n',max(abs(Policy6a(:)-Policy6b(:))))
 
 clear V4a V4b V5a V5b V6a V6b Policy4a Policy4b Policy5a Policy5b Policy6a Policy6b
 
