@@ -10,14 +10,8 @@ function output=CoreFHorzQHExpAssetz_nod1_z_e_semiz_with2A1(n_d,n_a,n_a_big,n_z,
 % TEST-FIRST: written ahead of the toolkit code. There is no QH+experienceassetz+semiz family
 % yet, so this errors at the first ValueFnIter call.
 
-% Build the binary second standard endogenous asset a1_2, inserted between a1_1 and a2
-n_a1_1=n_a(1); n_a2exp=n_a(2);
-a1_1_grid=a_grid(1:n_a1_1);
-a2_grid=a_grid(n_a1_1+1:end);
-a1_2_grid=[0;1]; % binary second asset (capped high-return asset)
-n_a=[n_a1_1,2,n_a2exp];
-a_grid=[a1_1_grid;a1_2_grid;a2_grid];
-Params.r2=0.08; % return on the binary asset (higher than r, so it is used up to the cap)
+% n_a=[a1_1 (divide-conquered), a1_2 (multi-point, folded), a2 (experience asset)] and
+% a_grid arrive already built from the calling test script; Params.r2 comes from the setup.
 
 % Setup vfoptions and simoptions
 vfoptions=struct();

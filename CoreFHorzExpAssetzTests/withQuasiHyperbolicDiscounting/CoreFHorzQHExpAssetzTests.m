@@ -149,10 +149,11 @@ output=CoreFHorzQHExpAssetz_d1_z_e_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,
 %% ================= with2A1 (figs 17-24): two standard endogenous assets =================
 % Splice a binary second standard asset a1_2 in each subcode -> n_a=[a1_1,2,a2] -> length(n_a1)>1
 % -> DC2A/GI2A/DC2A_GI2A path. base + DC2A + GI2A + DC2A_GI2A + lowmemory, Naive & Sophisticated.
-n_a_2A1=[51,n_a_justexpasset]; % [a1_1, a2]; the binary a1_2 is added inside the subcode -> [51,2,13]
-a_grid_2A1=[5*linspace(0,1,n_a_2A1(1))'.^3; a2_grid];
-n_a_2A1_notsobig=[151,n_a_justexpasset];
-a_grid_2A1_notsobig=[5*linspace(0,1,n_a_2A1_notsobig(1))'.^3; a2_grid];
+% n_a_2A1=[a1, a1_2, a2] and a_grid_2A1 come from the setup; a1_2 is a genuine multi-point
+% second standard asset, so the subcodes take n_a/a_grid as given and build nothing.
+n_a_2A1_notsobig=[151,n_a1_2,n_a_justexpasset];
+a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
+a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
 %% with2A1, without d1, with z, without e
 figure_c=17;

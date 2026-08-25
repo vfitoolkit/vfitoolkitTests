@@ -32,6 +32,16 @@ a_grid=[a1_grid;a2_grid];
 a_grid_big=[a1_grid_big;a2_grid];
 a_grid_justexpasset=a2_grid;
 
+% with2A1: a SECOND standard endogenous asset a1_2, inserted between the liquid asset a1 and the
+% experience asset a2. Two standard assets -> length(n_a1)>1 -> the dispatcher routes to
+% DC2A / GI2A / DC2A_GI2A. Grid layout: a = [a1, a1_2, a2]. Built here rather than inside the
+% subcodes, so that n_a_2A1 holds the real 2A1 shape and not a withA1 shape.
+n_a1_2=2;
+a1_2_grid=[0;1]; % binary second asset (capped high-return asset)
+n_a_2A1=[51,n_a1_2,n_a_justexpasset];
+a_grid_2A1=[5*linspace(0,1,n_a_2A1(1))'.^3;a1_2_grid;a2_grid];
+
+
 
 % setup z
 [z_grid,pi_z]=discretizeAR1_FarmerToda(0,0.9,0.03,n_z);
@@ -86,6 +96,7 @@ Params.varphi=0.8; % relative weight of leisure in utility
 % Prices
 Params.w=1;
 Params.r=0.05;
+Params.r2=0.08; % return on the binary asset a1_2 (higher than r, so it is used up to the cap)
 
 % Retirement
 Params.Jr=16;

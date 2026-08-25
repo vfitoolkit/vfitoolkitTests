@@ -245,10 +245,11 @@ addpath('./CoreFHorzExpAssete_ReturnFns/With2A1_ReturnFns/')
 % The second standard endogenous state a1_2 is BINARY (a capped high-return asset).
 % a1main is kept modest here because the binary second asset doubles the a-grid.
 
-n_a_2A1=[51,n_a_justexpasset]; % [a1_1, a2]; the binary a1_2 is added inside the subcode -> [51,2,13]
-a_grid_2A1=[5*linspace(0,1,n_a_2A1(1))'.^3; a2_grid];
-n_a_2A1_notsobig=[151,n_a_justexpasset];
-a_grid_2A1_notsobig=[5*linspace(0,1,n_a_2A1_notsobig(1))'.^3; a2_grid];
+% n_a_2A1=[a1, a1_2, a2] and a_grid_2A1 come from the setup; a1_2 is a genuine multi-point
+% second standard asset, so the subcodes take n_a/a_grid as given and build nothing.
+n_a_2A1_notsobig=[151,n_a1_2,n_a_justexpasset];
+a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
+a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
 %% with2A1, without d1, without z, with e
 figure_c=17;
