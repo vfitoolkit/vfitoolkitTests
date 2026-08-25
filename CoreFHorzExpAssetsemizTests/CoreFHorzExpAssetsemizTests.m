@@ -229,7 +229,7 @@ exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetsemizTests_Fig',
 %% with2A1 cross-tests (TEST-FIRST: error when run, same reason as above)
 % CrossTest 5: a degenerate second standard asset a1_2 (single point {0}) reduces the
 % two-standard-asset model back to the with-a1 model (i.e. DC2A/GI2A vs the ordinary solvers)
-output=CoreFHorzExpAssetsemiz_CrossTests5_nod1_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetsemiz_CrossTests5_d1_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetsemiz_CrossTests5_nod1_with2A1(n_d_withoutd1,n_a,n_a_big,0,N_j,d_grid_withoutd1,a_grid,a_grid_big,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssetsemiz_CrossTests5_d1_with2A1(n_d_withd1,n_a,n_a_big,0,N_j,d_grid_withd1,a_grid,a_grid_big,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
 diary off
