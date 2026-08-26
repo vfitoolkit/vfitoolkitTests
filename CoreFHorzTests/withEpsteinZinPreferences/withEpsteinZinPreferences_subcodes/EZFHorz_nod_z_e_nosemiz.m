@@ -11,7 +11,7 @@ function output=EZFHorz_nod_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_
 %          (the vNM oracle discounts by DiscountFactorParamNames={'beta','sj'}); cross-method agreement with sj
 %   (vii)  warm-glow of bequests (De Nardi luxury-good form): terminal-only default and with declining sj;
 %          exact vNM collapse oracles with sj+warm-glow; a V_Jplus1 mini-leg; the N_j-1 terminal
-%          warm-glow identity (utility-units only)
+%          warm-glow identity (all three EZ cases)
 %   (viii) EZmortalityriskaversion: identity when set equal to the case's own risk aversion; cross-method
 %          agreement with a distinct mortality risk aversion
 %   (ix)   EZoneminusbeta=2 versus manually scaling the return fn by the age-dependent (1-sj*beta) factor
@@ -1142,13 +1142,42 @@ end
 clear V1 V2 V3 V4 Policy1 Policy2 Policy3 Policy4 V1fromPolicy
 
 % (vii).3 exact collapse oracles with sj AND warm-glow.
-% (vii).3a cons-units gamma=1/phi: EXCLUDED. The toolkit's terminal-age warm-glow convention is
-% additive AFTER the ^ezc7 root, V_Nj=(ezc1*F^ezc2)^ezc7+ezc3*beta*((1-sj)*WG^ezc8)^ezc6, whereas
-% the combined-wrapper vNM oracle's W-recursion (W=F^x+beta*sj*E[W']+beta*(1-sj)*WG^x) implies
-% terminal V=(F^x+beta*(1-sj)*WG^x)^(1/x); these coincide only when ezc7==1, so for cons-units
-% (ezc7=1/(1-1/phi)~=1) the oracle cannot match at N_j and the difference propagates back to all
-% ages (the same reason cons-units is excluded from (vii).5). The utility-units legs (vii).3b
-% below have ezc7==1 and are unaffected.
+% (vii).3a cons-units gamma=1/phi with sj and warm-glow: cons-units became valid under the
+% inside-the-root terminal warm-glow convention (Kraft-Munk-Weiss 2022): the terminal age is now the
+% interior recursion with the warm-glow as its continuation, so the combined-wrapper vNM oracle's
+% W-recursion (W=F^x+beta*sj*E[W']+beta*(1-sj)*WG^x, x=1-ezgamma) holds at every age INCLUDING N_j.
+% As in (vi).2 the vNM oracle is the negativeUtils return fn with ezsigma=ezgamma and
+% DiscountFactorParamNames={'beta','sj'}, here plus beta*oneminussj*(WG_cons^(1-ezsigma))/(1-ezsigma)
+% (the cons-units warm-glow through the same crosswalk as the return fn; the scale factors enter as
+% trailing Params args). Policy exact; V via V_EZ=((1-ezgamma)*V_vNM).^(1/(1-ezgamma)).
+ezphi_store=Params.ezphi;
+ezsigma_store=Params.ezsigma;
+Params.ezphi=1/Params.ezgamma;
+Params.ezsigma=Params.ezgamma;
+ReturnFn_consWGoracle=@(aprime,a,z,e,r,w,kappa_j,ezsigma,agej,Jr,pension,beta,oneminussj,wg1,wg2) EZReturnFn_negativeUtils_nod_z_e_nosemiz(aprime,a,z,e,r,w,kappa_j,ezsigma,agej,Jr,pension)+beta*oneminussj*((EZWarmGlowFn_cons(aprime,wg1,wg2)^(1-ezsigma))/(1-ezsigma));
+vfoptions1=struct();
+vfoptions1.n_e=vfoptionsbaseline.n_e;
+vfoptions1.e_grid=vfoptionsbaseline.e_grid;
+vfoptions1.pi_e=vfoptionsbaseline.pi_e;
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=0;
+vfoptions1.EZriskaversion='ezgamma';
+vfoptions1.EZeis='ezphi';
+vfoptions1.survivalprobability='sj';
+vfoptions1.WarmGlowBequestsFn=WGFn_cons;
+[V1a,Policy1a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptions1=struct();
+vfoptions1.n_e=vfoptionsbaseline.n_e;
+vfoptions1.e_grid=vfoptionsbaseline.e_grid;
+vfoptions1.pi_e=vfoptionsbaseline.pi_e;
+vfoptions1.exoticpreferences='None';
+[V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_consWGoracle,Params,DiscountFactorParamNames2,[],vfoptions1);
+V1btransformed=((1-Params.ezgamma)*V1b).^(1/(1-Params.ezgamma));
+fprintf('EZ gamma=1/phi collapse, sj+warm-glow, Policy [EZ cons-units]: should give zero: %2.8f \n',max(abs(Policy1a(:)-Policy1b(:))))
+fprintf('EZ gamma=1/phi collapse, sj+warm-glow, V after transform (relative) [EZ cons-units]: should be roughly 1e-13: %g \n',max(abs(V1a(:)-V1btransformed(:)))/max(abs(V1a(:))))
+Params.ezphi=ezphi_store;
+Params.ezsigma=ezsigma_store;
+clear V1a V1b V1btransformed Policy1a Policy1b
 
 % (vii).3b utility-units EZriskaversion=0 with sj and warm-glow: the vNM oracle adds
 % beta*oneminussj*WG(aprime) to the return fn (the warm-glow is already in utility units).
@@ -1262,7 +1291,7 @@ for ezcase=1:3
 end
 clear Vbase Vshort Policybase Policyshort
 
-% (vii).5 the N_j-1 terminal warm-glow identity, UTILITY-UNITS ONLY. Solve the full N_j model with
+% (vii).5 the N_j-1 terminal warm-glow identity, ALL THREE EZ CASES. Solve the full N_j model with
 % no warm-glow and no survival probability; then solve an N_j-1 model whose terminal-only warm-glow
 % (weight exactly 1, since with no survivalprobability the default sj=[ones,0] applies) is the
 % CLOSED FORM of the full model's terminal value fn: age N_j is retired, so the terminal budget
@@ -1270,14 +1299,32 @@ clear Vbase Vshort Policybase Policyshort
 % (utility is increasing in c, and a_grid(1)=0). V and Policy at ages 1,...,N_j-1 must then
 % reproduce the full model's (the terminal V is shock-independent, so the certainty-equivalent the
 % full model takes over it is over a degenerate distribution).
-% cons-units excluded: the terminal warm-glow convention is additive AFTER the ^ezc7 root, whereas
-% an interior age composes inside the root — these coincide only when ezc7==1.
+% cons-units became valid under the inside-the-root terminal warm-glow convention (Kraft-Munk-Weiss
+% 2022): the cons-units terminal V is (ezc1*F^ezc2)^ezc7=F itself (ezc1=1, ezc2*ezc7=1), so its
+% warm-glow fn is the same closed-form terminal composite with NO utility wrap.
+WGterm_cons=@(aprime,r,pension) (1+r)*aprime+pension; % the terminal composite itself (cons-units terminal V=(ezc1*F^ezc2)^ezc7=F)
 WGterm_posU=@(aprime,ezsigma,r,pension) ((1+((1+r)*aprime+pension))^(1-ezsigma)-1)/(1-ezsigma);
 WGterm_negU=@(aprime,ezsigma,r,pension) (((1+r)*aprime+pension)^(1-ezsigma))/(1-ezsigma);
 Njs2=N_j-1;
 Paramsjs=Params;
 Paramsjs.agej=Params.agej(1:Njs2);
 Paramsjs.kappa_j=Params.kappa_j(1:Njs2);
+% consumption-units
+vfoptions1=struct();
+vfoptions1.n_e=vfoptionsbaseline.n_e;
+vfoptions1.e_grid=vfoptionsbaseline.e_grid;
+vfoptions1.pi_e=vfoptionsbaseline.pi_e;
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=0;
+vfoptions1.EZriskaversion='ezgamma';
+vfoptions1.EZeis='ezphi';
+[Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+Vbase=Vbase(:,:,:,1:Njs2);
+Policybase=Policybase(:,:,:,:,1:Njs2);
+vfoptions1.WarmGlowBequestsFn=WGterm_cons;
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs2,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Paramsjs,DiscountFactorParamNames,[],vfoptions1);
+fprintf('N_j-1 terminal warm-glow identity [EZ cons-units], this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('N_j-1 terminal warm-glow identity [EZ cons-units], this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
 % positive-valued utility fn
 vfoptions1=struct();
 vfoptions1.n_e=vfoptionsbaseline.n_e;
