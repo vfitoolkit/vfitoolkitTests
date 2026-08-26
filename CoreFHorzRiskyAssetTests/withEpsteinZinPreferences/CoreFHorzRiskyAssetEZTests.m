@@ -67,6 +67,15 @@ Params.ezrisk=3; % utility-units additional risk aversion (vfoptions.EZriskavers
 Params.ezsigma=2; % curvature of the positiveUtils/negativeUtils utility fns (>1; the positiveUtils
 % family uses a (1+x) shift so it stays strictly positive despite ezsigma>1)
 
+% Survival probabilities and warm-glow of bequests (for the special tests (vi)-(ix); same
+% calibration as the main EZ bank's sj/warm-glow round)
+Params.sj=[linspace(1,0.6,N_j-1),0]; % declining, certain death at the end of the final period
+Params.oneminussj=1-Params.sj;
+Params.wg1=2; % strength of the bequest motive (De Nardi's theta)
+Params.wg2=1; % luxury-good shifter (kappa)
+Params.wg3=Params.ezsigma; % warm-glow curvature (=ezsigma so the utility-units warm-glows match the utility fns)
+Params.ezmrisk=5; % EZmortalityriskaversion for special test (viii)
+
 % vfoptions.exoticpreferences='EpsteinZin';
 % Case 1: vfoptions.EZutils=0; vfoptions.EZriskaversion='ezgamma'; vfoptions.EZeis='ezphi';
 % Case 2: vfoptions.EZutils=1; vfoptions.EZpositiveutility=1; vfoptions.EZriskaversion='ezrisk';

@@ -74,6 +74,69 @@ vfoptions1.lowmemory=0;
 
 %%
 clear V1 V1B V1C Policy1 Policy1B Policy1C PolicyVals1 V1fromPolicy
+%% V_Jplus1: use V of period jstar as the terminal value function of a shorter model
+% Solve the model, then solve a shorter model that runs only periods 1,...,jstar-1, giving it
+% vfoptions.V_Jplus1=Vbase(:,:,:,jstar). V_Jplus1 is the value fn of period N_j+1 of the model
+% being solved, so the shorter model has Njs=jstar-1 periods, and the age-dependent parameters
+% (agej, kappa_j) are trimmed to length Njs. V and Policy must then be identical to the original
+% model for periods 1,...,Njs. Two legs: jstar=round(3*N_j/4), then jstar=N_j (so the V_Jplus1
+% terminal branches cover the retirement periods); each leg repeats the lowmemory rungs above.
+% Note: mewj is age-dependent, but is only used for the agent distribution, so is left alone.
+
+% First leg: jstar=round(3*N_j/4)
+jstar=round(3*N_j/4);
+Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+Paramsjs=Params;
+Paramsjs.agej=Params.agej(1:Njs);
+Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+[Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptionsjs=vfoptions1;
+vfoptionsjs.V_Jplus1=Vbase(:,:,:,jstar);
+Vbase=Vbase(:,:,:,1:Njs);
+Policybase=Policybase(:,:,:,:,1:Njs);
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+fprintf('V_Jplus1 (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+% lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
+vfoptionsjs.lowmemory=1;
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+fprintf('V_Jplus1 (jstar=%i), lowmemory=1, this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i), lowmemory=1, this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+vfoptionsjs.lowmemory=0;
+vfoptionsjs.lowmemory=2;
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+fprintf('V_Jplus1 (jstar=%i), lowmemory=2, this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i), lowmemory=2, this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+vfoptionsjs.lowmemory=0;
+
+% Second leg: jstar=N_j (the V_Jplus1 terminal branches now cover the retirement periods)
+jstar=N_j;
+Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+Paramsjs=Params;
+Paramsjs.agej=Params.agej(1:Njs);
+Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+[Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+vfoptionsjs=vfoptions1;
+vfoptionsjs.V_Jplus1=Vbase(:,:,:,jstar);
+Vbase=Vbase(:,:,:,1:Njs);
+Policybase=Policybase(:,:,:,:,1:Njs);
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+fprintf('V_Jplus1 (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+% lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
+vfoptionsjs.lowmemory=1;
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+fprintf('V_Jplus1 (jstar=%i), lowmemory=1, this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i), lowmemory=1, this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+vfoptionsjs.lowmemory=0;
+vfoptionsjs.lowmemory=2;
+[Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+fprintf('V_Jplus1 (jstar=%i), lowmemory=2, this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i), lowmemory=2, this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+vfoptionsjs.lowmemory=0;
+
+clear Vbase Vshort Policybase Policyshort
+
 %% Big a_grid for moments
 simoptions1.a_grid=a_grid_big;
 [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);

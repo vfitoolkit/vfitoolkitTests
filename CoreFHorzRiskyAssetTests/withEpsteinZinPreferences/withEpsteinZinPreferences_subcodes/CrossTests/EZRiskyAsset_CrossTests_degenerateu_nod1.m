@@ -20,6 +20,21 @@ function output=EZRiskyAsset_CrossTests_degenerateu_nod1(n_d,n_a,n_a_big,n_z,N_j
 % Run for the cons-units case and the negativeUtils case (per the approved design).
 % TEST-FIRST: needs the (existing, never GPU-run) EZ riskyasset nod1 with-z raw and the plain
 % EZ FHorz solver (GPU-verified in the main EZ bank) to agree.
+%
+% Bridge variants (user-approved extension): the same degenerate comparison repeated with
+%   (+sj)              vfoptions.survivalprobability='sj' on both sides (driver provides the
+%                      declining Params.sj=[linspace(1,0.6,N_j-1),0] and Params.oneminussj),
+%   (+warm-glow)       vfoptions.WarmGlowBequestsFn on both sides with NO survivalprobability
+%                      (both sides print the toolkit's terminal-only warm-glow warning), and
+%   (+sj+warm-glow)    both together.
+% The warm-glow fns are the bank's EZRiskyWarmGlowFn_{cons,negativeUtils} (same functional forms
+% GPU-validated in the main EZ bank); as in the main bank, WarmGlowBequestsFnParamsNames is NOT
+% set -- the toolkit reads (aprime,wg1,wg2[,wg3]) off the anonymous handle and pulls wg1/wg2/wg3
+% from Params. KEY POINT of the warm-glow bridge: on the riskyasset side the warm-glow is
+% evaluated at a2prime through the (d,u) lottery, which under the degenerate u and the on-grid
+% d3_grid=a_grid collapses to exactly the plain side's WG(aprime), so the comparison is exact and
+% INCLUDES cons-units (both sides share the same terminal additive-after-root convention). These
+% legs are the first-ever exercise of the riskyasset EZ sj/warm-glow code paths.
 
 % Store/restore r (Params is function-local, but mirror the approved design explicitly)
 r_store=Params.r;
@@ -76,6 +91,68 @@ for ezcase=[1,3]
     aprime_p=PolicyVals_p(1,:,:,:);
     fprintf('CrossTest degenerateu (nod1) [EZ %s], savings-policy values, this should be zero: %2.8f \n',casestr,max(abs(savings_r(:)-aprime_p(:))))
 
+end
+
+%% Bridge variants: +sj, +warm-glow (terminal-only), +sj+warm-glow; same two EZ cases each.
+% Warm-glow fns follow the main-bank convention: anonymous handles, no WarmGlowBequestsFnParamsNames
+% (the toolkit reads wg1/wg2/wg3 off the handle signature and pulls them from Params).
+WGFn_cons=@(aprime,wg1,wg2) EZRiskyWarmGlowFn_cons(aprime,wg1,wg2);
+WGFn_negU=@(aprime,wg1,wg2,wg3) EZRiskyWarmGlowFn_negativeUtils(aprime,wg1,wg2,wg3);
+
+for bridgevariant=1:3
+    if bridgevariant==1 % survival probabilities only
+        variantstr='+sj';
+    elseif bridgevariant==2 % warm-glow only (terminal-only default; expect the toolkit warning on BOTH sides)
+        variantstr='+warm-glow';
+    else % survival probabilities AND warm-glow (warm-glow weight 1-sj(j) at every age)
+        variantstr='+sj+warm-glow';
+    end
+
+    for ezcase=[1,3]
+        vfoptions_r=vfoptions_r_base;
+        vfoptions_r.exoticpreferences='EpsteinZin';
+        vfoptions_p=struct(); % plain (non-riskyasset) side
+        vfoptions_p.exoticpreferences='EpsteinZin';
+        if ezcase==1 % consumption-units (traditional Epstein-Zin)
+            casestr='cons-units';
+            vfoptions_r.EZutils=0; vfoptions_r.EZriskaversion='ezgamma'; vfoptions_r.EZeis='ezphi';
+            vfoptions_p.EZutils=0; vfoptions_p.EZriskaversion='ezgamma'; vfoptions_p.EZeis='ezphi';
+            ReturnFn_risky=ReturnFn_risky_cons; ReturnFn_plain=ReturnFn_plain_cons;
+            WGFn=WGFn_cons;
+        else % utility-units, negative-valued utility fn
+            casestr='negative utils';
+            vfoptions_r.EZutils=1; vfoptions_r.EZpositiveutility=0; vfoptions_r.EZriskaversion='ezrisk';
+            vfoptions_p.EZutils=1; vfoptions_p.EZpositiveutility=0; vfoptions_p.EZriskaversion='ezrisk';
+            ReturnFn_risky=ReturnFn_risky_negU; ReturnFn_plain=ReturnFn_plain_negU;
+            WGFn=WGFn_negU;
+        end
+        if bridgevariant==1 || bridgevariant==3 % survival probabilities on both sides
+            vfoptions_r.survivalprobability='sj';
+            vfoptions_p.survivalprobability='sj';
+        end
+        if bridgevariant==2 || bridgevariant==3 % warm-glow on both sides
+            vfoptions_r.WarmGlowBequestsFn=WGFn;
+            vfoptions_p.WarmGlowBequestsFn=WGFn;
+        end
+
+        % Riskyasset solve (degenerate risk: riskyshare=0 always, r=0, so aprime=savings on-grid;
+        % the warm-glow's a2prime argument likewise collapses to the on-grid savings value)
+        [V_r,Policy_r]=ValueFnIter_Case1_FHorz(n_d_deg,n_a,n_z,N_j,d_grid_deg,a_grid,z_grid,pi_z,ReturnFn_risky,Params,DiscountFactorParamNames,[],vfoptions_r);
+
+        % Plain (non-riskyasset) EZ savings model
+        [V_p,Policy_p]=ValueFnIter_Case1_FHorz(0,n_a,n_z,N_j,[],a_grid,z_grid,pi_z,ReturnFn_plain,Params,DiscountFactorParamNames,[],vfoptions_p);
+
+        fprintf('CrossTest degenerateu %s (nod1) [EZ %s], V, this should be zero: %2.8f \n',variantstr,casestr,max(abs(V_r(:)-V_p(:))))
+
+        % Compare savings VALUES: riskyasset PolicyValues row 2 is the savings(d3) value;
+        % plain PolicyValues row 1 is the aprime value. Same grid (d3_grid=a_grid), so exact match.
+        PolicyVals_r=PolicyInd2Val_FHorz(Policy_r,n_d_deg,n_a,n_z,N_j,d_grid_deg,a_grid,vfoptions_r);
+        PolicyVals_p=PolicyInd2Val_FHorz(Policy_p,0,n_a,n_z,N_j,[],a_grid,vfoptions_p);
+        savings_r=PolicyVals_r(2,:,:,:);
+        aprime_p=PolicyVals_p(1,:,:,:);
+        fprintf('CrossTest degenerateu %s (nod1) [EZ %s], savings-policy values, this should be zero: %2.8f \n',variantstr,casestr,max(abs(savings_r(:)-aprime_p(:))))
+
+    end
 end
 
 % Restore r

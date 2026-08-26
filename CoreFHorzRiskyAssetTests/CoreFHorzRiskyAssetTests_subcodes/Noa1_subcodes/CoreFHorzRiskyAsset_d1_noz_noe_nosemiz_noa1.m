@@ -79,6 +79,31 @@ fprintf('SimPanel mean assets by age (should roughly match AgeConditionalStats1)
 AggVars=EvalFnOnAgentDist_AggVars_FHorz_Case1(StationaryDist1,Policy1b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions1);
 ValuesOnGrid=EvalFnOnAgentDist_ValuesOnGrid_FHorz_Case1(Policy1b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions1);
 
+%% V_Jplus1: use V of period jstar as the terminal value function of a shorter model
+% Solve the model, then solve a shorter model that runs only periods 1,...,jstar-1, giving it
+% vfoptions.V_Jplus1=Vbase(:,jstar). V_Jplus1 is the value fn of period N_j+1 of the model being
+% solved, so the shorter model has Njs=jstar-1 periods, and the age-dependent parameters are
+% trimmed to length Njs. V and Policy must then be identical to the original model for periods
+% 1,...,jstar-1. Run at jstar=round(3*N_j/4) and again at jstar=N_j (so the retirement periods,
+% and the terminal V_Jplus1 branch, are also covered).
+% Note: mewj is age-dependent, but is only used for the agent distribution, so it is left alone.
+for jstar=[round(3*N_j/4),N_j]
+    Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+    Paramsjs=Params;
+    Paramsjs.agej=Params.agej(1:Njs);
+    Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    vfoptionsjs=vfoptions1; % inherit all the riskyasset settings
+    vfoptionsjs.V_Jplus1=Vbase(:,jstar);
+    Vbase=Vbase(:,1:Njs);
+    Policybase=Policybase(:,:,1:Njs);
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1 (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+    % no lowmemory here: with none of z/e/semiz, only lowmemory=0 exists
+end
+clear Vbase Vshort Policybase Policyshort Paramsjs vfoptionsjs
+
 %%
 output=struct();
 
