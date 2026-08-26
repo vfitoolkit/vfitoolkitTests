@@ -145,7 +145,7 @@ simoptionsFH.npoints=100;
 simoptionsFH.nquantiles=20;
 simoptionsFH.whichstats=ones(7,1);
 
-AgentDistPathFH=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPath2, n_d, n_a, n_z, pi_z, T, Params, simoptionsFH);
+AgentDistPathFH=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPath2, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptionsFH);
 StatDist_FH=StationaryDist_FHorz_Case1(AgentDist_initial,{'mewjFH'},Policy_FH,n_d,n_a,n_z,N_jFH,pi_z,ParamsFH,simoptionsFH);
 temp1=reshape(AgentDistPathFH,[],T); temp2=reshape(StatDist_FH,[],N_jFH);
 temp2=temp2./sum(temp2,1); % undo the age weighting, so each age carries mass one like each TPath period
@@ -181,16 +181,16 @@ clear V_FH Policy_FH ParamsFH vfoptionsFH temp1 temp2 dev AgentDistPathFH StatDi
 % TransitionPath_InfHorz_substeps_Step1_ValueFnIter) and what ValueFnIter_Case1_FHorz documents.
 % So the two line up slice for slice, exactly as the price and param paths do.
 %
-% Why Jz=T and not N_jFH: KFTT fills its LAST slice with a uniform distribution, a placeholder for
-% the transition out of the final period. FHorz normally drops that slice, but not when
-% vfoptions.V_Jplus1 is in use, which is exactly what this cross-check relies on. Asking KFTT for
-% one period more than the FHorz model needs leaves the placeholder in slice T, which the TPath
-% never reads (VPath(:,:,T)=V_final is assigned, not computed) and which FHorz never sees.
+% Why Jz=T+1: KFTT returns J-1 transition matrices for J ages, since there is no age J+1 to
+% transition to. The TPath wants T of them (slice T is never read, as VPath(:,:,T)=V_final is
+% assigned rather than computed, but the setup still checks the size), and FHorz with V_Jplus1 wants
+% N_jFH=T-1. So ask for T+1 ages, take all T transition slices for the TPath and the first T-1 for
+% FHorz. The grids come back with T+1 columns, one more than the TPath needs, so they are trimmed.
 %
 % Note V_final is the stationary V under the ORIGINAL z_grid, whereas the KFTT grid at t=T holds
 % different values. Economically odd, but irrelevant to the comparison: both sides are handed the
 % identical array and index it by z-index, so the check stays exact.
-Jz=T;
+Jz=T+1;
 kfttmew=zeros(1,Jz);
 kfttrho=linspace(0.95,0.75,Jz);  % persistence falls along the path
 kfttsigma=0.03*linspace(1,2,Jz); % innovation std deviation doubles along the path
@@ -199,6 +199,7 @@ kfttoptions.nMoments=2; % the default of 4 cannot be hit with this few grid poin
                         % actually varies by period serves this test
 [z_grid_KFTT,pi_z_KFTT]=discretizeLifeCycleAR1_KFTT(kfttmew,kfttrho,kfttsigma,n_z,Jz,kfttoptions);
 z_grid_KFTT=exp(z_grid_KFTT); % same exp() convention as the baseline z_grid
+z_grid_KFTT=z_grid_KFTT(:,1:T); % KFTT returns Jz=T+1 columns; the TPath wants T
 
 [VPathZ,PolicyPathZ]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid_KFTT, pi_z_KFTT, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 
@@ -228,7 +229,7 @@ simoptionsFHZ.npoints=100;
 simoptionsFHZ.nquantiles=20;
 simoptionsFHZ.whichstats=ones(7,1);
 
-AgentDistPathZ=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathZ, n_d, n_a, n_z, pi_z_KFTT, T, Params, simoptionsFHZ);
+AgentDistPathZ=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathZ, n_d, n_a, n_z, pi_z_KFTT, T, Params, transpathoptionsbaseline, simoptionsFHZ);
 StatDist_FHZ=StationaryDist_FHorz_Case1(AgentDist_initial,{'mewjFH'},Policy_FHZ,n_d,n_a,n_z,N_jFH,pi_z_KFTT(:,:,1:N_jFH),ParamsFHZ,simoptionsFHZ);
 temp1=reshape(AgentDistPathZ,[],T); temp2=reshape(StatDist_FHZ,[],N_jFH);
 temp2=temp2./sum(temp2,1); % undo the age weighting, so each age carries mass one like each TPath period
@@ -365,7 +366,7 @@ simoptionsFH.npoints=100;
 simoptionsFH.nquantiles=20;
 simoptionsFH.whichstats=ones(7,1);
 
-AgentDistPathFH=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPath4, n_d, n_a, n_z, pi_z, T, Params, simoptionsFH);
+AgentDistPathFH=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPath4, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptionsFH);
 StatDist_FH=StationaryDist_FHorz_Case1(AgentDist_initial,{'mewjFH'},Policy_FH,n_d,n_a,n_z,N_jFH,pi_z,ParamsFH,simoptionsFH);
 temp1=reshape(AgentDistPathFH,[],T); temp2=reshape(StatDist_FH,[],N_jFH);
 temp2=temp2./sum(temp2,1); % undo the age weighting, so each age carries mass one like each TPath period
@@ -394,11 +395,11 @@ clear VPath3 VPath4 PolicyPath3 PolicyPath4 VPath3B VPath4B PolicyPath3B PolicyP
 
 %% Big a_grid: moments along path should be close with/without grid interp
 [VPath2b,PolicyPath2b]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_big, Policy_final_big, Params, n_d, n_a_big, n_z, d_grid, a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
-AgentDistPath2=AgentDistOnTransPath_InfHorz(AgentDist_initial_big, PricePath, ParamPath, PolicyPath2b, n_d, n_a_big, n_z, pi_z, T, Params, simoptions2);
+AgentDistPath2=AgentDistOnTransPath_InfHorz(AgentDist_initial_big, PricePath, ParamPath, PolicyPath2b, n_d, n_a_big, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptions2);
 AggVarsPath2=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPath2, PolicyPath2b, PricePath, ParamPath, Params, T, n_d, n_a_big, n_z, d_grid, a_grid_big, z_grid, simoptions2);
 
 [VPath4b,PolicyPath4b]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_big_GI, Policy_final_big_GI, Params, n_d, n_a_big, n_z, d_grid, a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
-AgentDistPath4=AgentDistOnTransPath_InfHorz(AgentDist_initial_big, PricePath, ParamPath, PolicyPath4b, n_d, n_a_big, n_z, pi_z, T, Params, simoptions4);
+AgentDistPath4=AgentDistOnTransPath_InfHorz(AgentDist_initial_big, PricePath, ParamPath, PolicyPath4b, n_d, n_a_big, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptions4);
 AggVarsPath4=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPath4, PolicyPath4b, PricePath, ParamPath, Params, T, n_d, n_a_big, n_z, d_grid, a_grid_big, z_grid, simoptions4);
 
 %% SimPanel along the path: per-period panel mean should reproduce the AggVars along the path
@@ -472,7 +473,7 @@ if prod(n_z)>0 && ~isfield(simoptions,'n_e')
     % grid, not n_a_big: the command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and
     % TransitionProbs is (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
     [~,PolicyPathAC]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
-    AgentDistPathAC=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathAC, n_d, n_a, n_z, pi_z, T, Params, simoptionsAC);
+    AgentDistPathAC=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathAC, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptionsAC);
     AggVarsPathAC=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsAC);
     AllStatsPathAC=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsAC);
     CorrTransProbsPathAC=EvalFnOnTransPath_AutoCorrTransProbs_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, pi_z, simoptionsAC);
@@ -529,7 +530,7 @@ ParamPathConstant.sigma=Params.sigma*ones(1,T);
 
 % (1) without divide-and-conquer, without grid interpolation
 [VPath1,PolicyPath1]=ValueFnOnTransPath_InfHorz(PricePathConstant, ParamPathConstant, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
-AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, simoptions1);
+AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptions1);
 PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions1);
 
 Vfin_rep=repmat(V_final,1,1,1,1,T);
@@ -546,7 +547,7 @@ clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
 
 % (2) with divide-and-conquer, without grid interpolation (same targets as (1))
 [VPath1,PolicyPath1]=ValueFnOnTransPath_InfHorz(PricePathConstant, ParamPathConstant, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
-AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, simoptions2);
+AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptions2);
 PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions2);
 
 fprintf('Constant TPath (with DC, no GI), this should be zero, V: %2.8f \n',max(abs(VPath1(:)-Vfin_rep(:))))
@@ -560,7 +561,7 @@ clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
 % (uses the GI terminal V/Policy, and the stationary dist computed with GI)
 AgentDist_initial_GI=StationaryDist_InfHorz(Policy_final_GI,n_d,n_a,n_z,pi_z,simoptions4,Params,[]);
 [VPath1,PolicyPath1]=ValueFnOnTransPath_InfHorz(PricePathConstant, ParamPathConstant, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
-AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial_GI, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, simoptions4);
+AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial_GI, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptions4);
 PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions4);
 
 Vfin_rep_GI=repmat(V_final_GI,1,1,1,1,T);
@@ -655,6 +656,29 @@ fprintf('Null-reform GE bumped guess, max initial deviation: r %2.8f, w %2.8f \n
 fprintf('Null-reform GE from a bumped guess, should converge back toward zero, r: %2.10f \n',max(abs(PricePathBumpedOut.r-p_eqm.r)))
 fprintf('Null-reform GE from a bumped guess, should converge back toward zero, w: %2.10f \n',max(abs(PricePathBumpedOut.w-p_eqm.w)))
 
+%% GEnewprice3 additional factors: ramp the update factors over the shooting iterations
+% howtoupdate can be given with 6 columns instead of 4, the extra two being f_add and t_add: the
+% factor in column 4 is used as it is on iteration 1, f_add times it from iteration t_add on, and
+% linearly in between. The point is to start cautiously and speed up once the path has settled.
+%
+% (a) is the check that matters: no additionalfactor, and additionalfactor=[1,2], must be bit
+% identical, since f_add=1 makes the ramp the identity whatever t_add is. Run from the bumped guess so the prices
+% actually move, and for only a few iterations, because a difference in the update rule shows up on
+% the first one and there is no reason to pay for a hundred.
+transpathoptionsGE_AF=transpathoptionsGE;
+transpathoptionsGE_AF.maxiter=5;
+PricePathAF_noAF=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsGE_AF, simoptions1, vfoptions1, []);
+
+transpathoptionsGE_AF.GEnewprice3.additionalfactor=[1,1,2];
+PricePathAF_withAF=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsGE_AF, simoptions1, vfoptions1, []);
+fprintf('additionalfactor no-op (f_add=1), unset vs [1,1,2], this should be zero, r: %2.10f \n',max(abs(PricePathAF_noAF.r-PricePathAF_withAF.r)))
+fprintf('additionalfactor no-op (f_add=1), unset vs [1,1,2], this should be zero, w: %2.10f \n',max(abs(PricePathAF_noAF.w-PricePathAF_withAF.w)))
+
+% The ramp itself is measured in the DC+GI pass below, not here: this plain-tier p_eqm is not a
+% reliable equilibrium (see the GEcondns printed above), so 'distance from p_eqm' would not mean
+% what it says. The no-op check above is unaffected, being a bit-equality test.
+clear transpathoptionsGE_AF PricePathAF_noAF PricePathAF_withAF
+
 %% The same general equilibrium tests again, on the divide-and-conquer + grid-interpolation tier
 % Everything above runs on the plain tier (vfoptions1 is a bare struct). This repeat changes ONLY
 % the solution method -- same FnsToEvaluateGE, same GeneralEqmEqnsGE, same grids, same
@@ -699,6 +723,21 @@ PricePathBumpedOut_GI=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T,
 fprintf('Null-reform GE (with DC and GI) bumped guess, max initial deviation: r %2.8f, w %2.8f \n',max(abs(PricePathBumped_GI.r-p_eqm_GI.r)),max(abs(PricePathBumped_GI.w-p_eqm_GI.w)))
 fprintf('Null-reform GE (with DC and GI) from a bumped guess, should converge back toward zero, r: %2.10f \n',max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r)))
 fprintf('Null-reform GE (with DC and GI) from a bumped guess, should converge back toward zero, w: %2.10f \n',max(abs(PricePathBumpedOut_GI.w-p_eqm_GI.w)))
+
+% A genuine additionalfactor ramp, measured on the DC+GI tier because that is where the stationary
+% solve is sound (the plain tier's GE conditions are far enough from zero that distance from its
+% p_eqm is not a meaningful measure of convergence). There is no exact reference for what a ramp
+% should give, so this is reported rather than asserted: it says whether ramping the factors up got
+% closer to the equilibrium in the same number of iterations as the un-ramped solve just above
+% (PricePathBumpedOut_GI: same starting guess, same maxiter=100). Convergence speed is a property of
+% the model, not a correctness condition.
+transpathoptionsGE_AF=transpathoptionsGE;
+transpathoptionsGE_AF.maxiter=100;
+transpathoptionsGE_AF.GEnewprice3.additionalfactor=[2,10,50]; % hold at factor for 10 iterations, then ramp to 2x by iteration 50
+PricePathAF_ramp=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE_GI, DiscountFactorParamNames, transpathoptionsGE_AF, simoptionsGE_GI, vfoptionsGE_GI, []);
+fprintf('additionalfactor ramp (f_add=2 over iterations 10 to 50) vs no ramp, deviation from eqm, r: %2.10f vs %2.10f \n',max(abs(PricePathAF_ramp.r-p_eqm_GI.r)),max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r)))
+fprintf('additionalfactor ramp (f_add=2 over iterations 10 to 50) vs no ramp, deviation from eqm, w: %2.10f vs %2.10f \n',max(abs(PricePathAF_ramp.w-p_eqm_GI.w)),max(abs(PricePathBumpedOut_GI.w-p_eqm_GI.w)))
+clear transpathoptionsGE_AF PricePathAF_ramp
 
 clear FnsToEvaluateGE vfoptionsGE_GI simoptionsGE_GI p_eqm_GI GEcondns_GI ParamsGE_GI V_finalGE_GI Policy_finalGE_GI AgentDist_initialGE_GI PricePathGE_GI PricePathGEOut_GI PricePathBumped_GI PricePathBumpedOut_GI GeneralEqmEqnsGE heteroagentoptionsGE p_eqm GEcondns ParamsGE V_finalGE Policy_finalGE AgentDist_initialGE PricePathGE ParamPathGE transpathoptionsGE PricePathGEOut PricePathBumped PricePathBumpedOut bumpr bumpw Tbump
 
