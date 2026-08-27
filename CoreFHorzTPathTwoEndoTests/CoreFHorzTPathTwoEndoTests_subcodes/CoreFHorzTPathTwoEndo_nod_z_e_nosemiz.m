@@ -272,7 +272,7 @@ fprintf('Do nothing TPath, this should be zero, AgentDist: %2.8f \n',max(abs(Age
 
 clear V1 Policy1 VPath1 PolicyPath1
 
-%% Run the GE transition path, but with transpathoptions.maxit=1 -- just shape-check
+%% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
 [~,PolicyPath2]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 AgentDist_initial=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,PolicyPath2(:,:,:,:,:,:,1),n_d,n_a,n_z,N_j,pi_z,Params,simoptions2);
 clear PolicyPath2

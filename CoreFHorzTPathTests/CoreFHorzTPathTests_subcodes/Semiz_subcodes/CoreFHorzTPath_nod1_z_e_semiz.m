@@ -240,7 +240,7 @@ fprintf('Do nothing TPath, this should be zero, AgentDistB: %2.8f \n',max(max(ma
 
 clear V1 Policy1 VPath1 PolicyPath1
 
-%% Run the GE transition path, but with transpathoptions.maxit=1, so will end after one iteration. Just tests that things are all the right shapes (core is all tested already 
+%% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
 
 % First, create initial dist (current one is on n_a_big)
 [~,PolicyPath2]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);

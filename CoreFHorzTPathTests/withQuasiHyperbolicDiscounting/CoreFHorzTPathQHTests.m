@@ -32,7 +32,7 @@ CoreFHorzTPath_setup
 
 % Add the QH-specific bits to the baseline so each subcode picks them up via vfoptionsbaseline
 Params.beta0=0.9; % additional today-tomorrow discount factor
-vfoptionsbaseline.QHadditionaldiscount={'beta0'};
+vfoptionsbaseline.QHadditionaldiscount='beta0';
 % vfoptions.exoticpreferences='QuasiHyperbolic';
 % vfoptions.quasi_hyperbolic='Naive';        % set inside each subcode
 % vfoptions.quasi_hyperbolic='Sophisticated';

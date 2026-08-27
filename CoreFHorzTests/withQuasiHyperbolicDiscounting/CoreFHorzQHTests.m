@@ -35,7 +35,7 @@ addpath('./withQuasiHyperbolicDiscounting_subcodes/CrossTests/')
 CoreFHorz_setup
 
 Params.beta0=0.9; % additional today-tomorrow discount factor
-vfoptionsbaseline.QHadditionaldiscount={'beta0'};
+vfoptionsbaseline.QHadditionaldiscount='beta0';
 
 % vfoptions.exoticpreferences='QuasiHyperbolic';
 % vfoptions.quasi_hyperbolic='Naive';
@@ -156,7 +156,7 @@ CoreFHorz_setup
 % n_d_semiz and d_grid_semiz (as n_d and d_grid)
 
 Params.beta0=0.9; % additional today-tomorrow discount factor
-vfoptionsbaseline.QHadditionaldiscount={'beta0'};
+vfoptionsbaseline.QHadditionaldiscount='beta0';
 
 
 %% without d1, without z, without e, with semiz
@@ -251,7 +251,7 @@ addpath('../CoreFHorz_ReturnFns/With2A_ReturnFns/')
 addpath('../CoreFHorz_ReturnFns/With2A_ReturnFns/Semiz_ReturnFns/')
 
 Params.beta0=0.9; % additional today-tomorrow discount factor
-vfoptionsbaseline.QHadditionaldiscount={'beta0'};
+vfoptionsbaseline.QHadditionaldiscount='beta0';
 
 % Redefine the asset grid to two endogenous states for this section
 n_a_2A=[n_a,4];
