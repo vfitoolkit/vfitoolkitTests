@@ -601,8 +601,14 @@ transpathoptionsGE.GEnewprice3.howtoupdate={'CapitalMarket','r',0,0.1; ...
 % (i) Start from the equilibrium path. The update formulae return the same prices, so the solver
 % must leave the path alone.
 PricePathGEOut=TransitionPath_InfHorz(PricePathGE, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsGE, simoptions1, vfoptions1, []);
-fprintf('Null-reform GE from the equilibrium path, this should be zero, r: %2.10f \n',max(abs(PricePathGEOut.r-p_eqm.r)))
-fprintf('Null-reform GE from the equilibrium path, this should be zero, w: %2.10f \n',max(abs(PricePathGEOut.w-p_eqm.w)))
+% The CapitalMarket eqn is r-(MPK-delta), so its residual is already in units of r, and is exactly how
+% far r has to move to clear the market. The path moves r there, so the deviation from p_eqm.r equals
+% that residual and the ratio below should be about one. A ratio near one says the path is right and
+% p_eqm is off by the stationary solver's own residual; a ratio far from one says the path is wrong.
+% w has no such identity (it moves only because K moves, with a model-dependent elasticity), so w is
+% reported as a diagnostic rather than checked.
+fprintf('Null-reform GE from the equilibrium path, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathGEOut.r-p_eqm.r))/abs(GEcondns.CapitalMarket))
+fprintf('Null-reform GE from the equilibrium path, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathGEOut.r-p_eqm.r)),max(abs(PricePathGEOut.w-p_eqm.w)))
 
 % (ii) Start from a bumped guess: both prices bumped by between 1%% and 5%%, by a different amount
 % in every period, over the first two-thirds of the path only (r rising 1->5%%, w falling 5->1%%, so
@@ -616,8 +622,10 @@ PricePathBumped.w(1:Tbump)=PricePathGE.w(1:Tbump).*(1+bumpw);
 transpathoptionsGE.maxiter=100; % the bumped solve has to actually travel, so give it more iterations
 PricePathBumpedOut=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsGE, simoptions1, vfoptions1, []);
 fprintf('Null-reform GE bumped guess, max initial deviation: r %2.8f, w %2.8f \n',max(abs(PricePathBumped.r-p_eqm.r)),max(abs(PricePathBumped.w-p_eqm.w)))
-fprintf('Null-reform GE from a bumped guess, should converge back toward zero, r: %2.10f \n',max(abs(PricePathBumpedOut.r-p_eqm.r)))
-fprintf('Null-reform GE from a bumped guess, should converge back toward zero, w: %2.10f \n',max(abs(PricePathBumpedOut.w-p_eqm.w)))
+% Same ratio, from a different starting point: two starts landing on the same r is what says the path
+% has converged rather than been cut off by maxiter.
+fprintf('Null-reform GE from a bumped guess, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathBumpedOut.r-p_eqm.r))/abs(GEcondns.CapitalMarket))
+fprintf('Null-reform GE from a bumped guess, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathBumpedOut.r-p_eqm.r)),max(abs(PricePathBumpedOut.w-p_eqm.w)))
 
 %% GEnewprice3 additional factors: ramp the update factors over the shooting iterations
 % howtoupdate can be given with 6 columns instead of 4, the extra two being f_add and t_add: the
@@ -673,8 +681,8 @@ PricePathGE_GI.w=p_eqm_GI.w*ones(1,T);
 
 transpathoptionsGE.maxiter=25; % as above: the no-change solve starts at the answer
 PricePathGEOut_GI=TransitionPath_InfHorz(PricePathGE_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE_GI, DiscountFactorParamNames, transpathoptionsGE, simoptionsGE_GI, vfoptionsGE_GI, []);
-fprintf('Null-reform GE (with DC and GI) from the equilibrium path, this should be zero, r: %2.10f \n',max(abs(PricePathGEOut_GI.r-p_eqm_GI.r)))
-fprintf('Null-reform GE (with DC and GI) from the equilibrium path, this should be zero, w: %2.10f \n',max(abs(PricePathGEOut_GI.w-p_eqm_GI.w)))
+fprintf('Null-reform GE (with DC and GI) from the equilibrium path, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathGEOut_GI.r-p_eqm_GI.r))/abs(GEcondns_GI.CapitalMarket))
+fprintf('Null-reform GE (with DC and GI) from the equilibrium path, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathGEOut_GI.r-p_eqm_GI.r)),max(abs(PricePathGEOut_GI.w-p_eqm_GI.w)))
 
 % Same bump profile as the plain tier (bumpr/bumpw/Tbump are reused, so the two tiers face an
 % identical perturbation and the results are directly comparable)
@@ -684,8 +692,8 @@ PricePathBumped_GI.w(1:Tbump)=PricePathGE_GI.w(1:Tbump).*(1+bumpw);
 transpathoptionsGE.maxiter=100; % as above: the bumped solve has to actually travel
 PricePathBumpedOut_GI=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE_GI, DiscountFactorParamNames, transpathoptionsGE, simoptionsGE_GI, vfoptionsGE_GI, []);
 fprintf('Null-reform GE (with DC and GI) bumped guess, max initial deviation: r %2.8f, w %2.8f \n',max(abs(PricePathBumped_GI.r-p_eqm_GI.r)),max(abs(PricePathBumped_GI.w-p_eqm_GI.w)))
-fprintf('Null-reform GE (with DC and GI) from a bumped guess, should converge back toward zero, r: %2.10f \n',max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r)))
-fprintf('Null-reform GE (with DC and GI) from a bumped guess, should converge back toward zero, w: %2.10f \n',max(abs(PricePathBumpedOut_GI.w-p_eqm_GI.w)))
+fprintf('Null-reform GE (with DC and GI) from a bumped guess, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r))/abs(GEcondns_GI.CapitalMarket))
+fprintf('Null-reform GE (with DC and GI) from a bumped guess, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r)),max(abs(PricePathBumpedOut_GI.w-p_eqm_GI.w)))
 
 % A genuine additionalfactor ramp, measured on the DC+GI tier because that is where the stationary
 % solve is sound (the plain tier's GE conditions are far enough from zero that distance from its
@@ -704,7 +712,7 @@ clear transpathoptionsGE_AF PricePathAF_ramp
 
 clear FnsToEvaluateGE vfoptionsGE_GI simoptionsGE_GI p_eqm_GI GEcondns_GI ParamsGE_GI V_finalGE_GI Policy_finalGE_GI AgentDist_initialGE_GI PricePathGE_GI PricePathGEOut_GI PricePathBumped_GI PricePathBumpedOut_GI GeneralEqmEqnsGE heteroagentoptionsGE p_eqm GEcondns ParamsGE V_finalGE Policy_finalGE AgentDist_initialGE PricePathGE ParamPathGE transpathoptionsGE PricePathGEOut PricePathBumped PricePathBumpedOut bumpr bumpw Tbump
 
-%% Run the GE transition path with transpathoptions.maxiter=1 -- shape check only
+%% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
 transpathoptions.maxiter=1;
 GeneralEqmEqns.dummy=@(earnings) 0;
 
