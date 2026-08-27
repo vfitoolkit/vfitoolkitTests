@@ -80,9 +80,9 @@ vfoptionsA.quasi_hyperbolic='Naive';
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptionsA);
 StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptionsA);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V0(:)-V0z(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V0(:)-V0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
 clear V0 Policy0 V0z Policy0z StationaryDist0 StationaryDist0z
 
@@ -107,9 +107,9 @@ vfoptionsB.quasi_hyperbolic='Naive';
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
 clear V2 Policy2 StationaryDist2
 
@@ -129,9 +129,9 @@ V3=squeeze(V3);
 Policy3=squeeze(Policy3);
 StationaryDist3=squeeze(StationaryDist3);
 
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(V1(:)-V3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(V1(:)-V3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
 % Second, make e just 1 (with semiz)
 vfoptionsC=vfoptionsA; % semiz
@@ -149,9 +149,9 @@ V4=squeeze(V4);
 Policy4=squeeze(Policy4);
 StationaryDist4=squeeze(StationaryDist4);
 
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(V1(:)-V4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(V1(:)-V4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 
 
@@ -186,9 +186,9 @@ vfoptionsA.quasi_hyperbolic='Sophisticated';
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptionsA);
 StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptionsA);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V0(:)-V0z(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V0(:)-V0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
 clear V0 Policy0 V0z Policy0z StationaryDist0 StationaryDist0z
 
@@ -213,9 +213,9 @@ vfoptionsB.quasi_hyperbolic='Sophisticated';
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
 clear V2 Policy2 StationaryDist2
 
@@ -235,9 +235,9 @@ V3=squeeze(V3);
 Policy3=squeeze(Policy3);
 StationaryDist3=squeeze(StationaryDist3);
 
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(V1(:)-V3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(V1(:)-V3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
 % Second, make e just 1 (with semiz)
 vfoptionsC=vfoptionsA; % semiz
@@ -255,9 +255,9 @@ V4=squeeze(V4);
 Policy4=squeeze(Policy4);
 StationaryDist4=squeeze(StationaryDist4);
 
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(V1(:)-V4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(V1(:)-V4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 
 %%

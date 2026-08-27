@@ -62,9 +62,9 @@ for qhregime={'Naive','Sophisticated'}
     AgentDist_initial0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,PolicyPath0z(:,:,:,:,1),n_d,n_a,1,N_j,1,Params,simoptions_z);
     AgentDistPath0z=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial0z, jequaloneDist_none, PricePath, ParamPath, PolicyPath0z, AgeWeightParamNames,n_d,n_a,1,N_j,1, T,Params, transpathoptionsbaseline, simoptions_z);
 
-    fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(VPath0(:)-VPath0z(:))))
-    fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(PolicyPath0(:)-PolicyPath0z(:))))
-    fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(AgentDistPath0(:)-AgentDistPath0z(:))))
+    fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(VPath0(:)-VPath0z(:))))
+    fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(PolicyPath0(:)-PolicyPath0z(:))))
+    fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(AgentDistPath0(:)-AgentDistPath0z(:))))
 
     %% Solve using a markov which is just an iid in disguise. Should give same result as the iid
     jequaloneDist_z=zeros(n_a,n_z,'gpuArray');
@@ -88,9 +88,9 @@ for qhregime={'Naive','Sophisticated'}
     AgentDist_initial2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,PolicyPath2(:,:,:,:,1),n_d,n_a,0,N_j,[],Params,simoptions_e);
     AgentDistPath2=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial2, jequaloneDist_z, PricePath, ParamPath, PolicyPath2, AgeWeightParamNames,n_d,n_a,0,N_j,[], T,Params, transpathoptionsbaseline, simoptions_e);
 
-    fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
-    fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
-    fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(AgentDistPath1(:)-AgentDistPath2(:))))
+    fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath2(:))))
+    fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
+    fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(AgentDistPath1(:)-AgentDistPath2(:))))
 
     %% Use code with z and e, but set the 'other' to a single point with value 1 and prob 1
     % First, make z just 1
@@ -108,9 +108,9 @@ for qhregime={'Naive','Sophisticated'}
     PolicyPath3=squeeze(PolicyPath3);
     AgentDistPath3=squeeze(AgentDistPath3);
 
-    fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath3(:))))
-    fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath3(:))))
-    fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(AgentDistPath1(:)-AgentDistPath3(:))))
+    fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath3(:))))
+    fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath3(:))))
+    fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(AgentDistPath1(:)-AgentDistPath3(:))))
 
     % Second, make e just 1
     vfoptions_ze2.n_e=1;
@@ -130,9 +130,9 @@ for qhregime={'Naive','Sophisticated'}
     PolicyPath4=squeeze(PolicyPath4);
     AgentDistPath4=squeeze(AgentDistPath4);
 
-    fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath4(:))))
-    fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath4(:))))
-    fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(AgentDistPath1(:)-AgentDistPath4(:))))
+    fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath4(:))))
+    fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath4(:))))
+    fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(AgentDistPath1(:)-AgentDistPath4(:))))
 
     clear vfoptions_ze2
 end

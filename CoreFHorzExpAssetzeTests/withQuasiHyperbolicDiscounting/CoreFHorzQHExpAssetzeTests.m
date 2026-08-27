@@ -40,7 +40,7 @@ addpath('../CoreFHorzExpAssetze_ReturnFns/Noa1_ReturnFns/Semiz_ReturnFns/')
 CoreFHorzExpAssetze_setup
 
 Params.beta0=0.9; % additional today-tomorrow (present-bias) discount factor
-vfoptionsbaseline.QHadditionaldiscount={'beta0'};
+vfoptionsbaseline.QHadditionaldiscount='beta0';
 
 %% noa1 (experience asset is the only endogenous state): base method only, Naive & Sophisticated
 % With no standard asset a1 there is nothing for DC/GI to operate on, so these run the base

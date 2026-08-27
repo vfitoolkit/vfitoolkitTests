@@ -32,7 +32,7 @@ addpath('../CoreFHorzExpAssetsemiz_ReturnFns/')
 CoreFHorzExpAssetsemiz_setup
 
 Params.beta0=0.9; % additional today-tomorrow (present-bias) discount factor
-vfoptionsbaseline.QHadditionaldiscount={'beta0'};
+vfoptionsbaseline.QHadditionaldiscount='beta0';
 
 
 %% ================= WITHOUT a1 (figs 1-8): experience asset is the only endogenous state =================

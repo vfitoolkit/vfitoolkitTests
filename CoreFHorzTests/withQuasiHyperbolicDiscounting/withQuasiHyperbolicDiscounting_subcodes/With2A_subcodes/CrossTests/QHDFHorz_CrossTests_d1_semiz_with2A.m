@@ -31,7 +31,7 @@ ReturnFn_d1=@(d1,d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pensio
 ReturnFn_nod1=@(d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2) ReturnFn_nod1_noz_noe_semiz_with2A(d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2);
 [V_nod1,Pol_nod1]=ValueFnIter_Case1_FHorz(n_d2_semiz,n_a,0,N_j,d2_grid_semiz,a_grid,[],[],ReturnFn_nod1,Params,DiscountFactorParamNames,[],vfopts);
 
-fprintf('Test 4 (d1 ignored vs nod1), V should be zero: %2.8f \n',max(abs(V_d1(:)-V_nod1(:))))
+fprintf('Test 4 (d1 ignored vs nod1), V should be zero: %.3e \n',max(abs(V_d1(:)-V_nod1(:))))
 
 
 
@@ -60,7 +60,7 @@ ReturnFn_d1=@(d1,d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pensio
 ReturnFn_nod1=@(d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2) ReturnFn_nod1_noz_noe_semiz_with2A(d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2);
 [V_nod1,Pol_nod1]=ValueFnIter_Case1_FHorz(n_d2_semiz,n_a,0,N_j,d2_grid_semiz,a_grid,[],[],ReturnFn_nod1,Params,DiscountFactorParamNames,[],vfopts);
 
-fprintf('Test 4 (d1 ignored vs nod1), V should be zero: %2.8f \n',max(abs(V_d1(:)-V_nod1(:))))
+fprintf('Test 4 (d1 ignored vs nod1), V should be zero: %.3e \n',max(abs(V_d1(:)-V_nod1(:))))
 
 
 %%

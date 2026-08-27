@@ -67,7 +67,7 @@ addpath('./CoreFHorzQHExpAssetzTests_subcodes/With2A1_subcodes/Semiz_subcodes/')
 CoreFHorzExpAssetz_setup
 
 Params.beta0=0.9; % additional today-tomorrow (present-bias) discount factor
-vfoptionsbaseline.QHadditionaldiscount={'beta0'};
+vfoptionsbaseline.QHadditionaldiscount='beta0';
 
 %% ================= noa1 (figs 1-8): experience asset a2 is the ONLY endogenous state =================
 % Base method only (no DC/GI/DC+GI -- irrelevant without a1).
