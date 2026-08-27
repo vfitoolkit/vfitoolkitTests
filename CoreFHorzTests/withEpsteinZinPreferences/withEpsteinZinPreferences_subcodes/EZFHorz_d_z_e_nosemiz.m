@@ -1136,8 +1136,20 @@ for ezcase=1:3
     fprintf('warm-glow with sj, basic vs DC [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
     fprintf('warm-glow with sj, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
     fprintf('warm-glow with sj, GI vs DC+GI [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+    % lowmemory rung on the sj+warm-glow solve (mirroring the lowmemory values the standard
+    % sections exercise): covers the main-loop lowmemory warm-glow sites of the e-raws
+    vfoptions1.lowmemory=1;
+    [V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    fprintf('warm-glow with sj, lowmemory=1 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V1B(:))))
+    fprintf('warm-glow with sj, lowmemory=1 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy1B(:))))
+    vfoptions1.lowmemory=0;
+    vfoptions1.lowmemory=2;
+    [V1C,Policy1C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    fprintf('warm-glow with sj, lowmemory=2 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V1C(:))))
+    fprintf('warm-glow with sj, lowmemory=2 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy1C(:))))
+    vfoptions1.lowmemory=0;
 end
-clear V1 V2 V3 V4 Policy1 Policy2 Policy3 Policy4 V1fromPolicy
+clear V1 V2 V3 V4 V1B V1C Policy1 Policy2 Policy3 Policy4 Policy1B Policy1C V1fromPolicy
 
 % (vii).3 exact collapse oracles with sj AND warm-glow.
 % (vii).3a cons-units gamma=1/phi with sj and warm-glow: cons-units became valid under the

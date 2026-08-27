@@ -15,6 +15,9 @@ function output=EZFHorz_nod_noz_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_gri
 %   (viii) EZmortalityriskaversion: identity when set equal to the case's own risk aversion; cross-method
 %          agreement with a distinct mortality risk aversion
 %   (ix)   EZoneminusbeta=2 versus manually scaling the return fn by the age-dependent (1-sj*beta) factor
+%   (x)    deterministic risk-aversion invariance: with no shocks the certainty-equivalent is the
+%          identity, so V and Policy must be completely independent of the risk-aversion parameter
+%          (cons-units over ezgamma in {2,5,20}; utility-units over ezrisk in {0.5,2,5,20}, both signs)
 % Two-endogenous-state (with2A) versions of these tests will be added later.
 % NOTE: no shocks at all, so every EZ solve prints the (expected) toolkit warning that
 % Epstein-Zin does not make much sense without shocks; the certainty-equivalent is the
@@ -1258,6 +1261,67 @@ fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ negative utils]: sho
 fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ negative utils]: should give zero: %2.8f \n',max(abs(Policy6a(:)-Policy6b(:))))
 
 clear V4a V4b V5a V5b V6a V6b Policy4a Policy4b Policy5a Policy5b Policy6a Policy6b
+
+%% (x) Deterministic risk-aversion invariance
+% There are no shocks at all in this model, so the certainty-equivalent operator is the identity
+% and the Epstein-Zin solution must be COMPLETELY independent of the risk-aversion parameter (only
+% the time-aggregator matters). Solve at several risk aversions and compare V and Policy of each
+% against the first of them. cons-units: ezgamma in {2,5,20}, holding ezphi fixed (all values >1:
+% the EZ dispatcher errors on EZriskaversion<1 when EZutils=0). utility-units: ezrisk in
+% {0.5,2,5,20}, both signs of the utility fn (EZutils=1 puts no >1 restriction on EZriskaversion).
+% Policy indices are exact (max-abs-diff print plus an isequal check printed as 1); V passes
+% through the ^(1-gamma)-and-back roundtrip inside the solver, so its max-abs-diff is zero only up
+% to floating-point roundoff (invisible at the printed precision).
+
+% cons-units
+ezgamma_store=Params.ezgamma;
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=0;
+vfoptions1.EZriskaversion='ezgamma';
+vfoptions1.EZeis='ezphi';
+ezgammavals=[2,5,20];
+Params.ezgamma=ezgammavals(1);
+[Vref,Policyref]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+for cc=2:length(ezgammavals)
+    Params.ezgamma=ezgammavals(cc);
+    [V1a,Policy1a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+    fprintf('No-shocks risk-aversion invariance, ezgamma=%g vs %g [EZ cons-units], V: this should be zero: %2.8f \n',ezgammavals(cc),ezgammavals(1),max(abs(V1a(:)-Vref(:))))
+    fprintf('No-shocks risk-aversion invariance, ezgamma=%g vs %g [EZ cons-units], Policy: this should be zero: %2.8f \n',ezgammavals(cc),ezgammavals(1),max(abs(Policy1a(:)-Policyref(:))))
+    fprintf('No-shocks risk-aversion invariance, ezgamma=%g vs %g [EZ cons-units], Policy isequal: this should be one: %i \n',ezgammavals(cc),ezgammavals(1),isequal(Policy1a,Policyref))
+end
+Params.ezgamma=ezgamma_store;
+clear Vref Policyref V1a Policy1a
+
+% utility-units, both signs of the utility fn
+ezrisk_store=Params.ezrisk;
+ezriskvals=[0.5,2,5,20];
+for ezcase=2:3
+    vfoptions1=struct();
+    vfoptions1.exoticpreferences='EpsteinZin';
+    vfoptions1.EZutils=1;
+    vfoptions1.EZriskaversion='ezrisk';
+    if ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptions1.EZpositiveutility=1;
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptions1.EZpositiveutility=0;
+        ReturnFn=ReturnFn_negU;
+    end
+    Params.ezrisk=ezriskvals(1);
+    [Vref,Policyref]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    for cc=2:length(ezriskvals)
+        Params.ezrisk=ezriskvals(cc);
+        [V1a,Policy1a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+        fprintf('No-shocks risk-aversion invariance, ezrisk=%g vs %g [EZ %s], V: this should be zero: %2.8f \n',ezriskvals(cc),ezriskvals(1),casestr,max(abs(V1a(:)-Vref(:))))
+        fprintf('No-shocks risk-aversion invariance, ezrisk=%g vs %g [EZ %s], Policy: this should be zero: %2.8f \n',ezriskvals(cc),ezriskvals(1),casestr,max(abs(Policy1a(:)-Policyref(:))))
+        fprintf('No-shocks risk-aversion invariance, ezrisk=%g vs %g [EZ %s], Policy isequal: this should be one: %i \n',ezriskvals(cc),ezriskvals(1),casestr,isequal(Policy1a,Policyref))
+    end
+end
+Params.ezrisk=ezrisk_store;
+clear Vref Policyref V1a Policy1a
 
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.

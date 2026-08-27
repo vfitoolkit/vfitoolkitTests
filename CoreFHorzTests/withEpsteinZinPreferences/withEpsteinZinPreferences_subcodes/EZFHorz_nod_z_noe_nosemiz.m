@@ -15,6 +15,15 @@ function output=EZFHorz_nod_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,
 %   (viii) EZmortalityriskaversion: identity when set equal to the case's own risk aversion; cross-method
 %          agreement with a distinct mortality risk aversion
 %   (ix)   EZoneminusbeta=2 versus manually scaling the return fn by the age-dependent (1-sj*beta) factor
+%   (x)    degenerate-z invariance: n_z=5 points all equal to z=1 with uniform pi_z; the solution
+%          must be identical across the z slices AND reproduce a 1-point-z solve (all three EZ cases)
+%   (xi)   z-grid permutation invariance: solve with z_grid(perm)/pi_z(perm,perm), un-permute, must
+%          reproduce the baseline solve (catches misaligned matrix multiplies in the CE step)
+%   (xii)  homogeneity (units invariance) in cons-units: scale a_grid, w and pension by lambda in
+%          {1e-3,1e3}; V must equal lambda*V_baseline with identical Policy; plus an ezgamma=20
+%          overflow-stress leg with finiteness checks
+%   (xiii) age-vector EZ params vs scalar: EZriskaversion/EZeis as constant N_j-vectors must
+%          reproduce the scalar solve exactly (tests the internal ezc age-vectorization plumbing)
 % Two-endogenous-state (with2A) versions of these tests will be added later.
 
 % Setup vfoptions and simoptions
@@ -1352,6 +1361,184 @@ fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ negative utils]: sho
 fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ negative utils]: should give zero: %2.8f \n',max(abs(Policy6a(:)-Policy6b(:))))
 
 clear V4a V4b V5a V5b V6a V6b Policy4a Policy4b Policy5a Policy5b Policy6a Policy6b
+
+%% (x) Degenerate-z invariance
+% Replace the z process by n_z points that are ALL the same value. The baseline z_grid is
+% exp(<FarmerToda AR1 grid centered at 0>) and z enters the budget multiplicatively as w*kappa_j*z,
+% so the degenerate value z=1 (=exp(0), the baseline grid's midpoint) makes the return fn match a
+% genuine no-shock model. With all z points identical and pi_z uniform (ones(n_z)/n_z), the
+% solution must be identical across the z slices, AND must reproduce a 1-point-z solve (n_z=1,
+% z_grid=1, pi_z=1) exactly, for all three EZ cases. (The bank's noz subcodes cover the no-shock
+% raws; the 1-point-z solve is the cleanest same-command reference here.) Each degenerate solve
+% still exercises the full CE machinery (the expectation is over five equal values).
+zdeg_grid=ones(n_z,1); % all n_z points equal to z=1
+pi_zdeg=ones(n_z,n_z)/n_z;
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+    end
+    [Vdeg,Policydeg]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,zdeg_grid,pi_zdeg,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsv);
+    Vslicedev=Vdeg-Vdeg(:,1,:); % implicit expansion: every z slice against the first
+    Policyslicedev=Policydeg-Policydeg(:,:,1,:);
+    fprintf('Degenerate-z, V identical across z slices [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vslicedev(:))))
+    fprintf('Degenerate-z, Policy identical across z slices [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policyslicedev(:))))
+    % the 1-point-z reference solve (n_z=1, z_grid=1, pi_z=1; the same command)
+    [Vonept,Policyonept]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsv);
+    Vdev=Vdeg(:,1,:)-Vonept;
+    Policydev=Policydeg(:,:,1,:)-Policyonept;
+    fprintf('Degenerate-z vs 1-point z, V [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vdev(:))))
+    fprintf('Degenerate-z vs 1-point z, Policy [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policydev(:))))
+end
+clear Vdeg Policydeg Vonept Policyonept Vslicedev Policyslicedev Vdev Policydev
+
+%% (xi) z-grid permutation invariance
+% Relabel the z points by a fixed permutation: solving with z_grid(zperm) and pi_z(zperm,zperm) is
+% the same model with its z indices shuffled, so un-permuting the result (V(:,invperm,:) etc.) must
+% reproduce the baseline solve, for all three EZ cases. This catches misaligned matrix multiplies
+% in the certainty-equivalent step (pi_z-vs-pi_z'-style bugs) that a near-symmetric baseline pi_z
+% might otherwise let slip through. Policy is exact (aprime indices are z-label-free); the E-step
+% sums in a different order under the permutation, so V agreement is up to summation-order roundoff
+% (invisible at the printed precision).
+zperm=[3 5 1 4 2]; % a fixed permutation of the n_z=5 points
+invperm=zeros(1,n_z);
+invperm(zperm)=1:n_z; % the inverse permutation: zperm(invperm)=invperm(zperm)=1:n_z
+z_grid_perm=z_grid(zperm);
+pi_z_perm=pi_z(zperm,zperm);
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+    end
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsv);
+    [Vperm,Policyperm]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid_perm,pi_z_perm,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsv);
+    Vunperm=Vperm(:,invperm,:);
+    Policyunperm=Policyperm(:,:,invperm,:);
+    fprintf('z-permutation invariance, V [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vunperm(:)-Vbase(:))))
+    fprintf('z-permutation invariance, Policy [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policyunperm(:)-Policybase(:))))
+end
+clear Vbase Policybase Vperm Policyperm Vunperm Policyunperm
+
+%% (xii) Homogeneity (units invariance) in cons-units, plus a high-risk-aversion stress leg
+% Traditional Epstein-Zin (EZutils=0) is homogeneous of degree 1 in consumption: scaling the units
+% of the model by lambda (a_grid*lambda, plus the two LEVEL parameters entering the budget, w and
+% pension; r, kappa_j and z are unit-free multipliers) scales c by lambda everywhere, so V must
+% equal lambda*V_baseline (checked in relative terms, since the scaling is not exact in floating
+% point) with Policy indices identical. Utility-units EZ is NOT homogeneous of degree 1 (the
+% utility fns are not), so this is a cons-units-only test. Run at the baseline ezgamma and again at
+% ezgamma=20 as an overflow stress (the CE step raises to the powers 1-gamma and 1/(1-gamma), so at
+% gamma=20 with lambda=1e-3/1e3 the intermediate EV terms are of order |V|^(-19)); at each leg also
+% check V is finite everywhere (printed as a 0/1==1 check).
+ezgamma_store=Params.ezgamma;
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=0;
+vfoptions1.EZriskaversion='ezgamma';
+vfoptions1.EZeis='ezphi';
+for gg=1:2
+    if gg==1
+        gammastr=sprintf('ezgamma=%g',Params.ezgamma); % baseline risk aversion
+    else
+        Params.ezgamma=20; % high-risk-aversion overflow stress
+        gammastr='ezgamma=20';
+    end
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+    fprintf('Homogeneity leg (%s) [EZ cons-units], all(isfinite(V)): this should be one: %i \n',gammastr,all(isfinite(Vbase(:))))
+    for lam=[1e-3,1e3]
+        Paramslam=Params;
+        Paramslam.w=lam*Params.w;
+        Paramslam.pension=lam*Params.pension;
+        [Vlam,Policylam]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,lam*a_grid,z_grid,pi_z,ReturnFn_cons,Paramslam,DiscountFactorParamNames,[],vfoptions1);
+        fprintf('Homogeneity, lambda=%g (%s) [EZ cons-units], V relative: should be roughly 1e-13: %g \n',lam,gammastr,max(abs(Vlam(:)-lam*Vbase(:)))/max(abs(Vlam(:))))
+        fprintf('Homogeneity, lambda=%g (%s) [EZ cons-units], Policy: this should be zero: %2.8f \n',lam,gammastr,max(abs(Policylam(:)-Policybase(:))))
+        fprintf('Homogeneity, lambda=%g (%s) [EZ cons-units], Policy isequal: this should be one: %i \n',lam,gammastr,isequal(Policylam,Policybase))
+        fprintf('Homogeneity, lambda=%g (%s) [EZ cons-units], all(isfinite(V)): this should be one: %i \n',lam,gammastr,all(isfinite(Vlam(:))))
+    end
+end
+Params.ezgamma=ezgamma_store;
+clear Vbase Policybase Vlam Policylam
+
+%% (xiii) Age-vector EZ parameters versus scalar
+% The EZ dispatcher permits EZriskaversion/EZeis to be age-dependent N_j-vectors (the ezc2, ezc5,
+% ezc6, ezc7, ezc8 constants are all expanded to N_j-by-1 internally). Passing them as CONSTANT
+% N_j-element vectors must reproduce the scalar solve EXACTLY: pure plumbing for the internal ezc
+% age-vectorization. cons-units passes both EZriskaversion and EZeis as vectors; utility-units
+% passes EZriskaversion only (there is no EZeis when EZutils=1). All three EZ cases.
+% (Checked against ValueFnIter_FHorz_EpsteinZin.m 2026-08-27: the cons-units validation checks
+% (`if crisk<1`, `if ceis<=0`, `if ceis==1`) evaluate a vector condition under `if`, which is true
+% only if ALL elements are true, so a constant vector with ezgamma>1 and valid ezphi passes them.)
+Params.ezgammavec=Params.ezgamma*ones(1,N_j);
+Params.ezphivec=Params.ezphi*ones(1,N_j);
+Params.ezriskvec=Params.ezrisk*ones(1,N_j);
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+        vfoptionsvec=vfoptionsv;
+        vfoptionsvec.EZriskaversion='ezgammavec';
+        vfoptionsvec.EZeis='ezphivec';
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+        vfoptionsvec=vfoptionsv;
+        vfoptionsvec.EZriskaversion='ezriskvec';
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+        vfoptionsvec=vfoptionsv;
+        vfoptionsvec.EZriskaversion='ezriskvec';
+    end
+    [V1a,Policy1a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsv);
+    [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsvec);
+    fprintf('Age-vector EZ params vs scalar, V [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1a(:)-V1b(:))))
+    fprintf('Age-vector EZ params vs scalar, Policy [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1a(:)-Policy1b(:))))
+end
+clear V1a V1b Policy1a Policy1b
 
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.

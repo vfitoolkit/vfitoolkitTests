@@ -26,8 +26,8 @@
 % TEST-FIRST STATE (see EZtests_full_coverage_proposal.md). The following are EXPECTED to error or
 % fail until the corresponding toolkit features are implemented; they are here so the gap is
 % covered and drives the implementation:
-%  - EZ + divide-and-conquer: IMPLEMENTED (2026-08-11): the DC-vs-baseline checks are real.
-%  - EZ + grid interpolation: IMPLEMENTED (2026-08-12), incl. DC+GI and ValueFnFromPolicy under
+%  - EZ + divide-and-conquer: the DC-vs-baseline checks are real.
+%  - EZ + grid interpolation: incl. DC+GI and ValueFnFromPolicy under
 %    GI. The GI layer interpolates the transformed continuation EV=E[(ezc4*V)^ezc5], so the
 %    gamma=1/phi collapse tests are exact under GI too.
 %  - EZ + semiz (figs 9-16, and the semiz CrossTests): no EZ SemiExo solvers exist yet; everything
@@ -140,6 +140,17 @@ output=EZFHorz_d_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_
 exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzEZTests_Fig',num2str(figure_c),'_ConsUnits.png'],'Resolution',150)
 exportgraphics(figure(100+figure_c),['../TestOutput/CoreFHorzEZTests_Fig',num2str(figure_c),'_PositiveUtils.png'],'Resolution',150)
 exportgraphics(figure(200+figure_c),['../TestOutput/CoreFHorzEZTests_Fig',num2str(figure_c),'_NegativeUtils.png'],'Resolution',150)
+
+%% Brute-force oracle: an independent implementation of the EZ recursion
+% Solves a tiny model (n_a=5, n_z=2, N_j=3, no d) twice: by explicit loops written directly
+% from the Epstein-Zin FORMULAS (gamma/phi/risk enter directly; no ezc coefficients, no
+% toolkit subcodes — the reference shares NOTHING with the toolkit implementation), and
+% through ValueFnIter_Case1_FHorz with the bank's standard EZ vfoptions. All three EZ cases,
+% plus sj+warm-glow variants that independently validate the inside-the-root terminal
+% warm-glow convention (Kraft-Munk-Weiss). This is the only test class that can catch
+% 'toolkit and reference both wrong in the same way', since every other check in this bank
+% compares two toolkit code paths against each other.
+output=EZFHorz_bruteforce_oracle(Params,DiscountFactorParamNames);
 
 %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
 % Note: for EZ these are NOT redundant (unlike for QH): they check that an iid shock enters the

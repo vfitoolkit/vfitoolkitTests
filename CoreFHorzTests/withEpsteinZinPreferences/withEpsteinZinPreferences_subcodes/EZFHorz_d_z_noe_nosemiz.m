@@ -15,6 +15,9 @@ function output=EZFHorz_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_
 %   (viii) EZmortalityriskaversion: identity when set equal to the case's own risk aversion; cross-method
 %          agreement with a distinct mortality risk aversion
 %   (ix)   EZoneminusbeta=2 versus manually scaling the return fn by the age-dependent (1-sj*beta) factor
+%   (x)    infeasible-choice contamination: a_grid extended with points unaffordable from the
+%          original grid range (return fn -Inf there): V/Policy on the original grid points must
+%          be exactly unchanged; all three EZ cases, plus a cons-units repeat with sj+warm-glow
 % Two-endogenous-state (with2A) versions of these tests will be added later.
 
 % Setup vfoptions and simoptions
@@ -1352,6 +1355,91 @@ fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ negative utils]: sho
 fprintf('EZoneminusbeta=2 vs manual (1-sj*beta) scaling [EZ negative utils]: should give zero: %2.8f \n',max(abs(Policy6a(:)-Policy6b(:))))
 
 clear V4a V4b V5a V5b V6a V6b Policy4a Policy4b Policy5a Policy5b Policy6a Policy6b
+
+%% (x) Infeasible-choice contamination: extend a_grid with unaffordable points
+% An infeasible choice (c<=0, or d=1) returns F=-Inf from the EZ ReturnFns. In the cons-units
+% raws F is then raised to ezc2=1-1/ezphi<0, which maps -Inf to 0, so the raws juggle 0 and
+% -Inf as the infeasible marker (the becareful/==0/isfinite masks); and with gamma>1 the
+% certainty-equivalent E[(ezc4*V')^ezc5] raises V' to a negative power, so a stray 0/-Inf V'
+% entering it would become Inf and contaminate the WHOLE expectation over z' (not just lose
+% the max over aprime). The masks exist to prevent exactly this, but none of sections (i)-(ix)
+% deliberately plants infeasible states. Here a_grid is extended upward with 3 points {8,9,10}
+% that NO state in the ORIGINAL grid range can afford, at any age:
+%   working age: c=(1+r)*a+w*kappa_j*z*d-aprime, and resources are at most
+%     1.05*5+1*1*z_max*1<6.4 (z_max=exp(2*0.0688)~1.15: Farmer-Toda spans +/-sqrt(n_z-1)
+%     unconditional std devs, exponentiated; and d<1 is required for feasibility anyway);
+%   retirement: c=(1+r)*a+pension-aprime, and resources are at most 1.05*5+0.5=5.75.
+% So aprime=8 (the smallest extended point) forces c<0, i.e. F=-Inf, from every (a,z) with a
+% in the original range. The feasible choice set of every original-range state is therefore
+% UNCHANGED, and by backward induction V/Policy on the original grid points must be EXACTLY
+% unchanged: at each age the extended aprime candidates are -Inf-masked out of the max, and V'
+% at the extended points never enters an original-range state's continuation (it enters only
+% via the infeasible choices). The extended points CAN afford each other (from a=10, aprime=8
+% is feasible) -- that is fine, the invariance claim is only for the original range. And every
+% state, extended points included, has a feasible choice (at a>=8, aprime=0 gives c>0 at every
+% age), so V must be entirely finite: contamination would surface as Inf/NaN in the extended
+% solve's V or as changed V/Policy on the original points. Basic solve method, all three EZ
+% cases, then a cons-units repeat with sj+warm-glow.
+a_grid_ext=[a_grid; 8; 9; 10]; % three points above the max feasible resources (<6.4) of the original range
+n_a_ext=n_a+3;
+maxresources=(1+Params.r)*a_grid(end)+max(Params.w*max(Params.kappa_j)*z_grid(end)*d_grid(end),Params.pension); % resources upper bound over the original range (d_grid(end)=1 overstates, as d<1 is required for feasibility)
+fprintf('infeasible-choice contamination, extended points unaffordable from original range, this should be one: %i \n',a_grid_ext(n_a+1)>maxresources)
+for ezcase=1:3
+    vfoptionsv=struct();
+    vfoptionsv.exoticpreferences='EpsteinZin';
+    if ezcase==1 % consumption-units (traditional Epstein-Zin)
+        casestr='cons-units';
+        vfoptionsv.EZutils=0;
+        vfoptionsv.EZriskaversion='ezgamma';
+        vfoptionsv.EZeis='ezphi';
+        ReturnFn=ReturnFn_cons;
+    elseif ezcase==2 % utility-units, positive-valued utility fn
+        casestr='positive utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=1;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_posU;
+    else % utility-units, negative-valued utility fn
+        casestr='negative utils';
+        vfoptionsv.EZutils=1;
+        vfoptionsv.EZpositiveutility=0;
+        vfoptionsv.EZriskaversion='ezrisk';
+        ReturnFn=ReturnFn_negU;
+    end
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsv);
+    [Vext,Policyext]=ValueFnIter_Case1_FHorz(n_d,n_a_ext,n_z,N_j,d_grid,a_grid_ext,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsv);
+    Vexttrim=Vext(1:n_a,:,:); % the original grid points (the extension appends at the top, so indices 1:n_a are unchanged)
+    Policyexttrim=Policyext(:,1:n_a,:,:);
+    fprintf('infeasible-choice contamination, V on original grid [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vexttrim(:))))
+    fprintf('infeasible-choice contamination, Policy on original grid [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyexttrim(:))))
+    fprintf('infeasible-choice contamination, any NaN in extended-grid V [EZ %s], this should be zero: %i \n',casestr,any(isnan(Vext(:))))
+    fprintf('infeasible-choice contamination, any Inf in extended-grid V [EZ %s], this should be zero: %i \n',casestr,any(isinf(Vext(:))))
+end
+clear Vbase Vext Vexttrim Policybase Policyext Policyexttrim
+
+% cons-units repeat with sj and warm-glow: the survival aggregator's warm-glow masks (the
+% WG==0 and becareful=isfinite handling around (1-sj)*WG^ezc8) are the same class of mask.
+% The warm-glow WG(aprime)=wg1*(1+aprime/wg2) is strictly POSITIVE at the extended aprime
+% points, but a positive warm-glow must not resurrect a choice whose return is -Inf: the
+% candidate has to stay -Inf-masked. The warm-glow values on the original aprime range are
+% unchanged, so the invariance claim is exactly as above: V/Policy on the original grid
+% points exact, extended-grid V free of NaN/Inf.
+vfoptions1=struct();
+vfoptions1.exoticpreferences='EpsteinZin';
+vfoptions1.EZutils=0;
+vfoptions1.EZriskaversion='ezgamma';
+vfoptions1.EZeis='ezphi';
+vfoptions1.survivalprobability='sj';
+vfoptions1.WarmGlowBequestsFn=WGFn_cons;
+[Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+[Vext,Policyext]=ValueFnIter_Case1_FHorz(n_d,n_a_ext,n_z,N_j,d_grid,a_grid_ext,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
+Vexttrim=Vext(1:n_a,:,:);
+Policyexttrim=Policyext(:,1:n_a,:,:);
+fprintf('infeasible-choice contamination with sj+warm-glow, V on original grid [EZ cons-units], this should be zero: %2.8f \n',max(abs(Vbase(:)-Vexttrim(:))))
+fprintf('infeasible-choice contamination with sj+warm-glow, Policy on original grid [EZ cons-units], this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyexttrim(:))))
+fprintf('infeasible-choice contamination with sj+warm-glow, any NaN in extended-grid V [EZ cons-units], this should be zero: %i \n',any(isnan(Vext(:))))
+fprintf('infeasible-choice contamination with sj+warm-glow, any Inf in extended-grid V [EZ cons-units], this should be zero: %i \n',any(isinf(Vext(:))))
+clear Vbase Vext Vexttrim Policybase Policyext Policyexttrim
 
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.
