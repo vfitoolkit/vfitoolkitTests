@@ -710,6 +710,30 @@ fprintf('additionalfactor ramp (f_add=2 over iterations 10 to 50) vs no ramp, de
 fprintf('additionalfactor ramp (f_add=2 over iterations 10 to 50) vs no ramp, deviation from eqm, w: %2.10f vs %2.10f \n',max(abs(PricePathAF_ramp.w-p_eqm_GI.w)),max(abs(PricePathBumpedOut_GI.w-p_eqm_GI.w)))
 clear transpathoptionsGE_AF PricePathAF_ramp
 
+%% Does the convergence criterion actually decide, or does maxiter always cut the loop off first?
+% Every other GE solve in this bank runs to a maxiter it reaches, so none of them ever exercise
+% transpathoptions.toleranceGEcondns. Here the cap is generous and the additionalfactor ramp is what
+% gets there quickly: factor holds at 0.1 for 10 iterations, then ramps to three times that by
+% iteration 30.
+transpathoptionsGE_conv=transpathoptionsGE;
+transpathoptionsGE_conv.maxiter=250;
+transpathoptionsGE_conv.GEnewprice3.additionalfactor=[3,10,30];
+[PricePathConv,GEcondnPathConv]=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, transpathoptionsGE_conv, simoptionsGE_GI, vfoptionsGE_GI);
+% GEcondnPathConv holds the general eqm eqns along the returned path, one row per eqn. This rebuilds
+% the exact number the shooting loop tests: scalarize within each period by multiGEcriterion=1 (the
+% root-sum-of-squares, with the default weights of one), then take the L-Infinity norm over time.
+GEcondnDist=max(sqrt(GEcondnPathConv.CapitalMarket.^2+GEcondnPathConv.LabourMarket.^2));
+fprintf('Convergence criterion, GE condn distance of the returned path: %2.10f, should be at or below toleranceGEcondns=%2.10f \n',GEcondnDist,1e-4)
+
+% The same solve with one more iteration allowed. If the loop stopped because the general eqm
+% conditions got small then the extra iteration is never taken and the two paths are identical; if it
+% stopped because it ran out of iterations then that extra one moves the prices. Far cheaper than
+% raising the cap by a large factor, and just as decisive.
+transpathoptionsGE_conv.maxiter=251;
+PricePathConv_plus1=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, transpathoptionsGE_conv, simoptionsGE_GI, vfoptionsGE_GI);
+fprintf('Convergence criterion decided rather than maxiter, one more iteration changes nothing, this should be zero, r: %2.10f, w: %2.10f \n',max(abs(PricePathConv_plus1.r-PricePathConv.r)),max(abs(PricePathConv_plus1.w-PricePathConv.w)))
+clear transpathoptionsGE_conv PricePathConv PricePathConv_plus1 GEcondnPathConv GEcondnDist
+
 clear FnsToEvaluateGE vfoptionsGE_GI simoptionsGE_GI p_eqm_GI GEcondns_GI ParamsGE_GI V_finalGE_GI Policy_finalGE_GI AgentDist_initialGE_GI PricePathGE_GI PricePathGEOut_GI PricePathBumped_GI PricePathBumpedOut_GI GeneralEqmEqnsGE heteroagentoptionsGE p_eqm GEcondns ParamsGE V_finalGE Policy_finalGE AgentDist_initialGE PricePathGE ParamPathGE transpathoptionsGE PricePathGEOut PricePathBumped PricePathBumpedOut bumpr bumpw Tbump
 
 %% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
