@@ -718,7 +718,9 @@ clear transpathoptionsGE_AF PricePathAF_ramp
 transpathoptionsGE_conv=transpathoptionsGE;
 transpathoptionsGE_conv.maxiter=250;
 transpathoptionsGE_conv.GEnewprice3.additionalfactor=[3,10,30];
+tic;
 [PricePathConv,GEcondnPathConv]=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, transpathoptionsGE_conv, simoptionsGE_GI, vfoptionsGE_GI);
+time_updatepert0=toc;
 % GEcondnPathConv holds the general eqm eqns along the returned path, one row per eqn. This rebuilds
 % the exact number the shooting loop tests: scalarize within each period by multiGEcriterion=1 (the
 % root-sum-of-squares, with the default weights of one), then take the L-Infinity norm over time.
@@ -732,7 +734,18 @@ fprintf('Convergence criterion, GE condn distance of the returned path: %2.10f, 
 transpathoptionsGE_conv.maxiter=251;
 PricePathConv_plus1=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, transpathoptionsGE_conv, simoptionsGE_GI, vfoptionsGE_GI);
 fprintf('Convergence criterion decided rather than maxiter, one more iteration changes nothing, this should be zero, r: %2.10f, w: %2.10f \n',max(abs(PricePathConv_plus1.r-PricePathConv.r)),max(abs(PricePathConv_plus1.w-PricePathConv.w)))
-clear transpathoptionsGE_conv PricePathConv PricePathConv_plus1 GEcondnPathConv GEcondnDist
+% The same converged solve with transpathoptions.updatepert=1, which builds the new price path period
+% by period inside the loop over t (updatePricePathNew_TPath_tt) rather than from all periods at once
+% after it (updatePricePathNew_TPath_T, which is the default and what the Newton options will need).
+% For the shooting algorithm the two are the same arithmetic, so the paths must be identical.
+transpathoptionsGE_conv.maxiter=250;
+transpathoptionsGE_conv.updatepert=1;
+tic;
+PricePathConv_pert1=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, transpathoptionsGE_conv, simoptionsGE_GI, vfoptionsGE_GI);
+time_updatepert1=toc;
+fprintf('updatepert=1 (per period) vs updatepert=0 (whole path), same converged solve, this should be zero, r: %2.10f, w: %2.10f \n',max(abs(PricePathConv_pert1.r-PricePathConv.r)),max(abs(PricePathConv_pert1.w-PricePathConv.w)))
+fprintf('updatepert=0 took %2.2f seconds, updatepert=1 took %2.2f seconds \n',time_updatepert0,time_updatepert1)
+clear transpathoptionsGE_conv PricePathConv PricePathConv_plus1 PricePathConv_pert1 GEcondnPathConv GEcondnDist time_updatepert0 time_updatepert1
 
 clear FnsToEvaluateGE vfoptionsGE_GI simoptionsGE_GI p_eqm_GI GEcondns_GI ParamsGE_GI V_finalGE_GI Policy_finalGE_GI AgentDist_initialGE_GI PricePathGE_GI PricePathGEOut_GI PricePathBumped_GI PricePathBumpedOut_GI GeneralEqmEqnsGE heteroagentoptionsGE p_eqm GEcondns ParamsGE V_finalGE Policy_finalGE AgentDist_initialGE PricePathGE ParamPathGE transpathoptionsGE PricePathGEOut PricePathBumped PricePathBumpedOut bumpr bumpw Tbump
 
