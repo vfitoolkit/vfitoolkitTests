@@ -19,7 +19,7 @@
 %
 % Which solution methods each subcode runs (mirroring its baseline counterpart):
 %   noa1 (figs 1-8):     base only (no a1 for divide-and-conquer / grid interpolation to act on)
-%   withA1 nosemiz (9-12): base only (there are no DC1/GI1 QH-ExpAssetz raws)
+%   withA1 nosemiz (9-12): base / DC1 / GI1 / DC1_GI1
 %   withA1 semiz (13-16):  base + DC1 + GI1 + DC1_GI1
 %   with2A1 (17-24):       base + DC2A + GI2A + DC2A_GI2A
 %

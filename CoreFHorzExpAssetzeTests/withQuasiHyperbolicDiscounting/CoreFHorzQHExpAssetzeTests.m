@@ -5,8 +5,8 @@
 %   (iii) Sophisticated, beta0=1: both the main value fn AND the continuation value equal exponential
 %
 % experienceassetze: aprime depends on (d2,a2,z,e), so z and e are ALWAYS present -> every subcode
-% is z_e (there is no z_noe). Nosemiz: single a1 supports the baseline only (DC/GI require two
-% standard assets -- see the _with2A1 subcodes). The QH+ExpAssetze+semiz family (figs 7,8) runs
+% is z_e (there is no z_noe). Nosemiz withA1 runs base / DC1 / GI1 / DC1_GI1; the 1A quasi-
+% hyperbolic raws for those tiers now exist. The QH+ExpAssetze+semiz family (figs 7,8) runs
 % single a1, base/DC1/GI1/DC1_GI1 x {d1,nod1} x {Naive,Sophisticated}, with the full lowmemory
 % ladder. The QH+ExpAssetze+semiz+with2A1 family (figs 11,12) runs base/DC2A/GI2A/DC2A_GI2A
 % x {d1,nod1} x {Naive,Sophisticated}, also with the full lowmemory ladder.
@@ -65,7 +65,7 @@ output=CoreFHorzQHExpAssetze_d1_z_e_semiz_noa1(n_d_withd1semiz,n_a_justexpasset,
 
 
 
-%% withA1 (single standard asset): baseline + lowmemory, Naive & Sophisticated
+%% withA1 (single standard asset): base / DC1 / GI1 / DC1_GI1 + lowmemory, Naive & Sophisticated
 %% without d1, with z, with e
 n_a_notsobig=[301,13]; % To avoid out-of-memory errors
 a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
