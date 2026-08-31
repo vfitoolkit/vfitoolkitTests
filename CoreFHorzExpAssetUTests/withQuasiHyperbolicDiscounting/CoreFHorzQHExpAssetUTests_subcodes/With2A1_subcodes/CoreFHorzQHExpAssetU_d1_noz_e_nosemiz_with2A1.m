@@ -79,7 +79,18 @@ vfoptions2=vfoptions; vfoptions2.divideandconquer=1;
 [V2,Policy2,V2alt,Policy2alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
 fprintf('%s DC2A, this should be zero: %.3e \n',qh,max(abs(V1(:)-V2(:))))
 fprintf('%s DC2A (Valt), this should be zero: %.3e \n',qh,max(abs(V1alt(:)-V2alt(:))))
-fprintf('%s DC2A (Policy), this should be zero: %.3e \n',qh,max(abs(Policy1(:)-Policy2(:))))
+dP=abs(Policy1-Policy2); iP=find(dP>0); szP=size(dP);
+fprintf('%s DC2A (Policy), this should be zero: %.3e   (%d of %d entries differ) \n',qh,max(dP(:)),numel(iP),numel(dP))
+if ~isempty(iP)
+    % A tie shows up as: policy index differs, achieved value bitwise identical.
+    sbP=cell(1,numel(szP)); [sbP{:}]=ind2sub(szP,iP(1));
+    fprintf('   channels differing: %s (of %d);  distinct Policy2-Policy1: %s \n',mat2str(unique(mod(iP-1,szP(1))+1)'),szP(1),mat2str(unique(Policy2(iP)-Policy1(iP))'))
+    fprintf('   first differing entry at [%s] of [%s]:  Policy1=%d  Policy2=%d \n',num2str(cell2mat(sbP)),num2str(szP),Policy1(iP(1)),Policy2(iP(1)))
+    if numel(szP)==numel(size(V1))+1 % Policy carries a leading channel dim that V does not
+        vidx=sub2ind(size(V1),sbP{2:end});
+        fprintf('   value achieved at that state:  V1=%.17g  V2=%.17g  bitwise equal=%d  (max|V1-V2| over all states=%.3e) \n',V1(vidx),V2(vidx),V1(vidx)==V2(vidx),max(abs(V1(:)-V2(:))))
+    end
+end
 fprintf('%s DC2A (Policyalt), this should be zero: %.3e \n',qh,max(abs(Policy1alt(:)-Policy2alt(:))));
 % ValueFnFromPolicy oracle on DC2A
 vfoptionsVFP2=vfoptions2; vfoptionsVFP2.lowmemory=0;
@@ -165,7 +176,18 @@ vfoptions2=vfoptions; vfoptions2.divideandconquer=1;
 [V2,Policy2,V2alt]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
 fprintf('%s DC2A, this should be zero: %.3e \n',qh,max(abs(V1(:)-V2(:))))
 fprintf('%s DC2A (Valt), this should be zero: %.3e \n',qh,max(abs(V1alt(:)-V2alt(:))))
-fprintf('%s DC2A (Policy), this should be zero: %.3e \n',qh,max(abs(Policy1(:)-Policy2(:))))
+dP=abs(Policy1-Policy2); iP=find(dP>0); szP=size(dP);
+fprintf('%s DC2A (Policy), this should be zero: %.3e   (%d of %d entries differ) \n',qh,max(dP(:)),numel(iP),numel(dP))
+if ~isempty(iP)
+    % A tie shows up as: policy index differs, achieved value bitwise identical.
+    sbP=cell(1,numel(szP)); [sbP{:}]=ind2sub(szP,iP(1));
+    fprintf('   channels differing: %s (of %d);  distinct Policy2-Policy1: %s \n',mat2str(unique(mod(iP-1,szP(1))+1)'),szP(1),mat2str(unique(Policy2(iP)-Policy1(iP))'))
+    fprintf('   first differing entry at [%s] of [%s]:  Policy1=%d  Policy2=%d \n',num2str(cell2mat(sbP)),num2str(szP),Policy1(iP(1)),Policy2(iP(1)))
+    if numel(szP)==numel(size(V1))+1 % Policy carries a leading channel dim that V does not
+        vidx=sub2ind(size(V1),sbP{2:end});
+        fprintf('   value achieved at that state:  V1=%.17g  V2=%.17g  bitwise equal=%d  (max|V1-V2| over all states=%.3e) \n',V1(vidx),V2(vidx),V1(vidx)==V2(vidx),max(abs(V1(:)-V2(:))))
+    end
+end
 % ValueFnFromPolicy oracle on DC2A
 vfoptionsVFP2=vfoptions2; vfoptionsVFP2.lowmemory=0;
 [V2fromPolicy,V2altfromPolicy]=ValueFnFromPolicy_FHorz(Policy2,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptionsVFP2);
