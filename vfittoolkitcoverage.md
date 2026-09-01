@@ -503,12 +503,14 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
   the terminal and backward arms at the same position in the same files already use six
   subscripts. The operational lesson: `V_Jplus1` drift replicates across sibling families, so
   when one of these turns up, sweep the siblings immediately rather than fixing the file in hand.
-- **Staleness.** `QHExpAssetz` and `QHExpAssetze` were re-run on 2026-09-01 (see the 1A-tier
-  section above) and are current. `QHExpAssete` is the one still exposed: it last ran 18 August,
-  before the beta0 refactor, the QH `ValueFnFromPolicy` hierarchy change and the two fixes in
-  `d7dfcd7c`. The hierarchy change **turned on** its `experienceassete`+semiz path, which
-  previously routed through the generic SemiExo router — same destination and same arguments,
-  but unrun since. Re-running it is the cheapest way to close the last of this.
+- ~~**Staleness.**~~ **Closed 2026-09-01.** All three exposed banks — `QHExpAssetz`,
+  `QHExpAssetze`, `QHExpAssete` — were re-run that day and are green. They had last run 18–19
+  August, before the beta0 refactor, the QH `ValueFnFromPolicy` hierarchy change and the two
+  fixes in `d7dfcd7c`; the hierarchy change had **turned on** their
+  `experienceasset{e,z,ze}`+semiz paths, which previously routed through the generic SemiExo
+  router. Same destination and same arguments, and the runs confirm it: `QHExpAssete` returns
+  **exactly the same 1624 checks across 24/24 configs** as its August run, with no errors. No
+  FHorz bank now predates the refactor.
 - **No QH bank is test-first any more.** `CoreFHorzQHExpAssetTests` was the last one, and it
   closed on 2026-08-22. Status re-read off the working tree 2026-08-25, not off the banners:
   - `CoreFHorzQHExpAssetTests` (48 subtests) — **implemented and substantially validated.**
@@ -534,12 +536,13 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
   - `CoreFHorzQHExpAsseteTests` (24 subtests) — **done and GPU-green.** The toolkit has 128 QH
     raws under `ExperienceAssete/QuasiHyperbolic/`, four `QuasiHyperbolicExpAssete*` dispatchers
     plus four SemiExo ones, and live routing at `ValueFnIter_Case1_FHorz.m:401`/`:411` (committed
-    `b6bc5acf`). The 2026-08-18 run is green: **1624 checks, 24/24 figures, no errors** — Naive and
+    `b6bc5acf`). Re-run 2026-09-01 and green: **1624 checks, 24/24 figures, no errors** — Naive and
     Sophisticated on V / Valt / Policy / Policyalt across each lowmemory ladder, plus 24
-    `ValueFnFromPolicy` oracle checks. Two checks print `0.00000001` rather than `0.00000000`
-    (`Sophisticated ValueFnFromPolicy (Valt)` and `... (DC1, Valt)`); that is display-precision
-    rounding on the reconstruction oracle, not a defect — but it does mean a plain
-    grep-for-nonzero flags this diary, so read those two lines before concluding anything.
+    `ValueFnFromPolicy` oracle checks. Identical check count to the 2026-08-18 run, which
+    confirms the beta0 refactor and the `ValueFnFromPolicy` hierarchy change left this family
+    alone. 1296 exactly zero and 328 at the ULP floor (worst `5.588e-09`), every one of them on
+    `ValueFnFromPolicy` or a cross-method comparison; the August run reported the same values
+    under `%2.8f`, where all but two of them rounded to `0.00000000`.
     One toolkit limit remains but is not reachable from this bank:
     `QuasiHyperbolicExpAsseteSemiExo_{DC,GI,DC_GI}` error on `N_a1==0`, and the noa1+semiz
     block (figs 5-8) is base-method only.
