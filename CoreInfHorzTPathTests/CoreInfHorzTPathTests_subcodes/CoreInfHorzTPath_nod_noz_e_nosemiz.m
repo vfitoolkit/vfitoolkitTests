@@ -503,8 +503,10 @@ transpathoptionsGE.verbose=0;
 % of its own residual. howtoupdate columns are {GEcondn name, price name, add, factor}, and
 % updatePricePathNew_TPath_tt does new = old + add*factor*residual - (1-add)*factor*residual.
 % Both residuals are of the form (price - its firm FOC), so a POSITIVE residual means the price is
-% too high and must come down: hence add=0 (subtract) for both. Rows are given in the same order
-% as the PricePath fields (r then w), which is the order setupGEnewprice3_shooting expects.
+% too high and must come down: hence add=0 (subtract) for both. The rows have to be in the same
+% order as the PricePath fields (r then w), because add and factor are applied to the prices
+% positionally by row. setupGEnewprice3_shooting has a reorder meant to lift that requirement,
+% but it matches on the wrong column of howtoupdate and so never fires.
 transpathoptionsGE.GEnewprice=3;
 transpathoptionsGE.GEnewprice3.howtoupdate={'CapitalMarket','r',0,0.1; ...
                                             'LabourMarket','w',0,0.1};
@@ -626,6 +628,11 @@ clear FnsToEvaluateGE vfoptionsGE_GI simoptionsGE_GI p_eqm_GI GEcondns_GI Params
 %% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
 transpathoptions.maxiter=1;
 GeneralEqmEqns.dummy=@(earnings) 0;
+% transpathoptions.GEnewprice has no default while the Newton options are being built, so it has to be
+% set. factor=0 means the dummy eqn never moves the price, which is what this shape-check wants: it is
+% only testing that the returned objects have the right shapes.
+transpathoptions.GEnewprice=3;
+transpathoptions.GEnewprice3.howtoupdate={'dummy','r',0,0};
 
 PricePath2=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, n_d, n_a, n_z, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, simoptions, vfoptions, []);
 

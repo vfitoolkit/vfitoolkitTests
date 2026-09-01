@@ -17,3 +17,7 @@ NOT tested here:
  - e/semiz: out of scope for this bank.
 
 Note: in the noz cases there is no exogenous shock, so the InfHorz stationary distribution collapses to a single mass point and the distribution/statistics are degenerate; for those cases the stats commands are run as 'executes without error' checks, and the z cases provide the meaningful cross-validation of the statistics.
+
+There is also a quasi-hyperbolic discounting mirror of this bank, in withQuasiHyperbolicDiscounting/
+(CoreInfHorzQHTests.m). It reuses this setup and these ReturnFns, tests V and Policy only (the
+exotic-preference convention), and writes into this TestOutput/. See its description.txt.

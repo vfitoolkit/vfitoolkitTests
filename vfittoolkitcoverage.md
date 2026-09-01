@@ -34,7 +34,9 @@ short of a full raw set — the missing nosemiz 1A tiers landed in `6031762b` (2
 banks are green. All six families now sit at exactly 2× their core raw count.
 
 ‡ written but not runnable — `SimulateTimeSeries/` has no `residualasset` support at all.
-‡‡ the bank is written test-first against 64 raws; the toolkit has 2. See below.
+‡‡ the bank is written test-first against 64 raws; the toolkit has 4 (this said 2 until
+2026-09-01 — the raw-count table below had already been updated to 4 and this footnote had not).
+See below.
 
 **The RiskyAsset with2A tier is complete and GPU-green** (2026-08-19).
 
