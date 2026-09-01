@@ -8,27 +8,30 @@ cross-tests. Format in the tier columns is `variants + cross-testsx`.
 withA1 subcodes sit at the top level of `..._subcodes/` and in `Semiz_subcodes/`. A tier rule
 that keys off directory names must fall through to withA1 for it, not skip it.
 
-Last updated: 2026-08-31
+Last updated: 2026-09-01
 
 ## CoreFHorzTests + the ExpAsset family + RiskyAsset + ResidAsset
 
-| bank | noa1 | withA1 | with2A | var | x-tests | panel vs dist | V_Jplus1 | core raws | QH | EZ |
-|---|---|---|---|---|---|---|---|---|---|---|
-| CoreFHorzTests | — | 16+6x | 16+4x | 32 | 10 | 32/32 | 32 + 32 QH | 142 | 42 | 24 |
-| ExpAsset | 16+10x | 16+14x | 16+2x | 48 | 26 | 48/48 | 0 | 128 | 48 | — |
-| ExpAssetU | 16+10x | 16+14x | 16+2x | 48 | 26 | 48/48 | 0 | 128 | 48 | — |
-| ExpAssete | 8+16x | 8+8x | 8+2x | 24 | 26 | 24/24 | 0 | 64 | 24 | — |
-| ExpAssetz | 8+16x | 8+8x | 8+4x | 24 | 28 | 24/24 | 0 | 64 | 24 | — |
-| ExpAssetze | 4+4x | 4+16x | 4+2x | 12 | 22 | 12/12 | 0 | 32 | 12 | — |
-| ExpAssetsemiz | 8+4x | 8+6x | 8+2x | 24 | 12 | 24/24 | 0 | 64 | 24 | — |
-| RiskyAsset | 16+0x | 16+25x | 16+4x | 48 | 29 | 48/48 | 0 | 128 | none | 50 |
-| ResidAsset | n/a | 16+22x | — | 16 | 22 | 16/16 ‡ | 16 | 4 ‡‡ | none | — |
-| **total** | | | | **276** | **201** | **276/276** | **80** | | **222** | **74** |
+| bank | noa1 | withA1 | with2A | var | x-tests | panel vs dist | V_Jplus1 | core raws | QH | EZ | AA |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| CoreFHorzTests | — | 16+6x | 16+4x | 32 | 10 | 32/32 | 32 + 32 QH + 16 EZ | 142 | 42 | 24 | 8 |
+| ExpAsset | 16+10x | 16+14x | 16+2x | 48 | 26 | 48/48 | 0 | 128 | 48 | — | — |
+| ExpAssetU | 16+10x | 16+14x | 16+2x | 48 | 26 | 48/48 | 0 | 128 | 48 | — | — |
+| ExpAssete | 8+16x | 8+8x | 8+2x | 24 | 26 | 24/24 | 0 | 64 | 24 | — | — |
+| ExpAssetz | 8+16x | 8+8x | 8+4x | 24 | 28 | 24/24 | 0 | 64 | 24 | — | — |
+| ExpAssetze | 4+4x | 4+16x | 4+2x | 12 | 22 | 12/12 | 0 | 32 | 12 | — | — |
+| ExpAssetsemiz | 8+4x | 8+6x | 8+2x | 24 | 12 | 24/24 | 0 | 64 | 24 | — | — |
+| RiskyAsset | 16+0x | 16+25x | 16+4x | 48 | 29 | 48/48 | 32 + 32 EZ | 128 | none | 50 | — |
+| ResidAsset | n/a | 16+22x | — | 16 | 22 | 16/16 ‡ | 16 | 4 ‡‡ | none | — | — |
+| **total** | | | | **276** | **201** | **276/276** | **160** | | **222** | **74** | **8** |
 
-477 subtests in the main banks, plus 222 QH and 74 EZ = **773**.
+477 subtests in the main banks, plus 222 QH, 74 EZ and 8 AA = **781**.
 
-**Every experience-asset family now has a QH mirror with a solver behind it.** ExpAssetU (48) and
-ExpAssetsemiz (24) were the last two showing `none`; both are implemented and have run.
+**Every experience-asset family now has a QH mirror with a solver behind it, and every mirror is
+complete at raw level.** ExpAssetU (48) and ExpAssetsemiz (24) were the last two showing `none`;
+both are implemented and have run. ExpAssetz and ExpAssetze were the last two whose mirrors were
+short of a full raw set — the missing nosemiz 1A tiers landed in `6031762b` (2026-09-01) and both
+banks are green. All six families now sit at exactly 2× their core raw count.
 
 ‡ written but not runnable — `SimulateTimeSeries/` has no `residualasset` support at all.
 ‡‡ the bank is written test-first against 64 raws; the toolkit has 2. See below.
@@ -70,8 +73,9 @@ baseline's 16 `with2A` variants into `withA1`.
 
 `CoreFHorzResidAssetTests` exists: **70 files, 16 variants, 22 cross-tests, 661 exact checks**,
 figures 1–16. It was briefly the only test-first bank in the suite; `CoreFHorzAmbiguityTests`
-(9 files) joined it on 2026-08-28. **Those two are now the only banks whose solver does not yet
-exist** — ResidualAsset has 4 of a needed 64 raws, AmbiguityAversion 6 and no dispatcher wave.
+(9 files) joined it on 2026-08-28 — and left again on 2026-09-01, when its solver wave landed and
+the bank ran GPU-green first try. **ResidAsset is once more the only bank whose solver does not
+yet exist** — 4 of a needed 64 raws.
 
 | | |
 |---|---|
@@ -174,10 +178,13 @@ code computing the same weights.
   These are printed side-by-side rows, eyeballed, not thresholded assertions.
 - **V_Jplus1** — subcodes that exercise the terminal-condition branch.
 - **core raws** — solver raws in the family, excluding exotic-preference variants
-  (which the QH/EZ mirrors cover). This is the surface the main bank dispatches into.
-- **QH / EZ** — subtests in the bank's `withQuasiHyperbolicDiscounting` /
-  `withEpsteinZinPreferences` mirror. `—` means no mirror. (No `⚠` remains: the last test-first
-  QH bank, ExpAsset, got its solver on 2026-08-22.)
+  (which the QH/EZ/AA mirrors cover). This is the surface the main bank dispatches into.
+- **QH / EZ / AA** — subtests in the bank's `withQuasiHyperbolicDiscounting` /
+  `withEpsteinZinPreferences` / `withAmbiguityAversion` mirror. `—` means no mirror. (No `⚠`
+  remains anywhere: the last test-first QH bank, ExpAsset, got its solver on 2026-08-22, and the
+  AA mirror got its solver on 2026-09-01 — see the AmbiguityAversion section. AA is 8 rather
+  than a QH-style 42 because ambiguity has no noz+noe variant (deliberately an error), and its
+  semiz and with2A tiers are deferred by design, not test-first.)
 
 ### Scope of the exotic-preference mirrors
 
@@ -199,8 +206,8 @@ for Naive.
 
 #### What the mirrors actually contain today
 
-Panel simulation is absent everywhere — `SimPanelValues` appears in 0 of 155 QH and 0 of 220
-EZ subcodes. Dist-derived output is not absent, but it is confined to two banks (TPath banks
+Panel simulation is absent everywhere — `SimPanelValues` appears in 0 of 155 QH, 0 of 220
+EZ and 0 of 9 AA subcodes. Dist-derived output is not absent, but it is confined to two banks (TPath banks
 excluded throughout):
 
 | mirror / bank | files | asserted | displayed |
@@ -209,6 +216,7 @@ excluded throughout):
 | QH — ExpAsset, ExpAssete, ExpAssetz, ExpAssetze | 112 | **0** | **0** |
 | EZ — CoreFHorzTests | 73 | 120 | 384 |
 | EZ — RiskyAsset | 147 | 100 | 240 |
+| AA — CoreFHorzTests | 9 | 6 | 48 |
 
 *asserted* = `fprintf` checks whose compared value is dist-derived. *displayed* = unsuppressed
 `[...]` rows that dump moments to screen with no assertion.
@@ -264,22 +272,33 @@ was first written. ResidualAsset added 2026-08-25: 2 raws, and they do not curre
 Re-counted 2026-08-31. ExperienceAssetu went 128 → 384 (`71856d75` nosemiz, `2aaecbc6` SemiExo);
 ExperienceAssetsemiz 64 → 192 (`d5cef0af`); ResidualAsset 2 → 4.
 
-| family | total raws | QH | EZ | core |
-|---|---|---|---|---|
-| baseline (FHorz, excl. asset families) | 406 | 224 | 40 | 142 |
-| ExperienceAsset | 400 | 256 | 0 | 128 |
-| ExperienceAssetu | 384 | 256 | 0 | 128 |
-| ExperienceAssete | 192 | 128 | 0 | 64 |
-| ExperienceAssetz | 168 | 104 | 0 | 64 |
-| ExperienceAssetze | 84 | 52 | 0 | 32 |
-| ExperienceAssetsemiz | 192 | 128 | 0 | 64 |
-| RiskyAsset | 208 | 0 | 80 | 128 |
-| ResidualAsset | 4 | 0 | 0 | 4 |
+Re-counted 2026-09-01: AmbiguityAversion's 6 old-style raws were deleted and replaced by 24
+modern ones ({plain, DC1, GI1, DC1_GI1} × {nod,d} × {z, noz_e, z_e}), all mechanical transforms
+of the modern exponential raws; the AA column (and the baseline total, 406 → 430) is new. The
+old table's baseline total never counted the ambiguity (or GulPesendorfer) raws.
 
-Two families remain short of a full QH mirror at raw level: **ExperienceAssetz** (104 of a
-notional 128 — 40 nosemiz rather than 64) and **ExperienceAssetze** (52 of 64 — 20 nosemiz
-rather than 32). Both are complete on the SemiExo side. Every other family is at 2× its core
-count, which is the expected ratio (one Naive and one Sophisticated raw per exponential raw).
+Re-counted again 2026-09-01 after `6031762b`: ExperienceAssetz 168 → 192 (QH 104 → 128) and
+ExperienceAssetze 84 → 96 (QH 52 → 64), closing the last two raw-level QH gaps. The
+ExperienceAsset row also drops 400 → 384: that figure was counting all `.m` files in the family,
+including its 16 dispatchers, while every other row counted `*_raw.m` only. **This table is
+`*_raw.m` only** — dispatchers are not raws and are counted in the prose, not here.
+
+| family | total raws | QH | EZ | AA | core |
+|---|---|---|---|---|---|
+| baseline (FHorz, excl. asset families) | 430 | 224 | 40 | 24 | 142 |
+| ExperienceAsset | 384 | 256 | 0 | 0 | 128 |
+| ExperienceAssetu | 384 | 256 | 0 | 0 | 128 |
+| ExperienceAssete | 192 | 128 | 0 | 0 | 64 |
+| ExperienceAssetz | 192 | 128 | 0 | 0 | 64 |
+| ExperienceAssetze | 96 | 64 | 0 | 0 | 32 |
+| ExperienceAssetsemiz | 192 | 128 | 0 | 0 | 64 |
+| RiskyAsset | 208 | 0 | 80 | 0 | 128 |
+| ResidualAsset | 4 | 0 | 0 | 0 | 4 |
+
+**Every experience-asset family is now at exactly 2× its core count** — one Naive and one
+Sophisticated raw per exponential raw, which is the expected ratio. The two families that were
+short (ExperienceAssetz at 104 of 128, ExperienceAssetze at 52 of 64, both missing only nosemiz
+1A tiers) were closed in `6031762b`; see below.
 
 Note the toolkit is inconsistent about where exotic-preference raws live: ExpAssete/z/ze
 keep them in a `QuasiHyperbolic/` subdir of their own family, while the *baseline* QH raws
@@ -321,10 +340,99 @@ Both fixes are in `d7dfcd7c` and were validated by four bank runs: QH ExpAsset i
 pre-fix baseline over all 1933 checks, ExpAsset 514 exact-zero checks all zero, QH ExpAssetU and
 ExpAssetU value-exact throughout.
 
-**Every remaining non-zero exact check in the FHorz suite is a Policy tie**, not a wrong value —
+**Every remaining non-zero exact check in the FHorz suite is a Policy tie** (plus, since
+2026-09-01, the AA bank's 18 ULP-floor V lines — see the AmbiguityAversion section), not a wrong
+value —
 demonstrated rather than assumed: one was measured at 30 differing entries of 1 260 480, confined
 to a single policy channel, every difference exactly ±1, with the achieved value bitwise identical
 on both sides.
+
+### QH ExperienceAssetz/ze 1A tiers closed (2026-09-01)
+
+The last raw-level QH gap. Both families had full SemiExo mirrors but only the base method on the
+nosemiz side, so `DC1`, `GI1` and `DC1_GI1` were missing: ExpAssetz 24 raws short, ExpAssetze 12.
+`6031762b` adds all 36, and both families now sit at 2× core.
+
+The leaf sets differ because the families differ. ExpAssetz has `z` structural in
+`aprimeFn(d2,a2,z,…)`, so there are no `noz` variants and the leaves are `{d1,nod1}×{e,noe}` — 24
+raws. ExpAssetze has **exactly one `e`**, serving both the structural role and the i.i.d. one, so
+the leaves are `{d1,nod1}` alone — 12 raws.
+
+Wiring took two shapes, and which one applies is forced by where the 2A routing already lives:
+
+- **ExpAssetz** already had `{DC, GI, DC_GI}` sub-dispatchers carrying 2A. They gained 1A routing
+  with their 2A paths left byte-identical (5250/5250/5290 bytes unchanged), and the base
+  dispatcher's not-yet-implemented guards came out.
+- **ExpAssetze** had no sub-dispatchers; its 2A routing sat directly in the family dispatcher.
+  Three sub-dispatchers were created and the 2A block moved into them verbatim — 53 substantive
+  lines, +13/−82 on the family dispatcher. This was the riskiest edit in the batch, because it
+  relocates GPU-validated code. One ordering decision was deliberate: the 2A block stays ahead of
+  the 1A `level1n` setup, since `min(vfoptions.level1n, n_a1)` against a vector would change what
+  2A's own `min(…, n_a1DC)` produces.
+
+The six `withA1` bank subcodes were extended from base-method-only to the full tier ladder
+(`3c64211`, +244 checks in ExpAssetz, +144 in ExpAssetze). Both banks then ran green:
+
+| bank | configs | checks | exactly 0 | at ULP floor | errors |
+|---|---|---|---|---|---|
+| QH ExpAssetz | 24/24 | 1512 | 1248 | 264 | 0 |
+| QH ExpAssetze | 12/12 | 920 | 772 | 148 | 0 |
+
+Three discriminators separate "at the floor" from "wrong", and all three are clean in both runs:
+every `lowmemory` check exactly zero, every β₀=1 exponential cross-check exactly zero, and **zero
+Policy differences anywhere** — not one argmax tie to explain away. All 412 non-zeros sit on
+`ValueFnFromPolicy` (which re-evaluates `V` from `Policy`, so a different summation order) or on
+the `DC1_GI1 vs GI1` / `DC2A_GI2A vs GI2A` method comparisons, and every distinct magnitude in
+both diaries is dyadic (`2^-33` … `2^-28`), which is what representation-level difference looks
+like and is not what a real numerical fault looks like. That covers the relocated 2A too: it
+contributed 234 checks in ze with every method and β₀ comparison bitwise zero.
+
+### AmbiguityAversion closed (2026-09-01)
+
+`CoreFHorzAmbiguityTests` was written test-first on 2026-08-28 (9 files: 6 variants + 2
+cross-test files, 156 exact checks + 8 warning checks + 1 error assert) and got its full solver
+wave on 2026-09-01. First GPU run was green: 156/156, all asserts. The spec is
+`AmbiguityAversion_testbank_proposal.md` in the toolkit repo.
+
+What the bank covers: `{nod,d} × {z, e, z&e}` (no noz+noe — ambiguity with no shocks is
+deliberately an error, and the bank asserts that it errors), each variant at all four solver
+tiers (plain/DC/GI/DC+GI) with the full lowmemory ladder (=2 in the z&e variants) and
+`ValueFnFromPolicy` at the plain and GI tiers, plus the big-`a_grid` GI-convergence
+moments/dist section in the baseline-mirror style. Cross-tests, each in a markov-z and an iid-e
+flavour: identical priors = vNM (with a flat-vs-`_J` input-form twin), 3-vs-9 duplicated priors
+(min ignores multiplicity — catches count-weighting), an unambiguously-worse pi binding from
+either prior slot (prior ordering irrelevant), age-varying `n_ambiguity` via `V_Jplus1`
+(single-prior second half = vNM there; first half = short solve seeded with the vNM `V`), and
+the pi-consistency warning firing/staying silent. Deferred by design (not test-first): semiz,
+with2A, and a combined z&e cross-test flavour.
+
+The solver wave: all 24 raws are mechanical transforms of the modern exponential raws (donor +
+per-prior loop + min at the EV sites, nothing else), which retired the 6 old-style raws — one of
+which, the z&e variant, had a real bug: its z-stage prior loop clobbered its own EV base, so
+priors 2+ multiplied garbage. Also new: the `ValueFnIter_FHorz_AmbiguityAversion` dispatcher +
+three level-2 dispatchers, `ExogShockSetup_FHorz_AmbiguityAversion` (each prior's pi runs
+through the standard `ExogShockSetup_FHorz` pipeline via one recursive `gridpiboth=2` call per
+prior, so every accepted pi shape and timing/trim convention applies to the priors for free; it
+also throws the pi-consistency `warning()`), and `ValueFnFromPolicy_FHorz_AmbiguityAversion`.
+
+Two conventions worth knowing when reading its diary or extending it:
+
+- **GI is conditional on the prior** (like d/z/e): each prior's EV is interpolated over aprime
+  and the min over priors is taken afterwards
+  (`EVinterp=min(interp1(a_grid,ambEV,aprime_grid),[],4)`); same in `ValueFnFromPolicy` (per-prior
+  L2-weighted lookup, then min). At grid nodes the orders coincide, which is why GI level 1 and
+  all of DC (where EV is only ever read pointwise at grid nodes) just use the pointwise min.
+- **The 18 non-zero exact checks are a new benign class**, distinct from Policy ties: 10
+  `ValueFnFromPolicy` lines at 1e-15..1e-14 (FromPolicy does the z-expectation by matrix
+  multiply where the raws broadcast-and-sum), and 8 cross-test-3 `V` lines (retirement flattens
+  `V` in z, making the worse and original priors' EVs mathematically equal there, so `min` is
+  free to return either one's rounding — the accompanying Policy lines are exactly zero).
+
+One honest gap: cross-test 4 exercises the `V_Jplus1` branches at the **plain** tier only (z and
+e flavours, nod and d); the 18 DC/GI/DC+GI raws' `V_Jplus1` branches have no runtime coverage
+yet. They are the same mechanical transform of donors whose `V_Jplus1` branches the baseline
+bank does cover, but given what the `V_Jplus1` audits keep finding, a DC/GI variant of
+cross-test 4 is the natural next check if this family ever misbehaves.
 
 ### Reading the diaries: the ULP floor
 
@@ -338,21 +446,43 @@ that floor honestly — expect small non-zeros as normal. The exponential banks 
 so their "exactly zero" counts include an unknown number of sub-5e-9 values. Their true state is at
 least as good as reported, but not verified to be exactly zero.
 
+**How much the formatter was hiding, measured.** QH ExpAssetze was recorded in this doc as
+"776 checks, 12/12 figures", all zero, on 2026-08-18 under `%2.8f`. Its first `%.3e` run
+(2026-09-01) reports 148 non-zeros — every one of them at the floor, worst case `5.588e-09`,
+i.e. 1.5 ULP. Nothing changed in the numbers; the earlier all-zero reading was an artifact of
+the format string. Do not read a pre-`bf158c7` "all zero" as stronger than "all below 1e-8".
+
+That run also shows what the floor looks like when you have enough of it to see the shape: the
+non-zeros take only ten distinct values across 920 checks, all dyadic. A fault does not produce
+a dyadic histogram. Three checks stay exactly zero even at the floor and are the ones worth
+grepping — `lowmemory`, the β₀=1 exponential cross-checks, and anything ending `(Policy)`.
+
 Any relative-error diagnostic in these banks must divide by `max(abs(V(isfinite(V))))`: the
 ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently reports 0.
 
 ### Known open items
 
-- **V_Jplus1**: now 80 subcodes — all 32 in `CoreFHorzTests_subcodes`, all 32 in its QH
-  mirror (committed `daa90d5`), and all 16 in the new ResidAsset bank (240 checks, unrun).
-  ResidAsset is the first family to get V_Jplus1 coverage from day one rather than retrofitted;
-  do the same for any new bank. Still zero coverage across the whole ExpAsset family and
-  RiskyAsset (re-verified 2026-08-31: the ExpAsset and ExpAssetU banks mention `V_Jplus1` in
-  0 subcodes), against 660
-  ExpAsset-family raws that all carry a `V_Jplus1` branch (ExperienceAsset 128,
-  ExperienceAssetu 128, ExperienceAssete 160, ExperienceAssetz 96, ExperienceAssetze 84,
-  ExperienceAssetsemiz 64). Those branches are age-shifted copies of the in-loop code — the
-  shape that produced the `jj`/`N_j` bug. Largest remaining gap on any axis.
+- **V_Jplus1**: now 160 subcodes (recounted 2026-09-01 off the working tree — the earlier "80"
+  missed the EZ side entirely): all 32 in `CoreFHorzTests_subcodes`, all 32 in its QH mirror
+  (committed `daa90d5`), all 16 in its EZ mirror, 32 in the RiskyAsset main bank plus 32 in the
+  RiskyAsset EZ mirror (both banks' noa1 and withA1 tiers incl. semiz; the with2A1 tier has
+  none), and all 16 in the ResidAsset bank (240 checks, unrun).
+  ResidAsset was the first family to get V_Jplus1 coverage from day one rather than retrofitted;
+  do the same for any new bank (AmbiguityAversion did: cross-test 4 covers its plain-tier
+  V_Jplus1 branches from day one, though not yet its DC/GI tiers — see its section). So among
+  the baseline preference mirrors, QH and EZ have full V_Jplus1 variant coverage (retrofitted)
+  while AA has cross-test-4 coverage of the plain tier only. Still zero coverage across the
+  whole ExpAsset family (re-verified 2026-08-31: the ExpAsset and ExpAssetU banks mention
+  `V_Jplus1` in 0 subcodes; the ExpAssetz and ExpAssetze banks likewise, re-checked 2026-09-01).
+
+  **The exposed-raw count was wrong and is now measured.** This entry previously said 660
+  ExpAsset-family raws carry a `V_Jplus1` branch, itemised per family; those per-family figures
+  were internally inconsistent (some were core-only, some were not) and the total was low. A
+  direct `grep -l V_Jplus1` over every `*_raw.m` in the six families returns **1440 of 1440** —
+  i.e. *every* raw carries one, with zero test coverage: ExperienceAsset 384, ExperienceAssetu
+  384, ExperienceAssete 192, ExperienceAssetz 192, ExperienceAssetze 96, ExperienceAssetsemiz
+  192. Those branches are age-shifted copies of the in-loop code — the shape that produced the
+  `jj`/`N_j` bug. Largest remaining gap on any axis, by more than double what this doc claimed.
 
   The QH ExperienceAssetu port put a number on the cost. Eleven real defects were found in
   shipped exponential code by diffing each `V_Jplus1` branch against the in-loop code of the same
@@ -363,12 +493,22 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
   `lowmemory==3` path, and a missing `repelem` pair. **Two of them returned silently wrong answers
   rather than erroring.** None was reachable by any bank, because no ExpAsset-family bank sets
   `V_Jplus1`. That is what this gap costs.
-- **Staleness.** Six banks last ran 18–19 August, before the beta0 refactor, the QH
-  `ValueFnFromPolicy` hierarchy change and the two fixes in `d7dfcd7c`. `QHExpAssete`,
-  `QHExpAssetz` and `QHExpAssetze` are the most exposed: the hierarchy change **turned on** their
-  `experienceasset{e,z,ze}`+semiz paths, which previously routed through the generic SemiExo
-  router. Same destination and same arguments, but unrun since. Re-running those three is the
-  cheapest way to close it.
+
+  **The `loweredge` defect then recurred, and the recurrence was also undetectable.** The same
+  five-subscript index against a 6-D `maxindex1` was found in four more `DC1_e` raws on
+  2026-09-01 and fixed in `6031762b` — two of them in *shipped exponential* code
+  (`ExpAsset_DC1_e_raw`, `ExpAssetz_DC1_e_raw`), one in each of the QH ExpAsset N/S pair. All
+  five sites are in `V_Jplus1` branches, so the two green bank runs that same day say nothing
+  about them: **this fix shipped untested, necessarily.** It is confident by inspection only —
+  the terminal and backward arms at the same position in the same files already use six
+  subscripts. The operational lesson: `V_Jplus1` drift replicates across sibling families, so
+  when one of these turns up, sweep the siblings immediately rather than fixing the file in hand.
+- **Staleness.** `QHExpAssetz` and `QHExpAssetze` were re-run on 2026-09-01 (see the 1A-tier
+  section above) and are current. `QHExpAssete` is the one still exposed: it last ran 18 August,
+  before the beta0 refactor, the QH `ValueFnFromPolicy` hierarchy change and the two fixes in
+  `d7dfcd7c`. The hierarchy change **turned on** its `experienceassete`+semiz path, which
+  previously routed through the generic SemiExo router — same destination and same arguments,
+  but unrun since. Re-running it is the cheapest way to close the last of this.
 - **No QH bank is test-first any more.** `CoreFHorzQHExpAssetTests` was the last one, and it
   closed on 2026-08-22. Status re-read off the working tree 2026-08-25, not off the banners:
   - `CoreFHorzQHExpAssetTests` (48 subtests) — **implemented and substantially validated.**
@@ -403,17 +543,25 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
     One toolkit limit remains but is not reachable from this bank:
     `QuasiHyperbolicExpAsseteSemiExo_{DC,GI,DC_GI}` error on `N_a1==0`, and the noa1+semiz
     block (figs 5-8) is base-method only.
-  - `CoreFHorzQHExpAssetzTests` (24 subtests) — **done and GPU-green as of 2026-08-19** (commit
-    `2f291d33`). The stale banner on this bank should be removed. `ExperienceAssetz` now carries
-    104 QH raws (40 nosemiz + 64 semiz), the `QuasiHyperbolicExpAssetzSemiExo` dispatcher and its
-    three `{DC,GI,DC_GI}` sub-dispatchers all exist, and no `not yet implemented` error survives
-    anywhere in the family. The run is **1268 checks, 24/24 figures, every one zero, no errors**,
-    covering all four solver tiers x nod1/with-d1 x no-e/with-e x Naive/Sophisticated, including
-    the with-e 2A paths at lowmemory 3 and the beta0=1 degeneracy checks that collapse QH onto
-    the exponential. `ValueFnFromPolicy_FHorz_QuasiHyperbolic_ExpAssetz_SemiExo_GI` was added to
-    close the last gap (ExpAssetz had been the only family missing a SemiExo_GI value-from-policy).
-  - `CoreFHorzQHExpAssetzeTests` (12 subtests) — passes. No banner; GPU-validated, 776 checks,
-    12/12 figures.
+  - `CoreFHorzQHExpAssetzTests` (24 subtests) — **done and GPU-green, re-run 2026-09-01.**
+    `ExperienceAssetz` carries **128 QH raws** (64 nosemiz + 64 semiz) after `6031762b` added the
+    24 nosemiz 1A raws; the `QuasiHyperbolicExpAssetzSemiExo` dispatcher and the three
+    `{DC,GI,DC_GI}` sub-dispatchers all exist, and no `not yet implemented` error survives
+    anywhere in the family. The current run is **1512 checks, 24/24 figures, no errors** — 1248
+    exactly zero and 264 at the ULP floor (worst `3.725e-09` = 1 ULP), all of them on
+    `ValueFnFromPolicy` or cross-method comparisons. Covers all four solver tiers x nod1/with-d1
+    x no-e/with-e x Naive/Sophisticated, including the with-e 2A paths at lowmemory 3 and the
+    beta0=1 degeneracy checks that collapse QH onto the exponential.
+    `ValueFnFromPolicy_FHorz_QuasiHyperbolic_ExpAssetz_SemiExo_GI` was added earlier
+    (`2f291d33`) to close the last gap — ExpAssetz had been the only family missing a SemiExo_GI
+    value-from-policy. The earlier 1268-check figure predates the 1A tiers and the `%.3e`
+    conversion; do not compare the two runs' zero counts directly.
+  - `CoreFHorzQHExpAssetzeTests` (12 subtests) — **done and GPU-green, re-run 2026-09-01.**
+    `ExperienceAssetze` carries **64 QH raws** after `6031762b` added the 12 nosemiz 1A raws and
+    three sub-dispatchers, the latter taking over the 2A routing that had lived in the family
+    dispatcher. **920 checks, 12/12 figures, no errors**, 772 exactly zero and 148 at the floor.
+    Its previously recorded "776 checks, all zero" was measured under `%2.8f` — see the ULP-floor
+    section; the numbers did not change, the format string did.
   - `CoreFHorzQHTests` (baseline, 32 subtests) — 4016 checks, none nonzero. Note this diary uses
     a different closing-marker style from the ExpAsset-family banks, so the per-figure counting
     used above does not apply to it.
