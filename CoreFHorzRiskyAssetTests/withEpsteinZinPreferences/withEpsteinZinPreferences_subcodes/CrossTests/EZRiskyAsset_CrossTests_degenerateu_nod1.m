@@ -81,7 +81,7 @@ for ezcase=[1,3]
     % Plain (non-riskyasset) EZ savings model
     [V_p,Policy_p]=ValueFnIter_Case1_FHorz(0,n_a,n_z,N_j,[],a_grid,z_grid,pi_z,ReturnFn_plain,Params,DiscountFactorParamNames,[],vfoptions_p);
 
-    fprintf('CrossTest degenerateu (nod1) [EZ %s], V, this should be zero: %2.8f \n',casestr,max(abs(V_r(:)-V_p(:))))
+    fprintf('CrossTest degenerateu (nod1) [EZ %s], V, this should be zero: %.3e \n',casestr,max(abs(V_r(:)-V_p(:))))
 
     % Compare savings VALUES: riskyasset PolicyValues row 2 is the savings(d3) value;
     % plain PolicyValues row 1 is the aprime value. Same grid (d3_grid=a_grid), so exact match.
@@ -89,7 +89,7 @@ for ezcase=[1,3]
     PolicyVals_p=PolicyInd2Val_FHorz(Policy_p,0,n_a,n_z,N_j,[],a_grid,vfoptions_p);
     savings_r=PolicyVals_r(2,:,:,:);
     aprime_p=PolicyVals_p(1,:,:,:);
-    fprintf('CrossTest degenerateu (nod1) [EZ %s], savings-policy values, this should be zero: %2.8f \n',casestr,max(abs(savings_r(:)-aprime_p(:))))
+    fprintf('CrossTest degenerateu (nod1) [EZ %s], savings-policy values, this should be zero: %.3e \n',casestr,max(abs(savings_r(:)-aprime_p(:))))
 
 end
 
@@ -142,7 +142,7 @@ for bridgevariant=1:3
         % Plain (non-riskyasset) EZ savings model
         [V_p,Policy_p]=ValueFnIter_Case1_FHorz(0,n_a,n_z,N_j,[],a_grid,z_grid,pi_z,ReturnFn_plain,Params,DiscountFactorParamNames,[],vfoptions_p);
 
-        fprintf('CrossTest degenerateu %s (nod1) [EZ %s], V, this should be zero: %2.8f \n',variantstr,casestr,max(abs(V_r(:)-V_p(:))))
+        fprintf('CrossTest degenerateu %s (nod1) [EZ %s], V, this should be zero: %.3e \n',variantstr,casestr,max(abs(V_r(:)-V_p(:))))
 
         % Compare savings VALUES: riskyasset PolicyValues row 2 is the savings(d3) value;
         % plain PolicyValues row 1 is the aprime value. Same grid (d3_grid=a_grid), so exact match.
@@ -150,7 +150,7 @@ for bridgevariant=1:3
         PolicyVals_p=PolicyInd2Val_FHorz(Policy_p,0,n_a,n_z,N_j,[],a_grid,vfoptions_p);
         savings_r=PolicyVals_r(2,:,:,:);
         aprime_p=PolicyVals_p(1,:,:,:);
-        fprintf('CrossTest degenerateu %s (nod1) [EZ %s], savings-policy values, this should be zero: %2.8f \n',variantstr,casestr,max(abs(savings_r(:)-aprime_p(:))))
+        fprintf('CrossTest degenerateu %s (nod1) [EZ %s], savings-policy values, this should be zero: %.3e \n',variantstr,casestr,max(abs(savings_r(:)-aprime_p(:))))
 
     end
 end

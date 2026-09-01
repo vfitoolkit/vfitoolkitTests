@@ -51,11 +51,11 @@ n_semiz=vfoptions.n_semiz;
 %% Oracle 1: ValueFnFromPolicy on the markov-z (nod1_raw) solve
 [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptions);
 V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_z,Params,DiscountFactorParamNames,vfoptions);
-fprintf('d2recon guard (1) ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+fprintf('d2recon guard (1) ValueFnFromPolicy, this should be zero: %.3e \n',max(abs(V1fromPolicy(:)-V1(:))))
 
 %% Oracle 2: markov-z (nod1_raw) vs same iid shock as e (correct nod1_noz_e raw) -- Policy must match
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e,Params,DiscountFactorParamNames,[],vfoptions_e);
-fprintf('d2recon guard (2) markov-z vs e, this should be zero: V %2.8f, Policy %2.8f \n',max(abs(V1(:)-V2(:))),max(abs(Policy1(:)-Policy2(:))))
+fprintf('d2recon guard (2) markov-z vs e, this should be zero: V %.3e, Policy %.3e \n',max(abs(V1(:)-V2(:))),max(abs(Policy1(:)-Policy2(:))))
 
 %% Trigger diagnostic: the bug can only manifest where the optimal dsemiz leaves 1.
 % Policy layout for nod1+withA1+semiz: (1)=riskyshare(d2), (2)=savings(d3), (3)=dsemiz(d4), (4)=a1prime.

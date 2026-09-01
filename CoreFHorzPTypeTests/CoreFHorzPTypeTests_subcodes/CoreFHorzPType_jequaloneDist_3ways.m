@@ -54,14 +54,14 @@ AllStats_iii=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_iii,Policy,FnsToE
 
 for ii=1:N_i
     nA=Names_i{ii};
-    fprintf('jequaloneDist 3 ways, Dist (type %s) (i)  vs (ii),  this should be zero: %2.8f \n',nA,max(abs(Dist_i.(nA)(:) -Dist_ii.(nA)(:))))
-    fprintf('jequaloneDist 3 ways, Dist (type %s) (i)  vs (iii), this should be zero: %2.8f \n',nA,max(abs(Dist_i.(nA)(:) -Dist_iii.(nA)(:))))
-    fprintf('jequaloneDist 3 ways, Dist (type %s) (ii) vs (iii), this should be zero: %2.8f \n',nA,max(abs(Dist_ii.(nA)(:)-Dist_iii.(nA)(:))))
+    fprintf('jequaloneDist 3 ways, Dist (type %s) (i)  vs (ii),  this should be zero: %.3e \n',nA,max(abs(Dist_i.(nA)(:) -Dist_ii.(nA)(:))))
+    fprintf('jequaloneDist 3 ways, Dist (type %s) (i)  vs (iii), this should be zero: %.3e \n',nA,max(abs(Dist_i.(nA)(:) -Dist_iii.(nA)(:))))
+    fprintf('jequaloneDist 3 ways, Dist (type %s) (ii) vs (iii), this should be zero: %.3e \n',nA,max(abs(Dist_ii.(nA)(:)-Dist_iii.(nA)(:))))
 end
-fprintf('jequaloneDist 3 ways, AllStats assets.Mean   (i) vs (ii),  this should be zero: %2.8f \n',abs(AllStats_i.assets.Mean   -AllStats_ii.assets.Mean))
-fprintf('jequaloneDist 3 ways, AllStats assets.Mean   (i) vs (iii), this should be zero: %2.8f \n',abs(AllStats_i.assets.Mean   -AllStats_iii.assets.Mean))
-fprintf('jequaloneDist 3 ways, AllStats earnings.Mean (i) vs (ii),  this should be zero: %2.8f \n',abs(AllStats_i.earnings.Mean -AllStats_ii.earnings.Mean))
-fprintf('jequaloneDist 3 ways, AllStats earnings.Mean (i) vs (iii), this should be zero: %2.8f \n',abs(AllStats_i.earnings.Mean -AllStats_iii.earnings.Mean))
+fprintf('jequaloneDist 3 ways, AllStats assets.Mean   (i) vs (ii),  this should be zero: %.3e \n',abs(AllStats_i.assets.Mean   -AllStats_ii.assets.Mean))
+fprintf('jequaloneDist 3 ways, AllStats assets.Mean   (i) vs (iii), this should be zero: %.3e \n',abs(AllStats_i.assets.Mean   -AllStats_iii.assets.Mean))
+fprintf('jequaloneDist 3 ways, AllStats earnings.Mean (i) vs (ii),  this should be zero: %.3e \n',abs(AllStats_i.earnings.Mean -AllStats_ii.earnings.Mean))
+fprintf('jequaloneDist 3 ways, AllStats earnings.Mean (i) vs (iii), this should be zero: %.3e \n',abs(AllStats_i.earnings.Mean -AllStats_iii.earnings.Mean))
 
 %% Part B: per-type-different bases — approach (i) cannot represent this; check (ii) vs (iii)
 jdA=zeros(n_a,n_z,'gpuArray'); jdA(1,ceil(n_z/2))=1;
@@ -83,10 +83,10 @@ AllStats_iii_d=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_iii_d,Policy,Fn
 
 for ii=1:N_i
     nA=Names_i{ii};
-    fprintf('jequaloneDist 3 ways (per-type diff), Dist (type %s) (ii) vs (iii), this should be zero: %2.8f \n',nA,max(abs(Dist_ii_d.(nA)(:)-Dist_iii_d.(nA)(:))))
+    fprintf('jequaloneDist 3 ways (per-type diff), Dist (type %s) (ii) vs (iii), this should be zero: %.3e \n',nA,max(abs(Dist_ii_d.(nA)(:)-Dist_iii_d.(nA)(:))))
 end
-fprintf('jequaloneDist 3 ways (per-type diff), AllStats assets.Mean   (ii) vs (iii), this should be zero: %2.8f \n',abs(AllStats_ii_d.assets.Mean   -AllStats_iii_d.assets.Mean))
-fprintf('jequaloneDist 3 ways (per-type diff), AllStats earnings.Mean (ii) vs (iii), this should be zero: %2.8f \n',abs(AllStats_ii_d.earnings.Mean -AllStats_iii_d.earnings.Mean))
+fprintf('jequaloneDist 3 ways (per-type diff), AllStats assets.Mean   (ii) vs (iii), this should be zero: %.3e \n',abs(AllStats_ii_d.assets.Mean   -AllStats_iii_d.assets.Mean))
+fprintf('jequaloneDist 3 ways (per-type diff), AllStats earnings.Mean (ii) vs (iii), this should be zero: %.3e \n',abs(AllStats_ii_d.earnings.Mean -AllStats_iii_d.earnings.Mean))
 
 output=struct();
 

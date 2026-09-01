@@ -66,8 +66,8 @@ for ff=1:length(FnNames)
     fn=FnNames{ff};
     err_m=max(abs(gather(ACP.(fn).Mean)-gather(LifeCycle.(fn).Mean)));
     err_s=max(abs(gather(ACP.(fn).StdDeviation)-gather(LifeCycle.(fn).StdDeviation)));
-    fprintf('AutoCorr Mean vs LifeCycle Mean (%-11s), should be zero: %2.10f\n', fn, err_m); fail_count=fail_count+(err_m>TOL_EXACT);
-    fprintf('AutoCorr StdDev vs LifeCycle StdDev (%-11s), should be zero: %2.10f\n', fn, err_s); fail_count=fail_count+(err_s>TOL_EXACT);
+    fprintf('AutoCorr Mean vs LifeCycle Mean (%-11s), should be zero: %.3e\n', fn, err_m); fail_count=fail_count+(err_m>TOL_EXACT);
+    fprintf('AutoCorr StdDev vs LifeCycle StdDev (%-11s), should be zero: %.3e\n', fn, err_s); fail_count=fail_count+(err_s>TOL_EXACT);
 end
 
 % AutoCorrelation values should lie in [-1, 1] (or be NaN when StdDev=0)
@@ -83,14 +83,14 @@ end
 % T1 (Jnumbers): X_j = j is constant within age, so StdDev_j = 0 -> AutoCorr = NaN, AutoCov = 0 exactly
 ac_J=gather(ACP.Jnumbers.AutoCovariance);
 err=max(abs(ac_J));
-fprintf('T1 Jnumbers AutoCovariance per-age, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T1 Jnumbers AutoCovariance per-age, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 allNaN=all(isnan(gather(ACP.Jnumbers.AutoCorrelation)));
 fprintf('T1 Jnumbers AutoCorrelation should be all NaN: %d\n',allNaN); fail_count=fail_count+(~allNaN);
 
 % T2 (one): constant 1 -> AutoCov = 0 exactly, AutoCorr = NaN
 ac_one=gather(ACP.one.AutoCovariance);
 err=max(abs(ac_one));
-fprintf('T2 one AutoCovariance per-age, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T2 one AutoCovariance per-age, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 allNaN=all(isnan(gather(ACP.one.AutoCorrelation)));
 fprintf('T2 one AutoCorrelation should be all NaN: %d\n',allNaN); fail_count=fail_count+(~allNaN);
 

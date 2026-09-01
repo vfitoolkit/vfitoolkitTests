@@ -36,9 +36,9 @@ simoptionsB.a_grid=a_grid;
 [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_none,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy1,n_d,n_a,0,N_j,1,Params,simoptionsB);
 
-fprintf('Cross test 3: expasset is just a standard endo state, this should be zero: %2.8f \n',max(abs(V0(:)-V1(:))))
-fprintf('Cross test 3: expasset is just a standard endo state, this should be zero: %2.8f \n',max(abs(Policy0alt(:)-Policy1(:))))
-fprintf('Cross test 3: expasset is just a standard endo state, this should be zero: %2.8f \n',max(abs(StationaryDist0(:)-StationaryDist1(:))))
+fprintf('Cross test 3: expasset is just a standard endo state, this should be zero: %.3e \n',max(abs(V0(:)-V1(:))))
+fprintf('Cross test 3: expasset is just a standard endo state, this should be zero: %.3e \n',max(abs(Policy0alt(:)-Policy1(:))))
+fprintf('Cross test 3: expasset is just a standard endo state, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist1(:))))
 
 
 %%

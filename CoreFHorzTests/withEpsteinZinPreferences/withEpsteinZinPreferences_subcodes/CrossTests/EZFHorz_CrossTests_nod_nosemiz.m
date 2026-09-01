@@ -58,9 +58,9 @@ StationaryDist0=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamName
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z_cons,Params,DiscountFactorParamNames,[],vfoptionsA);
 StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptionsA);
 
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(V0(:)-V0z(:))))
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(V0(:)-V0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
 %% And a single point for z vs a single point for e
 vfoptionsB=struct();
@@ -78,9 +78,9 @@ simoptionsB.pi_e=1;
 [V0e,Policy0e]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e_cons,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist0e=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0e,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(V0z(:)-V0e(:))))
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(Policy0z(:)-Policy0e(:))))
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(StationaryDist0z(:)-StationaryDist0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(V0z(:)-V0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(Policy0z(:)-Policy0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(StationaryDist0z(:)-StationaryDist0e(:))))
 
 clear V0 V0z V0e Policy0 Policy0z Policy0e StationaryDist0 StationaryDist0z StationaryDist0e
 
@@ -107,9 +107,9 @@ simoptionsC.pi_e=simoptionsbaseline.pi_e;
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e_cons,Params,DiscountFactorParamNames,[],vfoptionsC);
 StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptionsC);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
 clear V2 Policy2 StationaryDist2
 
@@ -125,9 +125,9 @@ V3=squeeze(V3);
 Policy3=squeeze(Policy3);
 StationaryDist3=squeeze(StationaryDist3);
 
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(V1(:)-V3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(V1(:)-V3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
 % Second, make e just 1
 vfoptionsD=struct();
@@ -150,9 +150,9 @@ V4=squeeze(V4);
 Policy4=squeeze(Policy4);
 StationaryDist4=squeeze(StationaryDist4);
 
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(V1(:)-V4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(V1(:)-V4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 clear V1 V3 V4 Policy1 Policy3 Policy4 StationaryDist1 StationaryDist3 StationaryDist4
 
@@ -173,9 +173,9 @@ StationaryDist0=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamName
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z_posU,Params,DiscountFactorParamNames,[],vfoptionsA);
 StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptionsA);
 
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(V0(:)-V0z(:))))
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(V0(:)-V0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
 %% And a single point for z vs a single point for e
 vfoptionsB=struct();
@@ -193,9 +193,9 @@ simoptionsB.pi_e=1;
 [V0e,Policy0e]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e_posU,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist0e=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0e,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(V0z(:)-V0e(:))))
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(Policy0z(:)-Policy0e(:))))
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(StationaryDist0z(:)-StationaryDist0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(V0z(:)-V0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(Policy0z(:)-Policy0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(StationaryDist0z(:)-StationaryDist0e(:))))
 
 clear V0 V0z V0e Policy0 Policy0z Policy0e StationaryDist0 StationaryDist0z StationaryDist0e
 
@@ -222,9 +222,9 @@ simoptionsC.pi_e=simoptionsbaseline.pi_e;
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e_posU,Params,DiscountFactorParamNames,[],vfoptionsC);
 StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptionsC);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
 clear V2 Policy2 StationaryDist2
 
@@ -240,9 +240,9 @@ V3=squeeze(V3);
 Policy3=squeeze(Policy3);
 StationaryDist3=squeeze(StationaryDist3);
 
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(V1(:)-V3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(V1(:)-V3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
 % Second, make e just 1
 vfoptionsD=struct();
@@ -265,9 +265,9 @@ V4=squeeze(V4);
 Policy4=squeeze(Policy4);
 StationaryDist4=squeeze(StationaryDist4);
 
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(V1(:)-V4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(V1(:)-V4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 clear V1 V3 V4 Policy1 Policy3 Policy4 StationaryDist1 StationaryDist3 StationaryDist4
 
@@ -288,9 +288,9 @@ StationaryDist0=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamName
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z_negU,Params,DiscountFactorParamNames,[],vfoptionsA);
 StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptionsA);
 
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(V0(:)-V0z(:))))
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test: no shocks vs single-point z, this should be zero: %2.8f \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(V0(:)-V0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
+fprintf('Cross test: no shocks vs single-point z, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
 %% And a single point for z vs a single point for e
 vfoptionsB=struct();
@@ -308,9 +308,9 @@ simoptionsB.pi_e=1;
 [V0e,Policy0e]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e_negU,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist0e=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0e,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(V0z(:)-V0e(:))))
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(Policy0z(:)-Policy0e(:))))
-fprintf('Cross test: single-point z vs single-point e, this should be zero: %2.8f \n',max(abs(StationaryDist0z(:)-StationaryDist0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(V0z(:)-V0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(Policy0z(:)-Policy0e(:))))
+fprintf('Cross test: single-point z vs single-point e, this should be zero: %.3e \n',max(abs(StationaryDist0z(:)-StationaryDist0e(:))))
 
 clear V0 V0z V0e Policy0 Policy0z Policy0e StationaryDist0 StationaryDist0z StationaryDist0e
 
@@ -337,9 +337,9 @@ simoptionsC.pi_e=simoptionsbaseline.pi_e;
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e_negU,Params,DiscountFactorParamNames,[],vfoptionsC);
 StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptionsC);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
 clear V2 Policy2 StationaryDist2
 
@@ -355,9 +355,9 @@ V3=squeeze(V3);
 Policy3=squeeze(Policy3);
 StationaryDist3=squeeze(StationaryDist3);
 
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(V1(:)-V3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(V1(:)-V3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
 % Second, make e just 1
 vfoptionsD=struct();
@@ -380,9 +380,9 @@ V4=squeeze(V4);
 Policy4=squeeze(Policy4);
 StationaryDist4=squeeze(StationaryDist4);
 
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(V1(:)-V4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(V1(:)-V4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 clear V1 V3 V4 Policy1 Policy3 Policy4 StationaryDist1 StationaryDist3 StationaryDist4
 

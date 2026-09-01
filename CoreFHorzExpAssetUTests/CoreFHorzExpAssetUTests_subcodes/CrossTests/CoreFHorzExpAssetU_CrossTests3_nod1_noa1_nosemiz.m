@@ -40,7 +40,7 @@ simoptionsB.pi_u=1;
 [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy1,n_d,n_a,0,N_j,1,Params,simoptionsB);
 
-fprintf('Cross test 3 (noa1+nod1): expassetu with u==1 reduces to expasset, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V0(:)-V1(:))),max(abs(Policy0(:)-Policy1(:))),max(abs(StationaryDist0(:)-StationaryDist1(:))))
+fprintf('Cross test 3 (noa1+nod1): expassetu with u==1 reduces to expasset, this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',max(abs(V0(:)-V1(:))),max(abs(Policy0(:)-Policy1(:))),max(abs(StationaryDist0(:)-StationaryDist1(:))))
 
 output=struct();
 

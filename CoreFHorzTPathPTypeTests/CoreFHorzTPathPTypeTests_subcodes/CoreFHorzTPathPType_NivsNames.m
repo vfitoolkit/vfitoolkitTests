@@ -61,15 +61,15 @@ AggVarsPath_B=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, AgentDi
 for ii=1:N_i
     nA=names_A{ii};
     nB=Names_i{ii};
-    fprintf('N_i vs Names_i, VPath        (type %d), this should be zero: %2.8f \n',ii,max(abs(VPath_A.(nA)(:)-VPath_B.(nB)(:))))
-    fprintf('N_i vs Names_i, PolicyPath   (type %d), this should be zero: %2.8f \n',ii,max(abs(PolicyPath_A.(nA)(:)-PolicyPath_B.(nB)(:))))
-    fprintf('N_i vs Names_i, AgentDistPath(type %d), this should be zero: %2.8f \n',ii,max(abs(AgentDistPath_A.(nA)(:)-AgentDistPath_B.(nB)(:))))
-    fprintf('N_i vs Names_i, AggVarsPath assets   breakdown (type %d), this should be zero: %2.8f \n',ii,max(abs(AggVarsPath_A.assets.(nA).Mean(:)-AggVarsPath_B.assets.(nB).Mean(:))))
-    fprintf('N_i vs Names_i, AggVarsPath earnings breakdown (type %d), this should be zero: %2.8f \n',ii,max(abs(AggVarsPath_A.earnings.(nA).Mean(:)-AggVarsPath_B.earnings.(nB).Mean(:))))
+    fprintf('N_i vs Names_i, VPath        (type %d), this should be zero: %.3e \n',ii,max(abs(VPath_A.(nA)(:)-VPath_B.(nB)(:))))
+    fprintf('N_i vs Names_i, PolicyPath   (type %d), this should be zero: %.3e \n',ii,max(abs(PolicyPath_A.(nA)(:)-PolicyPath_B.(nB)(:))))
+    fprintf('N_i vs Names_i, AgentDistPath(type %d), this should be zero: %.3e \n',ii,max(abs(AgentDistPath_A.(nA)(:)-AgentDistPath_B.(nB)(:))))
+    fprintf('N_i vs Names_i, AggVarsPath assets   breakdown (type %d), this should be zero: %.3e \n',ii,max(abs(AggVarsPath_A.assets.(nA).Mean(:)-AggVarsPath_B.assets.(nB).Mean(:))))
+    fprintf('N_i vs Names_i, AggVarsPath earnings breakdown (type %d), this should be zero: %.3e \n',ii,max(abs(AggVarsPath_A.earnings.(nA).Mean(:)-AggVarsPath_B.earnings.(nB).Mean(:))))
 end
-fprintf('N_i vs Names_i, ptweights, this should be zero: %2.8f \n',max(abs(AgentDistPath_A.ptweights(:)-AgentDistPath_B.ptweights(:))))
-fprintf('N_i vs Names_i, AggVarsPath assets.Mean,   this should be zero: %2.8f \n',max(abs(AggVarsPath_A.assets.Mean(:)  -AggVarsPath_B.assets.Mean(:))))
-fprintf('N_i vs Names_i, AggVarsPath earnings.Mean, this should be zero: %2.8f \n',max(abs(AggVarsPath_A.earnings.Mean(:)-AggVarsPath_B.earnings.Mean(:))))
+fprintf('N_i vs Names_i, ptweights, this should be zero: %.3e \n',max(abs(AgentDistPath_A.ptweights(:)-AgentDistPath_B.ptweights(:))))
+fprintf('N_i vs Names_i, AggVarsPath assets.Mean,   this should be zero: %.3e \n',max(abs(AggVarsPath_A.assets.Mean(:)  -AggVarsPath_B.assets.Mean(:))))
+fprintf('N_i vs Names_i, AggVarsPath earnings.Mean, this should be zero: %.3e \n',max(abs(AggVarsPath_A.earnings.Mean(:)-AggVarsPath_B.earnings.Mean(:))))
 
 output=struct();
 

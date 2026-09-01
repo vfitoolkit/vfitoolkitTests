@@ -56,7 +56,7 @@ StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Pol
 % here), from lining d3 (1..2) up against aprime (1..n_a). (V and Dist already confirm the two
 % models coincide.)
 Policy1_aligned=Policy1([1 3 2],:,:,:); % (d1,d2,d3) -> (d1,d3,d2=aprime), matching Policy0's (d1,d3,aprime)
-fprintf('Cross test 3 (noa1+d1+semiz): expasset noa1+d1+semiz is just a standard 1-endo+d1+semiz state, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V0(:)-V1(:))),max(abs(Policy0(:)-Policy1_aligned(:))),max(abs(StationaryDist0(:)-StationaryDist1(:))))
+fprintf('Cross test 3 (noa1+d1+semiz): expasset noa1+d1+semiz is just a standard 1-endo+d1+semiz state, this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',max(abs(V0(:)-V1(:))),max(abs(Policy0(:)-Policy1_aligned(:))),max(abs(StationaryDist0(:)-StationaryDist1(:))))
 
 output=struct();
 

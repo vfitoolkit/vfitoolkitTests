@@ -83,7 +83,7 @@ for ezcase=1:3
     [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptions);
     StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptions);
 
-    fprintf('CrossTest zase (A, withA1) single-point z == no z [EZ %s], this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',casestr,max(abs(V0(:)-V0z(:))),max(abs(Policy0(:)-Policy0z(:))),max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+    fprintf('CrossTest zase (A, withA1) single-point z == no z [EZ %s], this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',casestr,max(abs(V0(:)-V0z(:))),max(abs(Policy0(:)-Policy0z(:))),max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
     %% (B) A markov-z that is really an iid == the same shock done as e
     jequaloneDist_z=zeros([n_a,n_z],'gpuArray'); jequaloneDist_z(1,1,ceil(n_z/2))=1;
@@ -94,7 +94,7 @@ for ezcase=1:3
     [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e,Params,DiscountFactorParamNames,[],vfoptions_withe);
     StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptions_withe);
 
-    fprintf('CrossTest zase (B, withA1) iid-markov-z == e [EZ %s], this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',casestr,max(abs(V1(:)-V2(:))),max(abs(Policy1(:)-Policy2(:))),max(abs(StationaryDist1(:)-StationaryDist2(:))))
+    fprintf('CrossTest zase (B, withA1) iid-markov-z == e [EZ %s], this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',casestr,max(abs(V1(:)-V2(:))),max(abs(Policy1(:)-Policy2(:))),max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
     %% (C) z&e code with the 'other' a single point reproduces the z-only model
     % First, make z just a single point (so only e is active, but e is a copy of z)
@@ -103,7 +103,7 @@ for ezcase=1:3
     StationaryDist3=StationaryDist_FHorz_Case1(jequaloneDist3,AgeWeightParamNames,Policy3,n_d,n_a,1,N_j,1,Params,simoptions_withe);
     V3=squeeze(V3); Policy3=squeeze(Policy3); StationaryDist3=squeeze(StationaryDist3);
 
-    fprintf('CrossTest zase (C, withA1) z&e with z=1 [EZ %s], this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',casestr,max(abs(V1(:)-V3(:))),max(abs(Policy1(:)-Policy3(:))),max(abs(StationaryDist1(:)-StationaryDist3(:))))
+    fprintf('CrossTest zase (C, withA1) z&e with z=1 [EZ %s], this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',casestr,max(abs(V1(:)-V3(:))),max(abs(Policy1(:)-Policy3(:))),max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
     % Second, make e just a single point (so only z is active)
     [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_ze,Params,DiscountFactorParamNames,[],vfoptions_ze2);
@@ -111,7 +111,7 @@ for ezcase=1:3
     StationaryDist4=StationaryDist_FHorz_Case1(jequaloneDist4,AgeWeightParamNames,Policy4,n_d,n_a,n_z,N_j,pi_z,Params,simoptions_ze2);
     V4=squeeze(V4); Policy4=squeeze(Policy4); StationaryDist4=squeeze(StationaryDist4);
 
-    fprintf('CrossTest zase (C, withA1) z&e with e=1 [EZ %s], this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',casestr,max(abs(V1(:)-V4(:))),max(abs(Policy1(:)-Policy4(:))),max(abs(StationaryDist1(:)-StationaryDist4(:))))
+    fprintf('CrossTest zase (C, withA1) z&e with e=1 [EZ %s], this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',casestr,max(abs(V1(:)-V4(:))),max(abs(Policy1(:)-Policy4(:))),max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 end
 

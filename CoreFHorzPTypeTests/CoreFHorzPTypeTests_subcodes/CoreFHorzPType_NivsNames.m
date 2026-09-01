@@ -37,15 +37,15 @@ names_A=fieldnames(V_A);
 for ii=1:N_i
     nA=names_A{ii};
     nB=Names_i{ii};
-    fprintf('N_i vs Names_i, V    (type %d), this should be zero: %2.8f \n',ii,max(abs(V_A.(nA)(:)-V_B.(nB)(:))))
-    fprintf('N_i vs Names_i, Pol  (type %d), this should be zero: %2.8f \n',ii,max(abs(Policy_A.(nA)(:)-Policy_B.(nB)(:))))
-    fprintf('N_i vs Names_i, Dist (type %d), this should be zero: %2.8f \n',ii,max(abs(StationaryDist_A.(nA)(:)-StationaryDist_B.(nB)(:))))
-    fprintf('N_i vs Names_i, VFP  vs V (N_i,    type %d), this should be zero: %2.8f \n',ii,max(abs(V_A_vfp.(nA)(:)-V_A.(nA)(:))))
-    fprintf('N_i vs Names_i, VFP  vs V (Names_i,type %d), this should be zero: %2.8f \n',ii,max(abs(V_B_vfp.(nB)(:)-V_B.(nB)(:))))
+    fprintf('N_i vs Names_i, V    (type %d), this should be zero: %.3e \n',ii,max(abs(V_A.(nA)(:)-V_B.(nB)(:))))
+    fprintf('N_i vs Names_i, Pol  (type %d), this should be zero: %.3e \n',ii,max(abs(Policy_A.(nA)(:)-Policy_B.(nB)(:))))
+    fprintf('N_i vs Names_i, Dist (type %d), this should be zero: %.3e \n',ii,max(abs(StationaryDist_A.(nA)(:)-StationaryDist_B.(nB)(:))))
+    fprintf('N_i vs Names_i, VFP  vs V (N_i,    type %d), this should be zero: %.3e \n',ii,max(abs(V_A_vfp.(nA)(:)-V_A.(nA)(:))))
+    fprintf('N_i vs Names_i, VFP  vs V (Names_i,type %d), this should be zero: %.3e \n',ii,max(abs(V_B_vfp.(nB)(:)-V_B.(nB)(:))))
 end
-fprintf('N_i vs Names_i, ptweights, this should be zero: %2.8f \n',max(abs(StationaryDist_A.ptweights-StationaryDist_B.ptweights)))
-fprintf('N_i vs Names_i, AllStats assets.Mean,   this should be zero: %2.8f \n',abs(AllStats_A.assets.Mean   -AllStats_B.assets.Mean))
-fprintf('N_i vs Names_i, AllStats earnings.Gini, this should be zero: %2.8f \n',abs(AllStats_A.earnings.Gini -AllStats_B.earnings.Gini))
+fprintf('N_i vs Names_i, ptweights, this should be zero: %.3e \n',max(abs(StationaryDist_A.ptweights-StationaryDist_B.ptweights)))
+fprintf('N_i vs Names_i, AllStats assets.Mean,   this should be zero: %.3e \n',abs(AllStats_A.assets.Mean   -AllStats_B.assets.Mean))
+fprintf('N_i vs Names_i, AllStats earnings.Gini, this should be zero: %.3e \n',abs(AllStats_A.earnings.Gini -AllStats_B.earnings.Gini))
 
 %% Extension: per-type DiscountFactor (vector form) + per-type ReturnFn param (struct form)
 % Above tested kappa_j_pt as an [N_i x N_j] matrix. This section adds two more
@@ -80,14 +80,14 @@ AllStats_B2=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist_B2,Polic
 for ii=1:N_i
     nA=names_A{ii};
     nB=Names_i{ii};
-    fprintf('N_i vs Names_i (vec beta, struct sigma), V    (type %d), this should be zero: %2.8f \n',ii,max(abs(V_A2.(nA)(:)-V_B2.(nB)(:))))
-    fprintf('N_i vs Names_i (vec beta, struct sigma), Pol  (type %d), this should be zero: %2.8f \n',ii,max(abs(Policy_A2.(nA)(:)-Policy_B2.(nB)(:))))
-    fprintf('N_i vs Names_i (vec beta, struct sigma), Dist (type %d), this should be zero: %2.8f \n',ii,max(abs(StationaryDist_A2.(nA)(:)-StationaryDist_B2.(nB)(:))))
-    fprintf('N_i vs Names_i (vec beta, struct sigma), VFP vs V (N_i,    type %d), this should be zero: %2.8f \n',ii,max(abs(V_A2_vfp.(nA)(:)-V_A2.(nA)(:))))
-    fprintf('N_i vs Names_i (vec beta, struct sigma), VFP vs V (Names_i,type %d), this should be zero: %2.8f \n',ii,max(abs(V_B2_vfp.(nB)(:)-V_B2.(nB)(:))))
+    fprintf('N_i vs Names_i (vec beta, struct sigma), V    (type %d), this should be zero: %.3e \n',ii,max(abs(V_A2.(nA)(:)-V_B2.(nB)(:))))
+    fprintf('N_i vs Names_i (vec beta, struct sigma), Pol  (type %d), this should be zero: %.3e \n',ii,max(abs(Policy_A2.(nA)(:)-Policy_B2.(nB)(:))))
+    fprintf('N_i vs Names_i (vec beta, struct sigma), Dist (type %d), this should be zero: %.3e \n',ii,max(abs(StationaryDist_A2.(nA)(:)-StationaryDist_B2.(nB)(:))))
+    fprintf('N_i vs Names_i (vec beta, struct sigma), VFP vs V (N_i,    type %d), this should be zero: %.3e \n',ii,max(abs(V_A2_vfp.(nA)(:)-V_A2.(nA)(:))))
+    fprintf('N_i vs Names_i (vec beta, struct sigma), VFP vs V (Names_i,type %d), this should be zero: %.3e \n',ii,max(abs(V_B2_vfp.(nB)(:)-V_B2.(nB)(:))))
 end
-fprintf('N_i vs Names_i (vec beta, struct sigma), AllStats assets.Mean,   this should be zero: %2.8f \n',abs(AllStats_A2.assets.Mean   -AllStats_B2.assets.Mean))
-fprintf('N_i vs Names_i (vec beta, struct sigma), AllStats earnings.Gini, this should be zero: %2.8f \n',abs(AllStats_A2.earnings.Gini -AllStats_B2.earnings.Gini))
+fprintf('N_i vs Names_i (vec beta, struct sigma), AllStats assets.Mean,   this should be zero: %.3e \n',abs(AllStats_A2.assets.Mean   -AllStats_B2.assets.Mean))
+fprintf('N_i vs Names_i (vec beta, struct sigma), AllStats earnings.Gini, this should be zero: %.3e \n',abs(AllStats_A2.earnings.Gini -AllStats_B2.earnings.Gini))
 
 %% Per-type FnsToEvaluate (struct-of-structs, different fieldnames per type) ≡ single FnsToEvaluate
 % Split each of the single 'assets'/'earnings' functions into two per-type fields
@@ -104,10 +104,10 @@ FnsToEvaluate_PT.earnings_high.(Names_i{2}) = @(aprime,a,z,w,kappa_j_pt) w*kappa
 
 AllStats_B2_PT=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist_B2,Policy_B2,FnsToEvaluate_PT,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
 
-fprintf('per-type FnsToEvaluate, assets   breakdown (type %s, single==per-type), this should be zero: %2.8f \n',Names_i{1},abs(AllStats_B2.assets.(Names_i{1}).Mean   -AllStats_B2_PT.assets_low.(Names_i{1}).Mean))
-fprintf('per-type FnsToEvaluate, assets   breakdown (type %s, single==per-type), this should be zero: %2.8f \n',Names_i{2},abs(AllStats_B2.assets.(Names_i{2}).Mean   -AllStats_B2_PT.assets_high.(Names_i{2}).Mean))
-fprintf('per-type FnsToEvaluate, earnings breakdown (type %s, single==per-type), this should be zero: %2.8f \n',Names_i{1},abs(AllStats_B2.earnings.(Names_i{1}).Mean -AllStats_B2_PT.earnings_low.(Names_i{1}).Mean))
-fprintf('per-type FnsToEvaluate, earnings breakdown (type %s, single==per-type), this should be zero: %2.8f \n',Names_i{2},abs(AllStats_B2.earnings.(Names_i{2}).Mean -AllStats_B2_PT.earnings_high.(Names_i{2}).Mean))
+fprintf('per-type FnsToEvaluate, assets   breakdown (type %s, single==per-type), this should be zero: %.3e \n',Names_i{1},abs(AllStats_B2.assets.(Names_i{1}).Mean   -AllStats_B2_PT.assets_low.(Names_i{1}).Mean))
+fprintf('per-type FnsToEvaluate, assets   breakdown (type %s, single==per-type), this should be zero: %.3e \n',Names_i{2},abs(AllStats_B2.assets.(Names_i{2}).Mean   -AllStats_B2_PT.assets_high.(Names_i{2}).Mean))
+fprintf('per-type FnsToEvaluate, earnings breakdown (type %s, single==per-type), this should be zero: %.3e \n',Names_i{1},abs(AllStats_B2.earnings.(Names_i{1}).Mean -AllStats_B2_PT.earnings_low.(Names_i{1}).Mean))
+fprintf('per-type FnsToEvaluate, earnings breakdown (type %s, single==per-type), this should be zero: %.3e \n',Names_i{2},abs(AllStats_B2.earnings.(Names_i{2}).Mean -AllStats_B2_PT.earnings_high.(Names_i{2}).Mean))
 
 output=struct();
 

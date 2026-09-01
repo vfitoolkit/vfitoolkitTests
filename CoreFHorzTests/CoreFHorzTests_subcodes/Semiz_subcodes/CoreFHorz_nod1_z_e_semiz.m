@@ -40,7 +40,7 @@ simoptions1=simoptions;
 PolicyVals1=PolicyInd2Val_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions1);
 
 V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
-fprintf('ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+fprintf('ValueFnFromPolicy, this should be zero: %.3e \n',max(abs(V1fromPolicy(:)-V1(:))))
 
 % Solve with divide-and-conquer, should give same answer
 vfoptions2=vfoptions;
@@ -48,48 +48,48 @@ vfoptions2.divideandconquer=1;
 simoptions2=simoptions;
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
 
 
 % lowmemory
 vfoptions1.lowmemory=1;
 [V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(V1(:)-V1B(:))))
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1B(:))))
+fprintf('lowmemory=1, this should be zero: %.3e \n',max(abs(V1(:)-V1B(:))))
+fprintf('lowmemory=1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1B(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=1;
 [V2B,Policy2B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2B(:))))
-fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2B(:))))
 vfoptions2.lowmemory=0;
 
 %%
 % lowmemory2
 vfoptions1.lowmemory=2;
 [V1C,Policy1C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(V1(:)-V1C(:))))
-fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1C(:))))
+fprintf('lowmemory=2, this should be zero: %.3e \n',max(abs(V1(:)-V1C(:))))
+fprintf('lowmemory=2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1C(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=2;
 [V2C,Policy2C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2C(:))))
-fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2C(:))))
 vfoptions2.lowmemory=0;
 
 % lowmemory3
 vfoptions1.lowmemory=3;
 [V1D,Policy1D]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=3, this should be zero: %2.8f \n',max(abs(V1(:)-V1D(:))))
-fprintf('lowmemory=3, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1D(:))))
+fprintf('lowmemory=3, this should be zero: %.3e \n',max(abs(V1(:)-V1D(:))))
+fprintf('lowmemory=3, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1D(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=3;
 [V2D,Policy2D]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=3 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2D(:))))
-fprintf('lowmemory=3 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2D(:))))
+fprintf('lowmemory=3 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2D(:))))
+fprintf('lowmemory=3 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2D(:))))
 vfoptions2.lowmemory=0;
 
 clear V1 V2 V1B V2B V1C V2C V1D V2D Policy1 Policy2 Policy1B Policy2B Policy1C Policy2C Policy1D Policy2D PolicyVals1 V1fromPolicy
@@ -106,7 +106,7 @@ simoptions3.ngridinterp=vfoptions3.ngridinterp;
 PolicyVals3=PolicyInd2Val_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions3);
 
 V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
-fprintf('ValueFnFromPolicy with grid interp, this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+fprintf('ValueFnFromPolicy with grid interp, this should be zero: %.3e \n',max(abs(V3fromPolicy(:)-V3(:))))
 
 % Solve with divide-and-conquer, should give same answer
 vfoptions4=vfoptions;
@@ -120,44 +120,44 @@ simoptions4.ngridinterp=vfoptions4.ngridinterp;
 
 % max(abs(V2(:)-V4(:)))
 
-fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
-fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %.3e \n',max(abs(V3(:)-V4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy4(:))))
 
 % lowmemory
 vfoptions3.lowmemory=1;
 [V3B,Policy3B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3B(:))))
-fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3B(:))))
 vfoptions4.lowmemory=1;
 [V4B,Policy4B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=1  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4B(:))))
-fprintf('lowmemory=1  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4B(:))))
+fprintf('lowmemory=1  (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4B(:))))
+fprintf('lowmemory=1  (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4B(:))))
 
 %%
 % lowmemory2
 vfoptions3.lowmemory=2;
 [V3C,Policy3C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3C(:))))
-fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3C(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=2;
 [V4C,Policy4C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4C(:))))
-fprintf('lowmemory=2  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4C(:))))
+fprintf('lowmemory=2  (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4C(:))))
+fprintf('lowmemory=2  (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4C(:))))
 vfoptions4.lowmemory=0;
 
 % lowmemory3
 vfoptions3.lowmemory=3;
 [V3D,Policy3D]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=3 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3D(:))))
-fprintf('lowmemory=3 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3D(:))))
+fprintf('lowmemory=3 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3D(:))))
+fprintf('lowmemory=3 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3D(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=3;
 [V4D,Policy4D]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=3  (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4D(:))))
-fprintf('lowmemory=3  (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4D(:))))
+fprintf('lowmemory=3  (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4D(:))))
+fprintf('lowmemory=3  (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4D(:))))
 vfoptions4.lowmemory=0;
 
 clear V3 V4 V3B V4B V3C V4C V3D V4D Policy3 Policy4 Policy3B Policy4B Policy3C Policy4C Policy3D Policy4D PolicyVals3 V3fromPolicy
@@ -328,21 +328,21 @@ vfoptionsjs.V_Jplus1=Vbase(:,:,:,:,jstar);
 Vbase=Vbase(:,:,:,:,1:Njs);
 Policybase=Policybase(:,:,:,:,:,1:Njs);
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1 (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1 (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1 (jstar=%i), this should be zero: %.3e \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i), this should be zero: %.3e \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
 % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
 vfoptionsjs.lowmemory=1;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=1, this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=1, this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=1, this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=1, this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=2;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=2, this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=2, this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=2, this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=2, this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=3;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=3, this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=3, this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=3, this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=3, this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=0;
 
 %% V_Jplus1, with divide-and-conquer
@@ -357,21 +357,21 @@ vfoptionsjs.V_Jplus1=Vbase(:,:,:,:,jstar);
 Vbase=Vbase(:,:,:,:,1:Njs);
 Policybase=Policybase(:,:,:,:,:,1:Njs);
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1 (jstar=%i, with DC), this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1 (jstar=%i, with DC), this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1 (jstar=%i, with DC), this should be zero: %.3e \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i, with DC), this should be zero: %.3e \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
 % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
 vfoptionsjs.lowmemory=1;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=2;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=3;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=3 (with DC), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=3 (with DC), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=3 (with DC), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=3 (with DC), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=0;
 
 %% V_Jplus1, with grid interpolation
@@ -386,21 +386,21 @@ vfoptionsjs.V_Jplus1=Vbase(:,:,:,:,jstar);
 Vbase=Vbase(:,:,:,:,1:Njs);
 Policybase=Policybase(:,:,:,:,:,1:Njs);
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1 (jstar=%i, with GI), this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1 (jstar=%i, with GI), this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1 (jstar=%i, with GI), this should be zero: %.3e \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i, with GI), this should be zero: %.3e \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
 % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
 vfoptionsjs.lowmemory=1;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=2;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=3;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=3 (with GI), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=3 (with GI), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=3 (with GI), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=3 (with GI), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=0;
 
 %% V_Jplus1, with divide-and-conquer and grid interpolation
@@ -415,21 +415,21 @@ vfoptionsjs.V_Jplus1=Vbase(:,:,:,:,jstar);
 Vbase=Vbase(:,:,:,:,1:Njs);
 Policybase=Policybase(:,:,:,:,:,1:Njs);
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1 (jstar=%i, with DC+GI), this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1 (jstar=%i, with DC+GI), this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1 (jstar=%i, with DC+GI), this should be zero: %.3e \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 (jstar=%i, with DC+GI), this should be zero: %.3e \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
 % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
 vfoptionsjs.lowmemory=1;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=1 (with DC+GI), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=1 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=1 (with DC+GI), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=1 (with DC+GI), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=2;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=2 (with DC+GI), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=2 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=2 (with DC+GI), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=2 (with DC+GI), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=3;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1, lowmemory=3 (with DC+GI), this should be zero: %2.8f \n',max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1, lowmemory=3 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1, lowmemory=3 (with DC+GI), this should be zero: %.3e \n',max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1, lowmemory=3 (with DC+GI), this should be zero: %.3e \n',max(abs(Policybase(:)-Policyshort(:))))
 vfoptionsjs.lowmemory=0;
 
 %% V_Jplus1, with age-dependent shocks
@@ -454,8 +454,8 @@ vfoptionsjs.pi_e=pi_e_J(:,1:jstar);
 Vbase=Vbase(:,:,:,:,1:Njs);
 Policybase=Policybase(:,:,:,:,:,1:Njs);
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z_J(:,:,1:Njs),ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-fprintf('V_Jplus1 with age-dependent shocks (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Vbase(:)-Vshort(:))))
-fprintf('V_Jplus1 with age-dependent shocks (jstar=%i), this should be zero: %2.8f \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+fprintf('V_Jplus1 with age-dependent shocks (jstar=%i), this should be zero: %.3e \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+fprintf('V_Jplus1 with age-dependent shocks (jstar=%i), this should be zero: %.3e \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
 
 clear Vbase Policybase Vshort Policyshort
 

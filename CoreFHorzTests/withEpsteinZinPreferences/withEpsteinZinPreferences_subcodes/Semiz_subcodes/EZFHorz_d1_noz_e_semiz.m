@@ -66,39 +66,39 @@ vfoptions2.divideandconquer=1;
 simoptions2=simoptions;
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
 
 % lowmemory
 vfoptions1.lowmemory=1;
 [V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(V1(:)-V1B(:))))
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1B(:))))
+fprintf('lowmemory=1, this should be zero: %.3e \n',max(abs(V1(:)-V1B(:))))
+fprintf('lowmemory=1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1B(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=1;
 [V2B,Policy2B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2B(:))))
-fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2B(:))))
 vfoptions2.lowmemory=0;
 
 % lowmemory2
 vfoptions1.lowmemory=2;
 [V1C,Policy1C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(V1(:)-V1C(:))))
-fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1C(:))))
+fprintf('lowmemory=2, this should be zero: %.3e \n',max(abs(V1(:)-V1C(:))))
+fprintf('lowmemory=2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1C(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=2;
 [V2C,Policy2C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2C(:))))
-fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2C(:))))
 vfoptions2.lowmemory=0;
 
 %%
 % V from Policy
 V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
-fprintf('ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+fprintf('ValueFnFromPolicy, this should be zero: %.3e \n',max(abs(V1fromPolicy(:)-V1(:))))
 
 clear V1 V1B V1C V2 V2B V2C Policy1 Policy1B Policy1C Policy2 Policy2B Policy2C V1fromPolicy
 
@@ -121,39 +121,39 @@ simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
 [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 
-fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
-fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %.3e \n',max(abs(V3(:)-V4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy4(:))))
 
 % lowmemory
 vfoptions3.lowmemory=1;
 [V3B,Policy3B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3B(:))))
-fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3B(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=1;
 [V4B,Policy4B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=1 (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4B(:))))
-fprintf('lowmemory=1 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4B(:))))
+fprintf('lowmemory=1 (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4B(:))))
+fprintf('lowmemory=1 (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4B(:))))
 vfoptions4.lowmemory=0;
 
 % lowmemory2
 vfoptions3.lowmemory=2;
 [V3C,Policy3C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3C(:))))
-fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3C(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=2;
 [V4C,Policy4C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=2 (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4C(:))))
-fprintf('lowmemory=2 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4C(:))))
+fprintf('lowmemory=2 (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4C(:))))
+fprintf('lowmemory=2 (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4C(:))))
 vfoptions4.lowmemory=0;
 
 %%
 % V from Policy
 V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
-fprintf('ValueFnFromPolicy (GI), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+fprintf('ValueFnFromPolicy (GI), this should be zero: %.3e \n',max(abs(V3fromPolicy(:)-V3(:))))
 
 clear V3 V3B V3C V4 V4B V4C Policy3 Policy3B Policy3C Policy4 Policy4B Policy4C V3fromPolicy
 
@@ -170,7 +170,7 @@ AllStats3=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist3,Policy3b,FnsToE
 AgeConditionalStats3=LifeCycleProfiles_FHorz_Case1(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions3);
 
 fprintf('With/without grid interp, should get much the same moments (for big a_grid) \n')
-fprintf('StationaryDist with/without grid interp, this should be close to zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('StationaryDist with/without grid interp, this should be close to zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 [AllStats1.assets.Mean,AllStats3.assets.Mean]
 [AllStats1.earnings.Gini,AllStats3.earnings.Gini]
 [AgeConditionalStats1.earnings.Mean; AgeConditionalStats3.earnings.Mean]
@@ -226,39 +226,39 @@ vfoptions2.divideandconquer=1;
 simoptions2=simoptions;
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
 
 % lowmemory
 vfoptions1.lowmemory=1;
 [V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(V1(:)-V1B(:))))
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1B(:))))
+fprintf('lowmemory=1, this should be zero: %.3e \n',max(abs(V1(:)-V1B(:))))
+fprintf('lowmemory=1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1B(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=1;
 [V2B,Policy2B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2B(:))))
-fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2B(:))))
 vfoptions2.lowmemory=0;
 
 % lowmemory2
 vfoptions1.lowmemory=2;
 [V1C,Policy1C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(V1(:)-V1C(:))))
-fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1C(:))))
+fprintf('lowmemory=2, this should be zero: %.3e \n',max(abs(V1(:)-V1C(:))))
+fprintf('lowmemory=2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1C(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=2;
 [V2C,Policy2C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2C(:))))
-fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2C(:))))
 vfoptions2.lowmemory=0;
 
 %%
 % V from Policy
 V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
-fprintf('ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+fprintf('ValueFnFromPolicy, this should be zero: %.3e \n',max(abs(V1fromPolicy(:)-V1(:))))
 
 clear V1 V1B V1C V2 V2B V2C Policy1 Policy1B Policy1C Policy2 Policy2B Policy2C V1fromPolicy
 
@@ -281,39 +281,39 @@ simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
 [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 
-fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
-fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %.3e \n',max(abs(V3(:)-V4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy4(:))))
 
 % lowmemory
 vfoptions3.lowmemory=1;
 [V3B,Policy3B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3B(:))))
-fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3B(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=1;
 [V4B,Policy4B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=1 (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4B(:))))
-fprintf('lowmemory=1 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4B(:))))
+fprintf('lowmemory=1 (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4B(:))))
+fprintf('lowmemory=1 (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4B(:))))
 vfoptions4.lowmemory=0;
 
 % lowmemory2
 vfoptions3.lowmemory=2;
 [V3C,Policy3C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3C(:))))
-fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3C(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=2;
 [V4C,Policy4C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=2 (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4C(:))))
-fprintf('lowmemory=2 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4C(:))))
+fprintf('lowmemory=2 (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4C(:))))
+fprintf('lowmemory=2 (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4C(:))))
 vfoptions4.lowmemory=0;
 
 %%
 % V from Policy
 V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
-fprintf('ValueFnFromPolicy (GI), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+fprintf('ValueFnFromPolicy (GI), this should be zero: %.3e \n',max(abs(V3fromPolicy(:)-V3(:))))
 
 clear V3 V3B V3C V4 V4B V4C Policy3 Policy3B Policy3C Policy4 Policy4B Policy4C V3fromPolicy
 
@@ -330,7 +330,7 @@ AllStats3=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist3,Policy3b,FnsToE
 AgeConditionalStats3=LifeCycleProfiles_FHorz_Case1(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions3);
 
 fprintf('With/without grid interp, should get much the same moments (for big a_grid) \n')
-fprintf('StationaryDist with/without grid interp, this should be close to zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('StationaryDist with/without grid interp, this should be close to zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 [AllStats1.assets.Mean,AllStats3.assets.Mean]
 [AllStats1.earnings.Gini,AllStats3.earnings.Gini]
 [AgeConditionalStats1.earnings.Mean; AgeConditionalStats3.earnings.Mean]
@@ -386,39 +386,39 @@ vfoptions2.divideandconquer=1;
 simoptions2=simoptions;
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
 
 % lowmemory
 vfoptions1.lowmemory=1;
 [V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(V1(:)-V1B(:))))
-fprintf('lowmemory=1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1B(:))))
+fprintf('lowmemory=1, this should be zero: %.3e \n',max(abs(V1(:)-V1B(:))))
+fprintf('lowmemory=1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1B(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=1;
 [V2B,Policy2B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2B(:))))
-fprintf('lowmemory=1 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2B(:))))
+fprintf('lowmemory=1 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2B(:))))
 vfoptions2.lowmemory=0;
 
 % lowmemory2
 vfoptions1.lowmemory=2;
 [V1C,Policy1C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(V1(:)-V1C(:))))
-fprintf('lowmemory=2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1C(:))))
+fprintf('lowmemory=2, this should be zero: %.3e \n',max(abs(V1(:)-V1C(:))))
+fprintf('lowmemory=2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1C(:))))
 vfoptions1.lowmemory=0;
 
 vfoptions2.lowmemory=2;
 [V2C,Policy2C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(V2(:)-V2C(:))))
-fprintf('lowmemory=2 (with DC), this should be zero: %2.8f \n',max(abs(Policy2(:)-Policy2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(V2(:)-V2C(:))))
+fprintf('lowmemory=2 (with DC), this should be zero: %.3e \n',max(abs(Policy2(:)-Policy2C(:))))
 vfoptions2.lowmemory=0;
 
 %%
 % V from Policy
 V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
-fprintf('ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+fprintf('ValueFnFromPolicy, this should be zero: %.3e \n',max(abs(V1fromPolicy(:)-V1(:))))
 
 clear V1 V1B V1C V2 V2B V2C Policy1 Policy1B Policy1C Policy2 Policy2B Policy2C V1fromPolicy
 
@@ -441,39 +441,39 @@ simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
 [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
 
-fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(V3(:)-V4(:))))
-fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %.3e \n',max(abs(V3(:)-V4(:))))
+fprintf('Divide-and-conquer (with Grid Interp Layer), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy4(:))))
 
 % lowmemory
 vfoptions3.lowmemory=1;
 [V3B,Policy3B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3B(:))))
-fprintf('lowmemory=1 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3B(:))))
+fprintf('lowmemory=1 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3B(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=1;
 [V4B,Policy4B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=1 (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4B(:))))
-fprintf('lowmemory=1 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4B(:))))
+fprintf('lowmemory=1 (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4B(:))))
+fprintf('lowmemory=1 (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4B(:))))
 vfoptions4.lowmemory=0;
 
 % lowmemory2
 vfoptions3.lowmemory=2;
 [V3C,Policy3C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
-fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3C(:))))
-fprintf('lowmemory=2 (with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3C(:))))
+fprintf('lowmemory=2 (with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3C(:))))
 vfoptions3.lowmemory=0;
 
 vfoptions4.lowmemory=2;
 [V4C,Policy4C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-fprintf('lowmemory=2 (with DC+GI), this should be zero: %2.8f \n',max(abs(V4(:)-V4C(:))))
-fprintf('lowmemory=2 (with DC+GI), this should be zero: %2.8f \n',max(abs(Policy4(:)-Policy4C(:))))
+fprintf('lowmemory=2 (with DC+GI), this should be zero: %.3e \n',max(abs(V4(:)-V4C(:))))
+fprintf('lowmemory=2 (with DC+GI), this should be zero: %.3e \n',max(abs(Policy4(:)-Policy4C(:))))
 vfoptions4.lowmemory=0;
 
 %%
 % V from Policy
 V3fromPolicy=ValueFnFromPolicy_FHorz(Policy3,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions3);
-fprintf('ValueFnFromPolicy (GI), this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+fprintf('ValueFnFromPolicy (GI), this should be zero: %.3e \n',max(abs(V3fromPolicy(:)-V3(:))))
 
 clear V3 V3B V3C V4 V4B V4C Policy3 Policy3B Policy3C Policy4 Policy4B Policy4C V3fromPolicy
 
@@ -490,7 +490,7 @@ AllStats3=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist3,Policy3b,FnsToE
 AgeConditionalStats3=LifeCycleProfiles_FHorz_Case1(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,N_j,d_grid,a_grid_big,z_grid,simoptions3);
 
 fprintf('With/without grid interp, should get much the same moments (for big a_grid) \n')
-fprintf('StationaryDist with/without grid interp, this should be close to zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('StationaryDist with/without grid interp, this should be close to zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 [AllStats1.assets.Mean,AllStats3.assets.Mean]
 [AllStats1.earnings.Gini,AllStats3.earnings.Gini]
 [AgeConditionalStats1.earnings.Mean; AgeConditionalStats3.earnings.Mean]
@@ -549,7 +549,7 @@ vfoptions1.EZeis='ezphi';
 vfoptions1.exoticpreferences='None';
 [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
 V1btransformed=((1-Params.ezgamma)*V1b).^(1/(1-Params.ezgamma));
-fprintf('EZ gamma=1/phi collapse, Policy: should give zero: %2.8f \n',max(abs(Policy1a(:)-Policy1b(:))))
+fprintf('EZ gamma=1/phi collapse, Policy: should give zero: %.3e \n',max(abs(Policy1a(:)-Policy1b(:))))
 fprintf('EZ gamma=1/phi collapse, V after transform (relative): should be roughly 1e-13: %g \n',max(abs(V1a(:)-V1btransformed(:)))/max(abs(V1a(:))))
 
 Params.ezphi=ezphi_store;
@@ -570,8 +570,8 @@ vfoptions1.EZriskaversion='ezrisk';
 [V2a,Policy2a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.exoticpreferences='None';
 [V2b,Policy2b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZ (positive utils) with EZriskaversion=0: should give zero: %2.8f \n',max(abs(V2a(:)-V2b(:))))
-fprintf('EZ (positive utils) with EZriskaversion=0: should give zero: %2.8f \n',max(abs(Policy2a(:)-Policy2b(:))))
+fprintf('EZ (positive utils) with EZriskaversion=0: should give zero: %.3e \n',max(abs(V2a(:)-V2b(:))))
+fprintf('EZ (positive utils) with EZriskaversion=0: should give zero: %.3e \n',max(abs(Policy2a(:)-Policy2b(:))))
 
 % negative-valued utility fn
 vfoptions1=vfoptions;
@@ -582,8 +582,8 @@ vfoptions1.EZriskaversion='ezrisk';
 [V3a,Policy3a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.exoticpreferences='None';
 [V3b,Policy3b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZ (negative utils) with EZriskaversion=0: should give zero: %2.8f \n',max(abs(V3a(:)-V3b(:))))
-fprintf('EZ (negative utils) with EZriskaversion=0: should give zero: %2.8f \n',max(abs(Policy3a(:)-Policy3b(:))))
+fprintf('EZ (negative utils) with EZriskaversion=0: should give zero: %.3e \n',max(abs(V3a(:)-V3b(:))))
+fprintf('EZ (negative utils) with EZriskaversion=0: should give zero: %.3e \n',max(abs(Policy3a(:)-Policy3b(:))))
 
 Params.ezrisk=ezrisk_store;
 clear V2a V2b V3a V3b Policy2a Policy2b Policy3a Policy3b
@@ -609,7 +609,7 @@ vfoptions1.EZeis='ezphi';
 vfoptions1.exoticpreferences='None';
 [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
 V1btransformed=((1-Params.ezgamma)*V1b).^(1/(1-Params.ezgamma));
-fprintf('EZ gamma=1/phi collapse (GI), Policy: should give zero: %2.8f \n',max(abs(Policy1a(:)-Policy1b(:))))
+fprintf('EZ gamma=1/phi collapse (GI), Policy: should give zero: %.3e \n',max(abs(Policy1a(:)-Policy1b(:))))
 fprintf('EZ gamma=1/phi collapse (GI), V after transform (relative): should be roughly 1e-13: %g \n',max(abs(V1a(:)-V1btransformed(:)))/max(abs(V1a(:))))
 Params.ezphi=ezphi_store;
 Params.ezsigma=ezsigma_store;
@@ -624,8 +624,8 @@ vfoptions1.EZriskaversion='ezrisk';
 [V2a,Policy2a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.exoticpreferences='None';
 [V2b,Policy2b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZ (positive utils) with EZriskaversion=0 (GI): should give zero: %2.8f \n',max(abs(V2a(:)-V2b(:))))
-fprintf('EZ (positive utils) with EZriskaversion=0 (GI): should give zero: %2.8f \n',max(abs(Policy2a(:)-Policy2b(:))))
+fprintf('EZ (positive utils) with EZriskaversion=0 (GI): should give zero: %.3e \n',max(abs(V2a(:)-V2b(:))))
+fprintf('EZ (positive utils) with EZriskaversion=0 (GI): should give zero: %.3e \n',max(abs(Policy2a(:)-Policy2b(:))))
 vfoptions1=vfoptionsGI;
 vfoptions1.exoticpreferences='EpsteinZin';
 vfoptions1.EZutils=1;
@@ -634,8 +634,8 @@ vfoptions1.EZriskaversion='ezrisk';
 [V3a,Policy3a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.exoticpreferences='None';
 [V3b,Policy3b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZ (negative utils) with EZriskaversion=0 (GI): should give zero: %2.8f \n',max(abs(V3a(:)-V3b(:))))
-fprintf('EZ (negative utils) with EZriskaversion=0 (GI): should give zero: %2.8f \n',max(abs(Policy3a(:)-Policy3b(:))))
+fprintf('EZ (negative utils) with EZriskaversion=0 (GI): should give zero: %.3e \n',max(abs(V3a(:)-V3b(:))))
+fprintf('EZ (negative utils) with EZriskaversion=0 (GI): should give zero: %.3e \n',max(abs(Policy3a(:)-Policy3b(:))))
 Params.ezrisk=ezrisk_store;
 clear V1a V1b V1btransformed V2a V2b V3a V3b Policy1a Policy1b Policy2a Policy2b Policy3a Policy3b
 
@@ -662,8 +662,8 @@ vfoptions1.EZoneminusbeta=1;
 [V4a,Policy4a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V4b,Policy4b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons_scaled,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=1 (cons-units) vs manual scaling: should give zero: %2.8f \n',max(abs(V4a(:)-V4b(:))))
-fprintf('EZoneminusbeta=1 (cons-units) vs manual scaling: should give zero: %2.8f \n',max(abs(Policy4a(:)-Policy4b(:))))
+fprintf('EZoneminusbeta=1 (cons-units) vs manual scaling: should give zero: %.3e \n',max(abs(V4a(:)-V4b(:))))
+fprintf('EZoneminusbeta=1 (cons-units) vs manual scaling: should give zero: %.3e \n',max(abs(Policy4a(:)-Policy4b(:))))
 
 % utility-units, positive
 ReturnFn_posU_scaled=@(d1,d2,aprime,a,semiz,e,r,w,kappa_j,ezsigma,agej,Jr,pension,varphi,uempbenefit,searcheffortcost,ezscalefactoru) ezscalefactoru*EZReturnFn_positiveUtils_d1_noz_e_semiz(d1,d2,aprime,a,semiz,e,r,w,kappa_j,ezsigma,agej,Jr,pension,varphi,uempbenefit,searcheffortcost);
@@ -676,8 +676,8 @@ vfoptions1.EZoneminusbeta=1;
 [V5a,Policy5a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V5b,Policy5b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU_scaled,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=1 (positive utils) vs manual scaling: should give zero: %2.8f \n',max(abs(V5a(:)-V5b(:))))
-fprintf('EZoneminusbeta=1 (positive utils) vs manual scaling: should give zero: %2.8f \n',max(abs(Policy5a(:)-Policy5b(:))))
+fprintf('EZoneminusbeta=1 (positive utils) vs manual scaling: should give zero: %.3e \n',max(abs(V5a(:)-V5b(:))))
+fprintf('EZoneminusbeta=1 (positive utils) vs manual scaling: should give zero: %.3e \n',max(abs(Policy5a(:)-Policy5b(:))))
 
 % utility-units, negative
 ReturnFn_negU_scaled=@(d1,d2,aprime,a,semiz,e,r,w,kappa_j,ezsigma,agej,Jr,pension,varphi,uempbenefit,searcheffortcost,ezscalefactoru) ezscalefactoru*EZReturnFn_negativeUtils_d1_noz_e_semiz(d1,d2,aprime,a,semiz,e,r,w,kappa_j,ezsigma,agej,Jr,pension,varphi,uempbenefit,searcheffortcost);
@@ -690,8 +690,8 @@ vfoptions1.EZoneminusbeta=1;
 [V6a,Policy6a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V6b,Policy6b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU_scaled,Params,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=1 (negative utils) vs manual scaling: should give zero: %2.8f \n',max(abs(V6a(:)-V6b(:))))
-fprintf('EZoneminusbeta=1 (negative utils) vs manual scaling: should give zero: %2.8f \n',max(abs(Policy6a(:)-Policy6b(:))))
+fprintf('EZoneminusbeta=1 (negative utils) vs manual scaling: should give zero: %.3e \n',max(abs(V6a(:)-V6b(:))))
+fprintf('EZoneminusbeta=1 (negative utils) vs manual scaling: should give zero: %.3e \n',max(abs(Policy6a(:)-Policy6b(:))))
 
 clear V4a V4b V5a V5b V6a V6b Policy4a Policy4b Policy5a Policy5b Policy6a Policy6b
 
@@ -756,17 +756,17 @@ for ezcase=1:3
     Vbase=Vbase(:,:,:,1:Njs);
     Policybase=Policybase(:,:,:,:,1:Njs);
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1 (jstar=%i) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1 (jstar=%i) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1 (jstar=%i) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
     % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
     vfoptionsjs.lowmemory=1;
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1, lowmemory=1 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1, lowmemory=1 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
     vfoptionsjs.lowmemory=2;
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1, lowmemory=2 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1, lowmemory=2 [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1, lowmemory=2 [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=2 [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
     vfoptionsjs.lowmemory=0;
 
     %% V_Jplus1, with divide-and-conquer
@@ -781,17 +781,17 @@ for ezcase=1:3
     Vbase=Vbase(:,:,:,1:Njs);
     Policybase=Policybase(:,:,:,:,1:Njs);
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1 (jstar=%i, with DC) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1 (jstar=%i, with DC) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with DC) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with DC) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
     % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
     vfoptionsjs.lowmemory=1;
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1, lowmemory=1 (with DC) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1, lowmemory=1 (with DC) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with DC) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with DC) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
     vfoptionsjs.lowmemory=2;
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1, lowmemory=2 (with DC) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1, lowmemory=2 (with DC) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1, lowmemory=2 (with DC) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=2 (with DC) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
     vfoptionsjs.lowmemory=0;
 
     %% V_Jplus1, with grid interpolation
@@ -806,17 +806,17 @@ for ezcase=1:3
     Vbase=Vbase(:,:,:,1:Njs);
     Policybase=Policybase(:,:,:,:,1:Njs);
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1 (jstar=%i, with GI) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1 (jstar=%i, with GI) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with GI) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with GI) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
     % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
     vfoptionsjs.lowmemory=1;
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1, lowmemory=1 (with GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1, lowmemory=1 (with GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with GI) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with GI) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
     vfoptionsjs.lowmemory=2;
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1, lowmemory=2 (with GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1, lowmemory=2 (with GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1, lowmemory=2 (with GI) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=2 (with GI) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
     vfoptionsjs.lowmemory=0;
 
     %% V_Jplus1, with divide-and-conquer and grid interpolation
@@ -831,17 +831,17 @@ for ezcase=1:3
     Vbase=Vbase(:,:,:,1:Njs);
     Policybase=Policybase(:,:,:,:,1:Njs);
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1 (jstar=%i, with DC+GI) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1 (jstar=%i, with DC+GI) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with DC+GI) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i, with DC+GI) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
     % lowmemory (the V_Jplus1 branch of each raw has its own lowmemory sub-branches)
     vfoptionsjs.lowmemory=1;
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1, lowmemory=1 (with DC+GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1, lowmemory=1 (with DC+GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with DC+GI) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=1 (with DC+GI) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
     vfoptionsjs.lowmemory=2;
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1, lowmemory=2 (with DC+GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1, lowmemory=2 (with DC+GI) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1, lowmemory=2 (with DC+GI) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1, lowmemory=2 (with DC+GI) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policybase(:)-Policyshort(:))))
     vfoptionsjs.lowmemory=0;
 end
 
@@ -898,8 +898,8 @@ for ezcase=1:3
     vfoptionssj=vfoptionsv;
     vfoptionssj.survivalprobability='sjones';
     [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptionssj);
-    fprintf('survivalprobability=ones vs no-survivalprobability [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1a(:)-V1b(:))))
-    fprintf('survivalprobability=ones vs no-survivalprobability [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1a(:)-Policy1b(:))))
+    fprintf('survivalprobability=ones vs no-survivalprobability [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1a(:)-V1b(:))))
+    fprintf('survivalprobability=ones vs no-survivalprobability [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1a(:)-Policy1b(:))))
 end
 clear V1a V1b Policy1a Policy1b
 
@@ -921,7 +921,7 @@ vfoptions2=vfoptions;
 vfoptions2.exoticpreferences='None';
 [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,{'beta','sj'},[],vfoptions2);
 V1btransformed=((1-Params.ezgamma)*V1b).^(1/(1-Params.ezgamma));
-fprintf('EZ gamma=1/phi collapse with sj, Policy [EZ cons-units]: should give zero: %2.8f \n',max(abs(Policy1a(:)-Policy1b(:))))
+fprintf('EZ gamma=1/phi collapse with sj, Policy [EZ cons-units]: should give zero: %.3e \n',max(abs(Policy1a(:)-Policy1b(:))))
 fprintf('EZ gamma=1/phi collapse with sj, V after transform (relative) [EZ cons-units]: should be roughly 1e-13: %g \n',max(abs(V1a(:)-V1btransformed(:)))/max(abs(V1a(:))))
 % and the same under the grid interpolation layer
 vfoptions1.gridinterplayer=1;
@@ -931,7 +931,7 @@ vfoptions2.ngridinterp=5;
 [V1a,Policy1a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vfoptions1);
 [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,{'beta','sj'},[],vfoptions2);
 V1btransformed=((1-Params.ezgamma)*V1b).^(1/(1-Params.ezgamma));
-fprintf('EZ gamma=1/phi collapse with sj (GI), Policy [EZ cons-units]: should give zero: %2.8f \n',max(abs(Policy1a(:)-Policy1b(:))))
+fprintf('EZ gamma=1/phi collapse with sj (GI), Policy [EZ cons-units]: should give zero: %.3e \n',max(abs(Policy1a(:)-Policy1b(:))))
 fprintf('EZ gamma=1/phi collapse with sj (GI), V after transform (relative) [EZ cons-units]: should be roughly 1e-13: %g \n',max(abs(V1a(:)-V1btransformed(:)))/max(abs(V1a(:))))
 Params.ezphi=ezphi_store;
 Params.ezsigma=ezsigma_store;
@@ -951,8 +951,8 @@ vfoptions1.survivalprobability='sj';
 vfoptions2=vfoptions;
 vfoptions2.exoticpreferences='None';
 [V2b,Policy2b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params,{'beta','sj'},[],vfoptions2);
-fprintf('EZriskaversion=0 with sj [EZ positive utils], this should be zero: %2.8f \n',max(abs(V2a(:)-V2b(:))))
-fprintf('EZriskaversion=0 with sj [EZ positive utils], this should be zero: %2.8f \n',max(abs(Policy2a(:)-Policy2b(:))))
+fprintf('EZriskaversion=0 with sj [EZ positive utils], this should be zero: %.3e \n',max(abs(V2a(:)-V2b(:))))
+fprintf('EZriskaversion=0 with sj [EZ positive utils], this should be zero: %.3e \n',max(abs(Policy2a(:)-Policy2b(:))))
 % negative-valued utility fn
 vfoptions1=vfoptions;
 vfoptions1.exoticpreferences='EpsteinZin';
@@ -964,8 +964,8 @@ vfoptions1.survivalprobability='sj';
 vfoptions2=vfoptions;
 vfoptions2.exoticpreferences='None';
 [V3b,Policy3b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params,{'beta','sj'},[],vfoptions2);
-fprintf('EZriskaversion=0 with sj [EZ negative utils], this should be zero: %2.8f \n',max(abs(V3a(:)-V3b(:))))
-fprintf('EZriskaversion=0 with sj [EZ negative utils], this should be zero: %2.8f \n',max(abs(Policy3a(:)-Policy3b(:))))
+fprintf('EZriskaversion=0 with sj [EZ negative utils], this should be zero: %.3e \n',max(abs(V3a(:)-V3b(:))))
+fprintf('EZriskaversion=0 with sj [EZ negative utils], this should be zero: %.3e \n',max(abs(Policy3a(:)-Policy3b(:))))
 Params.ezrisk=ezrisk_store;
 clear V2a V2b V3a V3b Policy2a Policy2b Policy3a Policy3b
 
@@ -1011,14 +1011,14 @@ for ezcase=1:3
     vfoptions4.ngridinterp=5;
     [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
     [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    fprintf('Divide-and-conquer with sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V2(:))))
-    fprintf('Divide-and-conquer with sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
+    fprintf('Divide-and-conquer with sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1(:)-V2(:))))
+    fprintf('Divide-and-conquer with sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1(:)-Policy2(:))))
     [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
     [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    fprintf('Divide-and-conquer with sj (with Grid Interp Layer) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
-    fprintf('Divide-and-conquer with sj (with Grid Interp Layer) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+    fprintf('Divide-and-conquer with sj (with Grid Interp Layer) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V3(:)-V4(:))))
+    fprintf('Divide-and-conquer with sj (with Grid Interp Layer) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy3(:)-Policy4(:))))
     V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
-    fprintf('ValueFnFromPolicy with sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('ValueFnFromPolicy with sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
 end
 clear V1 V2 V3 V4 Policy1 Policy2 Policy3 Policy4 V1fromPolicy
 
@@ -1084,20 +1084,20 @@ for ezcase=1:3
     vfoptions4.ngridinterp=5;
     [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
     [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    fprintf('Divide-and-conquer with terminal warm-glow [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V2(:))))
-    fprintf('Divide-and-conquer with terminal warm-glow [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
+    fprintf('Divide-and-conquer with terminal warm-glow [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1(:)-V2(:))))
+    fprintf('Divide-and-conquer with terminal warm-glow [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1(:)-Policy2(:))))
     [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
     [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    fprintf('Divide-and-conquer with terminal warm-glow (with Grid Interp Layer) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
-    fprintf('Divide-and-conquer with terminal warm-glow (with Grid Interp Layer) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+    fprintf('Divide-and-conquer with terminal warm-glow (with Grid Interp Layer) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V3(:)-V4(:))))
+    fprintf('Divide-and-conquer with terminal warm-glow (with Grid Interp Layer) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy3(:)-Policy4(:))))
     V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
-    fprintf('ValueFnFromPolicy with terminal warm-glow [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('ValueFnFromPolicy with terminal warm-glow [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
     % identical to the explicit terminal-only survival probabilities
     vfoptionssjt=vfoptionsv;
     vfoptionssjt.survivalprobability='sjterm';
     [V5,Policy5]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptionssjt);
-    fprintf('terminal-only warm-glow vs explicit sjterm [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V5(:))))
-    fprintf('terminal-only warm-glow vs explicit sjterm [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy5(:))))
+    fprintf('terminal-only warm-glow vs explicit sjterm [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1(:)-V5(:))))
+    fprintf('terminal-only warm-glow vs explicit sjterm [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1(:)-Policy5(:))))
 end
 clear V1 V2 V3 V4 V5 Policy1 Policy2 Policy3 Policy4 Policy5 V1fromPolicy
 
@@ -1146,24 +1146,24 @@ for ezcase=1:3
     vfoptions4.ngridinterp=5;
     [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
     [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    fprintf('Divide-and-conquer with warm-glow and sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V2(:))))
-    fprintf('Divide-and-conquer with warm-glow and sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
+    fprintf('Divide-and-conquer with warm-glow and sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1(:)-V2(:))))
+    fprintf('Divide-and-conquer with warm-glow and sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1(:)-Policy2(:))))
     [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
     [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    fprintf('Divide-and-conquer with warm-glow and sj (with Grid Interp Layer) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
-    fprintf('Divide-and-conquer with warm-glow and sj (with Grid Interp Layer) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+    fprintf('Divide-and-conquer with warm-glow and sj (with Grid Interp Layer) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V3(:)-V4(:))))
+    fprintf('Divide-and-conquer with warm-glow and sj (with Grid Interp Layer) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy3(:)-Policy4(:))))
     V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
-    fprintf('ValueFnFromPolicy with warm-glow and sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('ValueFnFromPolicy with warm-glow and sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
     % lowmemory rungs on the sj+warm-glow solve (mirroring the lowmemory values this file uses
     % in the standard sections): covers the main-loop lowmemory warm-glow sites of the e-raws
     vfoptions1.lowmemory=1;
     [V1B,Policy1B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    fprintf('lowmemory=1 with warm-glow and sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V1B(:))))
-    fprintf('lowmemory=1 with warm-glow and sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy1B(:))))
+    fprintf('lowmemory=1 with warm-glow and sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1(:)-V1B(:))))
+    fprintf('lowmemory=1 with warm-glow and sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1(:)-Policy1B(:))))
     vfoptions1.lowmemory=2;
     [V1C,Policy1C]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
-    fprintf('lowmemory=2 with warm-glow and sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V1C(:))))
-    fprintf('lowmemory=2 with warm-glow and sj [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy1C(:))))
+    fprintf('lowmemory=2 with warm-glow and sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1(:)-V1C(:))))
+    fprintf('lowmemory=2 with warm-glow and sj [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1(:)-Policy1C(:))))
     vfoptions1.lowmemory=0;
 end
 clear V1 V2 V3 V4 V1B V1C Policy1 Policy2 Policy3 Policy4 Policy1B Policy1C V1fromPolicy
@@ -1195,7 +1195,7 @@ vfoptions2=vfoptions;
 vfoptions2.exoticpreferences='None';
 [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons_wgvnm,Params,{'beta','sj'},[],vfoptions2);
 V1btransformed=((1-Params.ezgamma)*V1b).^(1/(1-Params.ezgamma));
-fprintf('EZ gamma=1/phi collapse with sj and warm-glow, Policy [EZ cons-units]: should give zero: %2.8f \n',max(abs(Policy1a(:)-Policy1b(:))))
+fprintf('EZ gamma=1/phi collapse with sj and warm-glow, Policy [EZ cons-units]: should give zero: %.3e \n',max(abs(Policy1a(:)-Policy1b(:))))
 fprintf('EZ gamma=1/phi collapse with sj and warm-glow, V after transform (relative) [EZ cons-units]: should be roughly 1e-13: %g \n',max(abs(V1a(:)-V1btransformed(:)))/max(abs(V1a(:))))
 Params.ezphi=ezphi_store;
 Params.ezsigma=ezsigma_store;
@@ -1220,8 +1220,8 @@ vfoptions1.WarmGlowBequestsFn=@(aprime,wg1,wg2,wg3) EZWarmGlowFn_positiveUtils(a
 vfoptions2=vfoptions;
 vfoptions2.exoticpreferences='None';
 [V2b,Policy2b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU_wgutil,Params,{'beta','sj'},[],vfoptions2);
-fprintf('EZriskaversion=0 with sj and warm-glow [EZ positive utils], this should be zero: %2.8f \n',max(abs(V2a(:)-V2b(:))))
-fprintf('EZriskaversion=0 with sj and warm-glow [EZ positive utils], this should be zero: %2.8f \n',max(abs(Policy2a(:)-Policy2b(:))))
+fprintf('EZriskaversion=0 with sj and warm-glow [EZ positive utils], this should be zero: %.3e \n',max(abs(V2a(:)-V2b(:))))
+fprintf('EZriskaversion=0 with sj and warm-glow [EZ positive utils], this should be zero: %.3e \n',max(abs(Policy2a(:)-Policy2b(:))))
 % negative-valued utility fn
 vfoptions1=vfoptions;
 vfoptions1.exoticpreferences='EpsteinZin';
@@ -1234,8 +1234,8 @@ vfoptions1.WarmGlowBequestsFn=@(aprime,wg1,wg2,wg3) EZWarmGlowFn_negativeUtils(a
 vfoptions2=vfoptions;
 vfoptions2.exoticpreferences='None';
 [V3b,Policy3b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU_wgutil,Params,{'beta','sj'},[],vfoptions2);
-fprintf('EZriskaversion=0 with sj and warm-glow [EZ negative utils], this should be zero: %2.8f \n',max(abs(V3a(:)-V3b(:))))
-fprintf('EZriskaversion=0 with sj and warm-glow [EZ negative utils], this should be zero: %2.8f \n',max(abs(Policy3a(:)-Policy3b(:))))
+fprintf('EZriskaversion=0 with sj and warm-glow [EZ negative utils], this should be zero: %.3e \n',max(abs(V3a(:)-V3b(:))))
+fprintf('EZriskaversion=0 with sj and warm-glow [EZ negative utils], this should be zero: %.3e \n',max(abs(Policy3a(:)-Policy3b(:))))
 Params.ezrisk=ezrisk_store;
 clear V2a V2b V3a V3b Policy2a Policy2b Policy3a Policy3b
 
@@ -1288,8 +1288,8 @@ for ezcase=1:3
     Vbase=Vbase(:,:,:,1:Njs);
     Policybase=Policybase(:,:,:,:,1:Njs);
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1 with sj and warm-glow (jstar=%i) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1 with sj and warm-glow (jstar=%i) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1 with sj and warm-glow (jstar=%i) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 with sj and warm-glow (jstar=%i) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
     % with divide-and-conquer
     vfoptionsvDC=vfoptionsv;
     vfoptionsvDC.divideandconquer=1;
@@ -1299,8 +1299,8 @@ for ezcase=1:3
     Vbase=Vbase(:,:,:,1:Njs);
     Policybase=Policybase(:,:,:,:,1:Njs);
     [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
-    fprintf('V_Jplus1 with sj and warm-glow (jstar=%i, with DC) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
-    fprintf('V_Jplus1 with sj and warm-glow (jstar=%i, with DC) [EZ %s], this should be zero: %2.8f \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
+    fprintf('V_Jplus1 with sj and warm-glow (jstar=%i, with DC) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 with sj and warm-glow (jstar=%i, with DC) [EZ %s], this should be zero: %.3e \n',jstar,casestr,max(abs(Policybase(:)-Policyshort(:))))
 end
 clear Vbase Vshort Policybase Policyshort
 
@@ -1336,8 +1336,8 @@ Policyfull=Policyfull(:,:,:,:,1:N_j-1);
 vfoptions1nj=vfoptions1;
 vfoptions1nj.WarmGlowBequestsFn=@(aprime,r,pension,varphi) ((1+r)*aprime+pension)^varphi;
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j-1,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Paramsjs,DiscountFactorParamNames,[],vfoptions1nj);
-fprintf('N_j-1 warm-glow identity [EZ cons-units], this should be zero: %2.8f \n',max(abs(Vfull(:)-Vshort(:))))
-fprintf('N_j-1 warm-glow identity [EZ cons-units], this should be zero: %2.8f \n',max(abs(Policyfull(:)-Policyshort(:))))
+fprintf('N_j-1 warm-glow identity [EZ cons-units], this should be zero: %.3e \n',max(abs(Vfull(:)-Vshort(:))))
+fprintf('N_j-1 warm-glow identity [EZ cons-units], this should be zero: %.3e \n',max(abs(Policyfull(:)-Policyshort(:))))
 % positive-valued utility fn
 vfoptions1=vfoptions;
 vfoptions1.exoticpreferences='EpsteinZin';
@@ -1350,8 +1350,8 @@ Policyfull=Policyfull(:,:,:,:,1:N_j-1);
 vfoptions1nj=vfoptions1;
 vfoptions1nj.WarmGlowBequestsFn=@(aprime,r,pension,varphi,ezsigma) ((1+((1+r)*aprime+pension)^varphi)^(1-ezsigma)-1)/(1-ezsigma);
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j-1,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Paramsjs,DiscountFactorParamNames,[],vfoptions1nj);
-fprintf('N_j-1 warm-glow identity [EZ positive utils], this should be zero: %2.8f \n',max(abs(Vfull(:)-Vshort(:))))
-fprintf('N_j-1 warm-glow identity [EZ positive utils], this should be zero: %2.8f \n',max(abs(Policyfull(:)-Policyshort(:))))
+fprintf('N_j-1 warm-glow identity [EZ positive utils], this should be zero: %.3e \n',max(abs(Vfull(:)-Vshort(:))))
+fprintf('N_j-1 warm-glow identity [EZ positive utils], this should be zero: %.3e \n',max(abs(Policyfull(:)-Policyshort(:))))
 % negative-valued utility fn
 vfoptions1=vfoptions;
 vfoptions1.exoticpreferences='EpsteinZin';
@@ -1364,8 +1364,8 @@ Policyfull=Policyfull(:,:,:,:,1:N_j-1);
 vfoptions1nj=vfoptions1;
 vfoptions1nj.WarmGlowBequestsFn=@(aprime,r,pension,varphi,ezsigma) ((((1+r)*aprime+pension)^varphi)^(1-ezsigma))/(1-ezsigma);
 [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j-1,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Paramsjs,DiscountFactorParamNames,[],vfoptions1nj);
-fprintf('N_j-1 warm-glow identity [EZ negative utils], this should be zero: %2.8f \n',max(abs(Vfull(:)-Vshort(:))))
-fprintf('N_j-1 warm-glow identity [EZ negative utils], this should be zero: %2.8f \n',max(abs(Policyfull(:)-Policyshort(:))))
+fprintf('N_j-1 warm-glow identity [EZ negative utils], this should be zero: %.3e \n',max(abs(Vfull(:)-Vshort(:))))
+fprintf('N_j-1 warm-glow identity [EZ negative utils], this should be zero: %.3e \n',max(abs(Policyfull(:)-Policyshort(:))))
 clear Vfull Vshort Policyfull Policyshort
 
 %% (viii) EZmortalityriskaversion (mortality risk aversion distinct from within-period risk aversion)
@@ -1417,8 +1417,8 @@ for ezcase=1:3
     vfoptionsmr=vfoptionsv;
     vfoptionsmr.EZmortalityriskaversion='ezmriskeq';
     [V1b,Policy1b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params2,DiscountFactorParamNames,[],vfoptionsmr);
-    fprintf('EZmortalityriskaversion=within-period risk aversion vs unset [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1a(:)-V1b(:))))
-    fprintf('EZmortalityriskaversion=within-period risk aversion vs unset [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1a(:)-Policy1b(:))))
+    fprintf('EZmortalityriskaversion=within-period risk aversion vs unset [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1a(:)-V1b(:))))
+    fprintf('EZmortalityriskaversion=within-period risk aversion vs unset [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1a(:)-Policy1b(:))))
 end
 clear V1a V1b Policy1a Policy1b
 
@@ -1465,14 +1465,14 @@ for ezcase=1:3
     vfoptions4.ngridinterp=5;
     [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
     [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions2);
-    fprintf('Divide-and-conquer with sj and mortality risk aversion [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1(:)-V2(:))))
-    fprintf('Divide-and-conquer with sj and mortality risk aversion [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy1(:)-Policy2(:))))
+    fprintf('Divide-and-conquer with sj and mortality risk aversion [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1(:)-V2(:))))
+    fprintf('Divide-and-conquer with sj and mortality risk aversion [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy1(:)-Policy2(:))))
     [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
     [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions4);
-    fprintf('Divide-and-conquer with sj and mortality risk aversion (with Grid Interp Layer) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V3(:)-V4(:))))
-    fprintf('Divide-and-conquer with sj and mortality risk aversion (with Grid Interp Layer) [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(Policy3(:)-Policy4(:))))
+    fprintf('Divide-and-conquer with sj and mortality risk aversion (with Grid Interp Layer) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V3(:)-V4(:))))
+    fprintf('Divide-and-conquer with sj and mortality risk aversion (with Grid Interp Layer) [EZ %s], this should be zero: %.3e \n',casestr,max(abs(Policy3(:)-Policy4(:))))
     V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
-    fprintf('ValueFnFromPolicy with sj and mortality risk aversion [EZ %s], this should be zero: %2.8f \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
+    fprintf('ValueFnFromPolicy with sj and mortality risk aversion [EZ %s], this should be zero: %.3e \n',casestr,max(abs(V1fromPolicy(:)-V1(:))))
 end
 clear V1 V2 V3 V4 Policy1 Policy2 Policy3 Policy4 V1fromPolicy
 
@@ -1502,8 +1502,8 @@ vfoptions1.EZoneminusbeta=2;
 [V4a,Policy4a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons,Params2,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V4b,Policy4b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_cons_scaled2,Params2,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ cons-units]: should give zero: %2.8f \n',max(abs(V4a(:)-V4b(:))))
-fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ cons-units]: should give zero: %2.8f \n',max(abs(Policy4a(:)-Policy4b(:))))
+fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ cons-units]: should give zero: %.3e \n',max(abs(V4a(:)-V4b(:))))
+fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ cons-units]: should give zero: %.3e \n',max(abs(Policy4a(:)-Policy4b(:))))
 
 % utility-units, positive
 ReturnFn_posU_scaled2=@(d1,d2,aprime,a,semiz,e,r,w,kappa_j,ezsigma,agej,Jr,pension,varphi,uempbenefit,searcheffortcost,ezscalefactoru2) ezscalefactoru2*EZReturnFn_positiveUtils_d1_noz_e_semiz(d1,d2,aprime,a,semiz,e,r,w,kappa_j,ezsigma,agej,Jr,pension,varphi,uempbenefit,searcheffortcost);
@@ -1517,8 +1517,8 @@ vfoptions1.EZoneminusbeta=2;
 [V5a,Policy5a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU,Params2,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V5b,Policy5b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_posU_scaled2,Params2,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ positive utils]: should give zero: %2.8f \n',max(abs(V5a(:)-V5b(:))))
-fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ positive utils]: should give zero: %2.8f \n',max(abs(Policy5a(:)-Policy5b(:))))
+fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ positive utils]: should give zero: %.3e \n',max(abs(V5a(:)-V5b(:))))
+fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ positive utils]: should give zero: %.3e \n',max(abs(Policy5a(:)-Policy5b(:))))
 
 % utility-units, negative
 ReturnFn_negU_scaled2=@(d1,d2,aprime,a,semiz,e,r,w,kappa_j,ezsigma,agej,Jr,pension,varphi,uempbenefit,searcheffortcost,ezscalefactoru2) ezscalefactoru2*EZReturnFn_negativeUtils_d1_noz_e_semiz(d1,d2,aprime,a,semiz,e,r,w,kappa_j,ezsigma,agej,Jr,pension,varphi,uempbenefit,searcheffortcost);
@@ -1532,8 +1532,8 @@ vfoptions1.EZoneminusbeta=2;
 [V6a,Policy6a]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU,Params2,DiscountFactorParamNames,[],vfoptions1);
 vfoptions1.EZoneminusbeta=0;
 [V6b,Policy6b]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_negU_scaled2,Params2,DiscountFactorParamNames,[],vfoptions1);
-fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ negative utils]: should give zero: %2.8f \n',max(abs(V6a(:)-V6b(:))))
-fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ negative utils]: should give zero: %2.8f \n',max(abs(Policy6a(:)-Policy6b(:))))
+fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ negative utils]: should give zero: %.3e \n',max(abs(V6a(:)-V6b(:))))
+fprintf('EZoneminusbeta=2 with sj vs manual scaling [EZ negative utils]: should give zero: %.3e \n',max(abs(Policy6a(:)-Policy6b(:))))
 
 clear V4a V4b V5a V5b V6a V6b Policy4a Policy4b Policy5a Policy5b Policy6a Policy6b
 

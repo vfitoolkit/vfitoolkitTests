@@ -92,9 +92,9 @@ StationaryDist1B=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,P
 
 Policy1Bshort=[Policy1B(1,:,:,:); Policy1B(3,:,:,:)]; % remove the d2 policy (as it is not relevant, and is not in Policy1A)
 
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(V1A(:)-V1B(:))))
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(V1A(:)-V1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
 
 %% Solving for model with one markov and one e
 jequaloneDist2=zeros([n_a,n_semiz,vfoptionsbaseline.n_e],'gpuArray');
@@ -134,9 +134,9 @@ StationaryDist2B=StationaryDist_FHorz_Case1(jequaloneDist2,AgeWeightParamNames,P
 
 Policy2Bshort=[Policy2B(1,:,:,:,:); Policy2B(3,:,:,:,:)]; % remove the d2 policy (as it is not relevant, and is not in Policy2A)
 
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(V2A(:)-V2B(:))))
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(V2A(:)-V2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
 
 clear V1A V1B V2A V2B Policy1A Policy1B Policy2A Policy2B Policy1Bshort Policy2Bshort StationaryDist1A StationaryDist1B StationaryDist2A StationaryDist2B
 
@@ -169,9 +169,9 @@ StationaryDist1B=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,P
 
 Policy1Bshort=[Policy1B(1,:,:,:); Policy1B(3,:,:,:)]; % remove the d2 policy (as it is not relevant, and is not in Policy1A)
 
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(V1A(:)-V1B(:))))
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(V1A(:)-V1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
 
 %% Solving for model with one markov and one e
 jequaloneDist2=zeros([n_a,n_semiz,vfoptionsbaseline.n_e],'gpuArray');
@@ -211,9 +211,9 @@ StationaryDist2B=StationaryDist_FHorz_Case1(jequaloneDist2,AgeWeightParamNames,P
 
 Policy2Bshort=[Policy2B(1,:,:,:,:); Policy2B(3,:,:,:,:)]; % remove the d2 policy (as it is not relevant, and is not in Policy2A)
 
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(V2A(:)-V2B(:))))
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(V2A(:)-V2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
 
 clear V1A V1B V2A V2B Policy1A Policy1B Policy2A Policy2B Policy1Bshort Policy2Bshort StationaryDist1A StationaryDist1B StationaryDist2A StationaryDist2B
 
@@ -246,9 +246,9 @@ StationaryDist1B=StationaryDist_FHorz_Case1(jequaloneDist1,AgeWeightParamNames,P
 
 Policy1Bshort=[Policy1B(1,:,:,:); Policy1B(3,:,:,:)]; % remove the d2 policy (as it is not relevant, and is not in Policy1A)
 
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(V1A(:)-V1B(:))))
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(V1A(:)-V1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
 
 %% Solving for model with one markov and one e
 jequaloneDist2=zeros([n_a,n_semiz,vfoptionsbaseline.n_e],'gpuArray');
@@ -288,9 +288,9 @@ StationaryDist2B=StationaryDist_FHorz_Case1(jequaloneDist2,AgeWeightParamNames,P
 
 Policy2Bshort=[Policy2B(1,:,:,:,:); Policy2B(3,:,:,:,:)]; % remove the d2 policy (as it is not relevant, and is not in Policy2A)
 
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(V2A(:)-V2B(:))))
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(V2A(:)-V2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
 
 clear V1A V1B V2A V2B Policy1A Policy1B Policy2A Policy2B Policy1Bshort Policy2Bshort StationaryDist1A StationaryDist1B StationaryDist2A StationaryDist2B
 

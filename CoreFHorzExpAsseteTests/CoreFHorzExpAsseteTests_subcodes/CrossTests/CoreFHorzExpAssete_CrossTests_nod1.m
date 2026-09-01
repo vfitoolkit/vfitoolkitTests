@@ -52,7 +52,7 @@ simoptionsB.z_grid=z_grid;
 [V_B,Policy_B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_zside,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy_B,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsB);
 
-fprintf('CrossTest1 (experienceassete iid-e vs experienceassetz iid-markov-z), this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n', max(abs(V_A(:)-V_B(:))), max(abs(Policy_A(:)-Policy_B(:))), max(abs(StationaryDist_A(:)-StationaryDist_B(:))))
+fprintf('CrossTest1 (experienceassete iid-e vs experienceassetz iid-markov-z), this should be zero: V %.3e, Policy %.3e, Dist %.3e \n', max(abs(V_A(:)-V_B(:))), max(abs(Policy_A(:)-Policy_B(:))), max(abs(StationaryDist_A(:)-StationaryDist_B(:))))
 
 output=struct();
 

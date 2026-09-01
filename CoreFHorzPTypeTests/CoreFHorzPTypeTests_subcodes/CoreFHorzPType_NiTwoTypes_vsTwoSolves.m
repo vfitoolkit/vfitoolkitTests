@@ -50,18 +50,18 @@ end
 %% Compare per-type slices
 for ii=1:N_i
     nA=names_PT{ii};
-    fprintf('Two PTypes vs two solves, V    (type %d), this should be zero: %2.8f \n',ii,max(abs(V_PT.(nA)(:)-V_solo{ii}(:))))
-    fprintf('Two PTypes vs two solves, Pol  (type %d), this should be zero: %2.8f \n',ii,max(abs(Policy_PT.(nA)(:)-Policy_solo{ii}(:))))
-    fprintf('Two PTypes vs two solves, Dist (type %d), this should be zero: %2.8f \n',ii,max(abs(StationaryDist_PT.(nA)(:)-Dist_solo{ii}(:))))
-    fprintf('Two PTypes vs two solves, VFP  vs V (PType,   type %d), this should be zero: %2.8f \n',ii,max(abs(V_PT_vfp.(nA)(:)-V_PT.(nA)(:))))
-    fprintf('Two PTypes vs two solves, VFP  vs V (noPType, type %d), this should be zero: %2.8f \n',ii,max(abs(V_solo_vfp{ii}(:)-V_solo{ii}(:))))
+    fprintf('Two PTypes vs two solves, V    (type %d), this should be zero: %.3e \n',ii,max(abs(V_PT.(nA)(:)-V_solo{ii}(:))))
+    fprintf('Two PTypes vs two solves, Pol  (type %d), this should be zero: %.3e \n',ii,max(abs(Policy_PT.(nA)(:)-Policy_solo{ii}(:))))
+    fprintf('Two PTypes vs two solves, Dist (type %d), this should be zero: %.3e \n',ii,max(abs(StationaryDist_PT.(nA)(:)-Dist_solo{ii}(:))))
+    fprintf('Two PTypes vs two solves, VFP  vs V (PType,   type %d), this should be zero: %.3e \n',ii,max(abs(V_PT_vfp.(nA)(:)-V_PT.(nA)(:))))
+    fprintf('Two PTypes vs two solves, VFP  vs V (noPType, type %d), this should be zero: %.3e \n',ii,max(abs(V_solo_vfp{ii}(:)-V_solo{ii}(:))))
 end
 
 %% Aggregated AllStats.Mean equals ptw-weighted combination of solo means
 agg_assets_mean   = ptw(1)*AllStats_solo{1}.assets.Mean   + ptw(2)*AllStats_solo{2}.assets.Mean;
 agg_earnings_mean = ptw(1)*AllStats_solo{1}.earnings.Mean + ptw(2)*AllStats_solo{2}.earnings.Mean;
-fprintf('Two PTypes vs two solves, AllStats assets.Mean,   this should be zero: %2.8f \n',abs(AllStats_PT.assets.Mean   -agg_assets_mean))
-fprintf('Two PTypes vs two solves, AllStats earnings.Mean, this should be zero: %2.8f \n',abs(AllStats_PT.earnings.Mean -agg_earnings_mean))
+fprintf('Two PTypes vs two solves, AllStats assets.Mean,   this should be zero: %.3e \n',abs(AllStats_PT.assets.Mean   -agg_assets_mean))
+fprintf('Two PTypes vs two solves, AllStats earnings.Mean, this should be zero: %.3e \n',abs(AllStats_PT.earnings.Mean -agg_earnings_mean))
 
 output=struct();
 

@@ -71,18 +71,18 @@ end
 %% Compare per-type slices
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('PerTypeNj, V    (type %s, N_j=%d), this should be zero: %2.8f \n',nm,N_j_PT.(nm),max(abs(V_PT.(nm)(:)-V_solo.(nm)(:))))
-    fprintf('PerTypeNj, Pol  (type %s, N_j=%d), this should be zero: %2.8f \n',nm,N_j_PT.(nm),max(abs(Policy_PT.(nm)(:)-Policy_solo.(nm)(:))))
-    fprintf('PerTypeNj, Dist (type %s, N_j=%d), this should be zero: %2.8f \n',nm,N_j_PT.(nm),max(abs(StationaryDist_PT.(nm)(:)-Dist_solo.(nm)(:))))
-    fprintf('PerTypeNj, VFP  vs V (type %s, N_j=%d), this should be zero: %2.8f \n',nm,N_j_PT.(nm),max(abs(V_PT_vfp.(nm)(:)-V_PT.(nm)(:))))
+    fprintf('PerTypeNj, V    (type %s, N_j=%d), this should be zero: %.3e \n',nm,N_j_PT.(nm),max(abs(V_PT.(nm)(:)-V_solo.(nm)(:))))
+    fprintf('PerTypeNj, Pol  (type %s, N_j=%d), this should be zero: %.3e \n',nm,N_j_PT.(nm),max(abs(Policy_PT.(nm)(:)-Policy_solo.(nm)(:))))
+    fprintf('PerTypeNj, Dist (type %s, N_j=%d), this should be zero: %.3e \n',nm,N_j_PT.(nm),max(abs(StationaryDist_PT.(nm)(:)-Dist_solo.(nm)(:))))
+    fprintf('PerTypeNj, VFP  vs V (type %s, N_j=%d), this should be zero: %.3e \n',nm,N_j_PT.(nm),max(abs(V_PT_vfp.(nm)(:)-V_PT.(nm)(:))))
 end
 
 %% Aggregated AllStats.Mean equals ptw-weighted combination of solo means
 ptw=Params.(PTypeDistParamNames{:});
 agg_assets_mean   = ptw(1)*AllStats_solo.long.assets.Mean   + ptw(2)*AllStats_solo.short.assets.Mean;
 agg_earnings_mean = ptw(1)*AllStats_solo.long.earnings.Mean + ptw(2)*AllStats_solo.short.earnings.Mean;
-fprintf('PerTypeNj, AllStats assets.Mean,   this should be zero: %2.8f \n',abs(AllStats_PT.assets.Mean   -agg_assets_mean))
-fprintf('PerTypeNj, AllStats earnings.Mean, this should be zero: %2.8f \n',abs(AllStats_PT.earnings.Mean -agg_earnings_mean))
+fprintf('PerTypeNj, AllStats assets.Mean,   this should be zero: %.3e \n',abs(AllStats_PT.assets.Mean   -agg_assets_mean))
+fprintf('PerTypeNj, AllStats earnings.Mean, this should be zero: %.3e \n',abs(AllStats_PT.earnings.Mean -agg_earnings_mean))
 
 output=struct();
 

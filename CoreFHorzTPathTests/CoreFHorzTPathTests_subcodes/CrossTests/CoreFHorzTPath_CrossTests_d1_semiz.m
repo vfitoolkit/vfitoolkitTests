@@ -69,9 +69,9 @@ Policy_final0z=ones([3,n_a,n_semiz,1,N_j],'gpuArray');
 AgentDist_initial0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,PolicyPath0z(:,:,:,:,:,1),n_d,n_a,1,N_j,1,Params,simoptionsA);
 AgentDistPath0z=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial0z, jequaloneDist_none, PricePath, ParamPath, PolicyPath0z, AgeWeightParamNames,n_d,n_a,1,N_j,1, T,Params, transpathoptionsbaseline, simoptionsA);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(VPath0(:)-VPath0z(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(PolicyPath0(:)-PolicyPath0z(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(AgentDistPath0(:)-AgentDistPath0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(VPath0(:)-VPath0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(PolicyPath0(:)-PolicyPath0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(AgentDistPath0(:)-AgentDistPath0z(:))))
 
 clear VPath0 PolicyPath0 VPath0z PolicyPath0z AgentDistPath0 AgentDistPath0z
 
@@ -94,9 +94,9 @@ Policy_final2=ones([3,n_a,n_semiz,vfoptionsB.n_e,N_j],'gpuArray');
 AgentDist_initial2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,PolicyPath2(:,:,:,:,:,1),n_d,n_a,0,N_j,[],Params,simoptionsB);
 AgentDistPath2=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial2, jequaloneDist_z, PricePath, ParamPath, PolicyPath2, AgeWeightParamNames,n_d,n_a,0,N_j,[], T,Params, transpathoptionsbaseline, simoptionsB);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(AgentDistPath1(:)-AgentDistPath2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(AgentDistPath1(:)-AgentDistPath2(:))))
 
 clear VPath2 PolicyPath2 AgentDistPath2
 
@@ -115,9 +115,9 @@ VPath3=squeeze(VPath3);
 PolicyPath3=squeeze(PolicyPath3);
 AgentDistPath3=squeeze(AgentDistPath3);
 
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(AgentDistPath1(:)-AgentDistPath3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(AgentDistPath1(:)-AgentDistPath3(:))))
 
 % Second, make e just 1 (semiz with markov z, e=1 single point)
 vfoptionsC=vfoptionsA; % semiz
@@ -139,9 +139,9 @@ VPath4=squeeze(VPath4);
 PolicyPath4=squeeze(PolicyPath4);
 AgentDistPath4=squeeze(AgentDistPath4);
 
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(AgentDistPath1(:)-AgentDistPath4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(AgentDistPath1(:)-AgentDistPath4(:))))
 
 
 %%

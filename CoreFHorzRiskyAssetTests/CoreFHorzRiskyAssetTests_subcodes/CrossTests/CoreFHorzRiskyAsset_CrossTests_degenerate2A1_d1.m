@@ -32,7 +32,7 @@ jequaloneDist_B=zeros([n_a1,1,n_a2,n_z],'gpuArray'); jequaloneDist_B(1,1,1,ceil(
 [V_B,Policy_B]=ValueFnIter_Case1_FHorz(n_d,n_a_B,n_z,N_j,d_grid,a_grid_B,z_grid,pi_z,ReturnFn_B,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist_B,AgeWeightParamNames,Policy_B,n_d,n_a_B,n_z,N_j,pi_z,Params,simoptionsB);
 
-fprintf('Cross test (with2A1, d1): degenerate a1_2 reduces to with-a1, this should be zero: V %2.8f, Dist %2.8f \n',max(abs(V_A(:)-V_B(:))),max(abs(StationaryDist_A(:)-StationaryDist_B(:))))
+fprintf('Cross test (with2A1, d1): degenerate a1_2 reduces to with-a1, this should be zero: V %.3e, Dist %.3e \n',max(abs(V_A(:)-V_B(:))),max(abs(StationaryDist_A(:)-StationaryDist_B(:))))
 
 output=struct();
 end

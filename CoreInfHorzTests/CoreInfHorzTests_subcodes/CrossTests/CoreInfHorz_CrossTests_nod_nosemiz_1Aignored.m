@@ -41,31 +41,31 @@ vfoptions=struct(); simoptions=struct();
 
 % V: the 2A value fn is just the 1A value fn, repeated across the (ignored) a1 dimension
 V1Arep=repmat(reshape(V1A,[1,n_a,N_z]),n_a1,1,1);
-fprintf('no GI : V, 2A(ignored a1) vs 1A, should be zero:            %2.8f \n',max(abs(reshape(V2A,[n_a1,n_a,N_z])-V1Arep),[],'all'));
+fprintf('no GI : V, 2A(ignored a1) vs 1A, should be zero:            %.3e \n',max(abs(reshape(V2A,[n_a1,n_a,N_z])-V1Arep),[],'all'));
 
 % Policy: compare the a2prime VALUES (a1prime is an arbitrary tie-break, so is not compared)
 PolicyVals1A=PolicyInd2Val_InfHorz(Policy1A,n_d,n_a,   n_z,d_grid,a_grid,   vfoptions); % [1,n_a,n_z]
 PolicyVals2A=PolicyInd2Val_InfHorz(Policy2A,n_d,n_a_2A,n_z,d_grid,a_grid_2A,vfoptions); % [2,n_a1,n_a2,n_z]
 a2prime1A=repmat(reshape(PolicyVals1A(1,:,:),[1,n_a,N_z]),n_a1,1,1);
 a2prime2A=reshape(PolicyVals2A(2,:,:,:),[n_a1,n_a,N_z]);
-fprintf('no GI : a2prime policy values, 2A vs 1A, should be zero:    %2.8f \n',max(abs(a2prime2A-a2prime1A),[],'all'));
+fprintf('no GI : a2prime policy values, 2A vs 1A, should be zero:    %.3e \n',max(abs(a2prime2A-a2prime1A),[],'all'));
 
 % ValueFnFromPolicy on the 2A model should reproduce the 2A value fn
 V2AfromPolicy=ValueFnFromPolicy_InfHorz(Policy2A,n_d,n_a_2A,n_z,d_grid,a_grid_2A,z_grid,pi_z,ReturnFn_2A,Params,DF,vfoptions);
-fprintf('no GI : ValueFnFromPolicy on 2A, should be zero:            %2.8f \n',max(abs(V2AfromPolicy(:)-V2A(:))));
+fprintf('no GI : ValueFnFromPolicy on 2A, should be zero:            %.3e \n',max(abs(V2AfromPolicy(:)-V2A(:))));
 
 % StationaryDist: the a2-marginal of the 2A dist equals the 1A dist
 % (a2 evolves independently of a1, so this holds whichever a1prime the tie-break picked)
 StationaryDist1A=StationaryDist_InfHorz(Policy1A,n_d,n_a,   n_z,pi_z,simoptions,Params,[]);
 StationaryDist2A=StationaryDist_InfHorz(Policy2A,n_d,n_a_2A,n_z,pi_z,simoptions,Params,[]);
 StationaryDist2A_a2=reshape(sum(StationaryDist2A,1),[n_a,N_z]);
-fprintf('no GI : StationaryDist a2-marginal, 2A vs 1A, ~zero:        %2.8f \n',max(abs(StationaryDist2A_a2-reshape(StationaryDist1A,[n_a,N_z])),[],'all'));
+fprintf('no GI : StationaryDist a2-marginal, 2A vs 1A, ~zero:        %.3e \n',max(abs(StationaryDist2A_a2-reshape(StationaryDist1A,[n_a,N_z])),[],'all'));
 
 % AllStats on assets should agree
 AllStats1A=EvalFnOnAgentDist_AllStats_InfHorz(StationaryDist1A,Policy1A,FnsToEvaluate_1A,Params,[],n_d,n_a,   n_z,d_grid,a_grid,   z_grid,simoptions);
 AllStats2A=EvalFnOnAgentDist_AllStats_InfHorz(StationaryDist2A,Policy2A,FnsToEvaluate_2A,Params,[],n_d,n_a_2A,n_z,d_grid,a_grid_2A,z_grid,simoptions);
-fprintf('no GI : AllStats assets Mean, 2A vs 1A, should be zero:     %2.8f \n',abs(AllStats2A.assets.Mean-AllStats1A.assets.Mean));
-fprintf('no GI : AllStats assets Gini, 2A vs 1A, should be zero:     %2.8f \n',abs(AllStats2A.assets.Gini-AllStats1A.assets.Gini));
+fprintf('no GI : AllStats assets Mean, 2A vs 1A, should be zero:     %.3e \n',abs(AllStats2A.assets.Mean-AllStats1A.assets.Mean));
+fprintf('no GI : AllStats assets Gini, 2A vs 1A, should be zero:     %.3e \n',abs(AllStats2A.assets.Gini-AllStats1A.assets.Gini));
 
 output=struct();
 

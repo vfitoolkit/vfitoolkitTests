@@ -56,7 +56,7 @@ simoptionsB.a_grid=a_grid;
 [V_B,Policy_B]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy_B,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
-fprintf('CrossTest2 with d1 (fake-semiz-ignored experienceassetsemiz vs plain experienceasset), this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n', max(abs(V_A(:)-V_B(:))), max(abs(Policy_A(:)-Policy_B(:))), max(abs(StationaryDist_A(:)-StationaryDist_B(:))))
+fprintf('CrossTest2 with d1 (fake-semiz-ignored experienceassetsemiz vs plain experienceasset), this should be zero: V %.3e, Policy %.3e, Dist %.3e \n', max(abs(V_A(:)-V_B(:))), max(abs(Policy_A(:)-Policy_B(:))), max(abs(StationaryDist_A(:)-StationaryDist_B(:))))
 
 output=struct();
 

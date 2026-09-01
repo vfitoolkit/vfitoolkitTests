@@ -64,16 +64,16 @@ end
 %% Compare per-type slices
 for ii=1:N_i
     nm=names_PT{ii};
-    fprintf('Two PTypes vs two solves, VPath        (type %d), this should be zero: %2.8f \n',ii,max(abs(VPath_PT.(nm)(:)-VPath_solo{ii}(:))))
-    fprintf('Two PTypes vs two solves, PolicyPath   (type %d), this should be zero: %2.8f \n',ii,max(abs(PolicyPath_PT.(nm)(:)-PolicyPath_solo{ii}(:))))
-    fprintf('Two PTypes vs two solves, AgentDistPath(type %d), this should be zero: %2.8f \n',ii,max(abs(AgentDistPath_PT.(nm)(:)-AgentDistPath_solo{ii}(:))))
+    fprintf('Two PTypes vs two solves, VPath        (type %d), this should be zero: %.3e \n',ii,max(abs(VPath_PT.(nm)(:)-VPath_solo{ii}(:))))
+    fprintf('Two PTypes vs two solves, PolicyPath   (type %d), this should be zero: %.3e \n',ii,max(abs(PolicyPath_PT.(nm)(:)-PolicyPath_solo{ii}(:))))
+    fprintf('Two PTypes vs two solves, AgentDistPath(type %d), this should be zero: %.3e \n',ii,max(abs(AgentDistPath_PT.(nm)(:)-AgentDistPath_solo{ii}(:))))
 end
 
 %% Aggregated AggVarsPath.Mean equals ptw-weighted combination of solo mean paths
 agg_assets_mean  =ptw(1)*AggVarsPath_solo{1}.assets.Mean(:)  +ptw(2)*AggVarsPath_solo{2}.assets.Mean(:);
 agg_earnings_mean=ptw(1)*AggVarsPath_solo{1}.earnings.Mean(:)+ptw(2)*AggVarsPath_solo{2}.earnings.Mean(:);
-fprintf('Two PTypes vs two solves, AggVarsPath assets.Mean,   this should be zero: %2.8f \n',max(abs(AggVarsPath_PT.assets.Mean(:)  -agg_assets_mean)))
-fprintf('Two PTypes vs two solves, AggVarsPath earnings.Mean, this should be zero: %2.8f \n',max(abs(AggVarsPath_PT.earnings.Mean(:)-agg_earnings_mean)))
+fprintf('Two PTypes vs two solves, AggVarsPath assets.Mean,   this should be zero: %.3e \n',max(abs(AggVarsPath_PT.assets.Mean(:)  -agg_assets_mean)))
+fprintf('Two PTypes vs two solves, AggVarsPath earnings.Mean, this should be zero: %.3e \n',max(abs(AggVarsPath_PT.earnings.Mean(:)-agg_earnings_mean)))
 
 %% Do some graphs of the AggVars path to see them
 fig=figure(figure_c);

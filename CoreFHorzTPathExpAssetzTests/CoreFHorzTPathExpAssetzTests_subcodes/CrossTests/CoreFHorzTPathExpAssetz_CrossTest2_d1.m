@@ -49,14 +49,14 @@ transpathoptionsslow.fastOLG=0;
 [VPathAslow,PolicyPathAslow]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptionsA);
 [VPathBslow,PolicyPathBslow]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptionsB);
 
-fprintf('CrossTest2 (fake-z expassetz vs plain expasset, slowOLG), this should be zero: V %2.8f, Policy %2.8f \n', max(abs(VPathAslow(:)-VPathBslow(:))), max(abs(PolicyPathAslow(:)-PolicyPathBslow(:))))
+fprintf('CrossTest2 (fake-z expassetz vs plain expasset, slowOLG), this should be zero: V %.3e, Policy %.3e \n', max(abs(VPathAslow(:)-VPathBslow(:))), max(abs(PolicyPathAslow(:)-PolicyPathBslow(:))))
 
 clear VPathAslow VPathBslow PolicyPathAslow PolicyPathBslow
 
 [VPathA,PolicyPathA]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsA);
 [VPathB,PolicyPathB]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsB);
 
-fprintf('CrossTest2 (fake-z expassetz vs plain expasset, fastOLG), this should be zero: V %2.8f, Policy %2.8f \n', max(abs(VPathA(:)-VPathB(:))), max(abs(PolicyPathA(:)-PolicyPathB(:))))
+fprintf('CrossTest2 (fake-z expassetz vs plain expasset, fastOLG), this should be zero: V %.3e, Policy %.3e \n', max(abs(VPathA(:)-VPathB(:))), max(abs(PolicyPathA(:)-PolicyPathB(:))))
 
 %% AgentDist and AggVars on the path (using the fastOLG PolicyPaths)
 AgentDist_initialA=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,PolicyPathA(:,:,:,:,:,1),n_d,n_a,n_z,N_j,pi_z,Params,simoptionsA);
@@ -67,7 +67,7 @@ AgentDist_initialB=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,
 AgentDistPathB=AgentDistOnTransPath_Case1_FHorz(AgentDist_initialB, jequaloneDist, PricePath, ParamPath, PolicyPathB, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptionsB);
 AggVarsPathB=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPathB, PolicyPathB, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptionsB);
 
-fprintf('CrossTest2 (fake-z expassetz vs plain expasset), this should be zero: AgentDistPath %2.8f, AggVars earnings %2.8f, AggVars assets %2.8f \n', max(abs(AgentDistPathA(:)-AgentDistPathB(:))), max(abs(AggVarsPathA.earnings.Mean(:)-AggVarsPathB.earnings.Mean(:))), max(abs(AggVarsPathA.assets.Mean(:)-AggVarsPathB.assets.Mean(:))))
+fprintf('CrossTest2 (fake-z expassetz vs plain expasset), this should be zero: AgentDistPath %.3e, AggVars earnings %.3e, AggVars assets %.3e \n', max(abs(AgentDistPathA(:)-AgentDistPathB(:))), max(abs(AggVarsPathA.earnings.Mean(:)-AggVarsPathB.earnings.Mean(:))), max(abs(AggVarsPathA.assets.Mean(:)-AggVarsPathB.assets.Mean(:))))
 
 clear VPathA VPathB PolicyPathA PolicyPathB AgentDistPathA AgentDistPathB AggVarsPathA AggVarsPathB
 
@@ -79,7 +79,7 @@ vfoptionsB.ngridinterp=5;
 [VPathA,PolicyPathA]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsA);
 [VPathB,PolicyPathB]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsB);
 
-fprintf('CrossTest2 (fake-z expassetz vs plain expasset, with GI, fastOLG), this should be zero: V %2.8f, Policy %2.8f \n', max(abs(VPathA(:)-VPathB(:))), max(abs(PolicyPathA(:)-PolicyPathB(:))))
+fprintf('CrossTest2 (fake-z expassetz vs plain expasset, with GI, fastOLG), this should be zero: V %.3e, Policy %.3e \n', max(abs(VPathA(:)-VPathB(:))), max(abs(PolicyPathA(:)-PolicyPathB(:))))
 
 output=struct();
 

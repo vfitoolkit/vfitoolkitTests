@@ -62,7 +62,7 @@ StationaryDist1B=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Po
 % Actually Policy1A has shape [1=d2, n_a, n_z, N_j]; Policy1B has [2=d2+d3, n_a, n_semiz, N_j]. Drop d3 to compare.
 Policy1Bshort=Policy1B(1,:,:,:);
 
-fprintf('Cross test 2 (noa1+semiz): semiz as z, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V1A(:)-V1B(:))),max(abs(Policy1A(:)-Policy1Bshort(:))),max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
+fprintf('Cross test 2 (noa1+semiz): semiz as z, this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',max(abs(V1A(:)-V1B(:))),max(abs(Policy1A(:)-Policy1Bshort(:))),max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
 
 output=struct();
 

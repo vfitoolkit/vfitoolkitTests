@@ -113,9 +113,9 @@ Policy1Bshort=[Policy1B(1:2,:,:,:); Policy1B(4,:,:,:)]; % remove the d2 policy  
 % size(Policy1A)
 % size(Policy1B)
 
-fprintf('Cross test 2: semiz as z, this should be zero: %2.8f \n',max(abs(V1A(:)-V1B(:))))
-fprintf('Cross test 2: semiz as z, this should be zero: %2.8f \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
-fprintf('Cross test 2: semiz as z, this should be zero: %2.8f \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
+fprintf('Cross test 2: semiz as z, this should be zero: %.3e \n',max(abs(V1A(:)-V1B(:))))
+fprintf('Cross test 2: semiz as z, this should be zero: %.3e \n',max(abs(Policy1A(:)-Policy1Bshort(:))))
+fprintf('Cross test 2: semiz as z, this should be zero: %.3e \n',max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
 
 % squeeze(abs(sum(StationaryDist1A,1)-sum(StationaryDist1B,1))) % Directly check shocks without Policy.
 
@@ -181,9 +181,9 @@ Policy2Bshort=[Policy2B(1:2,:,:,:,:); Policy2B(4,:,:,:,:)]; % remove the d2 poli
 % size(Policy2A)
 % size(Policy2B)
 
-fprintf('Cross test 2: semiz as z (with e), this should be zero: %2.8f \n',max(abs(V2A(:)-V2B(:))))
-fprintf('Cross test 2: semiz as z (with e), this should be zero: %2.8f \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
-fprintf('Cross test 2: semiz as z (with e), this should be zero: %2.8f \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
+fprintf('Cross test 2: semiz as z (with e), this should be zero: %.3e \n',max(abs(V2A(:)-V2B(:))))
+fprintf('Cross test 2: semiz as z (with e), this should be zero: %.3e \n',max(abs(Policy2A(:)-Policy2Bshort(:))))
+fprintf('Cross test 2: semiz as z (with e), this should be zero: %.3e \n',max(abs(StationaryDist2A(:)-StationaryDist2B(:))))
 
 % squeeze(abs(sum(StationaryDist2A(:,1,:,:),1)-sum(StationaryDist2B(:,1,:,:),1))) % Directly check shocks without Policy.
 % squeeze(abs(sum(StationaryDist2A(:,2,:,:),1)-sum(StationaryDist2B(:,2,:,:),1))) % Directly check shocks without Policy.

@@ -70,11 +70,11 @@ for ii=1:N_i
     V_A_vfp_ii=V_A_vfp.(nA);
     V_B_vfp_ii=reshape(V_B_vfp(:,ii,:),[n_a,N_j]);
 
-    fprintf('N_i vs z-identity, V    (type %d), this should be zero: %2.8f \n',ii,max(abs(V_A_ii(:)-V_B_ii(:))))
-    fprintf('N_i vs z-identity, Pol  (type %d), this should be zero: %2.8f \n',ii,max(abs(Pol_A_ii(:)-Pol_B_ii(:))))
-    fprintf('N_i vs z-identity, Dist (type %d, weighted), this should be zero: %2.8f \n',ii,max(abs(ptw(ii)*Dist_A_ii(:)-Dist_B_ii(:))))
-    fprintf('N_i vs z-identity, VFP  vs V (PType,   type %d), this should be zero: %2.8f \n',ii,max(abs(V_A_vfp_ii(:)-V_A_ii(:))))
-    fprintf('N_i vs z-identity, VFP  vs V (noPType, type %d), this should be zero: %2.8f \n',ii,max(abs(V_B_vfp_ii(:)-V_B_ii(:))))
+    fprintf('N_i vs z-identity, V    (type %d), this should be zero: %.3e \n',ii,max(abs(V_A_ii(:)-V_B_ii(:))))
+    fprintf('N_i vs z-identity, Pol  (type %d), this should be zero: %.3e \n',ii,max(abs(Pol_A_ii(:)-Pol_B_ii(:))))
+    fprintf('N_i vs z-identity, Dist (type %d, weighted), this should be zero: %.3e \n',ii,max(abs(ptw(ii)*Dist_A_ii(:)-Dist_B_ii(:))))
+    fprintf('N_i vs z-identity, VFP  vs V (PType,   type %d), this should be zero: %.3e \n',ii,max(abs(V_A_vfp_ii(:)-V_A_ii(:))))
+    fprintf('N_i vs z-identity, VFP  vs V (noPType, type %d), this should be zero: %.3e \n',ii,max(abs(V_B_vfp_ii(:)-V_B_ii(:))))
 end
 
 output=struct();

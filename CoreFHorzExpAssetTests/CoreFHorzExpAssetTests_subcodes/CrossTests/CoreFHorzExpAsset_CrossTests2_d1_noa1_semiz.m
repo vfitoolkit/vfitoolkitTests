@@ -58,7 +58,7 @@ StationaryDist1B=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Po
 % Drop d3 from Policy1B to align (Policy1A has d1,d2; Policy1B has d1,d2,d3)
 Policy1Bshort=Policy1B(1:2,:,:,:);
 
-fprintf('Cross test 2 (noa1+d1+semiz): semiz as z, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V1A(:)-V1B(:))),max(abs(Policy1A(:)-Policy1Bshort(:))),max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
+fprintf('Cross test 2 (noa1+d1+semiz): semiz as z, this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',max(abs(V1A(:)-V1B(:))),max(abs(Policy1A(:)-Policy1Bshort(:))),max(abs(StationaryDist1A(:)-StationaryDist1B(:))))
 
 output=struct();
 

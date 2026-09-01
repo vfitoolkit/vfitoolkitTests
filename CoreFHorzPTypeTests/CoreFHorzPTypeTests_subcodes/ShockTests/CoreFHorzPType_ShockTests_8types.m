@@ -160,9 +160,9 @@ end
 %% Compare per type
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('ShockTests 8 types, V    (type %s), this should be zero: %2.8f \n',nm,max(abs(V_PT.(nm)(:)-V_solo.(nm)(:))))
-    fprintf('ShockTests 8 types, Pol  (type %s), this should be zero: %2.8f \n',nm,max(abs(Policy_PT.(nm)(:)-Policy_solo.(nm)(:))))
-    fprintf('ShockTests 8 types, Dist (type %s), this should be zero: %2.8f \n',nm,max(abs(StationaryDist_PT.(nm)(:)-Dist_solo.(nm)(:))))
+    fprintf('ShockTests 8 types, V    (type %s), this should be zero: %.3e \n',nm,max(abs(V_PT.(nm)(:)-V_solo.(nm)(:))))
+    fprintf('ShockTests 8 types, Pol  (type %s), this should be zero: %.3e \n',nm,max(abs(Policy_PT.(nm)(:)-Policy_solo.(nm)(:))))
+    fprintf('ShockTests 8 types, Dist (type %s), this should be zero: %.3e \n',nm,max(abs(StationaryDist_PT.(nm)(:)-Dist_solo.(nm)(:))))
 end
 
 output=struct();

@@ -81,9 +81,9 @@ AgentDistPath1B=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial1B, jequaloneD
 
 PolicyPath1Bshort=PolicyPath1B([1,3],:,:,:,:); % remove the d2 policy (keep d1 and aprime; not in PolicyPath1A)
 
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(VPath1A(:)-VPath1B(:))))
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(PolicyPath1A(:)-PolicyPath1Bshort(:))))
-fprintf('Cross test: semiz as z, this should be zero: %2.8f \n',max(abs(AgentDistPath1A(:)-AgentDistPath1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(VPath1A(:)-VPath1B(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(PolicyPath1A(:)-PolicyPath1Bshort(:))))
+fprintf('Cross test: semiz as z, this should be zero: %.3e \n',max(abs(AgentDistPath1A(:)-AgentDistPath1B(:))))
 
 clear VPath1A PolicyPath1A AgentDistPath1A VPath1B PolicyPath1B PolicyPath1Bshort AgentDistPath1B
 
@@ -126,9 +126,9 @@ AgentDistPath2B=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial2B, jequaloneD
 
 PolicyPath2Bshort=PolicyPath2B([1,3],:,:,:,:,:); % remove the d2 policy (keep d1 and aprime; not in PolicyPath2A)
 
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(VPath2A(:)-VPath2B(:))))
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(PolicyPath2A(:)-PolicyPath2Bshort(:))))
-fprintf('Cross test: semiz as z (with e), this should be zero: %2.8f \n',max(abs(AgentDistPath2A(:)-AgentDistPath2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(VPath2A(:)-VPath2B(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(PolicyPath2A(:)-PolicyPath2Bshort(:))))
+fprintf('Cross test: semiz as z (with e), this should be zero: %.3e \n',max(abs(AgentDistPath2A(:)-AgentDistPath2B(:))))
 
 
 %%

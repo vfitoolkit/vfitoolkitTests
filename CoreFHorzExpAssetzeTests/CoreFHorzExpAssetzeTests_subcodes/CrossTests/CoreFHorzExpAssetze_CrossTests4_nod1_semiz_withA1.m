@@ -79,7 +79,7 @@ jequaloneDist_B(1,1,ceil(vfoptionsB.n_semiz/2),ceil(n_z/2),ceil(n_e_orig/2))=1;
 [V_B,Policy_B]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_B,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist_B,AgeWeightParamNames,Policy_B,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
-fprintf('CrossTest4+semiz (experienceassetze iid-markov-z + e vs experienceassete with 2-dim e; nod1), this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n', max(abs(V_A(:)-V_B(:))), max(abs(Policy_A(:)-Policy_B(:))), max(abs(StationaryDist_A(:)-StationaryDist_B(:))))
+fprintf('CrossTest4+semiz (experienceassetze iid-markov-z + e vs experienceassete with 2-dim e; nod1), this should be zero: V %.3e, Policy %.3e, Dist %.3e \n', max(abs(V_A(:)-V_B(:))), max(abs(Policy_A(:)-Policy_B(:))), max(abs(StationaryDist_A(:)-StationaryDist_B(:))))
 
 output=struct();
 

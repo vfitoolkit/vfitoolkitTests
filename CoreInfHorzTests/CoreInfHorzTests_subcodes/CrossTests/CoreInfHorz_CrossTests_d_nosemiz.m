@@ -20,9 +20,9 @@ StationaryDist0=StationaryDist_InfHorz(Policy0,n_d,n_a,0,[],struct(),Params,[]);
 [V0z,Policy0z]=ValueFnIter_InfHorz(n_d,n_a,1,d_grid,a_grid,1,1,ReturnFn_z,Params,DiscountFactorParamNames,[],struct());
 StationaryDist0z=StationaryDist_InfHorz(Policy0z,n_d,n_a,1,1,struct(),Params,[]);
 
-fprintf('Cross test A (trivial z == noz), V should be zero:             %2.8f \n',max(abs(V0(:)-V0z(:))))
-fprintf('Cross test A (trivial z == noz), Policy should be zero:        %2.8f \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test A (trivial z == noz), StationaryDist should be zero:%2.8f \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+fprintf('Cross test A (trivial z == noz), V should be zero:             %.3e \n',max(abs(V0(:)-V0z(:))))
+fprintf('Cross test A (trivial z == noz), Policy should be zero:        %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
+fprintf('Cross test A (trivial z == noz), StationaryDist should be zero:%.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
 %% Cross test B: iid disguised as a markov (identical rows) => stationary marginal over z equals that row
 % (z is drawn iid each period, independent of the a and d choices, so the
@@ -50,10 +50,10 @@ pi_z_perm=pi_z(perm,perm);
 StationaryDistp=StationaryDist_InfHorz(Policyp,n_d,n_a,n_z,pi_z_perm,struct(),Params,[]);
 AllStatsp=EvalFnOnAgentDist_AllStats_InfHorz(StationaryDistp,Policyp,FnsToEvaluate_z,Params,[],n_d,n_a,n_z,d_grid,a_grid,z_grid_perm,struct());
 
-fprintf('Cross test C (z permutation invariance), assets Mean diff should be zero:   %2.8f \n',abs(AllStatsb.assets.Mean-AllStatsp.assets.Mean))
-fprintf('Cross test C (z permutation invariance), assets StdDev diff should be zero:  %2.8f \n',abs(AllStatsb.assets.StdDeviation-AllStatsp.assets.StdDeviation))
-fprintf('Cross test C (z permutation invariance), earnings Mean diff should be zero:  %2.8f \n',abs(AllStatsb.earnings.Mean-AllStatsp.earnings.Mean))
-fprintf('Cross test C (z permutation invariance), earnings Gini diff should be zero:  %2.8f \n',abs(AllStatsb.earnings.Gini-AllStatsp.earnings.Gini))
+fprintf('Cross test C (z permutation invariance), assets Mean diff should be zero:   %.3e \n',abs(AllStatsb.assets.Mean-AllStatsp.assets.Mean))
+fprintf('Cross test C (z permutation invariance), assets StdDev diff should be zero:  %.3e \n',abs(AllStatsb.assets.StdDeviation-AllStatsp.assets.StdDeviation))
+fprintf('Cross test C (z permutation invariance), earnings Mean diff should be zero:  %.3e \n',abs(AllStatsb.earnings.Mean-AllStatsp.earnings.Mean))
+fprintf('Cross test C (z permutation invariance), earnings Gini diff should be zero:  %.3e \n',abs(AllStatsb.earnings.Gini-AllStatsp.earnings.Gini))
 
 %%
 output=struct();

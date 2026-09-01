@@ -68,7 +68,7 @@ vfoptions1=vfoptions; simoptions1=simoptions;
 PolicyVals1=PolicyInd2Val_InfHorz(Policy1,n_d,n_a,n_z,d_grid,a_grid,vfoptions1);
 
 V1fromPolicy=ValueFnFromPolicy_InfHorz(Policy1,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,vfoptions1);
-fprintf('with2A(d): ValueFnFromPolicy, this should be zero: %2.8f \n',max(abs(V1fromPolicy(:)-V1(:))))
+fprintf('with2A(d): ValueFnFromPolicy, this should be zero: %.3e \n',max(abs(V1fromPolicy(:)-V1(:))))
 
 %% Grid-interpolation layer (Refine GI2A: interpolates the asset dimension)
 vfoptions3=vfoptions;
@@ -82,7 +82,7 @@ simoptions3.ngridinterp=vfoptions3.ngridinterp;
 PolicyVals3=PolicyInd2Val_InfHorz(Policy3,n_d,n_a,n_z,d_grid,a_grid,vfoptions3);
 
 V3fromPolicy=ValueFnFromPolicy_InfHorz(Policy3,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,vfoptions3);
-fprintf('with2A(d): ValueFnFromPolicy with grid interp, this should be zero: %2.8f \n',max(abs(V3fromPolicy(:)-V3(:))))
+fprintf('with2A(d): ValueFnFromPolicy with grid interp, this should be zero: %.3e \n',max(abs(V3fromPolicy(:)-V3(:))))
 
 clear V1 V3 Policy1 Policy3 PolicyVals1 PolicyVals3 V1fromPolicy V3fromPolicy
 
@@ -98,7 +98,7 @@ AllStats3=EvalFnOnAgentDist_AllStats_InfHorz(StationaryDist3,Policy3b,FnsToEvalu
 AggVars3=EvalFnOnAgentDist_AggVars_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,simoptions3);
 
 fprintf('with2A(d): with/without grid interp, should get much the same moments (for big asset grid) \n')
-fprintf('with2A(d): StationaryDist with/without grid interp, close to zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('with2A(d): StationaryDist with/without grid interp, close to zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 [AllStats1.assets.Mean,AllStats3.assets.Mean]
 [AllStats1.entrepreneur.Mean,AllStats3.entrepreneur.Mean]
 [AllStats1.laborsupply.Mean,AllStats3.laborsupply.Mean]
@@ -205,16 +205,16 @@ vfoptions1_noH=vfoptions1;
 vfoptions1_noH.howards=0;
 [V1,Policy1]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions1);
 [V1noH,Policy1noH]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions1_noH);
-fprintf('howards=0 (pure VFI), this should be zero: %2.8f \n',max(abs(V1(:)-V1noH(:))))
-fprintf('howards=0 (pure VFI), this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy1noH(:))))
+fprintf('howards=0 (pure VFI), this should be zero: %.3e \n',max(abs(V1(:)-V1noH(:))))
+fprintf('howards=0 (pure VFI), this should be zero: %.3e \n',max(abs(Policy1(:)-Policy1noH(:))))
 
 % Same again, with the grid interpolation layer
 vfoptions3_noH=vfoptions3;
 vfoptions3_noH.howards=0;
 [V3,Policy3]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions3);
 [V3noH,Policy3noH]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions3_noH);
-fprintf('howards=0 (pure VFI, with GI), this should be zero: %2.8f \n',max(abs(V3(:)-V3noH(:))))
-fprintf('howards=0 (pure VFI, with GI), this should be zero: %2.8f \n',max(abs(Policy3(:)-Policy3noH(:))))
+fprintf('howards=0 (pure VFI, with GI), this should be zero: %.3e \n',max(abs(V3(:)-V3noH(:))))
+fprintf('howards=0 (pure VFI, with GI), this should be zero: %.3e \n',max(abs(Policy3(:)-Policy3noH(:))))
 
 clear V1 V3 V1noH V3noH Policy1 Policy3 Policy1noH Policy3noH
 

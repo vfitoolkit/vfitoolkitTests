@@ -54,16 +54,16 @@ transpathoptions.fastOLG=1;
 PricePath_PT1=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, N_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);
 PricePath_NoPT1=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptions, simoptions, vfoptions);
 
-fprintf('One iter of GE TPath (fastOLG=1), PType vs no-PType, this should be zero: %2.8f \n',max(abs(PricePath_PT1.r(:)-PricePath_NoPT1.r(:))))
+fprintf('One iter of GE TPath (fastOLG=1), PType vs no-PType, this should be zero: %.3e \n',max(abs(PricePath_PT1.r(:)-PricePath_NoPT1.r(:))))
 
 %% And again with fastOLG=0
 transpathoptions.fastOLG=0;
 PricePath_PT0=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, N_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);
 PricePath_NoPT0=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptions, simoptions, vfoptions);
 
-fprintf('One iter of GE TPath (fastOLG=0), PType vs no-PType, this should be zero: %2.8f \n',max(abs(PricePath_PT0.r(:)-PricePath_NoPT0.r(:))))
+fprintf('One iter of GE TPath (fastOLG=0), PType vs no-PType, this should be zero: %.3e \n',max(abs(PricePath_PT0.r(:)-PricePath_NoPT0.r(:))))
 
-fprintf('One iter of GE TPath, PType with/without fastOLG, this should be zero: %2.8f \n',max(abs(PricePath_PT1.r(:)-PricePath_PT0.r(:))))
+fprintf('One iter of GE TPath, PType with/without fastOLG, this should be zero: %.3e \n',max(abs(PricePath_PT1.r(:)-PricePath_PT0.r(:))))
 
 output=struct();
 

@@ -82,7 +82,7 @@ for ezcase=1:3
     StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist_B,AgeWeightParamNames,Policy_B,n_d,n_a_B,0,N_j,[],Params,simoptionsB);
     AllStats_B=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist_B,Policy_B,FnsB,Params,[],n_d,n_a_B,0,N_j,d_grid,a_grid_B,[],simoptionsB);
     PdA=Policy_A(1:l_d,:); PdB=Policy_B(1:l_d,:);
-    fprintf('CrossTest plainvswithA1 (d1 noz noe, +semiz) [EZ %s]: should be zero: V %2.8f, Policy %2.8f, Dist %2.8f, AllStats.Mean %2.8f \n',casestr,max(abs(V_A(:)-V_B(:))),max(abs(PdA(:)-PdB(:))),max(abs(StationaryDist_A(:)-StationaryDist_B(:))),abs(AllStats_A.assets.Mean-AllStats_B.assets.Mean))
+    fprintf('CrossTest plainvswithA1 (d1 noz noe, +semiz) [EZ %s]: should be zero: V %.3e, Policy %.3e, Dist %.3e, AllStats.Mean %.3e \n',casestr,max(abs(V_A(:)-V_B(:))),max(abs(PdA(:)-PdB(:))),max(abs(StationaryDist_A(:)-StationaryDist_B(:))),abs(AllStats_A.assets.Mean-AllStats_B.assets.Mean))
 
     %% (2) noz, e, +semiz
     jequaloneDist_A=zeros([n_a,n_semiz,vfoptions_withe.n_e],'gpuArray'); jequaloneDist_A(1,ceil(n_semiz/2),ceil(vfoptions_withe.n_e/2))=1;
@@ -96,7 +96,7 @@ for ezcase=1:3
     StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist_B,AgeWeightParamNames,Policy_B,n_d,n_a_B,0,N_j,[],Params,simoptionsB_e);
     AllStats_B=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist_B,Policy_B,FnsB,Params,[],n_d,n_a_B,0,N_j,d_grid,a_grid_B,[],simoptionsB_e);
     PdA=Policy_A(1:l_d,:); PdB=Policy_B(1:l_d,:);
-    fprintf('CrossTest plainvswithA1 (d1 noz e, +semiz) [EZ %s]: should be zero: V %2.8f, Policy %2.8f, Dist %2.8f, AllStats.Mean %2.8f \n',casestr,max(abs(V_A(:)-V_B(:))),max(abs(PdA(:)-PdB(:))),max(abs(StationaryDist_A(:)-StationaryDist_B(:))),abs(AllStats_A.assets.Mean-AllStats_B.assets.Mean))
+    fprintf('CrossTest plainvswithA1 (d1 noz e, +semiz) [EZ %s]: should be zero: V %.3e, Policy %.3e, Dist %.3e, AllStats.Mean %.3e \n',casestr,max(abs(V_A(:)-V_B(:))),max(abs(PdA(:)-PdB(:))),max(abs(StationaryDist_A(:)-StationaryDist_B(:))),abs(AllStats_A.assets.Mean-AllStats_B.assets.Mean))
 
 end
 

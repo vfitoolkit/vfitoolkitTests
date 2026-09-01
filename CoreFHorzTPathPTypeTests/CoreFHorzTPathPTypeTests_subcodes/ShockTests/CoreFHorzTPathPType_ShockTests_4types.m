@@ -108,8 +108,8 @@ for ii=1:N_i
 
     [VPath_solo,PolicyPath_solo]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final_PT.(nm), Policy_final_PT.(nm), Params, n_d, n_a, n_z_PT.(nm), N_j, d_grid, a_grid,z_grid_PT.(nm), pi_z_PT.(nm), DiscountFactorParamNames, ReturnFn_PT.(nm), transpathoptionsbaseline, vfopt_solo);
 
-    fprintf('ShockTests 4 types, VPath        (type %s), this should be zero: %2.8f \n',nm,max(abs(VPath_PT.(nm)(:)-VPath_solo(:))))
-    fprintf('ShockTests 4 types, PolicyPath   (type %s), this should be zero: %2.8f \n',nm,max(abs(PolicyPath_PT.(nm)(:)-PolicyPath_solo(:))))
+    fprintf('ShockTests 4 types, VPath        (type %s), this should be zero: %.3e \n',nm,max(abs(VPath_PT.(nm)(:)-VPath_solo(:))))
+    fprintf('ShockTests 4 types, PolicyPath   (type %s), this should be zero: %.3e \n',nm,max(abs(PolicyPath_PT.(nm)(:)-PolicyPath_solo(:))))
 
     % PolicyPath equality has just been checked, so seeding the solo initial
     % distribution from Policy_init_PT.(nm) is the same as using the first
@@ -117,8 +117,8 @@ for ii=1:N_i
     AgentDist_initial_solo=StationaryDist_FHorz_Case1(jequaloneDist_PT.(nm),AgeWeightParamNames,Policy_init_PT.(nm),n_d,n_a,n_z_PT.(nm),N_j,pi_z_PT.(nm),Params,simopt_solo);
     AgentDistPath_solo=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial_solo, jequaloneDist_PT.(nm), PricePath, ParamPath, PolicyPath_solo, AgeWeightParamNames,n_d,n_a,n_z_PT.(nm),N_j,pi_z_PT.(nm), T,Params, transpathoptionsbaseline, simopt_solo);
 
-    fprintf('ShockTests 4 types, AgentDistInit(type %s), this should be zero: %2.8f \n',nm,max(abs(AgentDist_initial_PT.(nm)(:)-AgentDist_initial_solo(:))))
-    fprintf('ShockTests 4 types, AgentDistPath(type %s), this should be zero: %2.8f \n',nm,max(abs(AgentDistPath_PT.(nm)(:)-AgentDistPath_solo(:))))
+    fprintf('ShockTests 4 types, AgentDistInit(type %s), this should be zero: %.3e \n',nm,max(abs(AgentDist_initial_PT.(nm)(:)-AgentDist_initial_solo(:))))
+    fprintf('ShockTests 4 types, AgentDistPath(type %s), this should be zero: %.3e \n',nm,max(abs(AgentDistPath_PT.(nm)(:)-AgentDistPath_solo(:))))
 end
 
 output=struct();

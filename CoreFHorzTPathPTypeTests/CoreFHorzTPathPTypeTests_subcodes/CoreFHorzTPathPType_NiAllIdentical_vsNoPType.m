@@ -49,14 +49,14 @@ AggVarsPath=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPath, 
 %% Compare per-type slices to the single no-PType solve
 for ii=1:N_i
     nm=names_PT{ii};
-    fprintf('All identical vs no-PType, VPath        (type %d), this should be zero: %2.8f \n',ii,max(abs(VPath_PT.(nm)(:)-VPath(:))))
-    fprintf('All identical vs no-PType, PolicyPath   (type %d), this should be zero: %2.8f \n',ii,max(abs(PolicyPath_PT.(nm)(:)-PolicyPath(:))))
-    fprintf('All identical vs no-PType, AgentDistPath(type %d), this should be zero: %2.8f \n',ii,max(abs(AgentDistPath_PT.(nm)(:)-AgentDistPath(:))))
+    fprintf('All identical vs no-PType, VPath        (type %d), this should be zero: %.3e \n',ii,max(abs(VPath_PT.(nm)(:)-VPath(:))))
+    fprintf('All identical vs no-PType, PolicyPath   (type %d), this should be zero: %.3e \n',ii,max(abs(PolicyPath_PT.(nm)(:)-PolicyPath(:))))
+    fprintf('All identical vs no-PType, AgentDistPath(type %d), this should be zero: %.3e \n',ii,max(abs(AgentDistPath_PT.(nm)(:)-AgentDistPath(:))))
 end
 
 %% Aggregated AggVarsPath equals the no-PType AggVarsPath (ptypeweights sum to one)
-fprintf('All identical vs no-PType, AggVarsPath assets.Mean,   this should be zero: %2.8f \n',max(abs(AggVarsPath_PT.assets.Mean(:)  -AggVarsPath.assets.Mean(:))))
-fprintf('All identical vs no-PType, AggVarsPath earnings.Mean, this should be zero: %2.8f \n',max(abs(AggVarsPath_PT.earnings.Mean(:)-AggVarsPath.earnings.Mean(:))))
+fprintf('All identical vs no-PType, AggVarsPath assets.Mean,   this should be zero: %.3e \n',max(abs(AggVarsPath_PT.assets.Mean(:)  -AggVarsPath.assets.Mean(:))))
+fprintf('All identical vs no-PType, AggVarsPath earnings.Mean, this should be zero: %.3e \n',max(abs(AggVarsPath_PT.earnings.Mean(:)-AggVarsPath.earnings.Mean(:))))
 
 output=struct();
 

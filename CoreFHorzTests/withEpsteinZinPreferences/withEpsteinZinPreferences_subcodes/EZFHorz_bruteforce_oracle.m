@@ -135,7 +135,7 @@ vfoptions1.EZeis='ezphi';
 V1=reshape(gather(V1),[n_a,n_z,N_j]);
 Policy1=reshape(gather(Policy1),[n_a,n_z,N_j]);
 fprintf('Brute-force oracle vs toolkit, V [EZ cons-units], should be zero up to ~1e-14 roundoff: %g \n',max(abs(V1(:)-Vb(:))))
-fprintf('Brute-force oracle vs toolkit, Policy [EZ cons-units], this should be zero: %2.8f \n',max(abs(Policy1(:)-Pb(:))))
+fprintf('Brute-force oracle vs toolkit, Policy [EZ cons-units], this should be zero: %.3e \n',max(abs(Policy1(:)-Pb(:))))
 
 %% Case 2: utility-units, POSITIVE utility fn — brute force from the formula
 riskexp=1-ezrisk;
@@ -184,7 +184,7 @@ vfoptions2.EZriskaversion='ezrisk';
 V2=reshape(gather(V2),[n_a,n_z,N_j]);
 Policy2=reshape(gather(Policy2),[n_a,n_z,N_j]);
 fprintf('Brute-force oracle vs toolkit, V [EZ positive utils], should be zero up to ~1e-14 roundoff: %g \n',max(abs(V2(:)-Vb(:))))
-fprintf('Brute-force oracle vs toolkit, Policy [EZ positive utils], this should be zero: %2.8f \n',max(abs(Policy2(:)-Pb(:))))
+fprintf('Brute-force oracle vs toolkit, Policy [EZ positive utils], this should be zero: %.3e \n',max(abs(Policy2(:)-Pb(:))))
 
 %% Case 3: utility-units, NEGATIVE utility fn — brute force from the formula
 q=1+ezrisk;
@@ -233,7 +233,7 @@ vfoptions3.EZriskaversion='ezrisk';
 V3=reshape(gather(V3),[n_a,n_z,N_j]);
 Policy3=reshape(gather(Policy3),[n_a,n_z,N_j]);
 fprintf('Brute-force oracle vs toolkit, V [EZ negative utils], should be zero up to ~1e-14 roundoff: %g \n',max(abs(V3(:)-Vb(:))))
-fprintf('Brute-force oracle vs toolkit, Policy [EZ negative utils], this should be zero: %2.8f \n',max(abs(Policy3(:)-Pb(:))))
+fprintf('Brute-force oracle vs toolkit, Policy [EZ negative utils], this should be zero: %.3e \n',max(abs(Policy3(:)-Pb(:))))
 
 %% sj + warm-glow, Case 1: consumption-units — brute force from the formula
 % Independently validates the inside-the-root terminal warm-glow convention (Kraft-Munk-Weiss)
@@ -282,7 +282,7 @@ vfoptions1wg.WarmGlowBequestsFn=WGFn_cons;
 V4=reshape(gather(V4),[n_a,n_z,N_j]);
 Policy4=reshape(gather(Policy4),[n_a,n_z,N_j]);
 fprintf('Brute-force oracle vs toolkit, sj+warm-glow V [EZ cons-units], should be zero up to ~1e-14 roundoff: %g \n',max(abs(V4(:)-Vb(:))))
-fprintf('Brute-force oracle vs toolkit, sj+warm-glow Policy [EZ cons-units], this should be zero: %2.8f \n',max(abs(Policy4(:)-Pb(:))))
+fprintf('Brute-force oracle vs toolkit, sj+warm-glow Policy [EZ cons-units], this should be zero: %.3e \n',max(abs(Policy4(:)-Pb(:))))
 
 %% sj + warm-glow, Case 2: utility-units, POSITIVE utility fn — brute force from the formula
 riskexp=1-ezrisk;
@@ -330,7 +330,7 @@ vfoptions2wg.WarmGlowBequestsFn=WGFn_posU;
 V5=reshape(gather(V5),[n_a,n_z,N_j]);
 Policy5=reshape(gather(Policy5),[n_a,n_z,N_j]);
 fprintf('Brute-force oracle vs toolkit, sj+warm-glow V [EZ positive utils], should be zero up to ~1e-14 roundoff: %g \n',max(abs(V5(:)-Vb(:))))
-fprintf('Brute-force oracle vs toolkit, sj+warm-glow Policy [EZ positive utils], this should be zero: %2.8f \n',max(abs(Policy5(:)-Pb(:))))
+fprintf('Brute-force oracle vs toolkit, sj+warm-glow Policy [EZ positive utils], this should be zero: %.3e \n',max(abs(Policy5(:)-Pb(:))))
 
 %% sj + warm-glow, Case 3: utility-units, NEGATIVE utility fn — brute force from the formula
 q=1+ezrisk;
@@ -378,7 +378,7 @@ vfoptions3wg.WarmGlowBequestsFn=WGFn_negU;
 V6=reshape(gather(V6),[n_a,n_z,N_j]);
 Policy6=reshape(gather(Policy6),[n_a,n_z,N_j]);
 fprintf('Brute-force oracle vs toolkit, sj+warm-glow V [EZ negative utils], should be zero up to ~1e-14 roundoff: %g \n',max(abs(V6(:)-Vb(:))))
-fprintf('Brute-force oracle vs toolkit, sj+warm-glow Policy [EZ negative utils], this should be zero: %2.8f \n',max(abs(Policy6(:)-Pb(:))))
+fprintf('Brute-force oracle vs toolkit, sj+warm-glow Policy [EZ negative utils], this should be zero: %.3e \n',max(abs(Policy6(:)-Pb(:))))
 
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.

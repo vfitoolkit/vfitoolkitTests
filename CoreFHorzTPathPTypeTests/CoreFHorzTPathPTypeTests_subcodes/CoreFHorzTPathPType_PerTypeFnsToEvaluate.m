@@ -50,10 +50,10 @@ AgentDistPath_PT=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_PT, je
 AggVarsPath_A=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate_single, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions);
 AggVarsPath_B=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate_pertype, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions);
 
-fprintf('per-type FnsToEvaluate, AggVarsPath assets.Mean, this should be zero: %2.8f \n',max(abs(AggVarsPath_A.assets.Mean(:)-AggVarsPath_B.assets.Mean(:))))
+fprintf('per-type FnsToEvaluate, AggVarsPath assets.Mean, this should be zero: %.3e \n',max(abs(AggVarsPath_A.assets.Mean(:)-AggVarsPath_B.assets.Mean(:))))
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('per-type FnsToEvaluate, AggVarsPath assets breakdown (type %s), this should be zero: %2.8f \n',nm,max(abs(AggVarsPath_A.assets.(nm).Mean(:)-AggVarsPath_B.assets.(nm).Mean(:))))
+    fprintf('per-type FnsToEvaluate, AggVarsPath assets breakdown (type %s), this should be zero: %.3e \n',nm,max(abs(AggVarsPath_A.assets.(nm).Mean(:)-AggVarsPath_B.assets.(nm).Mean(:))))
 end
 
 %% One iteration of the GE transition path: single vs per-type FnsToEvaluate
@@ -65,7 +65,7 @@ GeneralEqmEqns.dummy=@(assets) 0;
 PricePath_A=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate_single, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);
 PricePath_B=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate_pertype, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);
 
-fprintf('per-type FnsToEvaluate, one iter of GE TPath, this should be zero: %2.8f \n',max(abs(PricePath_A.r(:)-PricePath_B.r(:))))
+fprintf('per-type FnsToEvaluate, one iter of GE TPath, this should be zero: %.3e \n',max(abs(PricePath_A.r(:)-PricePath_B.r(:))))
 
 %% AllStats on the transition path: single vs per-type FnsToEvaluate
 % NOT YET IMPLEMENTED: there is no EvalFnOnTransPath_AllStats_Case1_FHorz_PType
@@ -73,8 +73,8 @@ fprintf('per-type FnsToEvaluate, one iter of GE TPath, this should be zero: %2.8
 % Uncomment once the command exists.
 % AllStatsPath_A=EvalFnOnTransPath_AllStats_Case1_FHorz_PType(FnsToEvaluate_single, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions);
 % AllStatsPath_B=EvalFnOnTransPath_AllStats_Case1_FHorz_PType(FnsToEvaluate_pertype, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions);
-% fprintf('per-type FnsToEvaluate, AllStatsPath assets.Mean, this should be zero: %2.8f \n',max(abs(AllStatsPath_A.assets.Mean(:)-AllStatsPath_B.assets.Mean(:))))
-% fprintf('per-type FnsToEvaluate, AllStatsPath assets.Gini, this should be zero: %2.8f \n',max(abs(AllStatsPath_A.assets.Gini(:)-AllStatsPath_B.assets.Gini(:))))
+% fprintf('per-type FnsToEvaluate, AllStatsPath assets.Mean, this should be zero: %.3e \n',max(abs(AllStatsPath_A.assets.Mean(:)-AllStatsPath_B.assets.Mean(:))))
+% fprintf('per-type FnsToEvaluate, AllStatsPath assets.Gini, this should be zero: %.3e \n',max(abs(AllStatsPath_A.assets.Gini(:)-AllStatsPath_B.assets.Gini(:))))
 
 %% AgeConditionalStats on the transition path: single vs per-type FnsToEvaluate
 % NOT YET IMPLEMENTED: LifeCycleProfiles_TransPath_FHorz_Case1 exists but has
@@ -82,7 +82,7 @@ fprintf('per-type FnsToEvaluate, one iter of GE TPath, this should be zero: %2.8
 % exists.
 % AgeCondStatsPath_A=LifeCycleProfiles_TransPath_FHorz_Case1_PType(FnsToEvaluate_single, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, simoptions);
 % AgeCondStatsPath_B=LifeCycleProfiles_TransPath_FHorz_Case1_PType(FnsToEvaluate_pertype, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, simoptions);
-% fprintf('per-type FnsToEvaluate, AgeCondStatsPath assets.Mean, this should be zero: %2.8f \n',max(abs(AgeCondStatsPath_A.assets.Mean(:)-AgeCondStatsPath_B.assets.Mean(:))))
+% fprintf('per-type FnsToEvaluate, AgeCondStatsPath assets.Mean, this should be zero: %.3e \n',max(abs(AgeCondStatsPath_A.assets.Mean(:)-AgeCondStatsPath_B.assets.Mean(:))))
 
 output=struct();
 

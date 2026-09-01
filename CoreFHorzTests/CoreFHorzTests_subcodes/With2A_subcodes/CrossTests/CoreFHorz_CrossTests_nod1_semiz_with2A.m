@@ -51,7 +51,7 @@ ReturnFn_sz_test2=@(d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pen
 [Vsz,Polsz]=ValueFnIter_Case1_FHorz(n_d2_t2,n_a,0,N_j,d2_grid_t2,a_grid,[],[],ReturnFn_sz_test2,Params,DiscountFactorParamNames,[],vfopts_sz);
 
 % V should match: both are (a1,a2,semiz/z,N_j) of shape [n_a,n_z2,N_j]
-fprintf('Test 1 (d2-driven semiz vs alternating pi_z_J), should be zero: %2.8f \n',max(abs(Vz(:)-Vsz(:))))
+fprintf('Test 1 (d2-driven semiz vs alternating pi_z_J), should be zero: %.3e \n',max(abs(Vz(:)-Vsz(:))))
 
 
 %% Test 2: collapse z to 1pt in (semiz+z+e) -> matches (semiz+e)
@@ -76,7 +76,7 @@ ReturnFn_5_noz=@(d2,a1prime,a2prime,a1,a2,semiz,e,r,w,kappa_j,sigma,agej,Jr,pens
 [V5a_noz,~]=ValueFnIter_Case1_FHorz(n_d2_semiz,n_a,0,N_j,d2_grid_semiz,a_grid,[],[],ReturnFn_5_noz,Params,DiscountFactorParamNames,[],vfopts5);
 
 V5a_zfull=squeeze(V5a_zfull);
-fprintf('Test 2 (collapse z=1pt vs no z), should be zero: %2.8f \n',max(abs(V5a_zfull(:)-V5a_noz(:))))
+fprintf('Test 2 (collapse z=1pt vs no z), should be zero: %.3e \n',max(abs(V5a_zfull(:)-V5a_noz(:))))
 
 
 %% Test 3: collapse e to 1pt in (semiz+z+e) -> matches (semiz+z)
@@ -96,7 +96,7 @@ vfopts5b_efull.n_e=1; vfopts5b_efull.e_grid=1; vfopts5b_efull.pi_e=1;
 [V5b_noe,~]=ValueFnIter_Case1_FHorz(n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,ReturnFn_5_noe,Params,DiscountFactorParamNames,[],vfopts5b);
 
 V5b_efull=squeeze(V5b_efull);
-fprintf('Test 3 (collapse e=1pt vs no e), should be zero: %2.8f \n',max(abs(V5b_efull(:)-V5b_noe(:))))
+fprintf('Test 3 (collapse e=1pt vs no e), should be zero: %.3e \n',max(abs(V5b_efull(:)-V5b_noe(:))))
 
 
 %%

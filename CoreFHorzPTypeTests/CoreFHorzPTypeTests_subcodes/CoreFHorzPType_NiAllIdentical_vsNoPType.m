@@ -34,17 +34,17 @@ AllStats0=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist0,Policy0,FnsToEv
 names=fieldnames(V_PT);
 for ii=1:N_i
     nA=names{ii};
-    fprintf('Identical PType vs no-PType, V    (type %d), this should be zero: %2.8f \n',ii,max(abs(V_PT.(nA)(:)-V0(:))))
-    fprintf('Identical PType vs no-PType, Pol  (type %d), this should be zero: %2.8f \n',ii,max(abs(Policy_PT.(nA)(:)-Policy0(:))))
-    fprintf('Identical PType vs no-PType, Dist (type %d), this should be zero: %2.8f \n',ii,max(abs(StationaryDist_PT.(nA)(:)-StationaryDist0(:))))
-    fprintf('Identical PType vs no-PType, VFP  vs V (PType,   type %d), this should be zero: %2.8f \n',ii,max(abs(V_PT_vfp.(nA)(:)-V_PT.(nA)(:))))
+    fprintf('Identical PType vs no-PType, V    (type %d), this should be zero: %.3e \n',ii,max(abs(V_PT.(nA)(:)-V0(:))))
+    fprintf('Identical PType vs no-PType, Pol  (type %d), this should be zero: %.3e \n',ii,max(abs(Policy_PT.(nA)(:)-Policy0(:))))
+    fprintf('Identical PType vs no-PType, Dist (type %d), this should be zero: %.3e \n',ii,max(abs(StationaryDist_PT.(nA)(:)-StationaryDist0(:))))
+    fprintf('Identical PType vs no-PType, VFP  vs V (PType,   type %d), this should be zero: %.3e \n',ii,max(abs(V_PT_vfp.(nA)(:)-V_PT.(nA)(:))))
 end
-fprintf('Identical PType vs no-PType, VFP  vs V (noPType),         this should be zero: %2.8f \n',max(abs(V0_vfp(:)-V0(:))))
+fprintf('Identical PType vs no-PType, VFP  vs V (noPType),         this should be zero: %.3e \n',max(abs(V0_vfp(:)-V0(:))))
 
 %% Aggregated AllStats should equal the no-PType AllStats
-fprintf('Identical PType vs no-PType, AllStats assets.Mean,    this should be zero: %2.8f \n',abs(AllStats_PT.assets.Mean   -AllStats0.assets.Mean))
-fprintf('Identical PType vs no-PType, AllStats earnings.Mean,  this should be zero: %2.8f \n',abs(AllStats_PT.earnings.Mean -AllStats0.earnings.Mean))
-fprintf('Identical PType vs no-PType, AllStats earnings.Gini,  this should be zero: %2.8f \n',abs(AllStats_PT.earnings.Gini -AllStats0.earnings.Gini))
+fprintf('Identical PType vs no-PType, AllStats assets.Mean,    this should be zero: %.3e \n',abs(AllStats_PT.assets.Mean   -AllStats0.assets.Mean))
+fprintf('Identical PType vs no-PType, AllStats earnings.Mean,  this should be zero: %.3e \n',abs(AllStats_PT.earnings.Mean -AllStats0.earnings.Mean))
+fprintf('Identical PType vs no-PType, AllStats earnings.Gini,  this should be zero: %.3e \n',abs(AllStats_PT.earnings.Gini -AllStats0.earnings.Gini))
 
 output=struct();
 

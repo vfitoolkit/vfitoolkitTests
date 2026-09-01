@@ -36,8 +36,8 @@ simoptions1=simoptions;
 
 [VPath1fast,PolicyPath1fast]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
 
-fprintf('fastOLG, this should be zero: %2.8f \n',max(abs(VPath1slow(:)-VPath1fast(:))))
-fprintf('fastOLG, this should be zero: %2.8f \n',max(abs(PolicyPath1slow(:)-PolicyPath1fast(:))))
+fprintf('fastOLG, this should be zero: %.3e \n',max(abs(VPath1slow(:)-VPath1fast(:))))
+fprintf('fastOLG, this should be zero: %.3e \n',max(abs(PolicyPath1slow(:)-PolicyPath1fast(:))))
 
 clear VPath1fast VPath1slow PolicyPath1fast PolicyPath1slow
 
@@ -52,8 +52,8 @@ vfoptions2.divideandconquer=1;
 simoptions2=simoptions;
 [VPath2,PolicyPath2]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions2);
 
-fprintf('Divide-and-conquer (slowOLG), this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
-fprintf('Divide-and-conquer (slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
+fprintf('Divide-and-conquer (slowOLG), this should be zero: %.3e \n',max(abs(VPath1(:)-VPath2(:))))
+fprintf('Divide-and-conquer (slowOLG), this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
 
 clear VPath1 VPath2 PolicyPath1 PolicyPath2 % PolicyVals1
 
@@ -63,8 +63,8 @@ clear VPath1 VPath2 PolicyPath1 PolicyPath2 % PolicyVals1
 
 [VPath2,PolicyPath2]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 
-fprintf('Divide-and-conquer (fastOLG), this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
-fprintf('Divide-and-conquer (fastOLG), this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
+fprintf('Divide-and-conquer (fastOLG), this should be zero: %.3e \n',max(abs(VPath1(:)-VPath2(:))))
+fprintf('Divide-and-conquer (fastOLG), this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
 
 %%
 clear VPath1 VPath2 PolicyPath1 PolicyPath2
@@ -90,8 +90,8 @@ simoptions4.gridinterplayer=vfoptions4.gridinterplayer;
 simoptions4.ngridinterp=vfoptions4.ngridinterp;
 [VPath4,PolicyPath4]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsslow, vfoptions4);
 
-fprintf('Divide-and-conquer (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath4(:))))
-fprintf('Divide-and-conquer (with GI, slowOLG), this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
+fprintf('Divide-and-conquer (with GI, slowOLG), this should be zero: %.3e \n',max(abs(VPath3(:)-VPath4(:))))
+fprintf('Divide-and-conquer (with GI, slowOLG), this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
 
 clear VPath3 VPath4 PolicyPath3 PolicyPath4 % PolicyVals3
 
@@ -101,8 +101,8 @@ clear VPath3 VPath4 PolicyPath3 PolicyPath4 % PolicyVals3
 
 [VPath4,PolicyPath4]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final_GI, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
 
-fprintf('Divide-and-conquer (with GI, fastOLG), this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath4(:))))
-fprintf('Divide-and-conquer (with GI, fastOLG), this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
+fprintf('Divide-and-conquer (with GI, fastOLG), this should be zero: %.3e \n',max(abs(VPath3(:)-VPath4(:))))
+fprintf('Divide-and-conquer (with GI, fastOLG), this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
 
 %%
 clear VPath3 VPath4 PolicyPath3 PolicyPath4
@@ -118,7 +118,7 @@ AgentDistPath4=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial_big, jequalone
 AggVarsPath4=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPath4, PolicyPath4b, PricePath, ParamPath, Params, T, n_d, n_a_big, n_z, N_j, d_grid, a_grid_big,z_grid, transpathoptionsbaseline, simoptions4);
 
 fprintf('With/without grid interp, should get much the same moments (for big a_grid) \n')
-fprintf('StationaryDist with/without grid interp, this should be close to zero: %2.8f \n',max(abs(AgentDistPath2(:)-AgentDistPath4(:))))
+fprintf('StationaryDist with/without grid interp, this should be close to zero: %.3e \n',max(abs(AgentDistPath2(:)-AgentDistPath4(:))))
 [AggVarsPath2.earnings.Mean; AggVarsPath4.earnings.Mean]
 [AggVarsPath2.assets.Mean; AggVarsPath4.assets.Mean]
 [AggVarsPath2.house.Mean; AggVarsPath4.house.Mean]
@@ -143,11 +143,11 @@ ParamPathConstant.sigma=Params.sigma*ones(1,T);
 AgentDistPath1=AgentDistOnTransPath_Case1_FHorz(AgentDist1, jequaloneDist, PricePathConstant, ParamPathConstant, PolicyPath1, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions1);
 
 V1_rep=repmat(V1,1,1,1,1,T);
-fprintf('Do nothing TPath, this should be zero, V: %2.8f \n',max(abs(VPath1(:)-V1_rep(:))))
+fprintf('Do nothing TPath, this should be zero, V: %.3e \n',max(abs(VPath1(:)-V1_rep(:))))
 Policy1_rep=repmat(Policy1,1,1,1,1,1,T);
-fprintf('Do nothing TPath, this should be zero, Policy: %2.8f \n',max(abs(PolicyPath1(:)-Policy1_rep(:))))
+fprintf('Do nothing TPath, this should be zero, Policy: %.3e \n',max(abs(PolicyPath1(:)-Policy1_rep(:))))
 AgentDist1_rep=repmat(AgentDist1,1,1,1,1,T);
-fprintf('Do nothing TPath, this should be zero, AgentDist: %2.8f \n',max(abs(AgentDistPath1(:)-AgentDist1_rep(:))))
+fprintf('Do nothing TPath, this should be zero, AgentDist: %.3e \n',max(abs(AgentDistPath1(:)-AgentDist1_rep(:))))
 
 clear V1 Policy1 VPath1 PolicyPath1
 
@@ -165,7 +165,7 @@ PricePath2=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final, AgentDis
 transpathoptions.fastOLG=0;
 PricePath2B=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptions, simoptions, vfoptions);
 
-fprintf('One iter of TPath, with/without fastOLG, this should be zero: %2.8f \n',max(abs(PricePath2.r-PricePath2B.r)))
+fprintf('One iter of TPath, with/without fastOLG, this should be zero: %.3e \n',max(abs(PricePath2.r-PricePath2B.r)))
 
 % Big grid, uses vfoptions2 with divide-and-conquer
 transpathoptions.fastOLG=1;
@@ -174,7 +174,7 @@ PricePath3A=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final_big, Age
 % vfoptions4 has divide-and-conquer and grid interpolation layer
 PricePath3B=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final_big, AgentDist_initial_big, jequaloneDist_big, n_d, n_a_big, n_z, N_j, d_grid,a_grid_big,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptions, simoptions4, vfoptions4);
 
-fprintf('One iter of TPath, with/without GI, this should be close to zero: %2.8f \n',max(abs(PricePath3A.r-PricePath3B.r)))
+fprintf('One iter of TPath, with/without GI, this should be close to zero: %.3e \n',max(abs(PricePath3A.r-PricePath3B.r)))
 
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.

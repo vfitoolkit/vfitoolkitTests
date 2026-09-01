@@ -56,7 +56,7 @@ simoptionsB=struct();
 StationaryDistB=StationaryDist_FHorz_Case1(jequaloneDistA,AgeWeightParamNames,PolicyB,n_d,n_a,n_zB,N_j,pi_zB,Params,simoptionsB);
 
 fprintf('Cross test 3: (z,e) vs merged joint-markov, V, should be roughly 1e-13 or smaller: %g \n',max(abs(VA(:)-VB(:))))
-fprintf('Cross test 3: (z,e) vs merged joint-markov, Policy, this should be zero: %2.8f \n',max(abs(PolicyA(:)-PolicyB(:))))
+fprintf('Cross test 3: (z,e) vs merged joint-markov, Policy, this should be zero: %.3e \n',max(abs(PolicyA(:)-PolicyB(:))))
 fprintf('Cross test 3: (z,e) vs merged joint-markov, StationaryDist, should be roughly zero: %g \n',max(abs(StationaryDistA(:)-StationaryDistB(:))))
 
 clear VA VB PolicyA PolicyB StationaryDistA StationaryDistB
@@ -91,7 +91,7 @@ simoptionsB=struct();
 StationaryDistB=StationaryDist_FHorz_Case1(jequaloneDistA,AgeWeightParamNames,PolicyB,n_d,n_a,n_zB,N_j,pi_zB,Params,simoptionsB);
 
 fprintf('Cross test 3: (z,e) vs merged joint-markov, V, should be roughly 1e-13 or smaller: %g \n',max(abs(VA(:)-VB(:))))
-fprintf('Cross test 3: (z,e) vs merged joint-markov, Policy, this should be zero: %2.8f \n',max(abs(PolicyA(:)-PolicyB(:))))
+fprintf('Cross test 3: (z,e) vs merged joint-markov, Policy, this should be zero: %.3e \n',max(abs(PolicyA(:)-PolicyB(:))))
 fprintf('Cross test 3: (z,e) vs merged joint-markov, StationaryDist, should be roughly zero: %g \n',max(abs(StationaryDistA(:)-StationaryDistB(:))))
 
 clear VA VB PolicyA PolicyB StationaryDistA StationaryDistB
@@ -126,7 +126,7 @@ simoptionsB=struct();
 StationaryDistB=StationaryDist_FHorz_Case1(jequaloneDistA,AgeWeightParamNames,PolicyB,n_d,n_a,n_zB,N_j,pi_zB,Params,simoptionsB);
 
 fprintf('Cross test 3: (z,e) vs merged joint-markov, V, should be roughly 1e-13 or smaller: %g \n',max(abs(VA(:)-VB(:))))
-fprintf('Cross test 3: (z,e) vs merged joint-markov, Policy, this should be zero: %2.8f \n',max(abs(PolicyA(:)-PolicyB(:))))
+fprintf('Cross test 3: (z,e) vs merged joint-markov, Policy, this should be zero: %.3e \n',max(abs(PolicyA(:)-PolicyB(:))))
 fprintf('Cross test 3: (z,e) vs merged joint-markov, StationaryDist, should be roughly zero: %g \n',max(abs(StationaryDistA(:)-StationaryDistB(:))))
 
 clear VA VB PolicyA PolicyB StationaryDistA StationaryDistB

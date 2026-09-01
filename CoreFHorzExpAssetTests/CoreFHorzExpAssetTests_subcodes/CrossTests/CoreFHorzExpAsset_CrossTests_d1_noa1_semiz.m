@@ -45,7 +45,7 @@ StationaryDist0=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamName
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptions);
 StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptions);
 
-fprintf('Cross test (noa1+d1+semiz): z degenerate vs no shocks, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V0(:)-V0z(:))),max(abs(Policy0(:)-Policy0z(:))),max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+fprintf('Cross test (noa1+d1+semiz): z degenerate vs no shocks, this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',max(abs(V0(:)-V0z(:))),max(abs(Policy0(:)-Policy0z(:))),max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
 %% (2) Markov-as-iid == iid e
 jequaloneDist_z=zeros([n_a,n_semiz,n_z],'gpuArray');
@@ -57,7 +57,7 @@ StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,P
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e,Params,DiscountFactorParamNames,[],vfoptions_withe);
 StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptions_withe);
 
-fprintf('Cross test (noa1+d1+semiz): iid-markov-z == iid-e, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V1(:)-V2(:))),max(abs(Policy1(:)-Policy2(:))),max(abs(StationaryDist1(:)-StationaryDist2(:))))
+fprintf('Cross test (noa1+d1+semiz): iid-markov-z == iid-e, this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',max(abs(V1(:)-V2(:))),max(abs(Policy1(:)-Policy2(:))),max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
 output=struct();
 

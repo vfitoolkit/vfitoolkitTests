@@ -73,7 +73,7 @@ AgentDist_initial_PT=StationaryDist_Case1_FHorz_PType(jequaloneDist,AgeWeightPar
 AllStats_init_PT=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(AgentDist_initial_PT,Policy_init_PT,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('GEptype bequests, initial stationary eqm, beq vs bequests left (type %s), should be close to zero: %2.8f \n',nm,abs(p_eqm_init_PT.beq.(nm)-AllStats_init_PT.bequestsleft.(nm).Mean))
+    fprintf('GEptype bequests, initial stationary eqm, beq vs bequests left (type %s), should be close to zero: %.3e \n',nm,abs(p_eqm_init_PT.beq.(nm)-AllStats_init_PT.bequestsleft.(nm).Mean))
 end
 
 % Final stationary eqm (w=1)
@@ -88,7 +88,7 @@ StationaryDist_final_PT=StationaryDist_Case1_FHorz_PType(jequaloneDist,AgeWeight
 AllStats_final_PT=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist_final_PT,Policy_final_PT,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('GEptype bequests, final stationary eqm, beq vs bequests left (type %s), should be close to zero: %2.8f \n',nm,abs(p_eqm_final_PT.beq.(nm)-AllStats_final_PT.bequestsleft.(nm).Mean))
+    fprintf('GEptype bequests, final stationary eqm, beq vs bequests left (type %s), should be close to zero: %.3e \n',nm,abs(p_eqm_final_PT.beq.(nm)-AllStats_final_PT.bequestsleft.(nm).Mean))
 end
 
 % Sanity: the two types must have genuinely different beq (else the test could
@@ -123,8 +123,8 @@ end
 
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('GEptype bequests, initial stationary eqm, PType vs solo beq (type %s), should be close to zero: %2.8f \n',nm,abs(p_eqm_init_PT.beq.(nm)-p_eqm_init_solo(ii)))
-    fprintf('GEptype bequests, final   stationary eqm, PType vs solo beq (type %s), should be close to zero: %2.8f \n',nm,abs(p_eqm_final_PT.beq.(nm)-p_eqm_final_solo(ii)))
+    fprintf('GEptype bequests, initial stationary eqm, PType vs solo beq (type %s), should be close to zero: %.3e \n',nm,abs(p_eqm_init_PT.beq.(nm)-p_eqm_init_solo(ii)))
+    fprintf('GEptype bequests, final   stationary eqm, PType vs solo beq (type %s), should be close to zero: %.3e \n',nm,abs(p_eqm_final_PT.beq.(nm)-p_eqm_final_solo(ii)))
 end
 
 %% Initial guess for the price path (shared by both fastOLG blocks)
@@ -147,7 +147,7 @@ AggVarsPath_fast=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, Agen
 
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('GEptype bequests (fastOLG=1), beq path vs bequests left path (type %s), should be close to zero: %2.8f \n',nm,max(abs(PricePath_PT_fast.beq.(nm)(:)-AggVarsPath_fast.bequestsleft.(nm).Mean(:))))
+    fprintf('GEptype bequests (fastOLG=1), beq path vs bequests left path (type %s), should be close to zero: %.3e \n',nm,max(abs(PricePath_PT_fast.beq.(nm)(:)-AggVarsPath_fast.bequestsleft.(nm).Mean(:))))
 end
 
 % Two independent one-type GE transitions (no PType, scalar beq)
@@ -164,7 +164,7 @@ for ii=1:N_i
     PricePath0_ii.beq=linspace(p_eqm_init_solo(ii),p_eqm_final_solo(ii),T)';
     PricePath_solo_fast{ii}=TransitionPath_Case1_FHorz(PricePath0_ii, ParamPathLocal, T, V_final_solo{ii}, AgentDist_initial_solo{ii}, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params_ii, DiscountFactorParamNames, AgeWeightParamNames, transpathoptions_fast_solo, simoptions, vfoptions);
 
-    fprintf('GEptype bequests (fastOLG=1), PType vs solo beq path (type %s), should be close to zero: %2.8f \n',Names_i{ii},max(abs(PricePath_PT_fast.beq.(Names_i{ii})(:)-PricePath_solo_fast{ii}.beq(:))))
+    fprintf('GEptype bequests (fastOLG=1), PType vs solo beq path (type %s), should be close to zero: %.3e \n',Names_i{ii},max(abs(PricePath_PT_fast.beq.(Names_i{ii})(:)-PricePath_solo_fast{ii}.beq(:))))
 end
 
 %% GE transition path with GEptype, fastOLG=0
@@ -182,7 +182,7 @@ AggVarsPath_slow=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, Agen
 
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('GEptype bequests (fastOLG=0), beq path vs bequests left path (type %s), should be close to zero: %2.8f \n',nm,max(abs(PricePath_PT_slow.beq.(nm)(:)-AggVarsPath_slow.bequestsleft.(nm).Mean(:))))
+    fprintf('GEptype bequests (fastOLG=0), beq path vs bequests left path (type %s), should be close to zero: %.3e \n',nm,max(abs(PricePath_PT_slow.beq.(nm)(:)-AggVarsPath_slow.bequestsleft.(nm).Mean(:))))
 end
 
 % Two independent one-type GE transitions (no PType, scalar beq)
@@ -199,13 +199,13 @@ for ii=1:N_i
     PricePath0_ii.beq=linspace(p_eqm_init_solo(ii),p_eqm_final_solo(ii),T)';
     PricePath_solo_slow{ii}=TransitionPath_Case1_FHorz(PricePath0_ii, ParamPathLocal, T, V_final_solo{ii}, AgentDist_initial_solo{ii}, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params_ii, DiscountFactorParamNames, AgeWeightParamNames, transpathoptions_slow_solo, simoptions, vfoptions);
 
-    fprintf('GEptype bequests (fastOLG=0), PType vs solo beq path (type %s), should be close to zero: %2.8f \n',Names_i{ii},max(abs(PricePath_PT_slow.beq.(Names_i{ii})(:)-PricePath_solo_slow{ii}.beq(:))))
+    fprintf('GEptype bequests (fastOLG=0), PType vs solo beq path (type %s), should be close to zero: %.3e \n',Names_i{ii},max(abs(PricePath_PT_slow.beq.(Names_i{ii})(:)-PricePath_solo_slow{ii}.beq(:))))
 end
 
 %% fastOLG vs slowOLG
 for ii=1:N_i
     nm=Names_i{ii};
-    fprintf('GEptype bequests, fastOLG vs slowOLG beq path (type %s), should be close to zero: %2.8f \n',nm,max(abs(PricePath_PT_fast.beq.(nm)(:)-PricePath_PT_slow.beq.(nm)(:))))
+    fprintf('GEptype bequests, fastOLG vs slowOLG beq path (type %s), should be close to zero: %.3e \n',nm,max(abs(PricePath_PT_fast.beq.(nm)(:)-PricePath_PT_slow.beq.(nm)(:))))
 end
 
 %% Graph the bequest paths

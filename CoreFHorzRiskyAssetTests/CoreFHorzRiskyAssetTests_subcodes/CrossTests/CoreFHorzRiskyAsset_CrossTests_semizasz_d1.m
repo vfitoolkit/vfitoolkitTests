@@ -59,7 +59,7 @@ StationaryDist_z=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,
 StationaryDist_s=StationaryDist_FHorz_Case1(jequaloneDist_s,AgeWeightParamNames,Policy_s,n_d,n_a,0,N_j,[],Params,simoptions_s);
 
 Pd_z=Policy_z(1:3,:); Pd_s=Policy_s(1:3,:);
-fprintf('CrossTest semizasz (d1 noe): should be zero: V %2.8f, Policy(h,riskyshare,savings) %2.8f, Dist %2.8f \n',max(abs(V_z(:)-V_s(:))),max(abs(Pd_z(:)-Pd_s(:))),max(abs(StationaryDist_z(:)-StationaryDist_s(:))))
+fprintf('CrossTest semizasz (d1 noe): should be zero: V %.3e, Policy(h,riskyshare,savings) %.3e, Dist %.3e \n',max(abs(V_z(:)-V_s(:))),max(abs(Pd_z(:)-Pd_s(:))),max(abs(StationaryDist_z(:)-StationaryDist_s(:))))
 
 %% (2) with e
 vfoptions_z_e=vfoptions_z; vfoptions_z_e.n_e=vfoptionsbaseline.n_e; vfoptions_z_e.e_grid=vfoptionsbaseline.e_grid; vfoptions_z_e.pi_e=vfoptionsbaseline.pi_e;
@@ -80,7 +80,7 @@ StationaryDist_z=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,
 StationaryDist_s=StationaryDist_FHorz_Case1(jequaloneDist_s,AgeWeightParamNames,Policy_s,n_d,n_a,0,N_j,[],Params,simoptions_s_e);
 
 Pd_z=Policy_z(1:3,:); Pd_s=Policy_s(1:3,:);
-fprintf('CrossTest semizasz (d1 e): should be zero: V %2.8f, Policy(h,riskyshare,savings) %2.8f, Dist %2.8f \n',max(abs(V_z(:)-V_s(:))),max(abs(Pd_z(:)-Pd_s(:))),max(abs(StationaryDist_z(:)-StationaryDist_s(:))))
+fprintf('CrossTest semizasz (d1 e): should be zero: V %.3e, Policy(h,riskyshare,savings) %.3e, Dist %.3e \n',max(abs(V_z(:)-V_s(:))),max(abs(Pd_z(:)-Pd_s(:))),max(abs(StationaryDist_z(:)-StationaryDist_s(:))))
 
 %%
 output=struct();

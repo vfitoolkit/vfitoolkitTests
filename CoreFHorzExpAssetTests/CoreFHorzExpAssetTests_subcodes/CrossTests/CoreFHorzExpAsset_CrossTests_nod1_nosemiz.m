@@ -44,9 +44,9 @@ simoptions_z=simoptions;
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptions_z);
 StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptions_z);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V0(:)-V0z(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V0(:)-V0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
 %% Solve using a markov which is just an iid in disguise. Should give same result as the iid
 % zeros assets, mid points for any shocks
@@ -63,9 +63,9 @@ simoptions_e=simoptions_withe;
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e,Params,DiscountFactorParamNames,[],vfoptions_e);
 StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptions_e);
 
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(V1(:)-V2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy2(:))))
-fprintf('Cross test: z as e, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
+fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
 %% Now use code with z and e, but just set the 'other' to be a single point with value 1 and prob 1
 % So it should again give same answer
@@ -81,9 +81,9 @@ V3=squeeze(V3);
 Policy3=squeeze(Policy3);
 StationaryDist3=squeeze(StationaryDist3);
 
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(V1(:)-V3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(V1(:)-V3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy3(:))))
+fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
 % Second, make e just 1
 vfoptions_ze2=vfoptions;
@@ -102,9 +102,9 @@ V4=squeeze(V4);
 Policy4=squeeze(Policy4);
 StationaryDist4=squeeze(StationaryDist4);
 
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(V1(:)-V4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(Policy1(:)-Policy4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %2.8f \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(V1(:)-V4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy4(:))))
+fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 
 %%

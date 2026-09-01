@@ -67,7 +67,7 @@ for ff=1:length(FnNames)
     m_lc=sum(m_lcj.*AgeMass);
     m_cc=gather(CovarCorr.(fn).Mean);
     err=max(abs([m_all, m_lc, m_cc]-m_agg));
-    fprintf('Mean(%-11s) AggVars vs AllStats vs LifeCycle vs CovarCorr, should be zero: %2.10f\n', fn, err)
+    fprintf('Mean(%-11s) AggVars vs AllStats vs LifeCycle vs CovarCorr, should be zero: %.3e\n', fn, err)
     fail_count=fail_count+(err>TOL_EXACT);
 end
 
@@ -79,7 +79,7 @@ for ff=1:length(FnNames)
     var_diag=gather(CovarCorr.CovarianceMatrix(ff,ff));
     err1=abs(var_all-sd_cc^2);
     err2=abs(var_all-var_diag);
-    fprintf('Var(%-11s) AllStats vs CovarCorr.StdDev^2 vs diag(CovMat), should be zero: %2.10f / %2.10f\n', fn, err1, err2)
+    fprintf('Var(%-11s) AllStats vs CovarCorr.StdDev^2 vs diag(CovMat), should be zero: %.3e / %.3e\n', fn, err1, err2)
     fail_count=fail_count+(err1>TOL_EXACT)+(err2>TOL_EXACT);
 end
 
@@ -92,7 +92,7 @@ for ff=1:length(FnNames)
     acc_sd=gather(AgeCondCovarCorr.(fn).StdDeviation);
     err_m=max(abs(lcj_mean-acc_mean));
     err_s=max(abs(lcj_sd-acc_sd));
-    fprintf('LifeCycle vs AgeCondCovarCorr Mean(%-11s)/StdDev, should be zero: %2.10f / %2.10f\n', fn, err_m, err_s)
+    fprintf('LifeCycle vs AgeCondCovarCorr Mean(%-11s)/StdDev, should be zero: %.3e / %.3e\n', fn, err_m, err_s)
     fail_count=fail_count+(err_m>TOL_EXACT)+(err_s>TOL_EXACT);
 end
 
@@ -108,7 +108,7 @@ for ff1=1:length(FnNames)
         E_m1=sum(m1_kj.*AgeMass); E_m2=sum(m2_kj.*AgeMass);
         cov_m=sum((m1_kj-E_m1).*(m2_kj-E_m2).*AgeMass);
         err=abs(cov_pool-(E_cov+cov_m));
-        fprintf('Law-of-total-cov %s,%s, should be zero: %2.10f\n', fn1, fn2, err)
+        fprintf('Law-of-total-cov %s,%s, should be zero: %.3e\n', fn1, fn2, err)
         fail_count=fail_count+(err>TOL_EXACT);
     end
 end
@@ -130,7 +130,7 @@ for ff=1:length(FnNames)
     vogvec=reshape(ValuesOnGrid.(fn),[],1);
     pooled=gather(sum(SDvec.*vogvec));
     err=abs(pooled-gather(AggVars.(fn).Mean));
-    fprintf('ValuesOnGrid pooled vs AggVars.Mean (%-11s), should be zero: %2.10f\n', fn, err)
+    fprintf('ValuesOnGrid pooled vs AggVars.Mean (%-11s), should be zero: %.3e\n', fn, err)
     fail_count=fail_count+(err>TOL_EXACT);
 end
 
@@ -141,7 +141,7 @@ AllStats_TR=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEv
 for ff=1:length(FnNames)
     fn=FnNames{ff};
     err=abs(gather(AllStats.(fn).Mean)-gather(AllStats_TR.always.(fn).Mean));
-    fprintf('Trivial-restriction Mean(%-11s), should be zero: %2.10f\n', fn, err)
+    fprintf('Trivial-restriction Mean(%-11s), should be zero: %.3e\n', fn, err)
     fail_count=fail_count+(err>TOL_EXACT);
 end
 
@@ -160,42 +160,42 @@ P_aug=[0,P_cum]; L_aug=[0,L_cum];
 area=sum(diff(P_aug).*(L_aug(1:end-1)+L_aug(2:end))/2);
 Gini_an=1-2*area;
 err=abs(EJ_an-gather(AllStats.Jnumbers.Mean));
-fprintf('T1 Jnumbers Mean analytical vs AllStats, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T1 Jnumbers Mean analytical vs AllStats, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=abs(SDJ_an-gather(AllStats.Jnumbers.StdDeviation));
-fprintf('T1 Jnumbers StdDev analytical vs AllStats, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T1 Jnumbers StdDev analytical vs AllStats, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=abs(Gini_an-gather(AllStats.Jnumbers.Gini));
 fprintf('T1 Jnumbers Gini analytical vs AllStats, should be near-zero: %2.6f\n',err); fail_count=fail_count+(err>TOL_GINI);
 err=max(abs(gather(LifeCycle.Jnumbers.Mean)-agej_vec));
-fprintf('T1 LifeCycle.Jnumbers.Mean - agej, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T1 LifeCycle.Jnumbers.Mean - agej, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=max(abs(gather(LifeCycle.Jnumbers.StdDeviation)));
-fprintf('T1 LifeCycle.Jnumbers.StdDev, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T1 LifeCycle.Jnumbers.StdDev, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 idx_J=find(strcmp(FnNames,'Jnumbers'));
 diag_var=gather(reshape(AgeCondCovarCorr.CovarianceMatrix(idx_J,idx_J,:),1,[]));
 err=max(abs(diag_var));
-fprintf('T1 AgeCond CovMat(Jnumbers,Jnumbers,kk), should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T1 AgeCond CovMat(Jnumbers,Jnumbers,kk), should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 
 % T2. one is constant 1
 err=abs(gather(AggVars.one.Mean)-1);
-fprintf('T2 AggVars.one.Mean - 1, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T2 AggVars.one.Mean - 1, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=abs(gather(AllStats.one.Variance));
-fprintf('T2 AllStats.one.Variance, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T2 AllStats.one.Variance, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=abs(gather(AllStats.one.Gini));
-fprintf('T2 AllStats.one.Gini, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T2 AllStats.one.Gini, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 idx_one=find(strcmp(FnNames,'one'));
 cov_one_row=gather(reshape(CovarCorr.CovarianceMatrix(idx_one,:),1,[]));
 err=max(abs(cov_one_row));
-fprintf('T2 CovarCorr.CovarianceMatrix(one,:), should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T2 CovarCorr.CovarianceMatrix(one,:), should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 
 % T3. retired
 p_ret=sum(AgeMass(Params.Jr:N_j));
 err=abs(p_ret-gather(AggVars.retired.Mean));
-fprintf('T3 retired Mean analytical vs AggVars, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T3 retired Mean analytical vs AggVars, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=abs(p_ret*(1-p_ret)-gather(AllStats.retired.Variance));
-fprintf('T3 retired Var analytical vs AllStats, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T3 retired Var analytical vs AllStats, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 
 % T4. atJ1
 err=abs(AgeMass(Params.J1)-gather(AggVars.atJ1.Mean));
-fprintf('T4 atJ1 Mean - AgeMass(J1), should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T4 atJ1 Mean - AgeMass(J1), should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 
 % "at age J1" conditional restriction: restricted moments == LifeCycle.Mean at J1.
 % Use condJ1 as the restriction name to avoid colliding with the atJ1 FnsToEvaluate field
@@ -211,7 +211,7 @@ for ff=1:length(FnNames)
     m_res=gather(AllStats_J1.condJ1.(fn).Mean);
     m_lcJ1=gather(LifeCycle.(fn).Mean(Params.J1));
     err=abs(m_res-m_lcJ1);
-    fprintf('T4 ConditionalRestriction at age J1 vs LifeCycle.Mean(J1) for %-11s, should be zero: %2.10f\n', fn, err)
+    fprintf('T4 ConditionalRestriction at age J1 vs LifeCycle.Mean(J1) for %-11s, should be zero: %.3e\n', fn, err)
     fail_count=fail_count+(err>TOL_EXACT);
 end
 
@@ -221,7 +221,7 @@ EJ=sum(agej_vec.*AgeMass); Ea=sum(m_a_kj.*AgeMass);
 cov_an=sum((agej_vec-EJ).*(m_a_kj-Ea).*AgeMass);
 cov_num=gather(CovarCorr.Jnumbers.CovarianceWith.assets);
 err=abs(cov_an-cov_num);
-fprintf('T5 Cov(Jnumbers,assets) law of total cov, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T5 Cov(Jnumbers,assets) law of total cov, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 
 %% ===== Section F: agegroupings tests =====
 fprintf('\n-- Section F: agegroupings --\n')
@@ -231,8 +231,8 @@ simoptions_1bin.agegroupings=[1];
 AgeCond_1bin=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_1bin);
 err_cov=max(abs(gather(AgeCond_1bin.CovarianceMatrix(:))-gather(CovarCorr.CovarianceMatrix(:))));
 err_cor=max(abs(gather(AgeCond_1bin.CorrelationMatrix(:))-gather(CovarCorr.CorrelationMatrix(:))));
-fprintf('T6 single-bin AgeCond CovMat vs pooled, should be zero: %2.10f\n',err_cov); fail_count=fail_count+(err_cov>TOL_EXACT);
-fprintf('T6 single-bin AgeCond CorrMat vs pooled, should be zero: %2.10f\n',err_cor); fail_count=fail_count+(err_cor>TOL_EXACT);
+fprintf('T6 single-bin AgeCond CovMat vs pooled, should be zero: %.3e\n',err_cov); fail_count=fail_count+(err_cov>TOL_EXACT);
+fprintf('T6 single-bin AgeCond CorrMat vs pooled, should be zero: %.3e\n',err_cor); fail_count=fail_count+(err_cor>TOL_EXACT);
 
 simoptions_5bin=simoptions;
 simoptions_5bin.agegroupings=1:5:N_j;
@@ -261,7 +261,7 @@ simoptions_oas.outputasstructure=1;
 simoptions_oas.AggVarNames=FnNames;
 AggVars_oas=EvalFnOnAgentDist_AggVars_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_oas);
 err=abs(gather(AggVars_oas.assets.Mean)-gather(AggVars.assets.Mean));
-fprintf('outputasstructure=1 AggVars.assets.Mean unchanged, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('outputasstructure=1 AggVars.assets.Mean unchanged, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 
 %% ===== Section I: Gridinterplayer (big grid) =====
 fprintf('\n-- Section I: gridinterplayer --\n')
@@ -314,8 +314,8 @@ for ff=1:length(FnNames)
     fn=FnNames{ff};
     err_m=max(abs(gather(ACP.(fn).Mean)-gather(LifeCycle.(fn).Mean)));
     err_s=max(abs(gather(ACP.(fn).StdDeviation)-gather(LifeCycle.(fn).StdDeviation)));
-    fprintf('AutoCorr Mean vs LifeCycle Mean (%-11s), should be zero: %2.10f\n', fn, err_m); fail_count=fail_count+(err_m>TOL_EXACT);
-    fprintf('AutoCorr StdDev vs LifeCycle StdDev (%-11s), should be zero: %2.10f\n', fn, err_s); fail_count=fail_count+(err_s>TOL_EXACT);
+    fprintf('AutoCorr Mean vs LifeCycle Mean (%-11s), should be zero: %.3e\n', fn, err_m); fail_count=fail_count+(err_m>TOL_EXACT);
+    fprintf('AutoCorr StdDev vs LifeCycle StdDev (%-11s), should be zero: %.3e\n', fn, err_s); fail_count=fail_count+(err_s>TOL_EXACT);
 end
 
 % AutoCorrelation values should lie in [-1, 1] (or be NaN when StdDev=0)
@@ -329,13 +329,13 @@ end
 
 % T1 (Jnumbers): constant within age -> AutoCov = 0 exactly, AutoCorr = NaN
 err=max(abs(gather(ACP.Jnumbers.AutoCovariance)));
-fprintf('T1 Jnumbers AutoCovariance per-age, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T1 Jnumbers AutoCovariance per-age, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 allNaN=all(isnan(gather(ACP.Jnumbers.AutoCorrelation)));
 fprintf('T1 Jnumbers AutoCorrelation should be all NaN: %d\n',allNaN); fail_count=fail_count+(~allNaN);
 
 % T2 (one): constant 1 -> AutoCov = 0 exactly, AutoCorr = NaN
 err=max(abs(gather(ACP.one.AutoCovariance)));
-fprintf('T2 one AutoCovariance per-age, should be zero: %2.10f\n',err); fail_count=fail_count+(err>TOL_EXACT);
+fprintf('T2 one AutoCovariance per-age, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 allNaN=all(isnan(gather(ACP.one.AutoCorrelation)));
 fprintf('T2 one AutoCorrelation should be all NaN: %d\n',allNaN); fail_count=fail_count+(~allNaN);
 

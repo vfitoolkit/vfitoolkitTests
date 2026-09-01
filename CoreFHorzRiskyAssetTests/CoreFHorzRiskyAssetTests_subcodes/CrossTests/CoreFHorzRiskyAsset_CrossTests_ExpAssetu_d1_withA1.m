@@ -43,7 +43,7 @@ AllStatsR=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDistR,PolicyR,FnsR,Pa
 [VE,PolicyE]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_E,Params,DiscountFactorParamNames,[],vfoptionsE);
 StationaryDistE=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,PolicyE,n_d,n_a,0,N_j,[],Params,simoptionsE);
 AllStatsE=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDistE,PolicyE,FnsE,Params,[],n_d,n_a,0,N_j,d_grid,a_grid,[],simoptionsE);
-fprintf('CrossTest ExpAssetu (d1 noz noe, withA1): should be zero: V %2.8f, Policy %2.8f, Dist %2.8f, AllStats.a2.Mean %2.8f \n',max(abs(VR(:)-VE(:))),max(abs(PolicyR(:)-PolicyE(:))),max(abs(StationaryDistR(:)-StationaryDistE(:))),abs(AllStatsR.a2.Mean-AllStatsE.a2.Mean))
+fprintf('CrossTest ExpAssetu (d1 noz noe, withA1): should be zero: V %.3e, Policy %.3e, Dist %.3e, AllStats.a2.Mean %.3e \n',max(abs(VR(:)-VE(:))),max(abs(PolicyR(:)-PolicyE(:))),max(abs(StationaryDistR(:)-StationaryDistE(:))),abs(AllStatsR.a2.Mean-AllStatsE.a2.Mean))
 
 %% (2) z, noe
 jequaloneDist=zeros([n_a,n_z],'gpuArray'); jequaloneDist(1,1,ceil(n_z/2))=1;
@@ -57,7 +57,7 @@ AllStatsR=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDistR,PolicyR,FnsR,Pa
 [VE,PolicyE]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_E,Params,DiscountFactorParamNames,[],vfoptionsE);
 StationaryDistE=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,PolicyE,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsE);
 AllStatsE=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDistE,PolicyE,FnsE,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptionsE);
-fprintf('CrossTest ExpAssetu (d1 z noe, withA1): should be zero: V %2.8f, Policy %2.8f, Dist %2.8f, AllStats.a2.Mean %2.8f \n',max(abs(VR(:)-VE(:))),max(abs(PolicyR(:)-PolicyE(:))),max(abs(StationaryDistR(:)-StationaryDistE(:))),abs(AllStatsR.a2.Mean-AllStatsE.a2.Mean))
+fprintf('CrossTest ExpAssetu (d1 z noe, withA1): should be zero: V %.3e, Policy %.3e, Dist %.3e, AllStats.a2.Mean %.3e \n',max(abs(VR(:)-VE(:))),max(abs(PolicyR(:)-PolicyE(:))),max(abs(StationaryDistR(:)-StationaryDistE(:))),abs(AllStatsR.a2.Mean-AllStatsE.a2.Mean))
 
 %% (3) noz, e
 vfoptionsR_e=vfoptionsR; vfoptionsR_e.n_e=vfoptionsbaseline.n_e; vfoptionsR_e.e_grid=vfoptionsbaseline.e_grid; vfoptionsR_e.pi_e=vfoptionsbaseline.pi_e;
@@ -75,7 +75,7 @@ AllStatsR=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDistR,PolicyR,FnsR,Pa
 [VE,PolicyE]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_E,Params,DiscountFactorParamNames,[],vfoptionsE_e);
 StationaryDistE=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,PolicyE,n_d,n_a,0,N_j,[],Params,simoptionsE_e);
 AllStatsE=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDistE,PolicyE,FnsE,Params,[],n_d,n_a,0,N_j,d_grid,a_grid,[],simoptionsE_e);
-fprintf('CrossTest ExpAssetu (d1 noz e, withA1): should be zero: V %2.8f, Policy %2.8f, Dist %2.8f, AllStats.a2.Mean %2.8f \n',max(abs(VR(:)-VE(:))),max(abs(PolicyR(:)-PolicyE(:))),max(abs(StationaryDistR(:)-StationaryDistE(:))),abs(AllStatsR.a2.Mean-AllStatsE.a2.Mean))
+fprintf('CrossTest ExpAssetu (d1 noz e, withA1): should be zero: V %.3e, Policy %.3e, Dist %.3e, AllStats.a2.Mean %.3e \n',max(abs(VR(:)-VE(:))),max(abs(PolicyR(:)-PolicyE(:))),max(abs(StationaryDistR(:)-StationaryDistE(:))),abs(AllStatsR.a2.Mean-AllStatsE.a2.Mean))
 
 %% (4) z, e
 jequaloneDist=zeros([n_a,n_z,vfoptionsbaseline.n_e],'gpuArray'); jequaloneDist(1,1,ceil(n_z/2),ceil(vfoptionsbaseline.n_e/2))=1;
@@ -89,7 +89,7 @@ AllStatsR=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDistR,PolicyR,FnsR,Pa
 [VE,PolicyE]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_E,Params,DiscountFactorParamNames,[],vfoptionsE_e);
 StationaryDistE=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,PolicyE,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsE_e);
 AllStatsE=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDistE,PolicyE,FnsE,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptionsE_e);
-fprintf('CrossTest ExpAssetu (d1 z e, withA1): should be zero: V %2.8f, Policy %2.8f, Dist %2.8f, AllStats.a2.Mean %2.8f \n',max(abs(VR(:)-VE(:))),max(abs(PolicyR(:)-PolicyE(:))),max(abs(StationaryDistR(:)-StationaryDistE(:))),abs(AllStatsR.a2.Mean-AllStatsE.a2.Mean))
+fprintf('CrossTest ExpAssetu (d1 z e, withA1): should be zero: V %.3e, Policy %.3e, Dist %.3e, AllStats.a2.Mean %.3e \n',max(abs(VR(:)-VE(:))),max(abs(PolicyR(:)-PolicyE(:))),max(abs(StationaryDistR(:)-StationaryDistE(:))),abs(AllStatsR.a2.Mean-AllStatsE.a2.Mean))
 
 %%
 output=struct();

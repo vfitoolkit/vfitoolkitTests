@@ -106,7 +106,7 @@ for ezcase=1:3
     StationaryDist_s=StationaryDist_FHorz_Case1(jequaloneDist_s,AgeWeightParamNames,Policy_s,n_d,n_a,0,N_j,[],Params,simoptions_s);
 
     Pd_z=Policy_z(1:2,:); Pd_s=Policy_s(1:2,:);
-    fprintf('CrossTest semizasz (nod1 noe) [EZ %s]: should be zero: V %2.8f, Policy(riskyshare,savings) %2.8f, Dist %2.8f \n',casestr,max(abs(V_z(:)-V_s(:))),max(abs(Pd_z(:)-Pd_s(:))),max(abs(StationaryDist_z(:)-StationaryDist_s(:))))
+    fprintf('CrossTest semizasz (nod1 noe) [EZ %s]: should be zero: V %.3e, Policy(riskyshare,savings) %.3e, Dist %.3e \n',casestr,max(abs(V_z(:)-V_s(:))),max(abs(Pd_z(:)-Pd_s(:))),max(abs(StationaryDist_z(:)-StationaryDist_s(:))))
 
     %% (2) with e
     jequaloneDist_z=zeros([n_a,n_z,vfoptions_z_e.n_e],'gpuArray'); jequaloneDist_z(1,1,ceil(vfoptions_z_e.n_e/2))=1;
@@ -119,7 +119,7 @@ for ezcase=1:3
     StationaryDist_s=StationaryDist_FHorz_Case1(jequaloneDist_s,AgeWeightParamNames,Policy_s,n_d,n_a,0,N_j,[],Params,simoptions_s_e);
 
     Pd_z=Policy_z(1:2,:); Pd_s=Policy_s(1:2,:);
-    fprintf('CrossTest semizasz (nod1 e) [EZ %s]: should be zero: V %2.8f, Policy(riskyshare,savings) %2.8f, Dist %2.8f \n',casestr,max(abs(V_z(:)-V_s(:))),max(abs(Pd_z(:)-Pd_s(:))),max(abs(StationaryDist_z(:)-StationaryDist_s(:))))
+    fprintf('CrossTest semizasz (nod1 e) [EZ %s]: should be zero: V %.3e, Policy(riskyshare,savings) %.3e, Dist %.3e \n',casestr,max(abs(V_z(:)-V_s(:))),max(abs(Pd_z(:)-Pd_s(:))),max(abs(StationaryDist_z(:)-StationaryDist_s(:))))
 
 end
 

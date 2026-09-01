@@ -42,11 +42,11 @@ pi_z_asz=repmat(pi_e',n_e,1); % every row is pi_e => z is iid with distribution 
 StationaryDistz=StationaryDist_InfHorz(Policyz,n_d,n_a,n_z_asz,pi_z_asz,struct(),Params,[]);
 AggVarsz=EvalFnOnAgentDist_AggVars_InfHorz(StationaryDistz,Policyz,FnsToEvaluate_z,Params,[],n_d,n_a,n_z_asz,d_grid,a_grid,z_grid_asz,struct());
 
-fprintf('Cross test D (iid e == same iid disguised as markov z), V should be zero:              %2.8f \n',max(abs(Ve(:)-Vz(:))))
-fprintf('Cross test D (iid e == same iid disguised as markov z), Policy should be zero:         %2.8f \n',max(abs(Policye(:)-Policyz(:))))
-fprintf('Cross test D (iid e == same iid disguised as markov z), StationaryDist should be zero: %2.8f \n',max(abs(StationaryDiste(:)-StationaryDistz(:))))
-fprintf('Cross test D (iid e == same iid disguised as markov z), assets Mean should be zero:    %2.8f \n',abs(AggVarse.assets.Mean-AggVarsz.assets.Mean))
-fprintf('Cross test D (iid e == same iid disguised as markov z), earnings Mean should be zero:  %2.8f \n',abs(AggVarse.earnings.Mean-AggVarsz.earnings.Mean))
+fprintf('Cross test D (iid e == same iid disguised as markov z), V should be zero:              %.3e \n',max(abs(Ve(:)-Vz(:))))
+fprintf('Cross test D (iid e == same iid disguised as markov z), Policy should be zero:         %.3e \n',max(abs(Policye(:)-Policyz(:))))
+fprintf('Cross test D (iid e == same iid disguised as markov z), StationaryDist should be zero: %.3e \n',max(abs(StationaryDiste(:)-StationaryDistz(:))))
+fprintf('Cross test D (iid e == same iid disguised as markov z), assets Mean should be zero:    %.3e \n',abs(AggVarse.assets.Mean-AggVarsz.assets.Mean))
+fprintf('Cross test D (iid e == same iid disguised as markov z), earnings Mean should be zero:  %.3e \n',abs(AggVarse.earnings.Mean-AggVarsz.earnings.Mean))
 
 %% Cross test E: a single trivial e point (value 1, prob 1) reproduces the noe code path
 vfo_e1=struct(); vfo_e1.n_e=1; vfo_e1.e_grid=1; vfo_e1.pi_e=1;
@@ -58,9 +58,9 @@ StationaryDist0=StationaryDist_InfHorz(Policy0,n_d,n_a,n_z,pi_z,struct(),Params,
 [V0e,Policy0e]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn_e,Params,DiscountFactorParamNames,[],vfo_e1);
 StationaryDist0e=StationaryDist_InfHorz(Policy0e,n_d,n_a,n_z,pi_z,simo_e1,Params,[]);
 
-fprintf('Cross test E (trivial e == noe), V should be zero:             %2.8f \n',max(abs(V0(:)-V0e(:))))
-fprintf('Cross test E (trivial e == noe), Policy should be zero:        %2.8f \n',max(abs(Policy0(:)-Policy0e(:))))
-fprintf('Cross test E (trivial e == noe), StationaryDist should be zero:%2.8f \n',max(abs(StationaryDist0(:)-StationaryDist0e(:))))
+fprintf('Cross test E (trivial e == noe), V should be zero:             %.3e \n',max(abs(V0(:)-V0e(:))))
+fprintf('Cross test E (trivial e == noe), Policy should be zero:        %.3e \n',max(abs(Policy0(:)-Policy0e(:))))
+fprintf('Cross test E (trivial e == noe), StationaryDist should be zero:%.3e \n',max(abs(StationaryDist0(:)-StationaryDist0e(:))))
 
 %% Cross test F: relabelling (permuting) the e states leaves all aggregate statistics unchanged
 AllStatse=EvalFnOnAgentDist_AllStats_InfHorz(StationaryDiste,Policye,FnsToEvaluate_e,Params,[],n_d,n_a,n_z,d_grid,a_grid,z_grid,simo_e);
@@ -73,10 +73,10 @@ simo_ep=struct(); simo_ep.n_e=n_e; simo_ep.e_grid=e_grid(perm); simo_ep.pi_e=pi_
 StationaryDistp=StationaryDist_InfHorz(Policyp,n_d,n_a,n_z,pi_z,simo_ep,Params,[]);
 AllStatsp=EvalFnOnAgentDist_AllStats_InfHorz(StationaryDistp,Policyp,FnsToEvaluate_e,Params,[],n_d,n_a,n_z,d_grid,a_grid,z_grid,simo_ep);
 
-fprintf('Cross test F (e permutation invariance), assets Mean diff should be zero:   %2.8f \n',abs(AllStatse.assets.Mean-AllStatsp.assets.Mean))
-fprintf('Cross test F (e permutation invariance), assets StdDev diff should be zero: %2.8f \n',abs(AllStatse.assets.StdDeviation-AllStatsp.assets.StdDeviation))
-fprintf('Cross test F (e permutation invariance), earnings Mean diff should be zero: %2.8f \n',abs(AllStatse.earnings.Mean-AllStatsp.earnings.Mean))
-fprintf('Cross test F (e permutation invariance), earnings Gini diff should be zero: %2.8f \n',abs(AllStatse.earnings.Gini-AllStatsp.earnings.Gini))
+fprintf('Cross test F (e permutation invariance), assets Mean diff should be zero:   %.3e \n',abs(AllStatse.assets.Mean-AllStatsp.assets.Mean))
+fprintf('Cross test F (e permutation invariance), assets StdDev diff should be zero: %.3e \n',abs(AllStatse.assets.StdDeviation-AllStatsp.assets.StdDeviation))
+fprintf('Cross test F (e permutation invariance), earnings Mean diff should be zero: %.3e \n',abs(AllStatse.earnings.Mean-AllStatsp.earnings.Mean))
+fprintf('Cross test F (e permutation invariance), earnings Gini diff should be zero: %.3e \n',abs(AllStatse.earnings.Gini-AllStatsp.earnings.Gini))
 
 %%
 output=struct();

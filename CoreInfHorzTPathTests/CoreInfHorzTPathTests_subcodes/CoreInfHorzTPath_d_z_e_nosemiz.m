@@ -52,8 +52,8 @@ vfoptions2.divideandconquer=1;
 simoptions2=simoptions;
 [VPath2,PolicyPath2]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath2(:))))
-fprintf('Divide-and-conquer, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath2(:))))
+fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
 
 % lowmemory should give same answer
 vfoptions1.lowmemory=1;
@@ -64,10 +64,10 @@ vfoptions2.lowmemory=1;
 [VPath2B,PolicyPath2B]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 vfoptions2.lowmemory=0;
 
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath1B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath1B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(VPath2(:)-VPath2B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(PolicyPath2(:)-PolicyPath2B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath1B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath1B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath2(:)-VPath2B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath2(:)-PolicyPath2B(:))))
 
 % lowmemory 2 should give same answer
 vfoptions1.lowmemory=2;
@@ -78,17 +78,17 @@ vfoptions2.lowmemory=2;
 [VPath2C,PolicyPath2C]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
 vfoptions2.lowmemory=0;
 
-fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(VPath1(:)-VPath1C(:))))
-fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(PolicyPath1(:)-PolicyPath1C(:))))
-fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(VPath2(:)-VPath2C(:))))
-fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(PolicyPath2(:)-PolicyPath2C(:))))
+fprintf('low memory 2, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath1C(:))))
+fprintf('low memory 2, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath1C(:))))
+fprintf('low memory 2, this should be zero: %.3e \n',max(abs(VPath2(:)-VPath2C(:))))
+fprintf('low memory 2, this should be zero: %.3e \n',max(abs(PolicyPath2(:)-PolicyPath2C(:))))
 
 %% ValueFnFromPolicy along the path: recomputing V from the policy must reproduce VPath
 % ValueFnFromPolicyOnTransPath_InfHorz evaluates the Bellman at the given PolicyPath instead of
 % maximising, so it must return exactly the VPath that produced that policy. (Divide-and-conquer
 % is irrelevant here -- there is no maximisation -- so this covers the no-GI tier as a whole.)
 VfromPolicyPath=ValueFnFromPolicyOnTransPath_InfHorz(PolicyPath2,V_final,ParamPath,PricePath,T,n_d,n_a,n_z,d_grid,a_grid,z_grid, pi_z, ReturnFn, Params, DiscountFactorParamNames, vfoptions2);
-fprintf('ValueFnFromPolicy along TPath (no GI), this should be zero: %2.10f \n',max(abs(VfromPolicyPath(:)-VPath2(:))))
+fprintf('ValueFnFromPolicy along TPath (no GI), this should be zero: %.3e \n',max(abs(VfromPolicyPath(:)-VPath2(:))))
 clear VfromPolicyPath
 
 %% Cross-check against an FHorz solve (with DC, no GI)
@@ -116,14 +116,14 @@ vfoptionsFH.V_Jplus1=V_final;
 % Reshape to (everything else)-by-periods, so these lines are agnostic to the state dimensions
 temp1=reshape(VPath2,[],T); temp2=reshape(V_FH,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC, no GI), this should be zero, V: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (with DC, no GI), this should be zero, V: %.3e \n',max(abs(dev(:))))
 temp1=reshape(PolicyPath2,[],T); temp2=reshape(Policy_FH,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC, no GI), this should be zero, Policy: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (with DC, no GI), this should be zero, Policy: %.3e \n',max(abs(dev(:))))
 temp1=reshape(PolicyInd2Val_InfHorz_TPath(PolicyPath2,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions2),[],T);
 temp2=reshape(PolicyInd2Val_FHorz(Policy_FH,n_d,n_a,n_z,N_jFH,d_grid,a_grid,vfoptions2),[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC, no GI), this should be zero, PolicyVals: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (with DC, no GI), this should be zero, PolicyVals: %.3e \n',max(abs(dev(:))))
 
 % --- carry the same construction through the agent dist and the downstream statistics ---
 % The FHorz stationary dist bakes in the age weights (StationaryDist_FHorz_Iteration_raw ends
@@ -148,7 +148,7 @@ StatDist_FH=StationaryDist_FHorz_Case1(AgentDist_initial,{'mewjFH'},Policy_FH,n_
 temp1=reshape(AgentDistPathFH,[],T); temp2=reshape(StatDist_FH,[],N_jFH);
 temp2=temp2./sum(temp2,1); % undo the age weighting, so each age carries mass one like each TPath period
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC, no GI), this should be zero, AgentDist: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (with DC, no GI), this should be zero, AgentDist: %.3e \n',max(abs(dev(:))))
 
 AggVarsPathFH=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathFH, PolicyPath2, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsFH);
 AllStatsPathFH=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathFH, PolicyPath2, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsFH);
@@ -156,13 +156,13 @@ AgeCondStats_FH=LifeCycleProfiles_FHorz_Case1(StatDist_FH,Policy_FH,FnsToEvaluat
 
 for fnname={'assets','earnings','nextassets','zval','eval'}
     dev=AggVarsPathFH.(fnname{1}).Mean(1:N_jFH)-AgeCondStats_FH.(fnname{1}).Mean;
-    fprintf('TPath vs FHorz (with DC, no GI), this should be zero, AggVars %s Mean: %2.10f \n',fnname{1},max(abs(dev(:))))
+    fprintf('TPath vs FHorz (with DC, no GI), this should be zero, AggVars %s Mean: %.3e \n',fnname{1},max(abs(dev(:))))
 end
 % AllStats: every field the two commands have in common (periods/ages are the trailing dim in both)
 for statname={'Mean','Median','StdDeviation','Variance','Gini','LorenzCurve','QuantileCutoffs','QuantileMeans'}
     temp1=AllStatsPathFH.assets.(statname{1}); temp2=AgeCondStats_FH.assets.(statname{1});
     dev=temp1(:,1:N_jFH)-temp2;
-    fprintf('TPath vs FHorz (with DC, no GI), this should be zero, AllStats assets %s: %2.10f \n',statname{1},max(abs(dev(:))))
+    fprintf('TPath vs FHorz (with DC, no GI), this should be zero, AllStats assets %s: %.3e \n',statname{1},max(abs(dev(:))))
 end
 
 clear V_FH Policy_FH ParamsFH vfoptionsFH temp1 temp2 dev AgentDistPathFH StatDist_FH AggVarsPathFH AllStatsPathFH AgeCondStats_FH simoptionsFH
@@ -210,14 +210,14 @@ vfoptionsFHZ.V_Jplus1=V_final;
 
 temp1=reshape(VPathZ,[],T); temp2=reshape(V_FHZ,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (path-varying z), this should be zero, V: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (path-varying z), this should be zero, V: %.3e \n',max(abs(dev(:))))
 temp1=reshape(PolicyPathZ,[],T); temp2=reshape(Policy_FHZ,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (path-varying z), this should be zero, Policy: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (path-varying z), this should be zero, Policy: %.3e \n',max(abs(dev(:))))
 temp1=reshape(PolicyInd2Val_InfHorz_TPath(PolicyPathZ,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions2),[],T);
 temp2=reshape(PolicyInd2Val_FHorz(Policy_FHZ,n_d,n_a,n_z,N_jFH,d_grid,a_grid,vfoptions2),[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (path-varying z), this should be zero, PolicyVals: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (path-varying z), this should be zero, PolicyVals: %.3e \n',max(abs(dev(:))))
 
 % Same age-weight handling as the fixed-process block above
 ParamsFHZ.mewjFH=ones(1,N_jFH)/N_jFH;
@@ -232,7 +232,7 @@ StatDist_FHZ=StationaryDist_FHorz_Case1(AgentDist_initial,{'mewjFH'},Policy_FHZ,
 temp1=reshape(AgentDistPathZ,[],T); temp2=reshape(StatDist_FHZ,[],N_jFH);
 temp2=temp2./sum(temp2,1); % undo the age weighting, so each age carries mass one like each TPath period
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (path-varying z), this should be zero, AgentDist: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (path-varying z), this should be zero, AgentDist: %.3e \n',max(abs(dev(:))))
 
 AggVarsPathZ=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathZ, PolicyPathZ, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid_KFTT, simoptionsFHZ);
 AllStatsPathZ=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathZ, PolicyPathZ, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid_KFTT, simoptionsFHZ);
@@ -240,7 +240,7 @@ AgeCondStats_FHZ=LifeCycleProfiles_FHorz_Case1(StatDist_FHZ,Policy_FHZ,FnsToEval
 
 for fnname=fieldnames(FnsToEvaluate)'
     dev=AggVarsPathZ.(fnname{1}).Mean(1:N_jFH)-AgeCondStats_FHZ.(fnname{1}).Mean;
-    fprintf('TPath vs FHorz (path-varying z), this should be zero, AggVars %s Mean: %2.10f \n',fnname{1},max(abs(dev(:))))
+    fprintf('TPath vs FHorz (path-varying z), this should be zero, AggVars %s Mean: %.3e \n',fnname{1},max(abs(dev(:))))
 end
 % The shock FnsToEvaluate, which is what this block is really about: with the process moving, the
 % mean and the std deviation of the shock both move, and the two solvers must agree on both.
@@ -248,13 +248,13 @@ for fnname={'zval','eval'}
     for statname={'Mean','StdDeviation'}
         temp1=AllStatsPathZ.(fnname{1}).(statname{1}); temp2=AgeCondStats_FHZ.(fnname{1}).(statname{1});
         dev=temp1(:,1:N_jFH)-temp2;
-        fprintf('TPath vs FHorz (path-varying z), this should be zero, %s %s: %2.10f \n',fnname{1},statname{1},max(abs(dev(:))))
+        fprintf('TPath vs FHorz (path-varying z), this should be zero, %s %s: %.3e \n',fnname{1},statname{1},max(abs(dev(:))))
     end
 end
 for statname={'Mean','Median','StdDeviation','Variance','Gini','LorenzCurve','QuantileCutoffs','QuantileMeans'}
     temp1=AllStatsPathZ.assets.(statname{1}); temp2=AgeCondStats_FHZ.assets.(statname{1});
     dev=temp1(:,1:N_jFH)-temp2;
-    fprintf('TPath vs FHorz (path-varying z), this should be zero, AllStats assets %s: %2.10f \n',statname{1},max(abs(dev(:))))
+    fprintf('TPath vs FHorz (path-varying z), this should be zero, AllStats assets %s: %.3e \n',statname{1},max(abs(dev(:))))
 end
 
 % Non-vacuity. If the time-varying z_grid/pi_z were silently ignored, everything above would still
@@ -283,8 +283,8 @@ vfoptions4.divideandconquer=1;
 simoptions4=simoptions3;
 [VPath4,PolicyPath4]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
 
-fprintf('Divide-and-conquer (with GI), this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath4(:))))
-fprintf('Divide-and-conquer (with GI), this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
+fprintf('Divide-and-conquer (with GI), this should be zero: %.3e \n',max(abs(VPath3(:)-VPath4(:))))
+fprintf('Divide-and-conquer (with GI), this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
 
 % lowmemory should give same answer
 vfoptions3.lowmemory=1;
@@ -295,10 +295,10 @@ vfoptions4.lowmemory=1;
 [VPath4B,PolicyPath4B]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
 vfoptions4.lowmemory=0;
 
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath3B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath3B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(VPath4(:)-VPath4B(:))))
-fprintf('low memory, this should be zero: %2.8f \n',max(abs(PolicyPath4(:)-PolicyPath4B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath3(:)-VPath3B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath3B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath4(:)-VPath4B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath4(:)-PolicyPath4B(:))))
 
 % lowmemory 2 should give same answer
 vfoptions3.lowmemory=2;
@@ -309,14 +309,14 @@ vfoptions4.lowmemory=2;
 [VPath4C,PolicyPath4C]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
 vfoptions4.lowmemory=0;
 
-fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(VPath3(:)-VPath3C(:))))
-fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(PolicyPath3(:)-PolicyPath3C(:))))
-fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(VPath4(:)-VPath4C(:))))
-fprintf('low memory 2, this should be zero: %2.8f \n',max(abs(PolicyPath4(:)-PolicyPath4C(:))))
+fprintf('low memory 2, this should be zero: %.3e \n',max(abs(VPath3(:)-VPath3C(:))))
+fprintf('low memory 2, this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath3C(:))))
+fprintf('low memory 2, this should be zero: %.3e \n',max(abs(VPath4(:)-VPath4C(:))))
+fprintf('low memory 2, this should be zero: %.3e \n',max(abs(PolicyPath4(:)-PolicyPath4C(:))))
 
 %% ValueFnFromPolicy along the path, grid-interpolation tier
 VfromPolicyPath=ValueFnFromPolicyOnTransPath_InfHorz(PolicyPath4,V_final_GI,ParamPath,PricePath,T,n_d,n_a,n_z,d_grid,a_grid,z_grid, pi_z, ReturnFn, Params, DiscountFactorParamNames, vfoptions4);
-fprintf('ValueFnFromPolicy along TPath (with GI), this should be zero: %2.10f \n',max(abs(VfromPolicyPath(:)-VPath4(:))))
+fprintf('ValueFnFromPolicy along TPath (with GI), this should be zero: %.3e \n',max(abs(VfromPolicyPath(:)-VPath4(:))))
 clear VfromPolicyPath
 
 %% Cross-check against an FHorz solve (with DC and GI)
@@ -337,14 +337,14 @@ vfoptionsFH_GI.V_Jplus1=V_final_GI;
 
 temp1=reshape(VPath4,[],T); temp2=reshape(V_FH,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC and GI), this should be zero, V: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (with DC and GI), this should be zero, V: %.3e \n',max(abs(dev(:))))
 temp1=reshape(PolicyPath4,[],T); temp2=reshape(Policy_FH,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC and GI), this should be zero, Policy: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (with DC and GI), this should be zero, Policy: %.3e \n',max(abs(dev(:))))
 temp1=reshape(PolicyInd2Val_InfHorz_TPath(PolicyPath4,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions4),[],T);
 temp2=reshape(PolicyInd2Val_FHorz(Policy_FH,n_d,n_a,n_z,N_jFH,d_grid,a_grid,vfoptions4),[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC and GI), this should be zero, PolicyVals: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (with DC and GI), this should be zero, PolicyVals: %.3e \n',max(abs(dev(:))))
 
 % --- carry the same construction through the agent dist and the downstream statistics ---
 % The FHorz stationary dist bakes in the age weights (StationaryDist_FHorz_Iteration_raw ends
@@ -369,7 +369,7 @@ StatDist_FH=StationaryDist_FHorz_Case1(AgentDist_initial,{'mewjFH'},Policy_FH,n_
 temp1=reshape(AgentDistPathFH,[],T); temp2=reshape(StatDist_FH,[],N_jFH);
 temp2=temp2./sum(temp2,1); % undo the age weighting, so each age carries mass one like each TPath period
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC and GI), this should be zero, AgentDist: %2.10f \n',max(abs(dev(:))))
+fprintf('TPath vs FHorz (with DC and GI), this should be zero, AgentDist: %.3e \n',max(abs(dev(:))))
 
 AggVarsPathFH=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathFH, PolicyPath4, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsFH);
 AllStatsPathFH=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathFH, PolicyPath4, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsFH);
@@ -377,13 +377,13 @@ AgeCondStats_FH=LifeCycleProfiles_FHorz_Case1(StatDist_FH,Policy_FH,FnsToEvaluat
 
 for fnname={'assets','earnings','nextassets','zval','eval'}
     dev=AggVarsPathFH.(fnname{1}).Mean(1:N_jFH)-AgeCondStats_FH.(fnname{1}).Mean;
-    fprintf('TPath vs FHorz (with DC and GI), this should be zero, AggVars %s Mean: %2.10f \n',fnname{1},max(abs(dev(:))))
+    fprintf('TPath vs FHorz (with DC and GI), this should be zero, AggVars %s Mean: %.3e \n',fnname{1},max(abs(dev(:))))
 end
 % AllStats: every field the two commands have in common (periods/ages are the trailing dim in both)
 for statname={'Mean','Median','StdDeviation','Variance','Gini','LorenzCurve','QuantileCutoffs','QuantileMeans'}
     temp1=AllStatsPathFH.assets.(statname{1}); temp2=AgeCondStats_FH.assets.(statname{1});
     dev=temp1(:,1:N_jFH)-temp2;
-    fprintf('TPath vs FHorz (with DC and GI), this should be zero, AllStats assets %s: %2.10f \n',statname{1},max(abs(dev(:))))
+    fprintf('TPath vs FHorz (with DC and GI), this should be zero, AllStats assets %s: %.3e \n',statname{1},max(abs(dev(:))))
 end
 
 clear V_FH Policy_FH ParamsFH vfoptionsFH_GI temp1 temp2 dev AgentDistPathFH StatDist_FH AggVarsPathFH AllStatsPathFH AgeCondStats_FH simoptionsFH
@@ -433,7 +433,7 @@ fprintf('SimPanel (with GI), nextassets: max abs deviation: %2.8f, max abs perce
 [AggVarsPath2.assets.Mean;   mean(SimPanelTPath.assets,2)']
 
 fprintf('With/without grid interp, should get much the same moments (for big a_grid) \n')
-fprintf('AgentDist along TPath with/without grid interp, this should be close to zero: %2.8f \n',max(abs(AgentDistPath2(:)-AgentDistPath4(:))))
+fprintf('AgentDist along TPath with/without grid interp, this should be close to zero: %.3e \n',max(abs(AgentDistPath2(:)-AgentDistPath4(:))))
 [AggVarsPath2.earnings.Mean; AggVarsPath4.earnings.Mean]
 [AggVarsPath2.assets.Mean; AggVarsPath4.assets.Mean]
 
@@ -478,16 +478,16 @@ if prod(n_z)>0 && ~isfield(simoptions,'n_e')
 
     for fnname=fieldnames(FnsToEvaluate)'
         dev=CorrTransProbsPathAC.(fnname{1}).Mean-AggVarsPathAC.(fnname{1}).Mean;
-        fprintf('AutoCorrTransProbs vs AggVars along TPath, this should be zero, Mean %s: %2.10f \n',fnname{1},max(abs(dev)))
+        fprintf('AutoCorrTransProbs vs AggVars along TPath, this should be zero, Mean %s: %.3e \n',fnname{1},max(abs(dev)))
         dev=CorrTransProbsPathAC.(fnname{1}).StdDeviation-AllStatsPathAC.(fnname{1}).StdDeviation;
-        fprintf('AutoCorrTransProbs vs AllStats along TPath, this should be zero, StdDeviation %s: %2.10f \n',fnname{1},max(abs(dev)))
+        fprintf('AutoCorrTransProbs vs AllStats along TPath, this should be zero, StdDeviation %s: %.3e \n',fnname{1},max(abs(dev)))
     end
 
     for fnname=fieldnames(FnsToEvaluate)'
         sdthis=CorrTransProbsPathAC.(fnname{1}).StdDeviation(2:T);
         sdlag=CorrTransProbsPathAC.(fnname{1}).StdDeviation(1:T-1);
         dev=CorrTransProbsPathAC.(fnname{1}).AutoCorrelation(1:T-1)-CorrTransProbsPathAC.(fnname{1}).AutoCovariance(1:T-1)./(sdlag.*sdthis);
-        fprintf('AutoCorrTransProbs internal, corr=cov/(sd*sd), this should be zero, %s: %2.10f \n',fnname{1},max(abs(dev)))
+        fprintf('AutoCorrTransProbs internal, corr=cov/(sd*sd), this should be zero, %s: %.3e \n',fnname{1},max(abs(dev)))
         fprintf('AutoCorrTransProbs internal, max abs AutoCorrelation (should be at most one), %s: %2.8f \n',fnname{1},max(abs(CorrTransProbsPathAC.(fnname{1}).AutoCorrelation(1:T-1))))
     end
 
@@ -532,14 +532,14 @@ AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePathConstant
 PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions1);
 
 Vfin_rep=repmat(V_final,1,1,1,1,T);
-fprintf('Constant TPath (no DC, no GI), this should be zero, V: %2.8f \n',max(abs(VPath1(:)-Vfin_rep(:))))
+fprintf('Constant TPath (no DC, no GI), this should be zero, V: %.3e \n',max(abs(VPath1(:)-Vfin_rep(:))))
 Polfin_rep=repmat(Policy_final,1,1,1,1,1,T);
-fprintf('Constant TPath (no DC, no GI), this should be zero, Policy: %2.8f \n',max(abs(PolicyPath1(:)-Polfin_rep(:))))
+fprintf('Constant TPath (no DC, no GI), this should be zero, Policy: %.3e \n',max(abs(PolicyPath1(:)-Polfin_rep(:))))
 PolicyValsfin=PolicyInd2Val_InfHorz(Policy_final,n_d,n_a,n_z,d_grid,a_grid,vfoptions1);
 PolicyValsfin_rep=repmat(PolicyValsfin(:),1,T); % T is the last dimension of PolicyValsPath
-fprintf('Constant TPath (no DC, no GI), this should be zero, PolicyVals: %2.8f \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_rep(:))))
+fprintf('Constant TPath (no DC, no GI), this should be zero, PolicyVals: %.3e \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_rep(:))))
 AD_rep=repmat(AgentDist_initial,1,1,1,1,T);
-fprintf('Constant TPath (no DC, no GI), this should be zero, AgentDist (note: tolerance=1e-6): %2.8f \n',max(abs(AgentDistPath1(:)-AD_rep(:))))
+fprintf('Constant TPath (no DC, no GI), this should be zero, AgentDist (note: tolerance=1e-6): %.3e \n',max(abs(AgentDistPath1(:)-AD_rep(:))))
 
 clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
 
@@ -548,10 +548,10 @@ clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
 AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptions2);
 PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions2);
 
-fprintf('Constant TPath (with DC, no GI), this should be zero, V: %2.8f \n',max(abs(VPath1(:)-Vfin_rep(:))))
-fprintf('Constant TPath (with DC, no GI), this should be zero, Policy: %2.8f \n',max(abs(PolicyPath1(:)-Polfin_rep(:))))
-fprintf('Constant TPath (with DC, no GI), this should be zero, PolicyVals: %2.8f \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_rep(:))))
-fprintf('Constant TPath (with DC, no GI), this should be zero, AgentDist (note: tolerance=1e-6): %2.8f \n',max(abs(AgentDistPath1(:)-AD_rep(:))))
+fprintf('Constant TPath (with DC, no GI), this should be zero, V: %.3e \n',max(abs(VPath1(:)-Vfin_rep(:))))
+fprintf('Constant TPath (with DC, no GI), this should be zero, Policy: %.3e \n',max(abs(PolicyPath1(:)-Polfin_rep(:))))
+fprintf('Constant TPath (with DC, no GI), this should be zero, PolicyVals: %.3e \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_rep(:))))
+fprintf('Constant TPath (with DC, no GI), this should be zero, AgentDist (note: tolerance=1e-6): %.3e \n',max(abs(AgentDistPath1(:)-AD_rep(:))))
 
 clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
 
@@ -563,14 +563,14 @@ AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial_GI, PricePathConst
 PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions4);
 
 Vfin_rep_GI=repmat(V_final_GI,1,1,1,1,T);
-fprintf('Constant TPath (with DC and GI), this should be zero, V: %2.8f \n',max(abs(VPath1(:)-Vfin_rep_GI(:))))
+fprintf('Constant TPath (with DC and GI), this should be zero, V: %.3e \n',max(abs(VPath1(:)-Vfin_rep_GI(:))))
 Polfin_rep_GI=repmat(Policy_final_GI,1,1,1,1,1,T);
-fprintf('Constant TPath (with DC and GI), this should be zero, Policy: %2.8f \n',max(abs(PolicyPath1(:)-Polfin_rep_GI(:))))
+fprintf('Constant TPath (with DC and GI), this should be zero, Policy: %.3e \n',max(abs(PolicyPath1(:)-Polfin_rep_GI(:))))
 PolicyValsfin_GI=PolicyInd2Val_InfHorz(Policy_final_GI,n_d,n_a,n_z,d_grid,a_grid,vfoptions4);
 PolicyValsfin_GI_rep=repmat(PolicyValsfin_GI(:),1,T);
-fprintf('Constant TPath (with DC and GI), this should be zero, PolicyVals: %2.8f \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_GI_rep(:))))
+fprintf('Constant TPath (with DC and GI), this should be zero, PolicyVals: %.3e \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_GI_rep(:))))
 AD_rep_GI=repmat(AgentDist_initial_GI,1,1,1,1,T);
-fprintf('Constant TPath (with DC and GI), this should be zero, AgentDist (note: tolerance=1e-6): %2.8f \n',max(abs(AgentDistPath1(:)-AD_rep_GI(:))))
+fprintf('Constant TPath (with DC and GI), this should be zero, AgentDist (note: tolerance=1e-6): %.3e \n',max(abs(AgentDistPath1(:)-AD_rep_GI(:))))
 
 clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
 %% General equilibrium: solve the stationary GE first, then run a null-reform transition path
@@ -607,7 +607,7 @@ heteroagentoptionsGE=struct(); % default fminalgo, and no constraints on r or w
 
 [p_eqm,GEcondns]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptions1, vfoptions1);
 fprintf('Stationary GE: r=%2.8f, w=%2.8f \n',p_eqm.r,p_eqm.w)
-fprintf('Stationary GE conditions (these should be close to zero): CapitalMarket=%2.10f, LabourMarket=%2.10f \n',GEcondns.CapitalMarket,GEcondns.LabourMarket)
+fprintf('Stationary GE conditions (these should be close to zero): CapitalMarket=%.3e, LabourMarket=%.3e \n',GEcondns.CapitalMarket,GEcondns.LabourMarket)
 
 % The path needs the EQUILIBRIUM V_final and initial dist, else the null reform is not exact
 ParamsGE=Params;
@@ -679,8 +679,8 @@ PricePathAF_noAF=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_final
 
 transpathoptionsGE_AF.GEnewprice3.additionalfactor=[1,1,2];
 PricePathAF_withAF=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsGE_AF, simoptions1, vfoptions1, []);
-fprintf('additionalfactor no-op (f_add=1), unset vs [1,1,2], this should be zero, r: %2.10f \n',max(abs(PricePathAF_noAF.r-PricePathAF_withAF.r)))
-fprintf('additionalfactor no-op (f_add=1), unset vs [1,1,2], this should be zero, w: %2.10f \n',max(abs(PricePathAF_noAF.w-PricePathAF_withAF.w)))
+fprintf('additionalfactor no-op (f_add=1), unset vs [1,1,2], this should be zero, r: %.3e \n',max(abs(PricePathAF_noAF.r-PricePathAF_withAF.r)))
+fprintf('additionalfactor no-op (f_add=1), unset vs [1,1,2], this should be zero, w: %.3e \n',max(abs(PricePathAF_noAF.w-PricePathAF_withAF.w)))
 
 % The ramp itself is measured in the DC+GI pass below, not here: this plain-tier p_eqm is not a
 % reliable equilibrium (see the GEcondns printed above), so 'distance from p_eqm' would not mean
@@ -704,7 +704,7 @@ simoptionsGE_GI.ngridinterp=5;
 
 [p_eqm_GI,GEcondns_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGE_GI, vfoptionsGE_GI);
 fprintf('Stationary GE (with DC and GI): r=%2.8f, w=%2.8f \n',p_eqm_GI.r,p_eqm_GI.w)
-fprintf('Stationary GE conditions (with DC and GI), these should be close to zero: CapitalMarket=%2.10f, LabourMarket=%2.10f \n',GEcondns_GI.CapitalMarket,GEcondns_GI.LabourMarket)
+fprintf('Stationary GE conditions (with DC and GI), these should be close to zero: CapitalMarket=%.3e, LabourMarket=%.3e \n',GEcondns_GI.CapitalMarket,GEcondns_GI.LabourMarket)
 fprintf('Stationary GE, the two tiers should agree, difference in r: %2.8f, in w: %2.8f \n',abs(p_eqm_GI.r-p_eqm.r),abs(p_eqm_GI.w-p_eqm.w))
 
 ParamsGE_GI=Params;
@@ -766,7 +766,7 @@ PricePath3A=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final_big, AgentDi
 % Big grid + DC + GI
 PricePath3B=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final_big_GI, AgentDist_initial_big, n_d, n_a_big, n_z, d_grid,a_grid_big,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, simoptions4, vfoptions4, []);
 
-fprintf('One iter of TPath, big-grid with/without GI, this should be close to zero: %2.8f \n',max(abs(PricePath3A.r-PricePath3B.r)))
+fprintf('One iter of TPath, big-grid with/without GI, this should be close to zero: %.3e \n',max(abs(PricePath3A.r-PricePath3B.r)))
 
 %%
 output=struct();

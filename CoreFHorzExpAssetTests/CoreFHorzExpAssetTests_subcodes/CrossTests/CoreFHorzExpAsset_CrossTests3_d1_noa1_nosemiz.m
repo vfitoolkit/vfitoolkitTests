@@ -38,7 +38,7 @@ simoptionsB.a_grid=a_grid;
 [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d_expasset,n_a,0,N_j,d_grid_expasset,a_grid,[],[],ReturnFn_expasset,Params,DiscountFactorParamNames,[],vfoptionsB);
 StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy1,n_d_expasset,n_a,0,N_j,1,Params,simoptionsB);
 
-fprintf('Cross test 3 (noa1+d1): expasset noa1 is just a standard 1-endo state, this should be zero: V %2.8f, Policy %2.8f, Dist %2.8f \n',max(abs(V0(:)-V1(:))),max(abs(Policy0(:)-Policy1(:))),max(abs(StationaryDist0(:)-StationaryDist1(:))))
+fprintf('Cross test 3 (noa1+d1): expasset noa1 is just a standard 1-endo state, this should be zero: V %.3e, Policy %.3e, Dist %.3e \n',max(abs(V0(:)-V1(:))),max(abs(Policy0(:)-Policy1(:))),max(abs(StationaryDist0(:)-StationaryDist1(:))))
 
 output=struct();
 
