@@ -36,7 +36,7 @@ ReturnFn_ze=@(a1prime,a2prime,a1,a2,z,e,r,w,kappa_j,sigma,agej,Jr,pension,phi1,p
 
 %% Solving with just a single points for z with value 1 and prob 1 gives us same as no shocks
 jequaloneDist_none=zeros([n_a,1],'gpuArray');
-jequaloneDist_none(1)=1; % no assets
+jequaloneDist_none(1,1)=1; % no assets
 
 vfoptions_z.exoticpreferences='QuasiHyperbolic';
 vfoptions_z.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
@@ -128,7 +128,7 @@ vfoptions.quasi_hyperbolic='Sophisticated';
 
 %% Solving with just a single points for z with value 1 and prob 1 gives us same as no shocks
 jequaloneDist_none=zeros([n_a,1],'gpuArray');
-jequaloneDist_none(1)=1; % no assets
+jequaloneDist_none(1,1)=1; % no assets
 
 vfoptions_z.exoticpreferences='QuasiHyperbolic';
 vfoptions_z.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;

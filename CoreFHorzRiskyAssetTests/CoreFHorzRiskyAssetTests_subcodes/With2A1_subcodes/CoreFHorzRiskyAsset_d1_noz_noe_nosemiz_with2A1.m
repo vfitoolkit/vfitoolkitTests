@@ -42,7 +42,7 @@ simoptions.d_grid=d_grid;
 simoptions.a_grid=a_grid;
 
 jequaloneDist=zeros([n_a_big],'gpuArray');
-jequaloneDist(1,1)=1;
+jequaloneDist(1,1,1)=1;
 
 ReturnFn=@(h,savings,a1prime,a1_2prime,a1,a1_2,a2,r,w,kappa_j,sigma,eta,varphi,r_a1,r_a1_2,agej,Jr,pension) ReturnFn_d1_noz_noe_nosemiz_with2A1(h,savings,a1prime,a1_2prime,a1,a1_2,a2,r,w,kappa_j,sigma,eta,varphi,r_a1,r_a1_2,agej,Jr,pension);
 
@@ -182,7 +182,7 @@ simoptions5.gridinterplayer=vfoptions5.gridinterplayer;
 simoptions5.ngridinterp=vfoptions5.ngridinterp;
 [V5,Policy5]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions5);
 jequaloneDist5=zeros([n_a],'gpuArray');
-jequaloneDist5(1,1)=1;
+jequaloneDist5(1,1,1)=1;
 StationaryDist5=StationaryDist_FHorz_Case1(jequaloneDist5,AgeWeightParamNames,Policy5,n_d,n_a,n_z,N_j,pi_z,Params,simoptions5);
 AggVars=EvalFnOnAgentDist_AggVars_FHorz_Case1(StationaryDist5,Policy5,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions5);
 ValuesOnGrid=EvalFnOnAgentDist_ValuesOnGrid_FHorz_Case1(Policy5,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions5);

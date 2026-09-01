@@ -15,7 +15,7 @@ simoptions.pi_e=simoptionsbaseline.pi_e;
 simoptions.e_grid=simoptionsbaseline.e_grid;
 % zeros assets, mid points for any shocks
 jequaloneDist=zeros([n_a_big,vfoptions.n_e],'gpuArray'); % Note: based on n_a_big, not n_a
-jequaloneDist(1,1,ceil(vfoptions.n_e/2))=1;
+jequaloneDist(1,1,1,ceil(vfoptions.n_e/2))=1;
 
 ReturnFn=@(d1,d2,a1prime,a1_2prime,a1,a1_2,a2,e,r,r2,w,kappa_j,sigma,varphi,eta,agej,Jr,pension) ReturnFn_d1_noz_e_nosemiz_with2A1(d1,d2,a1prime,a1_2prime,a1,a1_2,a2,e,r,r2,w,kappa_j,sigma,varphi,eta,agej,Jr,pension);
 
@@ -201,7 +201,7 @@ simoptions5.gridinterplayer=vfoptions5.gridinterplayer;
 simoptions5.ngridinterp=vfoptions5.ngridinterp;
 [V5,Policy5]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions5);
 jequaloneDist5=zeros([n_a,vfoptions.n_e],'gpuArray'); % small-grid init for Policy5
-jequaloneDist5(1,1,ceil(vfoptions.n_e/2))=1;
+jequaloneDist5(1,1,1,ceil(vfoptions.n_e/2))=1;
 StationaryDist5=StationaryDist_FHorz_Case1(jequaloneDist5,AgeWeightParamNames,Policy5,n_d,n_a,n_z,N_j,pi_z,Params,simoptions5);
 % AllStats and LifeCycleProfiles were already used
 AggVars=EvalFnOnAgentDist_AggVars_FHorz_Case1(StationaryDist5,Policy5,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions5);

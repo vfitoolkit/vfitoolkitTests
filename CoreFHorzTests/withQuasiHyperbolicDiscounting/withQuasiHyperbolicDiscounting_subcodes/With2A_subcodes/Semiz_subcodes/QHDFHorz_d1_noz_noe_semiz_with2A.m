@@ -14,7 +14,7 @@ z_grid=[];
 pi_z=[];
 % zeros assets, mid points for any shocks
 jequaloneDist=zeros([n_a_big,vfoptions.n_semiz],'gpuArray'); % Note: based on n_a_big, not n_a
-jequaloneDist(1,1,1,ceil(vfoptions.n_semiz/2))=1;
+jequaloneDist(1,1,ceil(vfoptions.n_semiz/2))=1;
 
 ReturnFn=@(d1,d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2) ReturnFn_d1_noz_noe_semiz_with2A(d1,d2,a1prime,a2prime,a1,a2,semiz,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost,phi1,phi2);
 

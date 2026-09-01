@@ -11,7 +11,7 @@ z_grid=[];
 pi_z=[];
 % zeros assets, mid points for any shocks
 jequaloneDist=zeros([n_a_big,1],'gpuArray'); % Note: based on n_a_big, not n_a
-jequaloneDist(1)=1;
+jequaloneDist(1,1)=1;
 
 ReturnFn=@(a1prime,a2prime,a1,a2,r,w,kappa_j,sigma,agej,Jr,pension,phi1,phi2) ReturnFn_nod_noz_noe_nosemiz_with2A(a1prime,a2prime,a1,a2,r,w,kappa_j,sigma,agej,Jr,pension,phi1,phi2);
 
