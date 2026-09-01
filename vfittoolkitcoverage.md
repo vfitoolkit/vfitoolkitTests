@@ -8,13 +8,13 @@ cross-tests. Format in the tier columns is `variants + cross-testsx`.
 withA1 subcodes sit at the top level of `..._subcodes/` and in `Semiz_subcodes/`. A tier rule
 that keys off directory names must fall through to withA1 for it, not skip it.
 
-Last updated: 2026-09-01
+Last updated: 2026-09-02
 
 ## CoreFHorzTests + the ExpAsset family + RiskyAsset + ResidAsset
 
 | bank | noa1 | withA1 | with2A | var | x-tests | panel vs dist | V_Jplus1 | core raws | QH | EZ | AA |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| CoreFHorzTests | — | 16+6x | 16+4x | 32 | 10 | 32/32 | 32 + 32 QH + 16 EZ | 142 | 42 | 24 | 8 |
+| CoreFHorzTests | — | 16+6x | 16+4x | 32 | 10 | 32/32 | 32 + 32 QH + 16 EZ | 142 | 42 | 24 | 16 |
 | ExpAsset | 16+10x | 16+14x | 16+2x | 48 | 26 | 48/48 | 0 | 128 | 48 | — | — |
 | ExpAssetU | 16+10x | 16+14x | 16+2x | 48 | 26 | 48/48 | 0 | 128 | 48 | — | — |
 | ExpAssete | 8+16x | 8+8x | 8+2x | 24 | 26 | 24/24 | 0 | 64 | 24 | — | — |
@@ -23,9 +23,9 @@ Last updated: 2026-09-01
 | ExpAssetsemiz | 8+4x | 8+6x | 8+2x | 24 | 12 | 24/24 | 0 | 64 | 24 | — | — |
 | RiskyAsset | 16+0x | 16+25x | 16+4x | 48 | 29 | 48/48 | 32 + 32 EZ | 128 | none | 50 | — |
 | ResidAsset | n/a | 16+22x | — | 16 | 22 | 16/16 ‡ | 16 | 4 ‡‡ | none | — | — |
-| **total** | | | | **276** | **201** | **276/276** | **160** | | **222** | **74** | **8** |
+| **total** | | | | **276** | **201** | **276/276** | **160** | | **222** | **74** | **16** |
 
-477 subtests in the main banks, plus 222 QH, 74 EZ and 8 AA = **781**.
+477 subtests in the main banks, plus 222 QH, 74 EZ and 16 AA = **789**.
 
 **Every experience-asset family now has a QH mirror with a solver behind it, and every mirror is
 complete at raw level.** ExpAssetU (48) and ExpAssetsemiz (24) were the last two showing `none`;
@@ -184,9 +184,10 @@ code computing the same weights.
 - **QH / EZ / AA** — subtests in the bank's `withQuasiHyperbolicDiscounting` /
   `withEpsteinZinPreferences` / `withAmbiguityAversion` mirror. `—` means no mirror. (No `⚠`
   remains anywhere: the last test-first QH bank, ExpAsset, got its solver on 2026-08-22, and the
-  AA mirror got its solver on 2026-09-01 — see the AmbiguityAversion section. AA is 8 rather
-  than a QH-style 42 because ambiguity has no noz+noe variant (deliberately an error), and its
-  semiz and with2A tiers are deferred by design, not test-first.)
+  AA mirror got its solver on 2026-09-01 and its with2A tier on 2026-09-02 — see the
+  AmbiguityAversion section. AA is 16 rather than a QH-style 42 because ambiguity has no noz+noe
+  variant (deliberately an error) and no semiz tier (deferred by design, not test-first); its
+  with2A tier is 6+2x rather than 8+2x for the same noz+noe reason.)
 
 ### Scope of the exotic-preference mirrors
 
@@ -209,7 +210,7 @@ for Naive.
 #### What the mirrors actually contain today
 
 Panel simulation is absent everywhere — `SimPanelValues` appears in 0 of 155 QH, 0 of 220
-EZ and 0 of 9 AA subcodes. Dist-derived output is not absent, but it is confined to two banks (TPath banks
+EZ and 0 of 17 AA subcodes. Dist-derived output is not absent, but it is confined to two banks (TPath banks
 excluded throughout):
 
 | mirror / bank | files | asserted | displayed |
@@ -218,7 +219,7 @@ excluded throughout):
 | QH — ExpAsset, ExpAssete, ExpAssetz, ExpAssetze | 112 | **0** | **0** |
 | EZ — CoreFHorzTests | 73 | 120 | 384 |
 | EZ — RiskyAsset | 147 | 100 | 240 |
-| AA — CoreFHorzTests | 9 | 6 | 48 |
+| AA — CoreFHorzTests | 17 | 12 | 96 |
 
 *asserted* = `fprintf` checks whose compared value is dist-derived. *displayed* = unsuppressed
 `[...]` rows that dump moments to screen with no assertion.
@@ -430,11 +431,28 @@ Two conventions worth knowing when reading its diary or extending it:
   `V` in z, making the worse and original priors' EVs mathematically equal there, so `min` is
   free to return either one's rounding — the accompanying Policy lines are exactly zero).
 
-One honest gap: cross-test 4 exercises the `V_Jplus1` branches at the **plain** tier only (z and
-e flavours, nod and d); the 18 DC/GI/DC+GI raws' `V_Jplus1` branches have no runtime coverage
-yet. They are the same mechanical transform of donors whose `V_Jplus1` branches the baseline
-bank does cover, but given what the `V_Jplus1` audits keep finding, a DC/GI variant of
-cross-test 4 is the natural next check if this family ever misbehaves.
+**The with2A tier followed on 2026-09-02** (spec: `AmbiguityAversion_with2A_proposal.md`,
+test-first, one debug iteration): 6 with2A variants (figs 7-12, the QH bank's 2A setup reused) +
+2 cross-test files (identical-priors-=-vNM and V_Jplus1 both AT ALL FOUR TIERS, worse-pi-binds at
+plain), plus a companion fix repeating the main-tier cross-test 4 at the DC/GI/DC+GI tiers. The
+bank now totals 416 checks and is fully green: 374 exact zeros, 42 ULP-floor lines in three
+benign classes — the two from the main tier plus GI2A-vs-DC2A_GI2A at ~1e-14 in the six 2A
+subcodes, which is the donors' own discount-before-vs-after-interpolation asymmetry surfacing
+under `%.3e` (the exponential banks hide it under `%2.8f`). Toolkit side: 18
+`AmbAverse_{DC2A,GI2A,DC2A_GI2A}` raws, 2A branches in the three level-2 dispatchers, and the
+GI2A block in `ValueFnFromPolicy_FHorz_AmbiguityAversion` (a2prime folded into the linear index,
+QH-style).
+
+The former honest gap (DC/GI-tier `V_Jplus1` branches unexercised) is CLOSED — and closing it
+paid immediately: the companion GI leg caught a real bug on its first run. `interp1` returns the
+**query's** shape when its value input is a vector, and the e-only GI1 raws' per-prior `ambEV`
+`[N_a,n_ambiguity(jj)]` collapses to a vector exactly when age-varying `n_ambiguity` hits 1 —
+row query, row output, `min(...,[],2)` crushed it to a scalar, index error. Fixed by transposing
+the query to a column in all 24 GI1/DC1_GI1 interp sites (bit-identical where the input stays a
+matrix/N-D; the 2A GI families were immune, their `a1prime_grid` being column-shaped already).
+Every `V_Jplus1` check in the family is now an exact zero at every tier, 1A and 2A. The trap
+generalizes: any raw that interpolates a per-prior/per-something EV array whose trailing
+dimension can reach 1 has this failure mode.
 
 ### Reading the diaries: the ULP floor
 
@@ -470,10 +488,11 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
   RiskyAsset EZ mirror (both banks' noa1 and withA1 tiers incl. semiz; the with2A1 tier has
   none), and all 16 in the ResidAsset bank (240 checks, unrun).
   ResidAsset was the first family to get V_Jplus1 coverage from day one rather than retrofitted;
-  do the same for any new bank (AmbiguityAversion did: cross-test 4 covers its plain-tier
-  V_Jplus1 branches from day one, though not yet its DC/GI tiers — see its section). So among
-  the baseline preference mirrors, QH and EZ have full V_Jplus1 variant coverage (retrofitted)
-  while AA has cross-test-4 coverage of the plain tier only. Still zero coverage across the
+  do the same for any new bank (AmbiguityAversion did: cross-test 4 covers its V_Jplus1
+  branches, since 2026-09-02 at ALL solver tiers in both its 1A and 2A models — and that
+  coverage caught a real interp1 shape bug on its first run; see its section). So all three
+  baseline preference mirrors now have V_Jplus1 coverage: QH and EZ per-variant (retrofitted),
+  AA via cross-test 4 at every tier. Still zero coverage across the
   whole ExpAsset family (re-verified 2026-08-31: the ExpAsset and ExpAssetU banks mention
   `V_Jplus1` in 0 subcodes; the ExpAssetz and ExpAssetze banks likewise, re-checked 2026-09-01).
 
