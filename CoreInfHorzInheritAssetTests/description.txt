@@ -1,0 +1,90 @@
+CoreInfHorzInheritAssetTests
+============================
+
+Core InfHorz tests for the INHERITANCE ASSET.
+
+An inheritance asset is an endogenous state whose next-period value is set by a decision d2 and
+the realized shock transition (z,zprime), and does not depend on this period's value of the
+asset. Two consequences shape everything in this bank:
+
+  - the return function is Case-2 style, (d1,d2,a,z), with no aprime input
+  - vfoptions.aprimeFn takes (d2,z,zprime,params), with no a2 input
+
+
+THE ONE SUPPORTED TIER
+----------------------
+ValueFnIter_InfHorz_InheritAsset dispatches through eight 'Have not yet implemented' errors to a
+single live call:
+
+    N_e==0, N_a1==0, N_d1>0, N_z>0   ->  ValueFnIter_InfHorz_InheritAsset_noa1_raw
+
+so n_d must have at least two elements and n_a exactly one. Everything else errors, and the
+guards cross-test drives each of those branches so that added support shows up in the diary.
+
+
+WHAT IS AND IS NOT AVAILABLE
+----------------------------
+  divide-and-conquer     no   not usable for InfHorz at all
+  grid interpolation     no   the dispatcher has no gridinterplayer branch
+  Howards                no   the Howards block in the raw is commented out
+  lowmemory              yes  lowmemory=1 loops over z during the d1 refinement
+  ValueFnFromPolicy      no   ValueFnFromPolicy_InfHorz has no aprimeFn handling
+  StationaryDist         yes  StationaryDist_InfHorz_InheritAsset, via Tan improvement
+  SimPanel               yes  SimPanelIndexes_InfHorz_InheritAsset
+  PolicyInd2Val          yes
+
+Because ValueFnFromPolicy is unavailable, fig 1 recomputes V from Policy inside the bank,
+rebuilding the continuation from CreateInheritanceAssetFnMatrix. That recomputation reads BOTH
+Policy channels, so it checks the refine step's recovery of d1 as well as the choice of d2.
+
+
+THE FILES
+---------
+  CoreInfHorzInheritAssetTests.m                         entry point, diary, figures
+  CoreInfHorzInheritAssetTests_Setup/
+      CoreInfHorzInheritAsset_setup.m                    grids, parameters, aprimeFn, baselines
+  CoreInfHorzInheritAsset_ReturnFns/
+      ReturnFn_d1d2_a_z.m                                the Case-2 inheritance return fn
+      ReturnFn_plain_d1_aprime_a_z.m                     its Case-1 twin, for the cross-test
+  CoreInfHorzInheritAssetTests_subcodes/
+      CoreInfHorzInheritAsset_d1_noa1_z_noe.m            fig 1, the supported tier
+      CrossTests/
+          CoreInfHorzInheritAsset_CrossTests_vsplain.m   fig 2, vs the plain one-asset model
+          CoreInfHorzInheritAsset_CrossTests_guards.m    the eight unsupported shapes
+
+
+TWO DESIGN CHOICES THAT KEEP THE CHECKS FROM BEING VACUOUS
+----------------------------------------------------------
+1. n_d2 (11) is deliberately NOT equal to n_a (101).
+
+   The refine step stores d1star as [N_d2,N_a,N_z] and recovers d1 from it by linear indexing.
+   Any confusion between those two sizes is completely invisible when they are equal. The
+   cross-test uses n_d2 = n_a by construction, so fig 1 is the only place this is tested and it
+   must keep them different.
+
+2. The aprimeFn deliberately pushes a2prime off BOTH ends of a2_grid.
+
+   The toolkit sets the lower-point probability to exactly 0 for values off the top of the grid
+   and exactly 1 for values off the bottom. Those exact 0/1 weights are the only inputs that
+   reach the zero-weight guard in the raw, where a zero weight against a -Inf node used to give
+   0*(-Inf)=NaN and, one iteration later, a continuation value of zero. If a2prime never left
+   the grid the guard would never fire and the NaN census would prove nothing, so fig 1 prints
+   the count of exact 0s and exact 1s and both must be non-zero.
+
+The same reasoning applies to the checks themselves: max(abs(A-B)) ignores NaN, so a printed
+0.000e+00 can be comparing nothing at all. Every V in this bank is reported as a
+finite / -Inf / NaN census before it is differenced.
+
+
+THE REGRESSION TARGET
+---------------------
+e0aff864 (2026-09-10) fixed ValueFnIter_InfHorz_InheritAsset_noa1_raw zeroing a2primeProbs in
+place. a2primeProbs is built once, outside the while loop; the in-place
+`a2primeProbs(skipinterp)=0` therefore accumulated across iterations and never released, so the
+iteration converged having skipped interpolation at the union of every past iteration's mask
+rather than the current one. Every experience-asset sibling takes a copy first.
+
+The signature is that the answer depends on the starting guess, which a contraction's fixed
+point cannot. Fig 1 solves twice from different vfoptions.V0 and requires the same V and Policy.
+That check has NOT yet been shown to fail against the unfixed file; until someone runs it with
+e0aff864 reverted, it is unproven as a test of that bug specifically.
