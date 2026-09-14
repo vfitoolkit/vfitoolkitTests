@@ -317,10 +317,23 @@ zeros + 4 at 8e-15). The one run-1 find: the GP SemiExo_DC dispatcher had wrongl
 its 2A UnKron level — DC raws return the joint aprime kron index, so DC keeps the 1A
 UnKron calls (only GI/DC_GI bump); fixed to match the core dispatcher.
 
+Re-counted 2026-09-14: GulPesendorfer 112 → 152, with the 40 new raws sitting in the
+ExperienceAsset family row (384 → 424): the GulPesendorferExpAsset family ({plain incl
+noa1, DC1, GI1, DC1_GI1} × the 1A1 nosemiz combos) landed with its own sub-bank
+(CoreFHorzExpAssetTests/withGulPesendorferPrefs/, 508 checks, GPU-green 2026-09-14; 24
+checks sit at 3-4 ULP of the poor-corner V~1.1e7, accepted as the scale-adjusted ULP
+floor). Run-1 find: experience assets create states where EVERY choice is infeasible
+(earnings scale with a2, a2 grid starts at 0) — GP's V=max(-Inf)-max(-Inf)=NaN then
+corrupted continuations via the EV NaN-scrub; fixed by guarding every MostTempting
+(-Inf -> 0, so V=-Inf exactly as the standard solver). The GP-core 112 raws carry the
+same latent pattern but their models cannot trigger it (earnings never vanish); a
+guarded port there is a recorded follow-up. With2A1/SemiExo GP-ExpAsset tiers and the
+u/e/z/ze/semiz siblings remain gaps (dispatchers error). Unblocks KLM2021.
+
 | family | total raws | QH | EZ | AA | GP | core |
 |---|---|---|---|---|---|---|
 | baseline (FHorz, excl. asset families) | 542 | 224 | 40 | 24 | 112 | 142 |
-| ExperienceAsset | 384 | 256 | 0 | 0 | 0 | 128 |
+| ExperienceAsset | 424 | 256 | 0 | 0 | 40 | 128 |
 | ExperienceAssetu | 384 | 256 | 0 | 0 | 0 | 128 |
 | ExperienceAssete | 192 | 128 | 0 | 0 | 0 | 64 |
 | ExperienceAssetz | 192 | 128 | 0 | 0 | 0 | 64 |
