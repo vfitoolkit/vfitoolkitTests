@@ -1,0 +1,35 @@
+Tests of the VFI Toolkit discretization commands (VFIToolkit-matlab/DiscretizationMethods/), plus
+the two Other/MarkovChainMoments* commands that this bank uses as its measuring instrument.
+
+Organised top-level BY THE PROCESS BEING DISCRETIZED, not by command. Each block sets up one
+process, then runs every method that can discretize it, then compares those methods against each
+other and against analytic truth, then checks the identities that hold within the block, then
+prints a runtime table for the block.
+
+  P0  (validating the instruments)   MarkovChainMoments, MarkovChainMoments_FHorz
+  P1  iid normal
+  P2  AR(1) with normal innovations
+  P3  AR(1) with gaussian-mixture innovations
+  P4  AR(1) with stochastic volatility
+  P5  VAR(1) with normal innovations
+  P6  life-cycle AR(1) with normal innovations
+  P7  life-cycle AR(1) with gaussian-mixture innovations
+  P8  life-cycle VAR(1) with normal innovations
+  P9  a normal distribution on a GIVEN grid
+
+Unlike the other banks in this repo, this one solves no models (except a deliberately trivial
+n_a=1 one, used to validate the instruments and to check the outputs are shaped the way the
+toolkit's solvers expect). The oracle here is mostly analytic truth rather than "two code paths
+must agree", so most checks are threshold-based rather than exact. Every printed check names its
+tolerance tier:
+  T0  exact (==0)          two calls that must run the same arithmetic in the same order
+  T1  tight (<1e-10)       algebraic identities computed by genuinely different code
+  T2  accuracy (<x)        discretization error against analytic truth; always paired with either
+                           a theory-predicted ordering between methods, or a convergence-in-znum
+                           assertion, so that a threshold alone is never the whole check
+  MC  Monte Carlo          panel-vs-chain, checked as |difference| < 4*se with se estimated from
+                           the panel. Never exact: SimPanelValues is not reproducible run to run.
+
+Runtimes are measured on the same calls as the accuracy sweep and are REPORTED, never asserted.
+
+Currently built: P0 and P1 only.
