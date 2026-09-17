@@ -17,22 +17,29 @@
 % Parts are independent: each one runs its own setup, and no part reads another part's output. So
 % any subset can be run, in any combination.
 %
-% ALL ON. Every part is green, but only in pieces: P2/P4/P7 on one run, P1/P3/P5 on another,
-% P6/P8/P9 on a third. This is the first run of the whole bank since P8 and P9 were built, and the
-% first since the discretization commands were taken off the Statistics Toolbox - so it is the run
-% that produces a single number for the bank rather than a set of numbers that have to be argued
-% about. doPart(11) is set too; P10 was never scoped and the block below says so rather than
-% silently doing nothing.
+% ALL ON. The bank is at P0 to P10 and every part is green, but only in pieces: P0 to P9 on the full
+% run of 2026-09-16, P10 and P1 separately on 2026-09-17. This is the first run of the whole thing
+% since P10 was built and since discretizeIID_TanakaToda was generalised, so it is the run that
+% produces one number for the bank rather than a set that has to be argued about.
 %
-% WHAT TO EXPECT. P3 carries two standing reds - its worst-over-the-sweep variance and skewness
-% bars, both dominated by the coarsest grid in the sweep, where the paired finest-grid checks pass
-% comfortably. Everything else passed on its most recent run. Anything beyond those two is new.
+% WHAT TO EXPECT. Seven standing reds, all [T2] accuracy bars, all present on 2026-09-16 and none
+% touched since: four in P2 (three are worst-over-the-sweep measures dominated by the coarsest grid,
+% where the paired finest-grid checks pass comfortably; one is an autocorrelation bar about 1.2x too
+% tight), two in P3 of the same worst-over-the-sweep kind, and one in P4 - its excess-kurtosis
+% monotonicity, which is the only one of the seven that is a genuine finding about grid truncation
+% rather than a bar-calibration issue. Anything beyond those seven is new.
 %
-% WHAT THIS RUN COVERS THAT NO EARLIER ONE DID. The erfc rewrite of every normcdf/normpdf/norminv
-% site, the paren strip that followed it, B30 and B31 in the life-cycle gaussian-mixture commands,
-% B32 and B33 in discretizeLifeCycleVAR1_Tauchen, the new e_grid option on both IIDNormal commands,
-% and the new Tauchen_q=[] default on discretizeIIDNormal_Tauchen. Those have each been run, but
-% never all together, and never alongside the parts that call them indirectly.
+% WHAT THIS RUN COVERS THAT NO EARLIER ONE DID, all of it landed since the last full run:
+%   P10, and the two commands it tests - discretizeARp_FarmerToda and discretizeARpwGM_FarmerToda,
+%     neither of which existed, the second having been CALLED by LifeCycleModelA10 without existing
+%   discretizeIID_TanakaToda generalised to seven new options, then five defects found by review and
+%     fixed, then section 10 of DiscP1_IID_TanakaToda_general written to cover the paths that
+%     sections 1 to 9 isolate away from
+%   DiscSummary's block regex, which matched P\d and so could not see P10 at all
+%   P6's age-shift test, which compared a column against a row and could never fire
+%   P9's M=4 and M=5 grids, which had two points per dimension and so measured arithmetic
+%
+% doPart(11) is P10 and is now a real block rather than the placeholder notice it used to be.
 doPart=[1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into TestOutput as they are created)
@@ -55,6 +62,7 @@ addpath('./DiscretizationMethodTests_subcodes/P6_LCAR1/')
 addpath('./DiscretizationMethodTests_subcodes/P7_LCAR1GM/')
 addpath('./DiscretizationMethodTests_subcodes/P8_LCVAR1/')
 addpath('./DiscretizationMethodTests_subcodes/P9_NormalOnGrid/')
+addpath('./DiscretizationMethodTests_subcodes/P10_ARpGM/')
 
 output=struct();
 
@@ -112,6 +120,16 @@ if doPart(2)==1
     figure_c=figure_c+1;
 
     output.P1.IID_TanakaToda       = DiscP1_IID_TanakaToda(calibIID,znums,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/DiscretizationMethodTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=figure_c+1;
+
+    % discretizeIID_TanakaToda is the one command in the family meant to grow beyond the normal -
+    % discretizeIIDNormal_TanakaToda exists as its normal-only twin precisely so it can. It has
+    % gained distribution/distparams, truncate, e_grid, targetmoments, prior and masspoints, and
+    % this subcode is the first exercise of all of them. Its most valuable single check is the
+    % regression: every new option defaults off, so the default path must be bit-for-bit unchanged,
+    % and the frozen twin makes that checkable without saved baselines.
+    output.P1.IID_TanakaToda_gen   = DiscP1_IID_TanakaToda_general(calibIID,figure_c);
     exportgraphics(figure(figure_c),['./TestOutput/DiscretizationMethodTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
     figure_c=figure_c+1;
 
@@ -448,11 +466,51 @@ if doPart(10)==1
     figure_c=figure_c+1;
 end % doPart(10), which is P9
 
-%% P10 was never scoped. The proposal's block table stops at P9, and doPart has an eleventh entry
-%% only so the vector does not have to change if something is ever added. It currently does nothing.
+%% ===================================================================================
+%% P10: AR(p), WITH GAUSSIAN AND WITH GAUSSIAN-MIXTURE INNOVATIONS
+%% z' = mew + Rho(1)*z + Rho(2)*zlag1 + ... + Rho(p)*zlag(p-1) + e
+%%
+%% BOTH COMMANDS WERE WRITTEN FOR THIS BLOCK. discretizeARpwGM_FarmerToda had been
+%% called by LifeCycleModelA10 for some time without existing - the model was shipped
+%% against a command nobody had written, and TestTheLifeCycleModels skips it saying so.
+%% discretizeARp_FarmerToda, the gaussian-innovation case, did not exist either.
+%%
+%% THE STATE IS p-DIMENSIONAL AND ONLY ONE DIMENSION IS STOCHASTIC. The chain lives on
+%% (z,zlag1,...,zlag(p-1)); the new z is drawn and every lag shifts along one place. So
+%% pi_z has exactly znum non-zeros per row out of znum^p, at positions fixed by the
+%% shift, and that structural sparsity is asserted index by index rather than inferred
+%% from the row sums - a command with the lags wired up wrongly would still return a
+%% valid stochastic matrix with plausible moments.
+%%
+%% Truth is exact for all four moments, from the MA(inf) cumulant sum
+%% kappa_n(z)=(sum_j psi_j^n)*kappa_n(e), and the variance is computed a second,
+%% independent way by the Lyapunov equation on the companion form. The setup checks
+%% those two against each other before any command is measured against either.
+%% ===================================================================================
 if doPart(11)==1
-    fprintf('\nNote: doPart(11) refers to P10, which was never scoped, so it did nothing. \n')
-end
+    DiscSetup_ARpGM
+
+    figure_c=101; % P10 owns figure numbers 101 to 110
+
+    output.P10.ARp_AR2      = DiscP10_ARp_FarmerToda(calibARp,'AR2',figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/DiscretizationMethodTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=figure_c+1;
+
+    output.P10.ARp_AR3      = DiscP10_ARp_FarmerToda(calibARp,'AR3',figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/DiscretizationMethodTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=figure_c+1;
+
+    output.P10.ARpwGM_AR2   = DiscP10_ARpwGM_FarmerToda(calibARp,'AR2',figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/DiscretizationMethodTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=figure_c+1;
+
+    output.P10.ARpwGM_AR3   = DiscP10_ARpwGM_FarmerToda(calibARp,'AR3',figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/DiscretizationMethodTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=figure_c+1;
+
+    DiscP10_crosstests(calibARp,9);
+    output.P10.downstream   = DiscP10_downstream(calibARp);
+end % doPart(11), which is P10
 
 %% One verdict for the whole run
 % The bank prints its results in four different formats and there are around 2600 of them, so this

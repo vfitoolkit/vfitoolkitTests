@@ -59,7 +59,11 @@ faillines=cell(0,1); failblock=cell(0,1); failsection=cell(0,1); failno=[];
 
 for l_c=1:length(lines)
     l=lines{l_c};
-    tk=regexp(l,'=====+\s*(P\d)[:\s]','tokens','once');
+    % P\d+ NOT P\d. With a single \d this matched P0 to P9 and silently failed on P10, whose
+    % banners then left block and banner at whatever P1 had set - so every P10 failure on the run of
+    % 2026-09-17 was reported as sitting in P1's downstream block. The bank was always going to
+    % reach double digits; the regex was written when it could not.
+    tk=regexp(l,'=====+\s*(P\d+)[:\s]','tokens','once');
     if ~isempty(tk)
         block=tk{1};
         banner=strtrim(regexprep(strtrim(l),'^=+\s*|\s*=+$','')); % the banner without its rule of equals signs
