@@ -17,30 +17,34 @@
 % Parts are independent: each one runs its own setup, and no part reads another part's output. So
 % any subset can be run, in any combination.
 %
-% ALL ON. The bank is at P0 to P10 and every part is green, but only in pieces: P0 to P9 on the full
-% run of 2026-09-16, P10 and P1 separately on 2026-09-17. This is the first run of the whole thing
-% since P10 was built and since discretizeIID_TanakaToda was generalised, so it is the run that
-% produces one number for the bank rather than a set that has to be argued about.
+% EVERYTHING EXCEPT P8. This run measures two further changes to discreteApproximation, the shared
+% maximum-entropy solve that every moment-matching command goes through. Both are uncommitted.
+%   A convex-hull feasibility test before the solve. If the target moments lie outside the convex
+%     hull of the moments available on the grid then no distribution on that grid has them, and the
+%     achieved moment error can never be below the hull distance - so when that distance already
+%     exceeds the 1e-5 bar every caller uses to accept a fit, the solve is skipped and the caller
+%     falls back exactly as it does today. This is a bound, not a heuristic: checked on 2241 rows,
+%     150 are skipped and none of them was a row the old code had accepted.
+%   A quasi-newton retry when the target IS attainable and the trust-region solve still missed. It
+%     is kept only if it improves the moment error, so it cannot make a row worse. Four rows in 900
+%     qualified and all four were recovered.
+% P8 stays off for the same reason as last time: discretizeLifeCycleVAR1_Tauchen is pure Tauchen
+% and mvncdf, and P8's only two mentions of a Farmer-Toda command are in comments. Every other part
+% calls something that goes through discreteApproximation.
 %
-% WHAT TO EXPECT. Seven standing reds, all [T2] accuracy bars, all present on 2026-09-16 and none
-% touched since: four in P2 (three are worst-over-the-sweep measures dominated by the coarsest grid,
-% where the paired finest-grid checks pass comfortably; one is an autocorrelation bar about 1.2x too
-% tight), two in P3 of the same worst-over-the-sweep kind, and one in P4 - its excess-kurtosis
-% monotonicity, which is the only one of the seven that is a genuine finding about grid truncation
-% rather than a bar-calibration issue. Anything beyond those seven is new.
-%
-% WHAT THIS RUN COVERS THAT NO EARLIER ONE DID, all of it landed since the last full run:
-%   P10, and the two commands it tests - discretizeARp_FarmerToda and discretizeARpwGM_FarmerToda,
-%     neither of which existed, the second having been CALLED by LifeCycleModelA10 without existing
-%   discretizeIID_TanakaToda generalised to seven new options, then five defects found by review and
-%     fixed, then section 10 of DiscP1_IID_TanakaToda_general written to cover the paths that
-%     sections 1 to 9 isolate away from
-%   DiscSummary's block regex, which matched P\d and so could not see P10 at all
-%   P6's age-shift test, which compared a column against a row and could never fire
-%   P9's M=4 and M=5 grids, which had two points per dimension and so measured arithmetic
-%
-% doPart(11) is P10 and is now a real block rather than the placeholder notice it used to be.
-doPart=[1,1,1,1,1,1,1,1,1,1,1];
+% WHAT TO EXPECT, against the run of 2026-09-19: 3379 checks, 7 failed. The check COUNT should be
+% identical this time - neither change adds or removes a check - so compare both numbers. The seven
+% are the standing [T2] accuracy bars: four in P2, two in P3, one in P4. Anything else is new.
+%   P4's fall-back percentages should NOT move. The hull test cannot change an accept/reject
+%     decision, and the retry found nothing to rescue in that command.
+%   P2 may improve slightly. Its four-moment ladder is where the retry found rows, so a cell or two
+%     may match more moments than before and report a smaller error.
+%   RUNTIME should fall, and unevenly. The gain is largest where infeasible targets are common,
+%     which is the high-persistence end of the ladder: up to ninetyfold on individual configurations
+%     in the standalone measurement, against about six per cent LOST on grids so fine that nothing
+%     is infeasible and the hull test is pure overhead. The runtime lines in each block are the
+%     place to look.
+doPart=[1,1,1,1,1,1,1,1,0,1,1];
 
 %% Diary of the command window output (figures are saved into TestOutput as they are created)
 if ~exist('./TestOutput','dir')

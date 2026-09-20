@@ -132,6 +132,20 @@ end
 % were 1.759, 1.268, 1.305, 1.349 - rising monotonically over the last three cells - and a
 % first-versus-last test passed on that. What is wanted is that refining the grid never makes the
 % answer worse, so every consecutive pair is checked.
+%
+% WHY THIS CHECK IS RED, AND WHAT IT IS REALLY TESTING (investigated 2026-09-18). The assertion
+% as written asks the error against calib.z.exkurt to fall as the grid refines. The truth is not
+% in doubt - the formula in DiscSetup_AR1SV was re-derived independently and reproduces 0.828527,
+% and both of its limit checks pass - but discretizeAR1wSV_FarmerToda cannot converge to it. Its
+% transition is a product, z' independent of x' given (z,x), so the innovation variance has to be
+% E[exp(x')|x] rather than exp(x'); that turns the lag-h autocovariance of log volatility from
+% sigmaX*phi^h into sigmaX*phi^(h+2) and caps the attainable excess kurtosis at 0.6498, or ~0.567
+% once the x block's hard-coded nSigmas=2 is allowed for, against a measured 0.256 at znum=101.
+% The full derivation and the ladder of numbers are in the header of the command itself. So the
+% monotone-convergence framing is testing something false, and the [T2] bar should be restated
+% against the method's own ceiling rather than against the truth - deliberately NOT done yet,
+% since the honest version of it depends on which of the three fixes in that header is taken.
+% The check is left red on purpose: it is the visible marker for that decision.
 dek=diagek(ok);
 worst=0; worstat=0;
 for c_c=2:length(dek)

@@ -140,22 +140,64 @@ fprintf('symmetric mixture: z_grid symmetric about zero [T1], this should be zer
 mS=sum(dS.*zgS);
 fprintf('symmetric mixture: skewness is zero [T2], this should be small: %2.8e \n',abs(sum(dS.*(zgS-mS).^3)/vS^1.5))
 
-% pi_z is NOT centrosymmetric here, and the reason is worth printing rather than hiding behind a
-% loosened tolerance. Each row is an independent entropy solve, and the solve does not succeed
-% equally on mirrored rows: nMoments_grid itself comes back asymmetric, so one row of a mirrored
-% pair can be matching four moments while its mirror has fallen back to two. That produces a
-% genuinely asymmetric transition matrix on a perfectly symmetric problem - measured at 6e-02,
-% which is far too large to be solver noise - while the STATIONARY distribution stays symmetric to
-% 1e-04, because both rows still match the moments they did achieve.
+% CENTROSYMMETRY, WITH THE BAR DERIVED RATHER THAN CHOSEN. On a symmetric mixture the problem is
+% invariant under z -> -z, so pi_z ought to be centrosymmetric. It never is exactly, because each
+% row is an independent numerical solve, and the question is how big a departure is consistent
+% with that rather than evidence of a bug. This used to be asserted against a flat 1e-4 borrowed
+% from the four-moment entropy tolerance, which is a tolerance on MOMENT error and not on
+% probabilities, and the two are not on the same scale.
 %
-% So the check is made conditional on the thing that causes it: where the solve succeeded equally
-% on mirrored rows, the transition matrix must be centrosymmetric.
+% The scale factor between them is measurable. The entropy solution is pinned down by the moments
+% it matches, so a discrepancy in the achieved moments of a mirrored pair translates into a
+% discrepancy in their probability vectors, amplified by the conditioning of the moment map - to
+% first order by 1/sigma_min of the covariance of the moment functions under that row. For the
+% worst mirrored pair here that amplification is about 1.8e3, so a moment discrepancy of 1e-9
+% permits a probability discrepancy near 2e-6, and no fixed bar on pi_z can know that.
+%
+% So the assertion compares like with like: for each mirrored pair, the observed asymmetry against
+% that pair's own moment discrepancy times its own amplification. There is no constant in it. A
+% failure now means the asymmetry is NOT explained by the moment noise, which is the thing that
+% would actually be worth chasing. The point of writing it this way is that the ratio is a property
+% of the solve rather than of the machine: measured on cpu 2026-09-19 it is 2.70e-03 with the
+% feasibility test in place and 2.67e-03 without it, a difference of one per cent, even though the
+% raw asymmetry those two produce differs by a factor of fifteen (3.5e-09 against 5.2e-08).
+%
+% The nMoments_grid precondition is kept, and for the same reason as before: if mirrored rows
+% matched different numbers of moments then they solved different problems, the bound below does
+% not apply, and an asymmetric pi_z is expected rather than a defect. Before 2026-09-19 that was
+% the normal case on gpu and this whole check sat dormant - the asymmetry was 6e-02, far too large
+% to be solver noise - and it is the feasibility test in discreteApproximation that made mirrored
+% rows agree, because a convex-hull test is exact and therefore symmetric where an iterative solve
+% stopping on its own tolerances is not.
 nMg=ooS.nMoments_grid(:);
 symfallback=max(abs(nMg-flipud(nMg)));
 fprintf('symmetric mixture: nMoments_grid is itself asymmetric by %i moments across mirrored rows \n',symfallback)
-fprintf('symmetric mixture: pi_z asymmetry is %2.8e (reported; caused by the above) \n',max(abs(pzS-rot90(pzS,2)),[],'all'))
+fprintf('symmetric mixture: pi_z asymmetry is %2.8e (reported) \n',max(abs(pzS-rot90(pzS,2)),[],'all'))
 if symfallback==0
-    fprintf('symmetric mixture: the solve succeeded equally on mirrored rows, so pi_z must be centrosymmetric, this should be below %g: %2.8e \n',calib.entropytol4,max(abs(pzS-rot90(pzS,2)),[],'all'))
+    % The moment functions, in raw powers of the grid. Mirroring sends z to -z, so the kth moment
+    % of a row must equal (-1)^k times the kth moment of its mirror.
+    Tsym=[zgS(:),zgS(:).^2,zgS(:).^3,zgS(:).^4];
+    Msym=pzS*Tsym;
+    worstratio=0; worstpair=0; worstamp=0;
+    for s_c=1:floor(znum/2)
+        s_m=znum+1-s_c;
+        pairasym=max(abs(pzS(s_c,:)-fliplr(pzS(s_m,:))));
+        pairmom=max(abs(Msym(s_c,:)-Msym(s_m,:).*((-1).^(1:4))));
+        sigpair=Inf;
+        for s_r=[s_c,s_m]
+            pr=pzS(s_r,:)'; mur=Tsym'*pr; Cr=(Tsym-mur')'*(pr.*(Tsym-mur'));
+            sigpair=min(sigpair,min(eig(Cr)));
+        end
+        % eps floors a moment discrepancy that has underflowed to nothing, where the ratio would
+        % otherwise be 0/0 rather than small.
+        pairbound=max(pairmom,eps)/sigpair;
+        if pairasym/pairbound>worstratio
+            worstratio=pairasym/pairbound; worstpair=s_c; worstamp=1/sigpair;
+        end
+    end
+    fprintf('symmetric mixture: worst mirrored pair is row %i, amplification 1/sigma_min = %2.3e \n',worstpair,worstamp)
+    fprintf('symmetric mixture: its asymmetry as a fraction of what its own moment discrepancy permits, \n')
+    fprintf('   so the solve is symmetric to the accuracy it achieved [T2], this should be below 1: %2.8e \n',worstratio)
 else
     fprintf('symmetric mixture: mirrored rows achieved DIFFERENT numbers of moments, so an asymmetric \n')
     fprintf('   pi_z is expected here and is not asserted against. This is a property of the entropy \n')
