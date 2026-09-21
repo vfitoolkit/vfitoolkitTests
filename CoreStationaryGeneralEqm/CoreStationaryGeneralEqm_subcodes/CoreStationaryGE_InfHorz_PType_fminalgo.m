@@ -92,13 +92,29 @@ tt=tic;
 time9=toc(tt); nsolves9=StationaryGeneralEqm_subcode_GEsolvecounter('get');
 
 %% fminalgo=9 with Anderson Type-I (Zhang, O'Donoghue & Boyd 2020; globally convergent)
+% The Type-I step x-H*g is unbounded, and on this model it overshoots: on
+% 2026-09-17 it drove r below -delta at iteration 108, where the wage the
+% ReturnFn builds from the firm FOC, (1-alpha)*A*((r+delta)/(alpha*A))^(alpha/(alpha-1)),
+% has a negative base and a fractional exponent. That is a complex result, which
+% gpuArray/arrayfun cannot return, so the whole test bank died there. Note that
+% AndersonAcceleration already halves a Type-I step back toward the previous
+% iterate when the GE conditions come back non-finite, but that guard tests
+% isfinite() and this failure THROWS instead, so it never fires.
+% constrainpositive on r is what keeps it out of that region: Anderson then
+% iterates on uparam over the whole real line while the solver only ever sees
+% r=softplus(uparam)>0, so r+delta can never go negative however long the step.
 heteroagentoptions9I=heteroagentoptions9;   % same fminalgo9.howtoupdate as the Type-II run
 heteroagentoptions9I.anderson.type='I';
+heteroagentoptions9I.constrainpositive={'r'};
 tt=tic;
 [p_eqm9I,GEcondns9I]=HeteroAgentStationaryEqm_InfHorz_PType(n_d, n_a, n_z, Names_i, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, PTypeDistParamNames, GEPriceParamNames,heteroagentoptions9I, simoptions, vfoptions);
 time9I=toc(tt); nsolves9I=StationaryGeneralEqm_subcode_GEsolvecounter('get');
 
 %% Compare
+% Note that the 9I run is the one solve here that carries a parameter constraint
+% (constrainpositive on r, see above). The equilibrium r is interior to (0,infty),
+% so the constraint is not binding and 9I must still agree with the rest; it is
+% only the path the optimizer takes to get there that differs.
 fprintf('\n=== InfHorz PType: fminalgo agreement (r,Tr,tau_c) ===\n')
 fprintf('fminalgo=1: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm1.r,p_eqm1.Tr,p_eqm1.tau_c)
 fprintf('fminalgo=5: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm5.r,p_eqm5.Tr,p_eqm5.tau_c)

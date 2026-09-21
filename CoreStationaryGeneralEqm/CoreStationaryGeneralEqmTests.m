@@ -12,7 +12,23 @@
 %  (ii) re-solve using all three kinds of parameter constraint, each applied to
 %        one of the prices: constrain0to1 on r, constrainpositive on Tr,
 %        constrainAtoB on tau_c (and then all three at once); confirm each
-%        reproduces the unconstrained answer
+%        reproduces the unconstrained answer. constrainpositive is done three
+%        times: with constrainpositivemethod left unset, with it set explicitly
+%        to 'softplus' (cparam=log(1+exp(uparam))), and with it set to 'log'
+%        (uparam=log(cparam)). Since 2026-09-12 'softplus' IS the default, so the
+%        first two are the same transform and must agree exactly; that pair is
+%        what catches a GE solver whose own default has silently reverted. The
+%        log run is the only one that puts a non-default constrainpositivemethod
+%        through a GE solve, so the bank also checks that it DIFFERS from the
+%        softplus run: an exact zero there means the option never reached the
+%        solver, and every invariance check would stay green while covering
+%        nothing. Both transforms send the real line to (0,infty), so both must
+%        land on the same equilibrium; they differ in the step sizes the
+%        optimizer sees, which matters when a constrained price starts at 1 (log
+%        sends that to uparam=0, exactly where fminsearch switches to its tiny
+%        absolute simplex perturbation). log is the worse of the two on this
+%        model, so its invariance check carries a deliberately loose threshold
+%        and the accuracy ratio is printed alongside it.
 %
 % This file runs: InfHorz, then FHorz, then the same again with permanent types
 % (PType, N_i=2 types differing in sigma=2.2 and 1.8). Outputs: output1..output4
@@ -36,6 +52,82 @@ addpath('./CoreStationaryGeneralEqm_ReturnFns/')
 
 % Setup so that we use the same model in both halves
 CoreStationaryGE_setup
+
+
+%% ============ constrainpositivemethod round trips ============
+% Pure transform checks, no model and no GE solve, run first because if the
+% transforms are wrong there is no point solving anything with them.
+%
+% The GE-level checks further down put constrainpositive on Tr under both
+% methods, but Tr sits at a moderate value there, so those solves cannot see
+% what happens at the extremes. These three checks pin the parts that a GE solve
+% on this model would silently pass:
+%   (a) round trip over 16 orders of magnitude, both methods
+%   (b) cparam=100 under softplus. The +-50 cutoffs sit in log units, where +50
+%       means cparam of about 5e21; under softplus cparam is roughly uparam, so
+%       restoring an upper cutoff there would cap EVERY positive parameter at 50.
+%       This is the regression guard for that.
+%   (c) the overflow ends, where the naive log(exp(c)-1) and log(1+exp(u)) blow up.
+% Printed as %.3e because several of these differences are genuinely near a ULP.
+
+fprintf('\n=== constrainpositivemethod: transform round trips ===\n')
+cpm_names={'theta'};
+cpm_index=[0;1]; % one parameter, one element
+cpm_log.constrainpositive={'theta'}; cpm_log.constrain0to1={}; cpm_log.constrainAtoB={};
+cpm_log.constrainpositivemethod='log';
+cpm_sp=cpm_log; cpm_sp.constrainpositivemethod='softplus';
+
+% (a) round trip, and (b) is the 60/100/1e4 part of this grid
+cpm_grid=[1e-8,1e-4,0.01,0.5,1,2,10,50,60,100,1e4,1e8];
+cpm_worst_log=0; cpm_worst_sp=0;
+for cpm_c=cpm_grid
+    [cpm_u1,cpm_o1]=ParameterConstraints_TransformParamsToUnconstrained(cpm_c,cpm_index,cpm_names,cpm_log,1);
+    cpm_b1=ParameterConstraints_TransformParamsToOriginal(cpm_u1,cpm_index,cpm_names,cpm_o1);
+    [cpm_u2,cpm_o2]=ParameterConstraints_TransformParamsToUnconstrained(cpm_c,cpm_index,cpm_names,cpm_sp,1);
+    cpm_b2=ParameterConstraints_TransformParamsToOriginal(cpm_u2,cpm_index,cpm_names,cpm_o2);
+    cpm_worst_log=max(cpm_worst_log,abs(cpm_b1-cpm_c)/cpm_c);
+    cpm_worst_sp=max(cpm_worst_sp,abs(cpm_b2-cpm_c)/cpm_c);
+    fprintf('cparam=%9.2e | log uparam=%10.4f back=%9.2e | softplus uparam=%10.4f back=%9.2e \n',cpm_c,cpm_u1,cpm_b1,cpm_u2,cpm_b2)
+end
+fprintf('worst round-trip relative error, log, this should be near zero: %.3e \n',cpm_worst_log)
+fprintf('worst round-trip relative error, softplus, this should be near zero: %.3e \n',cpm_worst_sp)
+fprintf('(the 60, 100 and 1e4 rows are the cutoff guard: if softplus ever regains \n')
+fprintf(' an upper cutoff they come back as about 50 instead of themselves) \n')
+
+% cparam=1 is why the option exists: log sends it to exactly uparam=0, which is
+% where fminsearch swaps its 5% relative simplex perturbation for an absolute
+% 0.00025, making the first step on that parameter about 200x too small.
+[cpm_u1,~]=ParameterConstraints_TransformParamsToUnconstrained(1,cpm_index,cpm_names,cpm_log,1);
+[cpm_u2,~]=ParameterConstraints_TransformParamsToUnconstrained(1,cpm_index,cpm_names,cpm_sp,1);
+fprintf('cparam=1: log uparam=%.6f (expect exactly 0), softplus uparam=%.6f (expect %.6f) \n',cpm_u1,cpm_u2,log(exp(1)-1))
+fprintf('log uparam(1) distance from 0, this should be zero: %.3e \n',abs(cpm_u1))
+fprintf('softplus uparam(1) distance from log(e-1), this should be near zero: %.3e \n',abs(cpm_u2-log(exp(1)-1)))
+
+% (c) overflow ends
+[cpm_ubig,cpm_o2]=ParameterConstraints_TransformParamsToUnconstrained(1e6,cpm_index,cpm_names,cpm_sp,1);
+cpm_bbig=ParameterConstraints_TransformParamsToOriginal(cpm_ubig,cpm_index,cpm_names,cpm_o2);
+cpm_chuge=ParameterConstraints_TransformParamsToOriginal(1e6,cpm_index,cpm_names,cpm_o2);
+fprintf('softplus forward cparam=1e6: uparam=%.6e back=%.6e relerr=%.3e \n',cpm_ubig,cpm_bbig,abs(cpm_bbig-1e6)/1e6)
+fprintf('softplus inverse uparam=1e6: cparam=%.6e \n',cpm_chuge)
+fprintf('count of Inf/NaN across the overflow checks, this should be zero: %d \n',sum(~isfinite([cpm_ubig,cpm_bbig,cpm_chuge])))
+
+% The default is 'softplus' (changed from 'log' on 2026-09-12, after the InfHorz
+% constraint-invariance check below came out at 5.3e-2 under log against 2.6e-5
+% under softplus; that comparison is no longer a one-off, the constraints
+% subcodes below now run both transforms through a GE solve and print the ratio
+% of their errors every time). So the option unset must equal 'softplus', and must NOT equal
+% 'log' -- the second half is what catches a default that has silently reverted.
+cpm_unset=rmfield(cpm_log,'constrainpositivemethod');
+cpm_maxdiff_sp=0; cpm_maxdiff_log=0;
+for cpm_c=cpm_grid
+    [cpm_ua,~]=ParameterConstraints_TransformParamsToUnconstrained(cpm_c,cpm_index,cpm_names,cpm_unset,1);
+    [cpm_ub,~]=ParameterConstraints_TransformParamsToUnconstrained(cpm_c,cpm_index,cpm_names,cpm_sp,1);
+    [cpm_uc,~]=ParameterConstraints_TransformParamsToUnconstrained(cpm_c,cpm_index,cpm_names,cpm_log,1);
+    cpm_maxdiff_sp=max(cpm_maxdiff_sp,abs(cpm_ua-cpm_ub));
+    cpm_maxdiff_log=max(cpm_maxdiff_log,abs(cpm_ua-cpm_uc));
+end
+fprintf('option unset vs method=''softplus'', this should be zero: %.3e \n',cpm_maxdiff_sp)
+fprintf('option unset vs method=''log'', this should NOT be zero: %.3e \n',cpm_maxdiff_log)
 
 
 %% ========================= InfHorz ==========================
