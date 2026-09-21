@@ -116,7 +116,7 @@ for mm=1:2
                     if isempty(Voff)
                         fprintf('%s %s howards=%3d runtime: %2.4f seconds (no OFF reference to compare against) \n',gistr,cfg{cc}{1},howardslist(hh),tc);
                     else
-                        fprintf('%s %s howards=%3d vs OFF, V ~0: %2.8f, Pol 0: %2.8f, speedup >1: %2.2f \n',gistr,cfg{cc}{1},howardslist(hh),max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
+                        fprintf('%s %s howards=%3d vs OFF, V ~0: %.3e, Pol 0: %.3e, speedup >1: %2.2f \n',gistr,cfg{cc}{1},howardslist(hh),max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
                         % A policy index difference is not by itself a fault. Where two choices are
                         % worth the same to within the solver tolerance, Howards and pure VFI are
                         % free to pick either, and the max-abs-difference above cannot tell that

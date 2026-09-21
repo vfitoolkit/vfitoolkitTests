@@ -16,6 +16,32 @@
 % endogenous asset; that decision has been reversed.)
 % Layout: noa1 (figs 1-4) -> withA1 (figs 5-8) -> with2A1 (figs 9-12).
 
+%% Which parts to run
+% One entry per part, in the order they appear below. Set an entry to zero to skip that part.
+% That is for building and for rerunning: while one tier is being worked on there is no reason to
+% rerun the ones that already pass, and a bank that dies partway (out-of-memory, most often) can
+% be finished off by running just the parts that never got to run.
+% doPart(1):  NOA1 figs 1-2
+% doPart(2):  NOA1 cross-tests
+% doPart(3):  NOA1 figs 3-4
+% doPart(4):  NOA1 cross-tests 2
+% doPart(5):  WITH a1 figs 5-6
+% doPart(6):  WITH a1 cross-tests
+% doPart(7):  WITH a1 figs 7-8
+% doPart(8):  WITH a1 cross-tests 2
+% doPart(9):  With TWO standard endogenous figs 9-10
+% doPart(10): With TWO standard endogenous cross-tests
+% doPart(11): With TWO standard endogenous figs 11-12
+%
+% Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
+% Fig number is the same test whatever doPart says, and a png from a previous run is never
+% overwritten by a different test.
+%
+% Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
+% the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
+% in any combination. Anything added to this bank later must keep that true.
+doPart=[1,1,1,1,1,1,1,1,1,1,1];
+
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
     mkdir('./TestOutput')
@@ -24,7 +50,9 @@ if exist('./TestOutput/CoreFHorzExpAssetzeTestsdiary.txt','file')
     delete('./TestOutput/CoreFHorzExpAssetzeTestsdiary.txt') % otherwise diary just appends to the previous run
 end
 diary ./TestOutput/CoreFHorzExpAssetzeTestsdiary.txt
+fprintf('CoreFHorzExpAssetzeTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
+addpath('../SharedSubcodes/') % CoreSummary, shared by the Core banks
 addpath('./CoreFHorzExpAssetzeTests_subcodes/')
 addpath('./CoreFHorzExpAssetzeTests_subcodes/WithA1_subcodes/')
 addpath('./CoreFHorzExpAssetzeTests_Setup/')
@@ -42,80 +70,104 @@ addpath('./CoreFHorzExpAssetzeTests_subcodes/Noa1_subcodes/Semiz_subcodes/')
 addpath('./CoreFHorzExpAssetze_ReturnFns/Noa1_ReturnFns/')
 addpath('./CoreFHorzExpAssetze_ReturnFns/Noa1_ReturnFns/Semiz_ReturnFns/')
 
-%% noa1, without d1, with z, with e
-figure_c=1;
-output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+%% ===== doPart(1): NOA1 figs 1-2 =====
+if doPart(1)==1
+    fprintf('\n===== doPart(1): NOA1 figs 1-2 =====\n')
+    %% noa1, without d1, with z, with e
+    figure_c=1;
+    output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% noa1, with d1, with z, with e
-figure_c=2;
-output=CoreFHorzExpAssetze_d1_z_e_nosemiz_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% noa1, with d1, with z, with e
+    figure_c=2;
+    output=CoreFHorzExpAssetze_d1_z_e_nosemiz_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(1): NOA1 figs 1-2
 
-%% noa1 nosemiz cross-tests
-% CrossTest 5: noa1 vs withA1 model with n_a1=1 where a1 is ignored (should match bit-exact)
-output=CoreFHorzExpAssetze_CrossTests5_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests5_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+%% ===== doPart(2): NOA1 cross-tests =====
+if doPart(2)==1
+    fprintf('\n===== doPart(2): NOA1 cross-tests =====\n')
+    %% noa1 nosemiz cross-tests
+    % CrossTest 5: noa1 vs withA1 model with n_a1=1 where a1 is ignored (should match bit-exact)
+    output=CoreFHorzExpAssetze_CrossTests5_nod1_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests5_d1_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(2): NOA1 cross-tests
 
 %% noa1 semiz
 % PENDING TOOLKIT SUPPORT: these error at the ValueFnIter call until the
 % ExpAssetzeSemiExo noa1 raws exist (test-first: written ahead of the toolkit code)
 
-%% noa1, without d1, with z, with e, with semiz
-figure_c=3;
-output=CoreFHorzExpAssetze_nod1_z_e_semiz_noa1(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+%% ===== doPart(3): NOA1 figs 3-4 =====
+if doPart(3)==1
+    fprintf('\n===== doPart(3): NOA1 figs 3-4 =====\n')
+    %% noa1, without d1, with z, with e, with semiz
+    figure_c=3;
+    output=CoreFHorzExpAssetze_nod1_z_e_semiz_noa1(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% noa1, with d1, with z, with e, with semiz
-figure_c=4;
-output=CoreFHorzExpAssetze_d1_z_e_semiz_noa1(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% noa1, with d1, with z, with e, with semiz
+    figure_c=4;
+    output=CoreFHorzExpAssetze_d1_z_e_semiz_noa1(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(3): NOA1 figs 3-4
 
-%% noa1 semiz cross-tests
-% CrossTest 5 + semiz: noa1 vs withA1 model with n_a1=1 where a1 is ignored (should match bit-exact)
-output=CoreFHorzExpAssetze_CrossTests5_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests5_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+%% ===== doPart(4): NOA1 cross-tests 2 =====
+if doPart(4)==1
+    fprintf('\n===== doPart(4): NOA1 cross-tests 2 =====\n')
+    %% noa1 semiz cross-tests
+    % CrossTest 5 + semiz: noa1 vs withA1 model with n_a1=1 where a1 is ignored (should match bit-exact)
+    output=CoreFHorzExpAssetze_CrossTests5_nod1_noa1_semiz(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests5_d1_noa1_semiz(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(4): NOA1 cross-tests 2
 
 
 
 
 %% ================= WITH a1 (figs 5-8) =================
 
-%% without d1, with z, with e
-n_a_notsobig=[301,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+%% ===== doPart(5): WITH a1 figs 5-6 =====
+if doPart(5)==1
+    fprintf('\n===== doPart(5): WITH a1 figs 5-6 =====\n')
+    %% without d1, with z, with e
+    n_a_notsobig=[301,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=5;
-output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_withA1(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=5;
+    output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_withA1(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with d1, with z, with e
-n_a_notsobig=[201,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, with z, with e
+    n_a_notsobig=[201,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=6;
-output=CoreFHorzExpAssetze_d1_z_e_nosemiz_withA1(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=6;
+    output=CoreFHorzExpAssetze_d1_z_e_nosemiz_withA1(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(5): WITH a1 figs 5-6
 
 
-%% Cross-tests
-% CrossTest 1: 'fake' experienceassetze that ignores e vs actual experienceassetz (should match)
-output=CoreFHorzExpAssetze_CrossTests_nod1_withA1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+%% ===== doPart(6): WITH a1 cross-tests =====
+if doPart(6)==1
+    fprintf('\n===== doPart(6): WITH a1 cross-tests =====\n')
+    %% Cross-tests
+    % CrossTest 1: 'fake' experienceassetze that ignores e vs actual experienceassetz (should match)
+    output=CoreFHorzExpAssetze_CrossTests_nod1_withA1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-% CrossTest 2: 'fake' experienceassetze that ignores z vs actual experienceassete (should match)
-output=CoreFHorzExpAssetze_CrossTests2_nod1_withA1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests2_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    % CrossTest 2: 'fake' experienceassetze that ignores z vs actual experienceassete (should match)
+    output=CoreFHorzExpAssetze_CrossTests2_nod1_withA1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests2_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-% CrossTest 3: 'fake' experienceassetze that ignores both z and e vs plain experienceasset (should match)
-output=CoreFHorzExpAssetze_CrossTests3_nod1_withA1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests3_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    % CrossTest 3: 'fake' experienceassetze that ignores both z and e vs plain experienceasset (should match)
+    output=CoreFHorzExpAssetze_CrossTests3_nod1_withA1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests3_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-% CrossTest 4: experienceassetze with iid-markov z + e vs experienceassete with 2-dim e (should match)
-output=CoreFHorzExpAssetze_CrossTests4_nod1_withA1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests4_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    % CrossTest 4: experienceassetze with iid-markov z + e vs experienceassete with 2-dim e (should match)
+    output=CoreFHorzExpAssetze_CrossTests4_nod1_withA1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests4_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(6): WITH a1 cross-tests
 
 
 
@@ -125,41 +177,49 @@ output=CoreFHorzExpAssetze_CrossTests4_d1_withA1(n_d_withd1,n_a,n_a_big,n_z,N_j,
 addpath('./CoreFHorzExpAssetzeTests_subcodes/WithA1_subcodes/Semiz_subcodes/')
 addpath('./CoreFHorzExpAssetze_ReturnFns/Semiz_ReturnFns/')
 
-%% without d1, with z, with e, with semiz
-n_a_notsobig=[201,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+%% ===== doPart(7): WITH a1 figs 7-8 =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): WITH a1 figs 7-8 =====\n')
+    %% without d1, with z, with e, with semiz
+    n_a_notsobig=[201,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=7;
-output=CoreFHorzExpAssetze_nod1_z_e_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=7;
+    output=CoreFHorzExpAssetze_nod1_z_e_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with d1, with z, with e, with semiz
-n_a_notsobig=[151,13];
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, with z, with e, with semiz
+    n_a_notsobig=[151,13];
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=8;
-output=CoreFHorzExpAssetze_d1_z_e_semiz_withA1(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    figure_c=8;
+    output=CoreFHorzExpAssetze_d1_z_e_semiz_withA1(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(7): WITH a1 figs 7-8
 
-%% Semiz cross-tests
+%% ===== doPart(8): WITH a1 cross-tests 2 =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): WITH a1 cross-tests 2 =====\n')
+    %% Semiz cross-tests
 
-% CrossTest1+semiz: 'fake' experienceassetze+semiz that ignores e vs experienceassetz+semiz
-output=CoreFHorzExpAssetze_CrossTests_nod1_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    % CrossTest1+semiz: 'fake' experienceassetze+semiz that ignores e vs experienceassetz+semiz
+    output=CoreFHorzExpAssetze_CrossTests_nod1_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-% CrossTest2+semiz: 'fake' experienceassetze+semiz that ignores z vs experienceassete+semiz
-output=CoreFHorzExpAssetze_CrossTests2_nod1_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests2_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    % CrossTest2+semiz: 'fake' experienceassetze+semiz that ignores z vs experienceassete+semiz
+    output=CoreFHorzExpAssetze_CrossTests2_nod1_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests2_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-% CrossTest3+semiz: 'fake' experienceassetze+semiz that ignores both z and e vs plain experienceasset+semiz
-output=CoreFHorzExpAssetze_CrossTests3_nod1_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests3_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    % CrossTest3+semiz: 'fake' experienceassetze+semiz that ignores both z and e vs plain experienceasset+semiz
+    output=CoreFHorzExpAssetze_CrossTests3_nod1_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests3_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-% CrossTest4+semiz: experienceassetze+semiz with iid-markov z + e vs experienceassete+semiz with 2-dim e
-output=CoreFHorzExpAssetze_CrossTests4_nod1_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests4_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    % CrossTest4+semiz: experienceassetze+semiz with iid-markov z + e vs experienceassete+semiz with 2-dim e
+    output=CoreFHorzExpAssetze_CrossTests4_nod1_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests4_d1_semiz_withA1(n_d_withd1semiz,n_a,n_a_big,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(8): WITH a1 cross-tests 2
 
 
 
@@ -179,35 +239,52 @@ n_a_2A1_notsobig=[151,n_a1_2,n_a_justexpasset];
 a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
 a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
-%% with2A1, without d1, with z, with e
-figure_c=9;
-output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+%% ===== doPart(9): With TWO standard endogenous figs 9-10 =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): With TWO standard endogenous figs 9-10 =====\n')
+    %% with2A1, without d1, with z, with e
+    figure_c=9;
+    output=CoreFHorzExpAssetze_nod1_z_e_nosemiz_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with2A1, with d1, with z, with e
-figure_c=10;
-output=CoreFHorzExpAssetze_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% with2A1, with d1, with z, with e
+    figure_c=10;
+    output=CoreFHorzExpAssetze_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(9): With TWO standard endogenous figs 9-10
 
-%% with2A1 nosemiz cross-tests
-% CrossTest 6: a degenerate second standard asset a1_2 (single point {0}) reduces the
-% two-standard-asset model back to the with-a1 model
-output=CoreFHorzExpAssetze_CrossTests6_nod1_with2A1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
-output=CoreFHorzExpAssetze_CrossTests6_d1_with2A1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+%% ===== doPart(10): With TWO standard endogenous cross-tests =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): With TWO standard endogenous cross-tests =====\n')
+    %% with2A1 nosemiz cross-tests
+    % CrossTest 6: a degenerate second standard asset a1_2 (single point {0}) reduces the
+    % two-standard-asset model back to the with-a1 model
+    output=CoreFHorzExpAssetze_CrossTests6_nod1_with2A1(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreFHorzExpAssetze_CrossTests6_d1_with2A1(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(10): With TWO standard endogenous cross-tests
 
 %% with2A1 + semiz
 
-%% with2A1, without d1, with z, with e, with semiz
-figure_c=11;
-output=CoreFHorzExpAssetze_nod1_z_e_semiz_with2A1(n_d_withoutd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+%% ===== doPart(11): With TWO standard endogenous figs 11-12 =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): With TWO standard endogenous figs 11-12 =====\n')
+    %% with2A1, without d1, with z, with e, with semiz
+    figure_c=11;
+    output=CoreFHorzExpAssetze_nod1_z_e_semiz_with2A1(n_d_withoutd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with2A1, with d1, with z, with e, with semiz
+    %% with2A1, with d1, with z, with e, with semiz
 
-% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
-figure_c=12;
-output=CoreFHorzExpAssetze_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
-% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    figure_c=12;
+    output=CoreFHorzExpAssetze_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetzeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+end % doPart(11): With TWO standard endogenous figs 11-12
+
+%% One verdict for the whole run
+% The bank prints a lot of checks; this reads the diary back and says plainly whether the run
+% passed, how many checks it contained, and which parts they came from. See CoreSummary.m.
+CoreSummary('./TestOutput/CoreFHorzExpAssetzeTestsdiary.txt')
 
 diary off

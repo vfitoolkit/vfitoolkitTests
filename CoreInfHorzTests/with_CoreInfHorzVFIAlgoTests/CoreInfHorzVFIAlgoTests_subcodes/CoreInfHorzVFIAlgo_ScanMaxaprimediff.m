@@ -17,7 +17,7 @@ madlist=[5,8,10,15,20];
 for ii=1:length(madlist)
     vfo=struct(); vfo.gridinterplayer=1; vfo.ngridinterp=5; vfo.preGI=0; vfo.maxaprimediff=madlist(ii);
     [Vpost,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-    fprintf('maxaprimediff=%2d: |preGI-postGI| = %2.8f \n',madlist(ii),max(abs(Vpre(:)-Vpost(:))));
+    fprintf('maxaprimediff=%2d: |preGI-postGI| = %.3e \n',madlist(ii),max(abs(Vpre(:)-Vpost(:))));
 end
 
 output=struct();

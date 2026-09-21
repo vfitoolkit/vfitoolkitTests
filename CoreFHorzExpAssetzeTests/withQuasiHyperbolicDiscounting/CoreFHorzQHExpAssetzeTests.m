@@ -15,6 +15,23 @@
 %
 % The subcodes here take figure_c but draw no figures, so only the diary is saved.
 
+%% Which parts to run
+% One entry per part, in the order they appear below. Set an entry to zero to skip that part.
+% That is for building and for rerunning: while one tier is being worked on there is no reason to
+% rerun the ones that already pass, and a bank that dies partway (out-of-memory, most often) can
+% be finished off by running just the parts that never got to run.
+% doPart(1): figs 1-8
+% doPart(2): figs 9-12
+%
+% Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
+% Fig number is the same test whatever doPart says, and a png from a previous run is never
+% overwritten by a different test.
+%
+% Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
+% the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
+% in any combination. Anything added to this bank later must keep that true.
+doPart=[1,1];
+
 %% Diary of the command window output (written to the parent bank's TestOutput folder)
 if ~exist('../TestOutput','dir')
     mkdir('../TestOutput')
@@ -23,7 +40,9 @@ if exist('../TestOutput/CoreFHorzQHExpAssetzeTestsdiary.txt','file')
     delete('../TestOutput/CoreFHorzQHExpAssetzeTestsdiary.txt') % otherwise diary just appends to the previous run
 end
 diary ../TestOutput/CoreFHorzQHExpAssetzeTestsdiary.txt
+fprintf('CoreFHorzQHExpAssetzeTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
+addpath('../../SharedSubcodes/') % CoreSummary, shared by the Core banks
 addpath('../CoreFHorzExpAssetzeTests_Setup/')
 addpath('../CoreFHorzExpAssetze_ReturnFns/')
 addpath('./CoreFHorzQHExpAssetzeTests_subcodes/Noa1_subcodes/')
@@ -47,53 +66,57 @@ vfoptionsbaseline.QHadditionaldiscount='beta0';
 % method at every valid lowmemory level, for both prefs, plus the exponential cross-tests.
 % Ordering mirrors the baseline bank (which also puts noa1 first).
 
-%% noa1, without d1, with z, with e
-figure_c=1;
-output=CoreFHorzQHExpAssetze_nod1_z_e_nosemiz_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+%% ===== doPart(1): figs 1-8 =====
+if doPart(1)==1
+    fprintf('\n===== doPart(1): figs 1-8 =====\n')
+    %% noa1, without d1, with z, with e
+    figure_c=1;
+    output=CoreFHorzQHExpAssetze_nod1_z_e_nosemiz_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% noa1, with d1, with z, with e
-figure_c=2;
-output=CoreFHorzQHExpAssetze_d1_z_e_nosemiz_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% noa1, with d1, with z, with e
+    figure_c=2;
+    output=CoreFHorzQHExpAssetze_d1_z_e_nosemiz_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% noa1 + semiz, without d1, with z, with e
-figure_c=3;
-output=CoreFHorzQHExpAssetze_nod1_z_e_semiz_noa1(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% noa1 + semiz, without d1, with z, with e
+    figure_c=3;
+    output=CoreFHorzQHExpAssetze_nod1_z_e_semiz_noa1(n_d_withoutd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% noa1 + semiz, with d1, with z, with e
-figure_c=4;
-output=CoreFHorzQHExpAssetze_d1_z_e_semiz_noa1(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% noa1 + semiz, with d1, with z, with e
+    figure_c=4;
+    output=CoreFHorzQHExpAssetze_d1_z_e_semiz_noa1(n_d_withd1semiz,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 
 
-%% withA1 (single standard asset): base / DC1 / GI1 / DC1_GI1 + lowmemory, Naive & Sophisticated
-%% without d1, with z, with e
-n_a_notsobig=[301,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% withA1 (single standard asset): base / DC1 / GI1 / DC1_GI1 + lowmemory, Naive & Sophisticated
+    %% without d1, with z, with e
+    n_a_notsobig=[301,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=5;
-output=CoreFHorzQHExpAssetze_nod1_z_e_nosemiz_withA1(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=5;
+    output=CoreFHorzQHExpAssetze_nod1_z_e_nosemiz_withA1(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, with z, with e
-n_a_notsobig=[201,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, with z, with e
+    n_a_notsobig=[201,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=6;
-output=CoreFHorzQHExpAssetze_d1_z_e_nosemiz_withA1(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=6;
+    output=CoreFHorzQHExpAssetze_d1_z_e_nosemiz_withA1(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% Semiz variant (STAGE 2a): QH+semiz+experienceassetze, d1 BASE method only
-%% without d1, with z, with e, with semiz
-n_a_notsobig=[151,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% Semiz variant (STAGE 2a): QH+semiz+experienceassetze, d1 BASE method only
+    %% without d1, with z, with e, with semiz
+    n_a_notsobig=[151,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3;
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=7;
-output=CoreFHorzQHExpAssetze_nod1_z_e_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=7;
+    output=CoreFHorzQHExpAssetze_nod1_z_e_semiz_withA1(n_d_withoutd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, with z, with e, with semiz
-figure_c=8;
-output=CoreFHorzQHExpAssetze_d1_z_e_semiz_withA1(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, with z, with e, with semiz
+    figure_c=8;
+    output=CoreFHorzQHExpAssetze_d1_z_e_semiz_withA1(n_d_withd1semiz,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+end % doPart(1): figs 1-8
 
 
 
@@ -108,26 +131,35 @@ n_a_2A1_notsobig=[151,n_a1_2,n_a_justexpasset];
 a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
 a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
-%% with2A1, without d1, with z, with e
-figure_c=9;
-output=CoreFHorzQHExpAssetze_nod1_z_e_nosemiz_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+%% ===== doPart(2): figs 9-12 =====
+if doPart(2)==1
+    fprintf('\n===== doPart(2): figs 9-12 =====\n')
+    %% with2A1, without d1, with z, with e
+    figure_c=9;
+    output=CoreFHorzQHExpAssetze_nod1_z_e_nosemiz_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with2A1, with d1, with z, with e
-figure_c=10;
-output=CoreFHorzQHExpAssetze_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with2A1, with d1, with z, with e
+    figure_c=10;
+    output=CoreFHorzQHExpAssetze_d1_z_e_nosemiz_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
 
 
-%% with2A1 + semiz: QH+semiz+experienceassetze with TWO standard endogenous assets
-% Exercises the QH ExpAssetzeSemiExo DC2A / GI2A / DC2A_GI2A code paths (length(n_a1)>1).
-% Reuses the with2A1 grids (n_a_2A1 etc, the binary a1_2 is added inside the subcode).
+    %% with2A1 + semiz: QH+semiz+experienceassetze with TWO standard endogenous assets
+    % Exercises the QH ExpAssetzeSemiExo DC2A / GI2A / DC2A_GI2A code paths (length(n_a1)>1).
+    % Reuses the with2A1 grids (n_a_2A1 etc, the binary a1_2 is added inside the subcode).
 
-%% with2A1, without d1, with z, with e, with semiz
-figure_c=11;
-output=CoreFHorzQHExpAssetze_nod1_z_e_semiz_with2A1(n_d_withoutd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with2A1, without d1, with z, with e, with semiz
+    figure_c=11;
+    output=CoreFHorzQHExpAssetze_nod1_z_e_semiz_with2A1(n_d_withoutd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with2A1, with d1, with z, with e, with semiz
-figure_c=12;
-output=CoreFHorzQHExpAssetze_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with2A1, with d1, with z, with e, with semiz
+    figure_c=12;
+    output=CoreFHorzQHExpAssetze_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+end % doPart(2): figs 9-12
+
+%% One verdict for the whole run
+% The bank prints a lot of checks; this reads the diary back and says plainly whether the run
+% passed, how many checks it contained, and which parts they came from. See CoreSummary.m.
+CoreSummary('../TestOutput/CoreFHorzQHExpAssetzeTestsdiary.txt')
 
 diary off

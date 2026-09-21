@@ -50,7 +50,7 @@ for dd=1:length(n_d_list)
                 vfo=struct(); vfo.gridinterplayer=1; vfo.ngridinterp=5; vfo.preGI=0;
                 vfo.maxaprimediff=madlist(ii); vfo.postGIrepeat=repeatlist(jj);
                 [Vpost,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-                fprintf('%14.8f',max(abs(Vpre(:)-Vpost(:))));
+                fprintf('%14.3e',max(abs(Vpre(:)-Vpost(:))));
             end
             fprintf('\n');
         end

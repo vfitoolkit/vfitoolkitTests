@@ -109,7 +109,7 @@ for mm=1:2
                     if isempty(Voff)
                         fprintf('%s %s howards=%3d runtime: %2.4f seconds (no OFF reference to compare against) \n',gistr,cfg{cc}{1},howardslist(hh),tc);
                     else
-                        fprintf('%s %s howards=%3d vs OFF, V ~0: %2.8f, Pol 0: %2.8f, speedup >1: %2.2f \n',gistr,cfg{cc}{1},howardslist(hh),max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
+                        fprintf('%s %s howards=%3d vs OFF, V ~0: %.3e, Pol 0: %.3e, speedup >1: %2.2f \n',gistr,cfg{cc}{1},howardslist(hh),max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
                     end
                 catch ME
                     fprintf('%s %s howards=%3d not run: %s \n',gistr,cfg{cc}{1},howardslist(hh),ME.message(1:min(end,90)));
@@ -127,7 +127,7 @@ for mm=1:2
             if isempty(Voff)
                 fprintf('%s defaults (nothing set)   runtime: %2.4f seconds (no OFF reference to compare against) \n',gistr,td);
             else
-                fprintf('%s defaults (nothing set)   vs OFF, V ~0: %2.8f, Pol 0: %2.8f, speedup >1: %2.2f \n',gistr,max(abs(Voff(:)-Vd(:))),max(abs(Policyoff(:)-Policyd(:))),tOFF/td);
+                fprintf('%s defaults (nothing set)   vs OFF, V ~0: %.3e, Pol 0: %.3e, speedup >1: %2.2f \n',gistr,max(abs(Voff(:)-Vd(:))),max(abs(Policyoff(:)-Policyd(:))),tOFF/td);
             end
         catch ME
             fprintf('%s defaults (nothing set)   NOT RUN, the defaults do not dispatch here: %s \n',gistr,ME.message(1:min(end,90)));

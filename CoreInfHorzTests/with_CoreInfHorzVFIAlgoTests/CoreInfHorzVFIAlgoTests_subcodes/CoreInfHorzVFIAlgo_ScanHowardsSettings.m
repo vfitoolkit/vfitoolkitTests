@@ -108,12 +108,12 @@ for zz=1:length(n_z_list)
                         for hh=1:length(howardslist)
                             vfo=vfobase; vfo.howardsgreedy=cfg{cc}{2}; vfo.howardssparse=cfg{cc}{3}; vfo.lowmemory=cfg{cc}{4}; vfo.howards=howardslist(hh);
                             tic; [Vc,Policyc]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tc=toc;
-                            fprintf('%s %s howards=%3d vs OFF, V ~0: %2.8f, Pol 0: %2.8f, speedup >1: %2.2f \n',gistr,cfg{cc}{1},howardslist(hh),max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
+                            fprintf('%s %s howards=%3d vs OFF, V ~0: %.3e, Pol 0: %.3e, speedup >1: %2.2f \n',gistr,cfg{cc}{1},howardslist(hh),max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
                         end
                     else % greedy Howards, which ignores vfoptions.howards
                         vfo=vfobase; vfo.howardsgreedy=cfg{cc}{2}; vfo.howardssparse=cfg{cc}{3}; vfo.lowmemory=cfg{cc}{4};
                         tic; [Vc,Policyc]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tc=toc;
-                        fprintf('%s %s             vs OFF, V ~0: %2.8f, Pol 0: %2.8f, speedup >1: %2.2f \n',gistr,cfg{cc}{1},max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
+                        fprintf('%s %s             vs OFF, V ~0: %.3e, Pol 0: %.3e, speedup >1: %2.2f \n',gistr,cfg{cc}{1},max(abs(Voff(:)-Vc(:))),max(abs(Policyoff(:)-Policyc(:))),tOFF/tc);
                     end
                 end
             end

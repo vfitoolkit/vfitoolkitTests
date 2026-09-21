@@ -18,6 +18,25 @@
 % plain raws are generic in n_a), but the DC2A/GI2A/DC2A_GI2A solves and GI ValueFnFromPolicy
 % error until the 2A wave is written (the AmbAverse level-2 dispatchers error on ~isscalar(n_a)).
 
+%% Which parts to run
+% One entry per part, in the order they appear below. Set an entry to zero to skip that part.
+% That is for building and for rerunning: while one tier is being worked on there is no reason to
+% rerun the ones that already pass, and a bank that dies partway (out-of-memory, most often) can
+% be finished off by running just the parts that never got to run.
+% doPart(1): figs 1-6
+% doPart(2): cross-tests
+% doPart(3): figs 7-12
+% doPart(4): cross-tests 2
+%
+% Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
+% Fig number is the same test whatever doPart says, and a png from a previous run is never
+% overwritten by a different test.
+%
+% Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
+% the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
+% in any combination. Anything added to this bank later must keep that true.
+doPart=[1,1,1,1];
+
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('../TestOutput','dir')
     mkdir('../TestOutput')
@@ -26,7 +45,9 @@ if exist('../TestOutput/CoreFHorzAmbiguityTestsdiary.txt','file')
     delete('../TestOutput/CoreFHorzAmbiguityTestsdiary.txt') % otherwise diary just appends to the previous run
 end
 diary ../TestOutput/CoreFHorzAmbiguityTestsdiary.txt
+fprintf('CoreFHorzAmbiguityTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
+addpath('../../SharedSubcodes/') % CoreSummary, shared by the Core banks
 addpath('../CoreFHorzTests_Setup/')
 addpath('../CoreFHorz_ReturnFns/')
 
@@ -69,40 +90,48 @@ catch
 end
 clear vfoptionstemp
 
-%% without d, with z, without e
-figure_c=1;
-output=AmbFHorz_nod_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+%% ===== doPart(1): figs 1-6 =====
+if doPart(1)==1
+    fprintf('\n===== doPart(1): figs 1-6 =====\n')
+    %% without d, with z, without e
+    figure_c=1;
+    output=AmbFHorz_nod_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with d, with z, without e
-figure_c=2;
-output=AmbFHorz_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% with d, with z, without e
+    figure_c=2;
+    output=AmbFHorz_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% without d, without z, with e
-figure_c=3;
-output=AmbFHorz_nod_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% without d, without z, with e
+    figure_c=3;
+    output=AmbFHorz_nod_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with d, without z, with e
-figure_c=4;
-output=AmbFHorz_d_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% with d, without z, with e
+    figure_c=4;
+    output=AmbFHorz_d_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% without d, with z, with e
-figure_c=5;
-output=AmbFHorz_nod_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% without d, with z, with e
+    figure_c=5;
+    output=AmbFHorz_nod_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with d, with z, with e
-figure_c=6;
-output=AmbFHorz_d_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% with d, with z, with e
+    figure_c=6;
+    output=AmbFHorz_d_z_e_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(1): figs 1-6
 
-%% The cross tests (see the comments at the top of the cross-test subcodes for what they cover)
-output=AmbFHorz_CrossTests_nod_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+%% ===== doPart(2): cross-tests =====
+if doPart(2)==1
+    fprintf('\n===== doPart(2): cross-tests =====\n')
+    %% The cross tests (see the comments at the top of the cross-test subcodes for what they cover)
+    output=AmbFHorz_CrossTests_nod_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-output=AmbFHorz_CrossTests_d_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=AmbFHorz_CrossTests_d_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(2): cross-tests
 
 %% with2A: TWO standard endogenous states (triggers the DC2A/GI2A/DC2A_GI2A code paths), under Ambiguity Aversion
 % Mirror of the QH bank's with2A section, reusing the same With2A ReturnFns as the exponential suite.
@@ -123,40 +152,53 @@ a_grid_notsobig=[5*linspace(0,1,n_a_notsobig(1))'.^3; a2_grid_2A];
 Params.phi1=3; % second endo-state preference params
 Params.phi2=0.1;
 
-%% without d, with z, without e (with2A)
-figure_c=7;
-output=AmbFHorz_nod_z_noe_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+%% ===== doPart(3): figs 7-12 =====
+if doPart(3)==1
+    fprintf('\n===== doPart(3): figs 7-12 =====\n')
+    %% without d, with z, without e (with2A)
+    figure_c=7;
+    output=AmbFHorz_nod_z_noe_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with d, with z, without e (with2A)
-figure_c=8;
-output=AmbFHorz_d_z_noe_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% with d, with z, without e (with2A)
+    figure_c=8;
+    output=AmbFHorz_d_z_noe_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% without d, without z, with e (with2A)
-figure_c=9;
-output=AmbFHorz_nod_noz_e_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% without d, without z, with e (with2A)
+    figure_c=9;
+    output=AmbFHorz_nod_noz_e_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with d, without z, with e (with2A)
-figure_c=10;
-output=AmbFHorz_d_noz_e_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% with d, without z, with e (with2A)
+    figure_c=10;
+    output=AmbFHorz_d_noz_e_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% without d, with z, with e (with2A)
-figure_c=11;
-output=AmbFHorz_nod_z_e_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% without d, with z, with e (with2A)
+    figure_c=11;
+    output=AmbFHorz_nod_z_e_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
-%% with d, with z, with e (with2A)
-figure_c=12;
-output=AmbFHorz_d_z_e_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    %% with d, with z, with e (with2A)
+    figure_c=12;
+    output=AmbFHorz_d_z_e_nosemiz_with2A(n_d,n_a_2A,n_a_notsobig,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreFHorzAmbiguityTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(3): figs 7-12
 
-%% The with2A cross tests (see the comments at the top of the cross-test subcodes for what they cover)
-output=AmbFHorz_CrossTests_nod_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+%% ===== doPart(4): cross-tests 2 =====
+if doPart(4)==1
+    fprintf('\n===== doPart(4): cross-tests 2 =====\n')
+    %% The with2A cross tests (see the comments at the top of the cross-test subcodes for what they cover)
+    output=AmbFHorz_CrossTests_nod_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-output=AmbFHorz_CrossTests_d_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=AmbFHorz_CrossTests_d_nosemiz_with2A(n_d,n_a_2A,n_a_2A_big,n_z,N_j,d_grid,a_grid_2A,a_grid_2A_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(4): cross-tests 2
 
 %% Done
+%% One verdict for the whole run
+% The bank prints a lot of checks; this reads the diary back and says plainly whether the run
+% passed, how many checks it contained, and which parts they came from. See CoreSummary.m.
+CoreSummary('../TestOutput/CoreFHorzAmbiguityTestsdiary.txt')
+
 diary off

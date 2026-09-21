@@ -39,8 +39,28 @@ end
 if exist('../TestOutput/CoreFHorzGPExpAssetTestsdiary.txt','file')
     delete('../TestOutput/CoreFHorzGPExpAssetTestsdiary.txt') % otherwise diary just appends to the previous run
 end
-diary ../TestOutput/CoreFHorzGPExpAssetTestsdiary.txt
+%% Which parts to run
+% One entry per part, in the order they appear below. Set an entry to zero to skip that part.
+% That is for building and for rerunning: while one tier is being worked on there is no reason to
+% rerun the ones that already pass, and a bank that dies partway (out-of-memory, most often) can
+% be finished off by running just the parts that never got to run.
+% doPart(1): WITHOUT a1 figs 1-8
+% doPart(2): WITH a1 figs 9-16
+% doPart(3): WITH a1 cross-tests
+%
+% Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
+% Fig number is the same test whatever doPart says, and a png from a previous run is never
+% overwritten by a different test.
+%
+% Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
+% the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
+% in any combination. Anything added to this bank later must keep that true.
+doPart=[1,1,1];
 
+diary ../TestOutput/CoreFHorzGPExpAssetTestsdiary.txt
+fprintf('CoreFHorzGPExpAssetTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
+
+addpath('../../SharedSubcodes/') % CoreSummary, shared by the Core banks
 addpath('./CoreFHorzGPExpAssetTests_subcodes/') % the GPTemptationFn_* wrappers
 addpath('./CoreFHorzGPExpAssetTests_subcodes/WithA1_subcodes/')
 addpath('./CoreFHorzGPExpAssetTests_subcodes/Noa1_subcodes/')
@@ -65,37 +85,41 @@ Params.shiftGP=0; % constant shift of the temptation utility; should never chang
 % No DC/GI/DC+GI blocks (irrelevant without a1).
 % Pass n_a_justexpasset as n_a, a_grid_justexpasset as a_grid. n_a_big/a_grid_big slots unused.
 
-%% without d1, without z, without e, noa1, nosemiz
-figure_c=1;
-output=CoreFHorzGPExpAsset_nod1_noz_noe_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+%% ===== doPart(1): WITHOUT a1 figs 1-8 =====
+if doPart(1)==1
+    fprintf('\n===== doPart(1): WITHOUT a1 figs 1-8 =====\n')
+    %% without d1, without z, without e, noa1, nosemiz
+    figure_c=1;
+    output=CoreFHorzGPExpAsset_nod1_noz_noe_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, without z, without e, noa1, nosemiz
-figure_c=2;
-output=CoreFHorzGPExpAsset_d1_noz_noe_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, without z, without e, noa1, nosemiz
+    figure_c=2;
+    output=CoreFHorzGPExpAsset_d1_noz_noe_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, with z, without e, noa1, nosemiz
-figure_c=3;
-output=CoreFHorzGPExpAsset_nod1_z_noe_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% without d1, with z, without e, noa1, nosemiz
+    figure_c=3;
+    output=CoreFHorzGPExpAsset_nod1_z_noe_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, with z, without e, noa1, nosemiz
-figure_c=4;
-output=CoreFHorzGPExpAsset_d1_z_noe_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, with z, without e, noa1, nosemiz
+    figure_c=4;
+    output=CoreFHorzGPExpAsset_d1_z_noe_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, without z, with e, noa1, nosemiz
-figure_c=5;
-output=CoreFHorzGPExpAsset_nod1_noz_e_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% without d1, without z, with e, noa1, nosemiz
+    figure_c=5;
+    output=CoreFHorzGPExpAsset_nod1_noz_e_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, without z, with e, noa1, nosemiz
-figure_c=6;
-output=CoreFHorzGPExpAsset_d1_noz_e_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, without z, with e, noa1, nosemiz
+    figure_c=6;
+    output=CoreFHorzGPExpAsset_d1_noz_e_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, with z, with e, noa1, nosemiz
-figure_c=7;
-output=CoreFHorzGPExpAsset_nod1_z_e_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% without d1, with z, with e, noa1, nosemiz
+    figure_c=7;
+    output=CoreFHorzGPExpAsset_nod1_z_e_noa1_nosemiz(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, with z, with e, noa1, nosemiz
-figure_c=8;
-output=CoreFHorzGPExpAsset_d1_z_e_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, with z, with e, noa1, nosemiz
+    figure_c=8;
+    output=CoreFHorzGPExpAsset_d1_z_e_noa1_nosemiz(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+end % doPart(1): WITHOUT a1 figs 1-8
 
 %% ================= WITH a1 (figs 9-16) =================
 % Reset the setup (the without-a1 half above left the workspace alone, but re-run for safety/independence)
@@ -110,58 +134,71 @@ n_a_GPbig=[501,n_a_justexpasset];
 a1_grid_GPbig=5*linspace(0,1,n_a_GPbig(1))'.^3;
 a_grid_GPbig=[a1_grid_GPbig;a2_grid];
 
-%% without d1, without z, without e, without semiz
-figure_c=9;
-output=CoreFHorzGPExpAsset_nod1_noz_noe_nosemiz(n_d_withoutd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+%% ===== doPart(2): WITH a1 figs 9-16 =====
+if doPart(2)==1
+    fprintf('\n===== doPart(2): WITH a1 figs 9-16 =====\n')
+    %% without d1, without z, without e, without semiz
+    figure_c=9;
+    output=CoreFHorzGPExpAsset_nod1_noz_noe_nosemiz(n_d_withoutd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, without z, without e, without semiz
-figure_c=10;
-output=CoreFHorzGPExpAsset_d1_noz_noe_nosemiz(n_d_withd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, without z, without e, without semiz
+    figure_c=10;
+    output=CoreFHorzGPExpAsset_d1_noz_noe_nosemiz(n_d_withd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, with z, without e, without semiz
-figure_c=11;
-output=CoreFHorzGPExpAsset_nod1_z_noe_nosemiz(n_d_withoutd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% without d1, with z, without e, without semiz
+    figure_c=11;
+    output=CoreFHorzGPExpAsset_nod1_z_noe_nosemiz(n_d_withoutd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, with z, without e, without semiz
-n_a_notsobig=[201,n_a_justexpasset]; % QH twin uses [301,13]; GP rule tightens it
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, with z, without e, without semiz
+    n_a_notsobig=[201,n_a_justexpasset]; % QH twin uses [301,13]; GP rule tightens it
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=12;
-output=CoreFHorzGPExpAsset_d1_z_noe_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=12;
+    output=CoreFHorzGPExpAsset_d1_z_noe_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, without z, with e, without semiz
-figure_c=13;
-output=CoreFHorzGPExpAsset_nod1_noz_e_nosemiz(n_d_withoutd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% without d1, without z, with e, without semiz
+    figure_c=13;
+    output=CoreFHorzGPExpAsset_nod1_noz_e_nosemiz(n_d_withoutd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, without z, with e, without semiz
-n_a_notsobig=[201,n_a_justexpasset]; % QH twin uses [301,13]; GP rule tightens it
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, without z, with e, without semiz
+    n_a_notsobig=[201,n_a_justexpasset]; % QH twin uses [301,13]; GP rule tightens it
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=14;
-output=CoreFHorzGPExpAsset_d1_noz_e_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=14;
+    output=CoreFHorzGPExpAsset_d1_noz_e_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, with z, with e, without semiz
-n_a_notsobig=[201,n_a_justexpasset]; % QH twin uses [301,13]; GP rule tightens it
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% without d1, with z, with e, without semiz
+    n_a_notsobig=[201,n_a_justexpasset]; % QH twin uses [301,13]; GP rule tightens it
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=15;
-output=CoreFHorzGPExpAsset_nod1_z_e_nosemiz(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=15;
+    output=CoreFHorzGPExpAsset_nod1_z_e_nosemiz(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, with z, with e, without semiz
-n_a_notsobig=[151,n_a_justexpasset]; % QH twin uses [201,13]; GP rule tightens it
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, with z, with e, without semiz
+    n_a_notsobig=[151,n_a_justexpasset]; % QH twin uses [201,13]; GP rule tightens it
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=16;
-output=CoreFHorzGPExpAsset_d1_z_e_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=16;
+    output=CoreFHorzGPExpAsset_d1_z_e_nosemiz(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+end % doPart(2): WITH a1 figs 9-16
 
-%% The cross tests (see the comments at the top of the cross-test subcodes for what they cover)
-output=GPExpAsset_CrossTests_nod1(n_d_withoutd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+%% ===== doPart(3): WITH a1 cross-tests =====
+if doPart(3)==1
+    fprintf('\n===== doPart(3): WITH a1 cross-tests =====\n')
+    %% The cross tests (see the comments at the top of the cross-test subcodes for what they cover)
+    output=GPExpAsset_CrossTests_nod1(n_d_withoutd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 
-output=GPExpAsset_CrossTests_d1(n_d_withd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=GPExpAsset_CrossTests_d1(n_d_withd1,n_a,n_a_GPbig,n_z,N_j,d_grid_withd1,a_grid,a_grid_GPbig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(3): WITH a1 cross-tests
 
 %% Done
+%% One verdict for the whole run
+% The bank prints a lot of checks; this reads the diary back and says plainly whether the run
+% passed, how many checks it contained, and which parts they came from. See CoreSummary.m.
+CoreSummary('../TestOutput/CoreFHorzGPExpAssetTestsdiary.txt')
+
 diary off

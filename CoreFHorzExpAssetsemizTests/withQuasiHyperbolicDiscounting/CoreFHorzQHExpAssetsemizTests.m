@@ -20,8 +20,28 @@ end
 if exist('../TestOutput/CoreFHorzQHExpAssetsemizTestsdiary.txt','file')
     delete('../TestOutput/CoreFHorzQHExpAssetsemizTestsdiary.txt') % otherwise diary just appends to the previous run
 end
-diary ../TestOutput/CoreFHorzQHExpAssetsemizTestsdiary.txt
+%% Which parts to run
+% One entry per part, in the order they appear below. Set an entry to zero to skip that part.
+% That is for building and for rerunning: while one tier is being worked on there is no reason to
+% rerun the ones that already pass, and a bank that dies partway (out-of-memory, most often) can
+% be finished off by running just the parts that never got to run.
+% doPart(1): WITHOUT a1 figs 1-8
+% doPart(2): WITH a1 figs 9-16
+% doPart(3): WITH 2a1 figs 17-24
+%
+% Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
+% Fig number is the same test whatever doPart says, and a png from a previous run is never
+% overwritten by a different test.
+%
+% Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
+% the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
+% in any combination. Anything added to this bank later must keep that true.
+doPart=[1,1,1];
 
+diary ../TestOutput/CoreFHorzQHExpAssetsemizTestsdiary.txt
+fprintf('CoreFHorzQHExpAssetsemizTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
+
+addpath('../../SharedSubcodes/') % CoreSummary, shared by the Core banks
 addpath('./CoreFHorzQHExpAssetsemizTests_subcodes/WithA1_subcodes/')
 addpath('./CoreFHorzQHExpAssetsemizTests_subcodes/WithA1_subcodes/Semiz_subcodes/')
 addpath('../CoreFHorzExpAssetsemizTests_Setup/')
@@ -61,37 +81,41 @@ addpath('../CoreFHorzExpAssetsemiz_ReturnFns/Noa1_ReturnFns/')
 
 %% noa1 (8 variants)
 
-%% without d1, without z, without e, noa1, semiz
-figure_c=1;
-output=CoreFHorzQHExpAssetsemiz_nod1_noz_noe_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+%% ===== doPart(1): WITHOUT a1 figs 1-8 =====
+if doPart(1)==1
+    fprintf('\n===== doPart(1): WITHOUT a1 figs 1-8 =====\n')
+    %% without d1, without z, without e, noa1, semiz
+    figure_c=1;
+    output=CoreFHorzQHExpAssetsemiz_nod1_noz_noe_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, without z, without e, noa1, semiz
-figure_c=2;
-output=CoreFHorzQHExpAssetsemiz_d1_noz_noe_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, without z, without e, noa1, semiz
+    figure_c=2;
+    output=CoreFHorzQHExpAssetsemiz_d1_noz_noe_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, with z, without e, noa1, semiz
-figure_c=3;
-output=CoreFHorzQHExpAssetsemiz_nod1_z_noe_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% without d1, with z, without e, noa1, semiz
+    figure_c=3;
+    output=CoreFHorzQHExpAssetsemiz_nod1_z_noe_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, with z, without e, noa1, semiz
-figure_c=4;
-output=CoreFHorzQHExpAssetsemiz_d1_z_noe_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, with z, without e, noa1, semiz
+    figure_c=4;
+    output=CoreFHorzQHExpAssetsemiz_d1_z_noe_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, without z, with e, noa1, semiz
-figure_c=5;
-output=CoreFHorzQHExpAssetsemiz_nod1_noz_e_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% without d1, without z, with e, noa1, semiz
+    figure_c=5;
+    output=CoreFHorzQHExpAssetsemiz_nod1_noz_e_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, without z, with e, noa1, semiz
-figure_c=6;
-output=CoreFHorzQHExpAssetsemiz_d1_noz_e_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, without z, with e, noa1, semiz
+    figure_c=6;
+    output=CoreFHorzQHExpAssetsemiz_d1_noz_e_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,0,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% without d1, with z, with e, noa1, semiz
-figure_c=7;
-output=CoreFHorzQHExpAssetsemiz_nod1_z_e_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% without d1, with z, with e, noa1, semiz
+    figure_c=7;
+    output=CoreFHorzQHExpAssetsemiz_nod1_z_e_noa1(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-%% with d1, with z, with e, noa1, semiz
-figure_c=8;
-output=CoreFHorzQHExpAssetsemiz_d1_z_e_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    %% with d1, with z, with e, noa1, semiz
+    figure_c=8;
+    output=CoreFHorzQHExpAssetsemiz_d1_z_e_noa1(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+end % doPart(1): WITHOUT a1 figs 1-8
 
 %% noa1 semiz cross-tests
 % Markov-as-iid equivalence cross-test
@@ -171,78 +195,82 @@ CoreFHorzExpAssetsemiz_setup
 
 %% a1 semiz (8 variants)
 
-%% without d1, without z, without e, with semiz
-figure_c=9;
-output=CoreFHorzQHExpAssetsemiz_nod1_noz_noe(n_d_withoutd1,n_a,n_a_big,0,N_j,d_grid_withoutd1,a_grid,a_grid_big,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% looks good
+%% ===== doPart(2): WITH a1 figs 9-16 =====
+if doPart(2)==1
+    fprintf('\n===== doPart(2): WITH a1 figs 9-16 =====\n')
+    %% without d1, without z, without e, with semiz
+    figure_c=9;
+    output=CoreFHorzQHExpAssetsemiz_nod1_noz_noe(n_d_withoutd1,n_a,n_a_big,0,N_j,d_grid_withoutd1,a_grid,a_grid_big,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    % looks good
 
-%% with d1, without z, without e, with semiz
-n_a_notsobig=[301,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, without z, without e, with semiz
+    n_a_notsobig=[301,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=10;
-output=CoreFHorzQHExpAssetsemiz_d1_noz_noe(n_d_withd1,n_a,n_a_notsobig,0,N_j,d_grid_withd1,a_grid,a_grid_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=10;
+    output=CoreFHorzQHExpAssetsemiz_d1_noz_noe(n_d_withd1,n_a,n_a_notsobig,0,N_j,d_grid_withd1,a_grid,a_grid_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good (as good as it can be expected to given the n_a_notsobig)
+    % looks good (as good as it can be expected to given the n_a_notsobig)
 
-%% without d1, with z, without e, with semiz
-n_a_notsobig=[301,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% without d1, with z, without e, with semiz
+    n_a_notsobig=[301,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=11;
-output=CoreFHorzQHExpAssetsemiz_nod1_z_noe(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=11;
+    output=CoreFHorzQHExpAssetsemiz_nod1_z_noe(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good (as good as it can be expected to given the n_a_notsobig)
+    % looks good (as good as it can be expected to given the n_a_notsobig)
 
-%% with d1, with z, without e, with semiz
-n_a_notsobig=[201,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, with z, without e, with semiz
+    n_a_notsobig=[201,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=12;
-output=CoreFHorzQHExpAssetsemiz_d1_z_noe(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=12;
+    output=CoreFHorzQHExpAssetsemiz_d1_z_noe(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good (as good as it can be expected to given the n_a_notsobig)
+    % looks good (as good as it can be expected to given the n_a_notsobig)
 
-%% without d1, without z, with e, with semiz
-n_a_notsobig=[301,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% without d1, without z, with e, with semiz
+    n_a_notsobig=[301,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=13;
-output=CoreFHorzQHExpAssetsemiz_nod1_noz_e(n_d_withoutd1,n_a,n_a_notsobig,0,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=13;
+    output=CoreFHorzQHExpAssetsemiz_nod1_noz_e(n_d_withoutd1,n_a,n_a_notsobig,0,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good (as good as it can be expected to given the n_a_notsobig)
+    % looks good (as good as it can be expected to given the n_a_notsobig)
 
-%% with d1, without z, with e, with semiz
-n_a_notsobig=[201,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, without z, with e, with semiz
+    n_a_notsobig=[201,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=14;
-output=CoreFHorzQHExpAssetsemiz_d1_noz_e(n_d_withd1,n_a,n_a_notsobig,0,N_j,d_grid_withd1,a_grid,a_grid_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=14;
+    output=CoreFHorzQHExpAssetsemiz_d1_noz_e(n_d_withd1,n_a,n_a_notsobig,0,N_j,d_grid_withd1,a_grid,a_grid_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good (as good as it can be expected to given the n_a_notsobig)
+    % looks good (as good as it can be expected to given the n_a_notsobig)
 
-%% without d1, with z, with e, with semiz
-n_a_notsobig=[301,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% without d1, with z, with e, with semiz
+    n_a_notsobig=[301,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=15;
-output=CoreFHorzQHExpAssetsemiz_nod1_z_e(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=15;
+    output=CoreFHorzQHExpAssetsemiz_nod1_z_e(n_d_withoutd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-% looks good
+    % looks good
 
-%% with d1, with z, with e, with semiz
-n_a_notsobig=[201,13]; % To avoid out-of-memory errors
-a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
-a_grid_notsobig=[a1_grid_notsobig;a2_grid];
+    %% with d1, with z, with e, with semiz
+    n_a_notsobig=[201,13]; % To avoid out-of-memory errors
+    a1_grid_notsobig=5*linspace(0,1,n_a_notsobig(1))'.^3; % to test Grid Interpolation (same grid, just more points)
+    a_grid_notsobig=[a1_grid_notsobig;a2_grid];
 
-figure_c=16;
-output=CoreFHorzQHExpAssetsemiz_d1_z_e(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=16;
+    output=CoreFHorzQHExpAssetsemiz_d1_z_e(n_d_withd1,n_a,n_a_notsobig,n_z,N_j,d_grid_withd1,a_grid,a_grid_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+end % doPart(2): WITH a1 figs 9-16
 
 % looks good (as good as it can be expected to given the n_a_notsobig)
 
@@ -289,44 +317,53 @@ a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
 %% 2a1 nosemiz cross-tests: a degenerate second asset a1_2 (single point {0}) reduces to the with-a1 model
 
-%% 2a1 semiz (8 variants)
-n_a_2A1_notsobig=[151,n_a1_2,n_a_justexpasset];
-a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
-a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
+%% ===== doPart(3): WITH 2a1 figs 17-24 =====
+if doPart(3)==1
+    fprintf('\n===== doPart(3): WITH 2a1 figs 17-24 =====\n')
+    %% 2a1 semiz (8 variants)
+    n_a_2A1_notsobig=[151,n_a1_2,n_a_justexpasset];
+    a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
+    a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
-figure_c=17;
-output=CoreFHorzQHExpAssetsemiz_nod1_noz_noe_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-figure_c=18;
-output=CoreFHorzQHExpAssetsemiz_d1_noz_noe_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=17;
+    output=CoreFHorzQHExpAssetsemiz_nod1_noz_noe_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=18;
+    output=CoreFHorzQHExpAssetsemiz_d1_noz_noe_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-n_a_2A1_notsobig=[101,n_a1_2,n_a_justexpasset];
-a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
-a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
+    n_a_2A1_notsobig=[101,n_a1_2,n_a_justexpasset];
+    a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
+    a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
-figure_c=19;
-output=CoreFHorzQHExpAssetsemiz_nod1_z_noe_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=19;
+    output=CoreFHorzQHExpAssetsemiz_nod1_z_noe_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
 
-n_a_2A1_notsobig=[75,n_a1_2,n_a_justexpasset];
-a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
-a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
+    n_a_2A1_notsobig=[75,n_a1_2,n_a_justexpasset];
+    a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
+    a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
-figure_c=20;
-% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
-output=CoreFHorzQHExpAssetsemiz_d1_z_noe_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
-figure_c=21;
-output=CoreFHorzQHExpAssetsemiz_nod1_noz_e_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-figure_c=22;
-% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
-output=CoreFHorzQHExpAssetsemiz_d1_noz_e_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
-figure_c=23;
-output=CoreFHorzQHExpAssetsemiz_nod1_z_e_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-figure_c=24;
-% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
-output=CoreFHorzQHExpAssetsemiz_d1_z_e_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-% I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    figure_c=20;
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    output=CoreFHorzQHExpAssetsemiz_d1_z_noe_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    figure_c=21;
+    output=CoreFHorzQHExpAssetsemiz_nod1_noz_e_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=22;
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    output=CoreFHorzQHExpAssetsemiz_d1_noz_e_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,0,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,[],[],Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    figure_c=23;
+    output=CoreFHorzQHExpAssetsemiz_nod1_z_e_with2A1(n_d_withoutd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    figure_c=24;
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    output=CoreFHorzQHExpAssetsemiz_d1_z_e_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+end % doPart(3): WITH 2a1 figs 17-24
 
+
+%% One verdict for the whole run
+% The bank prints a lot of checks; this reads the diary back and says plainly whether the run
+% passed, how many checks it contained, and which parts they came from. See CoreSummary.m.
+CoreSummary('../TestOutput/CoreFHorzQHExpAssetsemizTestsdiary.txt')
 
 diary off
 
