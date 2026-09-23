@@ -2,6 +2,22 @@ function output=QHDFHorz_CrossTests_d1_semiz_with2A(n_d_semiz,n_d2_semiz,n_a,n_a
 % Cross tests for the two-endo SemiExo (d1) code paths.
 % Test 4: with-d1 model where d1 takes 3 values but the ReturnFn ignores it.
 % V from the with-d1 code path must equal V from the nod1 code path.
+%
+% V AND POLICY ONLY. The cross tests below compare V and Policy, and nothing downstream of them.
+% They used to also compare the agent distributions (56 zero-check lines across the ten
+% QH cross-test subcodes, removed 2026-09-23). Those comparisons did not test quasi-hyperbolic
+% discounting. StationaryDist is built FROM Policy by code that never looks at
+% vfoptions.exoticpreferences, so the dist comparison on each of those lines was the baseline
+% z-vs-e / semiz-vs-z distribution cross-test being re-run at exotic-preference prices: with the
+% Policy comparison on the line immediately above it already printing an exact zero, the only thing
+% the dist line could still catch was a disagreement between two StationaryDist branches, and
+% CoreFHorzTests.m makes exactly that comparison, on exactly these shapes, already.
+%
+% This does NOT extend to the with/without-grid-interpolation moment comparisons in the figure
+% subcodes ('should get much the same moments (for big a_grid)'). Those ARE a convergence check on
+% the QH solver itself and must stay: grid interpolation returns policies off the coarse grid, so
+% the tiers never agree elementwise and V/Policy cannot carry the check - the moment level is the
+% only place it can be made.
 
 %% Quasi-Hyperbolic Discounting
 % vfoptions.exoticpreferences='QuasiHyperbolic';

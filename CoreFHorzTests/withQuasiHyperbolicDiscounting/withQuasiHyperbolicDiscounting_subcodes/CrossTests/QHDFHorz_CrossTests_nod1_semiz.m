@@ -1,4 +1,19 @@
 function output=QHDFHorz_CrossTests_nod1_semiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
+% V AND POLICY ONLY. The cross tests below compare V and Policy, and nothing downstream of them.
+% They used to also compare the agent distributions (56 zero-check lines across the ten
+% QH cross-test subcodes, removed 2026-09-23). Those comparisons did not test quasi-hyperbolic
+% discounting. StationaryDist is built FROM Policy by code that never looks at
+% vfoptions.exoticpreferences, so the dist comparison on each of those lines was the baseline
+% z-vs-e / semiz-vs-z distribution cross-test being re-run at exotic-preference prices: with the
+% Policy comparison on the line immediately above it already printing an exact zero, the only thing
+% the dist line could still catch was a disagreement between two StationaryDist branches, and
+% CoreFHorzTests.m makes exactly that comparison, on exactly these shapes, already.
+%
+% This does NOT extend to the with/without-grid-interpolation moment comparisons in the figure
+% subcodes ('should get much the same moments (for big a_grid)'). Those ARE a convergence check on
+% the QH solver itself and must stay: grid interpolation returns policies off the coarse grid, so
+% the tiers never agree elementwise and V/Policy cannot carry the check - the moment level is the
+% only place it can be made.
 
 % n_d=n_d2_semiz;
 % d_grid=d2_grid_semiz;
@@ -9,12 +24,7 @@ vfoptions.divideandconquer=1;
 vfoptions.n_semiz=vfoptionsbaseline.n_semiz;
 vfoptions.semiz_grid=vfoptionsbaseline.semiz_grid;
 vfoptions.SemiExoStateFn=vfoptionsbaseline.SemiExoStateFn;
-simoptions.n_semiz=simoptionsbaseline.n_semiz;
-simoptions.semiz_grid=simoptionsbaseline.semiz_grid;
-simoptions.SemiExoStateFn=simoptionsbaseline.SemiExoStateFn;
-simoptions.d_grid=d_grid;
 % For convenience
-n_semiz=vfoptionsbaseline.n_semiz;
 
 % For crosstests, set up z to just be a copy of e
 n_z=vfoptionsbaseline.n_e;
@@ -22,13 +32,10 @@ pi_z=repmat(vfoptionsbaseline.pi_e',vfoptionsbaseline.n_e,1);
 z_grid=vfoptionsbaseline.e_grid;
 % NOTE: z & e appear in same place in earnings
 
-% Setup vfoptions and simoptions
+% Setup vfoptions
 vfoptions.n_e=vfoptionsbaseline.n_e;
 vfoptions.e_grid=vfoptionsbaseline.e_grid;
 vfoptions.pi_e=vfoptionsbaseline.pi_e;
-simoptions.n_e=simoptionsbaseline.n_e;
-simoptions.e_grid=simoptionsbaseline.e_grid;
-simoptions.pi_e=simoptionsbaseline.pi_e;
 % Note: all of these have semiz
 ReturnFn_none=@(d2,aprime,a,semiz,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost)...
     ReturnFn_nod1_noz_noe_semiz(d2,aprime,a,semiz,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost);
@@ -52,64 +59,48 @@ ReturnFn_ze=@(d2,aprime,a,semiz,z,e,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefi
 %% Naive
 % vfoptions.quasi_hyperbolic='Naive';
 %% Solving with just a single points for z with value 1 and prob 1 gives us same as no shocks (both with semiz)
-jequaloneDist_none=zeros([n_a,n_semiz],'gpuArray');
-jequaloneDist_none(1,ceil(n_semiz/2))=1; % no assets
 
 % optionsA: just semiz (no e)
 vfoptionsA.n_semiz=vfoptions.n_semiz;
 vfoptionsA.semiz_grid=vfoptions.semiz_grid;
 vfoptionsA.SemiExoStateFn=vfoptions.SemiExoStateFn;
-simoptionsA.n_semiz=simoptions.n_semiz;
-simoptionsA.semiz_grid=simoptions.semiz_grid;
-simoptionsA.SemiExoStateFn=simoptions.SemiExoStateFn;
-simoptionsA.d_grid=simoptions.d_grid;
 
 % Use vfoptionsA, which has semiz but nothing else
 vfoptionsA.exoticpreferences='QuasiHyperbolic';
 vfoptionsA.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsA.quasi_hyperbolic='Naive';
 [V0,Policy0]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_none,Params,DiscountFactorParamNames,[],vfoptionsA);
-StationaryDist0=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0,n_d,n_a,0,N_j,[],Params,simoptionsA);
 
 % Use vfoptionsA, which has semiz but nothing else
 vfoptionsA.exoticpreferences='QuasiHyperbolic';
 vfoptionsA.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsA.quasi_hyperbolic='Naive';
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptionsA);
-StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptionsA);
 
 fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V0(:)-V0z(:))))
 fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
-clear V0 Policy0 V0z Policy0z StationaryDist0 StationaryDist0z
+clear V0 Policy0 V0z Policy0z
 
 %% Solve using a markov which is just an iid in disguise. Should give same result as the iid
-% zeros assets, mid points for any shocks
-jequaloneDist_z=zeros([n_a,n_semiz,n_z],'gpuArray');
-jequaloneDist_z(1,ceil(n_semiz/2),ceil(n_z/2))=1; % no assets, midpoint shock
 
 % Use vfoptionsA, which has semiz but nothing else
 vfoptionsA.exoticpreferences='QuasiHyperbolic';
 vfoptionsA.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsA.quasi_hyperbolic='Naive';
 [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptionsA);
-StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy1,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsA);
 
 % Use semiz and e
 vfoptionsB=vfoptions;
-simoptionsB=simoptions;
 vfoptionsB.exoticpreferences='QuasiHyperbolic';
 vfoptionsB.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsB.quasi_hyperbolic='Naive';
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e,Params,DiscountFactorParamNames,[],vfoptionsB);
-StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
 fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
 fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
-fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
-clear V2 Policy2 StationaryDist2
+clear V2 Policy2
 
 %% Now use code with z and e, but just set the 'other' to be a single point with value 1 and prob 1
 % So it should again give same answer
@@ -120,40 +111,26 @@ vfoptionsB.exoticpreferences='QuasiHyperbolic';
 vfoptionsB.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsB.quasi_hyperbolic='Naive';
 [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_ze,Params,DiscountFactorParamNames,[],vfoptionsB);
-jequaloneDist3=zeros([n_a,n_semiz,1,vfoptionsB.n_e],'gpuArray');
-jequaloneDist3(1,ceil(n_semiz/2),1,ceil(vfoptionsB.n_e/2))=1; % no assets, midpoint shock
-StationaryDist3=StationaryDist_FHorz_Case1(jequaloneDist3,AgeWeightParamNames,Policy3,n_d,n_a,1,N_j,1,Params,simoptionsB);
 V3=squeeze(V3);
 Policy3=squeeze(Policy3);
-StationaryDist3=squeeze(StationaryDist3);
 
 fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(V1(:)-V3(:))))
 fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
 % Second, make e just 1 (with semiz)
 vfoptionsC=vfoptionsA; % semiz
 vfoptionsC.n_e=1; % and e=1 as single point
 vfoptionsC.e_grid=1;
 vfoptionsC.pi_e=1;
-simoptionsC=simoptionsB;
-simoptionsC.n_e=1;
-simoptionsC.e_grid=1;
-simoptionsC.pi_e=1;
 vfoptionsC.exoticpreferences='QuasiHyperbolic';
 vfoptionsC.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsC.quasi_hyperbolic='Naive';
 [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_ze,Params,DiscountFactorParamNames,[],vfoptionsC);
-jequaloneDist4=zeros([n_a,n_semiz,n_z,1],'gpuArray');
-jequaloneDist4(1,ceil(n_semiz/2),ceil(n_z/2),1)=1; % no assets, midpoint shock
-StationaryDist4=StationaryDist_FHorz_Case1(jequaloneDist4,AgeWeightParamNames,Policy4,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsC);
 V4=squeeze(V4);
 Policy4=squeeze(Policy4);
-StationaryDist4=squeeze(StationaryDist4);
 
 fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(V1(:)-V4(:))))
 fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 
 
@@ -162,64 +139,48 @@ fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Stationary
 %% Sophisticated
 % vfoptions.quasi_hyperbolic='Sophisticated';
 %% Solving with just a single points for z with value 1 and prob 1 gives us same as no shocks (both with semiz)
-jequaloneDist_none=zeros([n_a,n_semiz],'gpuArray');
-jequaloneDist_none(1,ceil(n_semiz/2))=1; % no assets
 
 % optionsA: just semiz (no e)
 vfoptionsA.n_semiz=vfoptions.n_semiz;
 vfoptionsA.semiz_grid=vfoptions.semiz_grid;
 vfoptionsA.SemiExoStateFn=vfoptions.SemiExoStateFn;
-simoptionsA.n_semiz=simoptions.n_semiz;
-simoptionsA.semiz_grid=simoptions.semiz_grid;
-simoptionsA.SemiExoStateFn=simoptions.SemiExoStateFn;
-simoptionsA.d_grid=simoptions.d_grid;
 
 % Use vfoptionsA, which has semiz but nothing else
 vfoptionsA.exoticpreferences='QuasiHyperbolic';
 vfoptionsA.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsA.quasi_hyperbolic='Sophisticated';
 [V0,Policy0]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_none,Params,DiscountFactorParamNames,[],vfoptionsA);
-StationaryDist0=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0,n_d,n_a,0,N_j,[],Params,simoptionsA);
 
 % Use vfoptionsA, which has semiz but nothing else
 vfoptionsA.exoticpreferences='QuasiHyperbolic';
 vfoptionsA.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsA.quasi_hyperbolic='Sophisticated';
 [V0z,Policy0z]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptionsA);
-StationaryDist0z=StationaryDist_FHorz_Case1(jequaloneDist_none,AgeWeightParamNames,Policy0z,n_d,n_a,1,N_j,1,Params,simoptionsA);
 
 fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V0(:)-V0z(:))))
 fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy0(:)-Policy0z(:))))
-fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist0(:)-StationaryDist0z(:))))
 
-clear V0 Policy0 V0z Policy0z StationaryDist0 StationaryDist0z
+clear V0 Policy0 V0z Policy0z
 
 %% Solve using a markov which is just an iid in disguise. Should give same result as the iid
-% zeros assets, mid points for any shocks
-jequaloneDist_z=zeros([n_a,n_semiz,n_z],'gpuArray');
-jequaloneDist_z(1,ceil(n_semiz/2),ceil(n_z/2))=1; % no assets, midpoint shock
 
 % Use vfoptionsA, which has semiz but nothing else
 vfoptionsA.exoticpreferences='QuasiHyperbolic';
 vfoptionsA.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsA.quasi_hyperbolic='Sophisticated';
 [V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_z,Params,DiscountFactorParamNames,[],vfoptionsA);
-StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy1,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsA);
 
 % Use semiz and e
 vfoptionsB=vfoptions;
-simoptionsB=simoptions;
 vfoptionsB.exoticpreferences='QuasiHyperbolic';
 vfoptionsB.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsB.quasi_hyperbolic='Sophisticated';
 [V2,Policy2]=ValueFnIter_Case1_FHorz(n_d,n_a,0,N_j,d_grid,a_grid,[],[],ReturnFn_e,Params,DiscountFactorParamNames,[],vfoptionsB);
-StationaryDist2=StationaryDist_FHorz_Case1(jequaloneDist_z,AgeWeightParamNames,Policy2,n_d,n_a,0,N_j,[],Params,simoptionsB);
 
 fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(V1(:)-V2(:))))
 fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy2(:))))
-fprintf('Cross test: z as e, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist2(:))))
 
-clear V2 Policy2 StationaryDist2
+clear V2 Policy2
 
 %% Now use code with z and e, but just set the 'other' to be a single point with value 1 and prob 1
 % So it should again give same answer
@@ -230,40 +191,26 @@ vfoptionsB.exoticpreferences='QuasiHyperbolic';
 vfoptionsB.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsB.quasi_hyperbolic='Sophisticated';
 [V3,Policy3]=ValueFnIter_Case1_FHorz(n_d,n_a,1,N_j,d_grid,a_grid,1,1,ReturnFn_ze,Params,DiscountFactorParamNames,[],vfoptionsB);
-jequaloneDist3=zeros([n_a,n_semiz,1,vfoptionsB.n_e],'gpuArray');
-jequaloneDist3(1,ceil(n_semiz/2),1,ceil(vfoptionsB.n_e/2))=1; % no assets, midpoint shock
-StationaryDist3=StationaryDist_FHorz_Case1(jequaloneDist3,AgeWeightParamNames,Policy3,n_d,n_a,1,N_j,1,Params,simoptionsB);
 V3=squeeze(V3);
 Policy3=squeeze(Policy3);
-StationaryDist3=squeeze(StationaryDist3);
 
 fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(V1(:)-V3(:))))
 fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy3(:))))
-fprintf('Cross test: z and e 1, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
 
 % Second, make e just 1 (with semiz)
 vfoptionsC=vfoptionsA; % semiz
 vfoptionsC.n_e=1; % and e=1 as single point
 vfoptionsC.e_grid=1;
 vfoptionsC.pi_e=1;
-simoptionsC=simoptionsB;
-simoptionsC.n_e=1;
-simoptionsC.e_grid=1;
-simoptionsC.pi_e=1;
 vfoptionsC.exoticpreferences='QuasiHyperbolic';
 vfoptionsC.QHadditionaldiscount=vfoptionsbaseline.QHadditionaldiscount;
 vfoptionsC.quasi_hyperbolic='Sophisticated';
 [V4,Policy4]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn_ze,Params,DiscountFactorParamNames,[],vfoptionsC);
-jequaloneDist4=zeros([n_a,n_semiz,n_z,1],'gpuArray');
-jequaloneDist4(1,ceil(n_semiz/2),ceil(n_z/2),1)=1; % no assets, midpoint shock
-StationaryDist4=StationaryDist_FHorz_Case1(jequaloneDist4,AgeWeightParamNames,Policy4,n_d,n_a,n_z,N_j,pi_z,Params,simoptionsC);
 V4=squeeze(V4);
 Policy4=squeeze(Policy4);
-StationaryDist4=squeeze(StationaryDist4);
 
 fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(V1(:)-V4(:))))
 fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(Policy1(:)-Policy4(:))))
-fprintf('Cross test: z and e 2, this should be zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist4(:))))
 
 
 %%

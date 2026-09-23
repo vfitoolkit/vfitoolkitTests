@@ -12,6 +12,16 @@
 % This is the QH mirror of CoreFHorzTests.m. Each subcode runs the model twice (Naive top,
 % Sophisticated bottom) with a Valt (continuation-value) check beside every V/Policy check.
 %
+% WHAT THIS BANK CHECKS. V and Policy (and Valt), plus the with/without-grid-interpolation
+% moment comparisons in the figure subcodes. It does NOT check the agent distribution, panel
+% simulations or model statistics for their own sake: those are all computed FROM Policy by code
+% that never looks at vfoptions.exoticpreferences, so once V and Policy are verified that whole
+% chain is already covered by CoreFHorzTests.m running the same code on the same shapes. The
+% cross-test StationaryDist comparisons were removed on that basis 2026-09-23 (56 checks; see the
+% header of any subcode in CrossTests/), so the CoreSummary check count is 56 lower than on runs
+% before that date. The grid-interp moment comparisons are NOT in that category and stay: they
+% are a convergence check on the QH solver that V and Policy cannot carry.
+%
 % TEST-FIRST STATE: nothing outstanding — everything this file tests is implemented and passing.
 %
 % Each subcode draws the Naive figure as figure_c and the Sophisticated figure as 100+figure_c.
