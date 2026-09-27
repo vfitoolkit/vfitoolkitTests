@@ -6,6 +6,8 @@ function output=CoreFHorzPType_jequaloneDist_3ways(n_d,n_a,n_z,N_j,d_grid,a_grid
 % V and Policy do not depend on jequaloneDist, so only StationaryDist and
 % downstream AllStats are compared. Per-type kappa_j_pt makes the two types
 % genuinely different (so the comparison actually exercises per-type setup).
+% Part C sets the (ii) slice masses different from Params.ptypeweights, which is
+% the only way to see that the slice masses really do override them.
 
 n_d=0;
 d_grid=[];
@@ -87,6 +89,32 @@ for ii=1:N_i
 end
 fprintf('jequaloneDist 3 ways (per-type diff), AllStats assets.Mean   (ii) vs (iii), this should be zero: %.3e \n',abs(AllStats_ii_d.assets.Mean   -AllStats_iii_d.assets.Mean))
 fprintf('jequaloneDist 3 ways (per-type diff), AllStats earnings.Mean (ii) vs (iii), this should be zero: %.3e \n',abs(AllStats_ii_d.earnings.Mean -AllStats_iii_d.earnings.Mean))
+
+%% Part C: slice masses of (ii) that DIFFER from Params.ptypeweights — the slice masses must win
+% Parts A and B set the slice masses equal to Params.ptypeweights, so they cannot tell an override
+% from the Params weights simply being used. Here they differ. The within-type (conditional)
+% distributions do not depend on the weights, so they must still equal those from (iii); only
+% ptweights, and so the grouped stats, change.
+ptw_override=[0.3; 0.7];
+
+jd_ii_ovr=zeros(n_a,n_z,N_i,'gpuArray');
+for ii=1:N_i
+    jd_ii_ovr(:,:,ii)=ptw_override(ii)*jd_base;
+end
+
+Dist_ii_ovr=StationaryDist_Case1_FHorz_PType(jd_ii_ovr,AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,Names_i,pi_z,Params,simoptions);
+AllStats_ii_ovr=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(Dist_ii_ovr,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
+
+fprintf('jequaloneDist 3 ways (override), ptweights equal the slice masses, this should be zero: %.3e \n',max(abs(Dist_ii_ovr.ptweights-ptw_override)))
+fprintf('jequaloneDist 3 ways (override), ptweights differ from Params.ptypeweights, this should NOT be zero: %.3e \n',max(abs(Dist_ii_ovr.ptweights-ptw)))
+for ii=1:N_i
+    nA=Names_i{ii};
+    fprintf('jequaloneDist 3 ways (override), Dist (type %s) (ii) vs (iii), this should be zero: %.3e \n',nA,max(abs(Dist_ii_ovr.(nA)(:)-Dist_iii.(nA)(:))))
+end
+agg_assets_mean_ovr  =ptw_override(1)*AllStats_iii.assets.(Names_i{1}).Mean  +ptw_override(2)*AllStats_iii.assets.(Names_i{2}).Mean;
+agg_earnings_mean_ovr=ptw_override(1)*AllStats_iii.earnings.(Names_i{1}).Mean+ptw_override(2)*AllStats_iii.earnings.(Names_i{2}).Mean;
+fprintf('jequaloneDist 3 ways (override), AllStats assets.Mean   vs slice-mass-weighted per-type means, this should be zero: %.3e \n',abs(AllStats_ii_ovr.assets.Mean  -agg_assets_mean_ovr))
+fprintf('jequaloneDist 3 ways (override), AllStats earnings.Mean vs slice-mass-weighted per-type means, this should be zero: %.3e \n',abs(AllStats_ii_ovr.earnings.Mean-agg_earnings_mean_ovr))
 
 output=struct();
 

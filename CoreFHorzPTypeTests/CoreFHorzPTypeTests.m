@@ -1,11 +1,15 @@
 % PType tests for the Core FHorz commands.
 %
-% Tests 1-4 use only z (no e, no semiz) and rely on existing return functions
-% from CoreFHorzTests/CoreFHorz_ReturnFns/.
+% Every check compares a PType solve against something known to be the same model: solves of
+% each type without PType, or a model without PType in which z encodes the type. The doPart list
+% below says what each part covers. Return functions come from CoreFHorzTests/CoreFHorz_ReturnFns/.
 %
-% The ShockTests test at the end uses all 8 (z,e,semiz) combinations across 8
-% PTypes and must be set up via Names_i + per-type structures, because the
-% n_z, z_grid, pi_z and vfoptions pieces differ across types.
+% Not covered: per-type solver options (divideandconquer, gridinterplayer for one type only),
+% per-type n_a/a_grid, ptypestorecpu=1, N_i>=10 auto-naming.
+%
+% The ShockTests (part 7) use all 8 (z,e,semiz) combinations across 8 PTypes and must be set up
+% via Names_i + per-type structures, because the n_z, z_grid, pi_z and vfoptions pieces differ
+% across types.
 %
 % No figures are drawn anywhere in this bank, so only the diary is saved.
 
@@ -18,18 +22,24 @@
 % doPart(2): N_i vs no-PType with identity z
 % doPart(3): N_i all types identical vs one solve
 % doPart(4): N_i two distinct types vs stacked solves
-% doPart(5): jequaloneDist accepted three ways: jequaloneDist accepted three ways
+% doPart(5): jequaloneDist accepted three ways
 % doPart(6): per-type N_j, different lifespans
-% doPart(7): ShockTests: ShockTests: 8 shock combos
-%
-% Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
-% Fig number is the same test whatever doPart says, and a png from a previous run is never
-% overwritten by a different test.
+% doPart(7): ShockTests, 8 shock combos
+% doPart(8): AggVars, ValuesOnGrid, LifeCycleProfiles, PolicyInd2Val, SimPanel vs stacked solves
+% doPart(9): SimPanel exactly, no z
+% doPart(10): every grouped statistic, via z-identity
+% doPart(11): a ptype of zero mass
+% doPart(12): standard decision variable d
+% doPart(13): z and e grids per type, struct vs trailing dim, age-dependent
+% doPart(14): ExogShockFn and EiidShockFn per type
+% doPart(15): DiscountFactorParamNames per type
+% doPart(16): ValuesOnGrid with per-type n_z
+% doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -82,12 +92,12 @@ if doPart(4)==1
     output=CoreFHorzPType_NiTwoTypes_vsTwoSolves(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(4): N_i two distinct types vs stacked solves
 
-%% ===== doPart(5): jequaloneDist accepted three ways: jequaloneDist accepted three ways =====
+%% ===== doPart(5): jequaloneDist accepted three ways =====
 if doPart(5)==1
-    fprintf('\n===== doPart(5): jequaloneDist accepted three ways: jequaloneDist accepted three ways =====\n')
+    fprintf('\n===== doPart(5): jequaloneDist accepted three ways =====\n')
     %% 5. jequaloneDist accepted three ways: [n_a,n_z], [n_a,n_z,N_i], struct
     output=CoreFHorzPType_jequaloneDist_3ways(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i,Names_i);
-end % doPart(5): jequaloneDist accepted three ways: jequaloneDist accepted three ways
+end % doPart(5): jequaloneDist accepted three ways
 
 %% ===== doPart(6): per-type N_j, different lifespans =====
 if doPart(6)==1
@@ -96,14 +106,86 @@ if doPart(6)==1
     output=CoreFHorzPType_PerTypeNj(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,PTypeDistParamNames);
 end % doPart(6): per-type N_j, different lifespans
 
-%% ===== doPart(7): ShockTests: ShockTests: 8 shock combos =====
+%% ===== doPart(7): ShockTests, 8 shock combos =====
 if doPart(7)==1
-    fprintf('\n===== doPart(7): ShockTests: ShockTests: 8 shock combos =====\n')
+    fprintf('\n===== doPart(7): ShockTests, 8 shock combos =====\n')
     %% ShockTests: one PType solve with 8 different (z,e,semiz) combos
     % Requires Names_i (per-type structures) because n_z/z_grid/pi_z and the e/semiz
     % pieces of vfoptions differ across types.
     output=CoreFHorzPType_ShockTests_8types(n_d,n_a,n_z,n_d_semiz,d_grid_semiz,n_d2_semiz,d2_grid_semiz,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,vfoptionsbaseline,simoptionsbaseline);
-end % doPart(7): ShockTests: ShockTests: 8 shock combos
+end % doPart(7): ShockTests, 8 shock combos
+
+%% ===== doPart(8): AggVars, ValuesOnGrid, LifeCycleProfiles, PolicyInd2Val, SimPanel vs stacked solves =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): AggVars, ValuesOnGrid, LifeCycleProfiles, PolicyInd2Val, SimPanel vs stacked solves =====\n')
+    %% 8. The PType commands downstream of StationaryDist, two distinct types vs two solves stacked
+    output=CoreFHorzPType_DownstreamCmds(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(8): AggVars, ValuesOnGrid, LifeCycleProfiles, PolicyInd2Val, SimPanel vs stacked solves
+
+%% ===== doPart(9): SimPanel exactly, no z =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): SimPanel exactly, no z =====\n')
+    %% 9. With no shocks and a point-mass jequaloneDist the panel is deterministic, so it can be checked exactly
+    output=CoreFHorzPType_SimPanelNoz(n_a,N_j,a_grid,Params,DiscountFactorParamNames,PTypeDistParamNames,N_i);
+end % doPart(9): SimPanel exactly, no z
+
+%% ===== doPart(10): every grouped statistic, via z-identity =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): every grouped statistic, via z-identity =====\n')
+    %% 10. Grouped AllStats/LifeCycleProfiles equal the no-PType stats when z encodes the type (as part 2);
+    % also conditionalrestrictions, agegroupings, lowmemory, groupptypesforstats and whichstats
+    output=CoreFHorzPType_ZidentityStats(n_a,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i);
+end % doPart(10): every grouped statistic, via z-identity
+
+%% ===== doPart(11): a ptype of zero mass =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): a ptype of zero mass =====\n')
+    %% 11. ptypeweight 0 on one type: grouped outputs must equal those of the other type alone
+    output=CoreFHorzPType_ZeroWeight(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(11): a ptype of zero mass
+
+%% ===== doPart(12): standard decision variable d =====
+if doPart(12)==1
+    fprintf('\n===== doPart(12): standard decision variable d =====\n')
+    %% 12. Two distinct types with a standard d vs two solves stacked, every PType command
+    output=CoreFHorzPType_WithD(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(12): standard decision variable d
+
+%% ===== doPart(13): z and e grids per type, struct vs trailing dim, age-dependent =====
+if doPart(13)==1
+    fprintf('\n===== doPart(13): z and e grids per type, struct vs trailing dim, age-dependent =====\n')
+    %% 13. z_grid/pi_z/e_grid/pi_e per type as struct and as a trailing N_i dimension, age-independent and age-dependent
+    output=CoreFHorzPType_ShockGridForms(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(13): z and e grids per type, struct vs trailing dim, age-dependent
+
+%% ===== doPart(14): ExogShockFn and EiidShockFn per type =====
+if doPart(14)==1
+    fprintf('\n===== doPart(14): ExogShockFn and EiidShockFn per type =====\n')
+    %% 14. One shock fn with per-type parameters, and a struct of shock fns, vs explicit grids
+    output=CoreFHorzPType_ShockFns(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(14): ExogShockFn and EiidShockFn per type
+
+%% ===== doPart(15): DiscountFactorParamNames per type =====
+if doPart(15)==1
+    fprintf('\n===== doPart(15): DiscountFactorParamNames per type =====\n')
+    %% 15. DiscountFactorParamNames as a struct keyed by Names_i
+    output=CoreFHorzPType_DiscountFactorStruct(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(15): DiscountFactorParamNames per type
+
+%% ===== doPart(16): ValuesOnGrid with per-type n_z =====
+if doPart(16)==1
+    fprintf('\n===== doPart(16): ValuesOnGrid with per-type n_z =====\n')
+    %% 16. ValuesOnGrid when n_z differs by ptype (this used to error on prod() of a struct n_z)
+    output=CoreFHorzPType_ValuesOnGridPerTypeShocks(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
+end % doPart(16): ValuesOnGrid with per-type n_z
+
+%% ===== doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages =====
+if doPart(17)==1
+    fprintf('\n===== doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages =====\n')
+    %% 17. Restricted LifeCycleProfiles PType (per-ptype and grouped) vs solo Case1 solves, vs E[X*1_R]/E[1_R], and vs AllStats PType;
+    % unequal ptweights and age weights, and a restriction whose mass differs by age and ptype
+    output=CoreFHorzPType_RestrictedLifeCycle(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages
 
 % All looks good!
 
