@@ -35,7 +35,6 @@ FnNames=fieldnames(FnsToEvaluate);
 % Counter incremented for every test that exceeds its tolerance (reported at end of subcode)
 fail_count=0;
 TOL_EXACT=1e-10;     % consumer-vs-consumer arithmetic identities + analytical-exact moments
-TOL_GINI=1e-6;       % Lorenz-curve interpolation in StatsFromWeightedGrid
 TOL_SIM=0.2;         % SimPanelValues sampling noise (loose)
 
 %% Solve VFI + StationaryDist (small grid, no GI)
@@ -165,11 +164,18 @@ fprintf('T1 Jnumbers Mean analytical vs AllStats, should be zero: %.3e\n',err); 
 err=abs(SDJ_an-gather(AllStats.Jnumbers.StdDeviation));
 fprintf('T1 Jnumbers StdDev analytical vs AllStats, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=abs(Gini_an-gather(AllStats.Jnumbers.Gini));
-fprintf('T1 Jnumbers Gini analytical vs AllStats, should be near-zero: %2.6f\n',err); fail_count=fail_count+(err>TOL_GINI);
+fprintf('T1 Jnumbers Gini analytical vs AllStats, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=max(abs(gather(LifeCycle.Jnumbers.Mean)-agej_vec));
 fprintf('T1 LifeCycle.Jnumbers.Mean - agej, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=max(abs(gather(LifeCycle.Jnumbers.StdDeviation)));
 fprintf('T1 LifeCycle.Jnumbers.StdDev, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
+% Median: m is a median if P(J<=m)>=0.5 and P(J>=m)>=0.5 (this is the definition, so it does not care which side of an exact tie
+% StatsFromWeightedGrid lands on; with equal age masses and N_j even, P(J<=N_j/2) is exactly 0.5 and both N_j/2 and N_j/2+1 are medians)
+m=gather(AllStats.Jnumbers.Median);
+err=max(0,0.5-sum(AgeMass(agej_vec<=m)))+max(0,0.5-sum(AgeMass(agej_vec>=m)))+(~any(agej_vec==m));
+fprintf('T1 Jnumbers Median satisfies the median definition, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
+err=max(abs(gather(LifeCycle.Jnumbers.Median)-agej_vec));
+fprintf('T1 LifeCycle.Jnumbers.Median - agej, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 idx_J=find(strcmp(FnNames,'Jnumbers'));
 diag_var=gather(reshape(AgeCondCovarCorr.CovarianceMatrix(idx_J,idx_J,:),1,[]));
 err=max(abs(diag_var));
@@ -244,6 +250,27 @@ LC_5bin=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params
 n_bins=length(1:5:N_j);
 fprintf('5-period agegroupings AgeCond CovMat third-dim, expected %d got %d\n',n_bins,size(AgeCond_5bin.CovarianceMatrix,3)); fail_count=fail_count+(size(AgeCond_5bin.CovarianceMatrix,3)~=n_bins);
 fprintf('5-period LifeCycle.assets.Mean length, expected %d got %d\n',n_bins,length(LC_5bin.assets.Mean)); fail_count=fail_count+(length(LC_5bin.assets.Mean)~=n_bins);
+
+% T6b: one agegrouping covering every age, with conditional restrictions, must reproduce the pooled AllStats under the same restrictions.
+% RestrictedStationaryDistVec is normalized age-by-age, so an agegrouping of several ages has to reweight each age by its restricted mass
+% (before this was fixed the weights of the agegrouping summed to the number of ages). 'positiveassets' has a restricted mass that differs by age.
+simoptions_1binR=simoptions_1bin;
+simoptions_1binR.conditionalrestrictions.positiveassets=@(d,aprime,a,z,e) (a>0);
+simoptions_1binR.conditionalrestrictions.always=@(d,aprime,a,z,e) 1;
+simoptions_R=simoptions;
+simoptions_R.conditionalrestrictions=simoptions_1binR.conditionalrestrictions;
+LC_1binR=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_1binR);
+AllStats_R=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_R);
+T6bRestrictions={'positiveassets','always'};
+T6bFns={'assets','earnings','consumption'};
+for rr=1:length(T6bRestrictions)
+    for ff=1:length(T6bFns)
+        LCstats=LC_1binR.(T6bRestrictions{rr}).(T6bFns{ff});
+        ASstats=AllStats_R.(T6bRestrictions{rr}).(T6bFns{ff});
+        err=abs(gather(LCstats.Mean)-gather(ASstats.Mean))+abs(gather(LCstats.Median)-gather(ASstats.Median))+abs(gather(LCstats.Variance)-gather(ASstats.Variance));
+        fprintf('T6b single agegrouping with restriction %s, %s: LifeCycle vs AllStats (Mean+Median+Variance), should be zero: %.3e\n',T6bRestrictions{rr},T6bFns{ff},err); fail_count=fail_count+(err>TOL_EXACT);
+    end
+end
 
 %% ===== Section G: nquantiles / npoints / tolerance =====
 fprintf('\n-- Section G: nquantiles / npoints / tolerance --\n')

@@ -36,7 +36,6 @@ FnNames=fieldnames(FnsToEvaluate);
 % Counter incremented for every test that exceeds its tolerance (reported at end of subcode)
 fail_count=0;
 TOL_EXACT=1e-10;
-TOL_GINI=1e-6;
 TOL_SIM=0.2;
 
 %% Solve VFI + StationaryDist (small grid, no GI)
@@ -164,11 +163,18 @@ fprintf('T1 Jnumbers Mean analytical vs AllStats, should be zero: %.3e\n',err); 
 err=abs(SDJ_an-gather(AllStats.Jnumbers.StdDeviation));
 fprintf('T1 Jnumbers StdDev analytical vs AllStats, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=abs(Gini_an-gather(AllStats.Jnumbers.Gini));
-fprintf('T1 Jnumbers Gini analytical vs AllStats, should be near-zero: %2.6f\n',err); fail_count=fail_count+(err>TOL_GINI);
+fprintf('T1 Jnumbers Gini analytical vs AllStats, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=max(abs(gather(LifeCycle.Jnumbers.Mean)-agej_vec));
 fprintf('T1 LifeCycle.Jnumbers.Mean - agej, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 err=max(abs(gather(LifeCycle.Jnumbers.StdDeviation)));
 fprintf('T1 LifeCycle.Jnumbers.StdDev, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
+% Median: m is a median if P(J<=m)>=0.5 and P(J>=m)>=0.5 (this is the definition, so it does not care which side of an exact tie
+% StatsFromWeightedGrid lands on; with equal age masses and N_j even, P(J<=N_j/2) is exactly 0.5 and both N_j/2 and N_j/2+1 are medians)
+m=gather(AllStats.Jnumbers.Median);
+err=max(0,0.5-sum(AgeMass(agej_vec<=m)))+max(0,0.5-sum(AgeMass(agej_vec>=m)))+(~any(agej_vec==m));
+fprintf('T1 Jnumbers Median satisfies the median definition, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
+err=max(abs(gather(LifeCycle.Jnumbers.Median)-agej_vec));
+fprintf('T1 LifeCycle.Jnumbers.Median - agej, should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 idx_J=find(strcmp(FnNames,'Jnumbers'));
 diag_var=gather(reshape(AgeCondCovarCorr.CovarianceMatrix(idx_J,idx_J,:),1,[]));
 err=max(abs(diag_var));

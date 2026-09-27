@@ -23,6 +23,7 @@
 % doPart(8):  with2A semiz (figs 25-32)
 % doPart(9):  with2A semiz cross-tests
 % doPart(10): TestFnsToEvaluate
+% doPart(11): StatsFromWeightedGrid unit tests (hand-built distributions, plus GPU runtimes)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so Fig 20
 % is the same test whatever doPart says, and a png from a previous run is never overwritten by a
@@ -31,7 +32,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -428,6 +429,18 @@ if doPart(10)==1
     %% FnsToEvaluate-focused tests (covers every FHorz FnsToEvaluate consumer + cross-validations + analytical-truth tests)
     TestFnsToEvaluate
 end % doPart(10): TestFnsToEvaluate
+
+%% ===== doPart(11): StatsFromWeightedGrid unit tests =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): StatsFromWeightedGrid unit tests =====\n')
+    %% Direct tests of StatsFromWeightedGrid (median definition, Gini vs pairwise/closed-form/analytical, npoints=0, presorted), plus runtimes on the GPU
+    fail_count_SFWG=TestStatsFromWeightedGrid();
+    if fail_count_SFWG==0
+        fprintf('\n===== TestStatsFromWeightedGrid: 0 tests outside tolerance. All clear. =====\n')
+    else
+        warning('TestStatsFromWeightedGrid: %d test(s) outside tolerance -- scroll up to find the failing line(s).', fail_count_SFWG)
+    end
+end % doPart(11): StatsFromWeightedGrid unit tests
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 %% One verdict for the whole run
