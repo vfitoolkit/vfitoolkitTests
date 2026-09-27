@@ -1,5 +1,5 @@
 % Tests of the VFI Toolkit discretization commands.
-% Organised by the process being discretized; see description.txt
+% Organised by the process being discretized (P0-P9), one block per process below.
 %
 % Currently built: P0 to P7.
 
