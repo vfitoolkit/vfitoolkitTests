@@ -44,11 +44,18 @@ title('InfHorz: cumulative distribution over asset grid'); xlabel('assets'); yla
 %% fminalgo=5 (shooting; need update rules, one row per GE eqn: {GEeqnName, PriceName, add, factor})
 heteroagentoptions5=heteroagentoptions;
 heteroagentoptions5.fminalgo=5;
+% The r factor is 0.001. Measured, not guessed: at the previous value the shooting map's multiplier
+% |1-factor*dCapitalMarket/dr| was at or past its stability boundary, so the solve reached about
+% 1e-05 and then sat in a period-2 limit cycle (the condition alternating sign every iteration with
+% constant amplitude ~2.4e-05, above toleranceGEcondns) and ran to maxiter instead of exiting. The
+% 2026-09-23 diary of doPart(17) shows it directly; that fixed dCapitalMarket/dr at about 1000 for
+% this model, which is why 0.001 puts the multiplier near zero. dc/dTr is -1 and dc/dtau_c is C, so
+% those two rows are nowhere near the boundary and keep their factors.
 heteroagentoptions5.fminalgo5.howtoupdate={...
-    'CapitalMarket','r',0,0.005;   % r_new = r - factor*(r-MPK)
+    'CapitalMarket','r',0,0.001;   % r_new = r - factor*(r-MPK)
     'GovBudget','Tr',1,0.05;        % Tr_new = Tr + factor*(tau*w*N-Tr)
     'ConsTax','tau_c',0,0.05};      % tau_c_new = tau_c - factor*(tau_c*C-G)
-heteroagentoptions5.maxiter=1e4;
+heteroagentoptions5.maxiter=3000; % backstop: with the factor above this converges in tens of iterations
 tt=tic;
 [p_eqm5,GEcondns5]=HeteroAgentStationaryEqm_InfHorz(n_d, n_a, n_z, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptions5, simoptions, vfoptions);
 time5=toc(tt); nsolves5=StationaryGeneralEqm_subcode_GEsolvecounter('get');
@@ -65,6 +72,16 @@ time8=toc(tt); nsolves8=StationaryGeneralEqm_subcode_GEsolvecounter('get');
 %% fminalgo=4 (CMA-ES; slow but very globally robust)
 heteroagentoptions4=heteroagentoptions;
 heteroagentoptions4.fminalgo=4;
+% insigma and MaxFunEvals are set here rather than left to the defaults. The default insigma is 30% of
+% |p0|, which at p0=[0.04,0.2,0.1] is a 1-sigma spread on r of +-0.012: CMA-ES then routinely samples r
+% near zero and negative, and most of its evaluations go on shrinking that ellipsoid rather than
+% locating the equilibrium (4,595 model solves, 1.4 hours, in the 2026-09-20 run of this part - and it
+% is what the search looks like when watched, prices jumping back and forth). 5% keeps it a stochastic
+% search without the excursions. MaxFunEvals then bounds the part: the default is Inf, with only
+% StopFitness and stagnation detection to stop it. CMA-ES returns its best-so-far, which is all the
+% 1-vs-4 comparison below needs - and that comparison is deliberately the loosest in the file.
+heteroagentoptions4.insigma=0.05*abs([Params.r;Params.Tr;Params.tau_c]); % in GEPriceParamNames order
+heteroagentoptions4.inopts.MaxFunEvals=1500;
 tt=tic;
 [p_eqm4,GEcondns4]=HeteroAgentStationaryEqm_InfHorz(n_d, n_a, n_z, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptions4, simoptions, vfoptions);
 time4=toc(tt); nsolves4=StationaryGeneralEqm_subcode_GEsolvecounter('get');
@@ -73,11 +90,21 @@ time4=toc(tt); nsolves4=StationaryGeneralEqm_subcode_GEsolvecounter('get');
 % Accelerates the same map as fminalgo=5, using the same howtoupdate rules.
 heteroagentoptions9=heteroagentoptions;
 heteroagentoptions9.fminalgo=9;
-heteroagentoptions9.fminalgo9.howtoupdate={...
-    'CapitalMarket','r',0,0.005;   % r_new = r - factor*(r-MPK)
+heteroagentoptions9.fminalgo9.howtoupdate={... % same rules as fminalgo=5 above, including the r factor
+    'CapitalMarket','r',0,0.001;   % r_new = r - factor*(r-MPK)
     'GovBudget','Tr',1,0.05;        % Tr_new = Tr + factor*(tau*w*N-Tr)
     'ConsTax','tau_c',0,0.05};      % tau_c_new = tau_c - factor*(tau_c*C-G)
 heteroagentoptions9.anderson.maxiter=1e4;
+% A shorter memory than the default of 5. With the default settings Anderson extrapolated r clean out
+% of the feasible region (r below -delta, so the MPK inversion took a fractional power of a negative
+% number and the model threw); fewer past iterates in the mix shrinks the extrapolation, and the
+% safeguard now rejects such a step rather than the model ending the run.
+% regularization is left at its default ON PURPOSE. It was 1e-6 for the 2026-09-26 run, which was a
+% mistake: the term was absolute back then, and 1e-6 against normal equations of size ~1e-19 meant the
+% Anderson step was pure regularization, i.e. exactly the plain shooting step it should accelerate
+% (fminalgo=9 took the same iterations as fminalgo=5 and paid the safeguard's second solve, so it was
+% strictly slower). The term is relative from 2026-09-27, so the default is the right thing to run.
+heteroagentoptions9.anderson.memory=3;
 tt=tic;
 [p_eqm9,GEcondns9]=HeteroAgentStationaryEqm_InfHorz(n_d, n_a, n_z, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptions9, simoptions, vfoptions);
 time9=toc(tt); nsolves9=StationaryGeneralEqm_subcode_GEsolvecounter('get');
@@ -104,7 +131,7 @@ d19=max(abs([p_eqm1.r-p_eqm9.r,p_eqm1.Tr-p_eqm9.Tr,p_eqm1.tau_c-p_eqm9.tau_c]));
 d19I=max(abs([p_eqm1.r-p_eqm9I.r,p_eqm1.Tr-p_eqm9I.Tr,p_eqm1.tau_c-p_eqm9I.tau_c]));
 fprintf('fminalgo 1 vs 5, this should be near zero: %.8f \n',d15)
 fprintf('fminalgo 1 vs 8, this should be near zero: %.8f \n',d18)
-fprintf('fminalgo 1 vs 4, this should be near zero: %.8f \n',d14)
+fprintf('fminalgo 1 vs 4 (CMA-ES, lower accuracy), this should be small: %.8f \n',d14)
 fprintf('fminalgo 1 vs 9, this should be near zero: %.8f \n',d19)
 fprintf('fminalgo 1 vs 9I (Type-I), this should be near zero: %.8f \n',d19I)
 

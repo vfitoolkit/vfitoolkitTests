@@ -43,8 +43,11 @@
 % be finished off by running just the parts that never got to run.
 % doPart(1): constrainpositivemethod round trips
 %            (pure transform checks - no model and no GE solve, so this part costs seconds;
-%             every other part is GE solves: 6 for each fminalgo part, 7 for each constraints
-%             part, 52 in all)
+%             the fminalgo and constraints parts are GE solves: 6 for each fminalgo part, 7 for
+%             each constraints part, 52 in all. The extraoptions parts (10 to 13) are mostly NOT
+%             solves: they use heteroagentoptions.maxiter=0, which evaluates the general eqm
+%             conditions at the prices in Params and returns them, one model solve rather than a
+%             hundred and fifty. Six real solves in the four of them, all told)
 % doPart(2): InfHorz fminalgo agreement
 % doPart(3): InfHorz parameter-constraint invariance
 % doPart(4): FHorz fminalgo agreement
@@ -53,6 +56,17 @@
 % doPart(7): InfHorz PType parameter-constraint invariance
 % doPart(8): FHorz PType fminalgo agreement
 % doPart(9): FHorz PType parameter-constraint invariance
+% doPart(10): InfHorz intermediateEqns and shock grids in GE
+% doPart(11): FHorz intermediateEqns, jequaloneDist as a function, shock grids in GE
+% doPart(12): InfHorz PType intermediateEqns and shock grids in GE
+% doPart(13): FHorz PType intermediateEqns, the four jequaloneDist forms, shock grids in GE
+% doPart(14): FHorz PType general eqm conditions by ptype (GEptype)
+% doPart(15): InfHorz PType general eqm conditions by ptype (GEptype)
+%             [ON again 2026-09-23: HeteroAgentStationaryEqm_InfHorz_PType_GEptype_subfn now exists,
+%              so the 'not implemented for infinite horizon' error is gone. This part is its first run]
+% doPart(16): FHorz PType GEptype parameter-constraint invariance (fminalgo 1, 5 and 9)
+% doPart(17): InfHorz PType GEptype parameter-constraint invariance (fminalgo 1, 5 and 9)
+%             [ON again 2026-09-23, same reason as doPart(15)]
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -61,7 +75,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1];
+doPart=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -297,8 +311,62 @@ end % doPart(9): FHorz PType parameter-constraint invariance
 
 
 
-% I want to next redo all these tests, but using ptype and with GEbyptype.
-% This remains to be built.
+% The 'redo all these tests with GEbyptype' note that used to sit here is done: doPart(14) and (15)
+% cover general eqm conditions by ptype, and doPart(16) and (17) sweep the parameter constraints
+% under them, under the three solvers that are worth distinguishing there (see those subcodes).
+% The deliberate remaining gap is a full fminalgo sweep under GEptype: fminalgo 4 and 8 reach the
+% equilibrium through the same objective function as 1, so they would only re-test that.
+
+%% ===== doPart(10): InfHorz intermediateEqns and shock grids in GE =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): InfHorz intermediateEqns and shock grids in GE =====\n')
+    output5=CoreStationaryGE_InfHorz_extraoptions(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(10): InfHorz intermediateEqns and shock grids in GE
+
+%% ===== doPart(11): FHorz intermediateEqns, jequaloneDist as a function, shock grids in GE =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): FHorz intermediateEqns, jequaloneDist as a function, shock grids in GE =====\n')
+    output6=CoreStationaryGE_FHorz_extraoptions(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(11): FHorz intermediateEqns, jequaloneDist as a function, shock grids in GE
+
+%% ===== doPart(12): InfHorz PType intermediateEqns and shock grids in GE =====
+if doPart(12)==1
+    fprintf('\n===== doPart(12): InfHorz PType intermediateEqns and shock grids in GE =====\n')
+    output5ptype=CoreStationaryGE_InfHorz_PType_extraoptions(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(12): InfHorz PType intermediateEqns and shock grids in GE
+
+%% ===== doPart(13): FHorz PType intermediateEqns, the four jequaloneDist forms, shock grids in GE =====
+if doPart(13)==1
+    fprintf('\n===== doPart(13): FHorz PType intermediateEqns, the four jequaloneDist forms, shock grids in GE =====\n')
+    output6ptype=CoreStationaryGE_FHorz_PType_extraoptions(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(13): FHorz PType intermediateEqns, the four jequaloneDist forms, shock grids in GE
+
+
+%% ===== doPart(14): FHorz PType general eqm conditions by ptype (GEptype) =====
+if doPart(14)==1
+    fprintf('\n===== doPart(14): FHorz PType general eqm conditions by ptype (GEptype) =====\n')
+    output7ptype=CoreStationaryGE_FHorz_PType_GEptype(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(14): FHorz PType general eqm conditions by ptype (GEptype)
+
+%% ===== doPart(15): InfHorz PType general eqm conditions by ptype (GEptype) =====
+if doPart(15)==1
+    fprintf('\n===== doPart(15): InfHorz PType general eqm conditions by ptype (GEptype) =====\n')
+    output8ptype=CoreStationaryGE_InfHorz_PType_GEptype(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(15): InfHorz PType general eqm conditions by ptype (GEptype)
+
+
+%% ===== doPart(16): FHorz PType GEptype parameter-constraint invariance =====
+if doPart(16)==1
+    fprintf('\n===== doPart(16): FHorz PType GEptype parameter-constraint invariance =====\n')
+    output9ptype=CoreStationaryGE_FHorz_PType_GEptype_constraints(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(16): FHorz PType GEptype parameter-constraint invariance
+
+%% ===== doPart(17): InfHorz PType GEptype parameter-constraint invariance =====
+if doPart(17)==1
+    fprintf('\n===== doPart(17): InfHorz PType GEptype parameter-constraint invariance =====\n')
+    output10ptype=CoreStationaryGE_InfHorz_PType_GEptype_constraints(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(17): InfHorz PType GEptype parameter-constraint invariance
+
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
