@@ -10,12 +10,12 @@
 %   EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz
 %   EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz
 %   SimPanelValues_FHorz_Case1
-%   EvalFnOnAgentDist_AutoCorrTransProbs_FHorz (markov-only config 3)
+%   EvalFnOnAgentDist_AutoCorrTransProbs_FHorz (all three configs; config 3 in detail, incl. timehorizons)
 %
 % Configs:
 %   d_z_e_nosemiz    -- with d, with z, with e, without semiz
 %   nod1_z_noe_semiz -- without d1 (only d2), with z, without e, with semiz
-%   d_z_noe_nosemiz  -- with d, with z, no e, no semiz (only config supporting AutoCorrTransProbs)
+%   d_z_noe_nosemiz  -- with d, with z, no e, no semiz (AutoCorrTransProbs in detail)
 
 addpath('./CoreFHorzTests_subcodes/')
 addpath('./CoreFHorzTests_Setup/')
@@ -36,7 +36,7 @@ total_fail_count=total_fail_count+out1.fail_count;
 out2=TestFnsToEvaluate_nod1_z_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 total_fail_count=total_fail_count+out2.fail_count;
 
-%% Config 3: with d, with z, no e, no semiz (the only one supporting AutoCorrTransProbs_FHorz)
+%% Config 3: with d, with z, no e, no semiz (AutoCorrTransProbs_FHorz in detail)
 out3=TestFnsToEvaluate_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 total_fail_count=total_fail_count+out3.fail_count;
 

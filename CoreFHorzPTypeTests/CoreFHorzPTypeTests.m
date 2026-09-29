@@ -7,6 +7,12 @@
 % Not covered: per-type solver options (divideandconquer, gridinterplayer for one type only),
 % per-type n_a/a_grid, ptypestorecpu=1, N_i>=10 auto-naming.
 %
+% Parts 18-21 (added 2026-09-29) are the PType counterpart of the model-stats checks at the end of CoreFHorzTests
+% (TestFnsToEvaluate): every PType command downstream of StationaryDist on two shock configs, including the three
+% commands added on 2026-09-29 (CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and
+% AutoCorrTransProbs, each _FHorz_PType), the grouped correlation commands via z-identity, and the AutoCorr
+% timehorizons/conditionalrestrictions/PType grouping against an independent brute-force calculation.
+%
 % The ShockTests (part 7) use all 8 (z,e,semiz) combinations across 8 PTypes and must be set up
 % via Names_i + per-type structures, because the n_z, z_grid, pi_z and vfoptions pieces differ
 % across types.
@@ -35,11 +41,15 @@
 % doPart(15): DiscountFactorParamNames per type
 % doPart(16): ValuesOnGrid with per-type n_z
 % doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages
+% doPart(18): every stats command, with d, z and e (the PType counterpart of TestFnsToEvaluate config 1)
+% doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
+% doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
+% doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -186,6 +196,43 @@ if doPart(17)==1
     % unequal ptweights and age weights, and a restriction whose mass differs by age and ptype
     output=CoreFHorzPType_RestrictedLifeCycle(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages
+
+%% ===== doPart(18): every stats command, with d, z and e =====
+if doPart(18)==1
+    fprintf('\n===== doPart(18): every stats command, with d, z and e =====\n')
+    %% 18. All PType commands downstream of StationaryDist (AggVars, AllStats, ValuesOnGrid, LifeCycleProfiles, CrossSectionCovarCorr,
+    % AgeConditionalStats_CrossSectionCovarCorr, AutoCorrTransProbs with timehorizons and a restriction, PolicyInd2Val, SimPanel),
+    % two distinct types vs two solo solves, grouped vs a by-hand pooling of the solo outputs; also gridinterplayer=1 for AutoCorr
+    output=CoreFHorzPType_StatsCmds_d_z_e(n_d,n_a,n_z,vfoptionsbaseline.n_e,N_j,d_grid,a_grid,z_grid,pi_z,vfoptionsbaseline.e_grid,vfoptionsbaseline.pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(18): every stats command, with d, z and e
+
+%% ===== doPart(19): every stats command, without d1, with z and semiz =====
+if doPart(19)==1
+    fprintf('\n===== doPart(19): every stats command, without d1, with z and semiz =====\n')
+    %% 19. As part 18 on the semiz config (binary d2 only), with a restriction on the semi-exogenous state
+    output=CoreFHorzPType_StatsCmds_nod1_z_semiz(n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(19): every stats command, without d1, with z and semiz
+
+%% ===== doPart(20): grouped CrossSection and AutoCorr commands, via z-identity =====
+if doPart(20)==1
+    fprintf('\n===== doPart(20): grouped CrossSection and AutoCorr commands, via z-identity =====\n')
+    %% 20. Grouped CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and AutoCorrTransProbs PType equal the
+    % no-PType commands when z encodes the type (as part 10); per-type and restricted AutoCorr via restrictions on z
+    output=CoreFHorzPType_ZidentityCorr(n_a,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i);
+end % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
+
+%% ===== doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation =====
+if doPart(21)==1
+    fprintf('\n===== doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation =====\n')
+    %% 21. AutoCorrTransProbs_FHorz (horizon 1 unchanged vs the pre-change command; horizons 2,3,5 and restrictions vs dense
+    % transition kernels built here; lowmemory; gridinterplayer; a cohort started at age 10) and its PType wrapper (per type vs
+    % solo, grouped vs by-hand pooling with different age weights per type, a zero-weight type)
+    output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,z_grid,pi_z,vfoptionsbaseline.e_grid,vfoptionsbaseline.pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation
+% doPart(18): every stats command, with d, z and e (the PType counterpart of TestFnsToEvaluate config 1)
+% doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
+% doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
+% doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation
 
 % All looks good!
 
