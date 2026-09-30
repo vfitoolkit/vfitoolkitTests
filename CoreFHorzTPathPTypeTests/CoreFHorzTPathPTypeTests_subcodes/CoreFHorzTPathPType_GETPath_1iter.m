@@ -47,6 +47,8 @@ clear PolicyPath_PT
 
 %% One iteration of the GE transition path, with fastOLG=1
 transpathoptions.maxiter=1;
+transpathoptions.GEnewprice=3; % the shooting algorithm (GEnewprice has no default: 1 is quasi-Newton, 2 Anderson, 3 shooting)
+transpathoptions.GEnewprice3.howtoupdate={'dummy','r',0,0.1};
 
 GeneralEqmEqns.dummy=@(earnings) 0;
 

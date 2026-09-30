@@ -223,6 +223,8 @@ AgentDist_initial=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,P
 clear PolicyPath2
 
 transpathoptions.maxiter=1;
+transpathoptions.GEnewprice=3; % the shooting algorithm (GEnewprice has no default: 1 is quasi-Newton, 2 Anderson, 3 shooting)
+transpathoptions.GEnewprice3.howtoupdate={'dummy','r',0,0.1};
 GeneralEqmEqns.dummy=@(earnings) 0;
 
 transpathoptions.fastOLG=1;

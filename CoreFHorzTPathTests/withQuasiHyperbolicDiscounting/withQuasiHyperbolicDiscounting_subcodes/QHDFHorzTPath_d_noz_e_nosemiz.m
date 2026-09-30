@@ -154,6 +154,8 @@ clear PolicyPath2
 
 transpathoptions=transpathoptionsbaseline;
 transpathoptions.maxiter=1;
+transpathoptions.GEnewprice=3; % the shooting algorithm (GEnewprice has no default: 1 is quasi-Newton, 2 Anderson, 3 shooting)
+transpathoptions.GEnewprice3.howtoupdate={'dummy','r',0,0.1};
 GeneralEqmEqns.dummy=@(earnings) 0;
 
 transpathoptions.fastOLG=1;
@@ -272,6 +274,8 @@ clear V1 Policy1 V1under VPath1 PolicyPath1 ValtPath1
 %% One-iter TransitionPath_Case1_FHorz shape test (Sophisticated)
 transpathoptions=transpathoptionsbaseline;
 transpathoptions.maxiter=1;
+transpathoptions.GEnewprice=3; % the shooting algorithm (GEnewprice has no default: 1 is quasi-Newton, 2 Anderson, 3 shooting)
+transpathoptions.GEnewprice3.howtoupdate={'dummy','r',0,0.1};
 
 transpathoptions.fastOLG=1;
 PricePath2=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, Vunderbar_finalS, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptions, simoptions, vfoptions);
