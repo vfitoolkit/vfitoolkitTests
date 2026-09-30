@@ -45,6 +45,41 @@ n_a_2A1_notsobig=[151,n_a1_2,n_a_justexpasset];                 % 2-asset 'big' 
 a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
 a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
+% with2A2: a SECOND EXPERIENCE asset a2_2, appended after the existing experience asset a2_1.
+% Grid layout: a = [a1, a2_1, a2_2], and vfoptions.experienceasset=2 (the switch is the integer
+% count of experience-asset dimensions, not a flag).
+% Both a2 grids are coarser than the n_a_justexpasset=13 of the one-experience-asset tier, because
+% the state space now carries their PRODUCT (7*5=35 vs 13) on top of a1, z, e and semiz.
+n_a2_1=7; % first experience asset  (human capital)
+n_a2_2=5; % second experience asset (cumulated lifetime earnings)
+a2_1_grid=linspace(0,10,n_a2_1)';
+a2_2_grid=linspace(0,10,n_a2_2)';
+n_a_2A2=[n_a(1),n_a2_1,n_a2_2];
+a_grid_2A2=[a1_grid;a2_1_grid;a2_2_grid];
+n_a_2A2_justexpasset=[n_a2_1,n_a2_2];          % noa1 tier: the two experience assets are all there is
+a_grid_2A2_justexpasset=[a2_1_grid;a2_2_grid];
+% The 'big' a1 grid for the with/without-grid-interpolation moment comparison is built per-figure
+% (n_a_2A2_notsobig) in the main script, because it has to shrink as z/e/semiz are added: the
+% arrays scale with n_a1*n_a1prime(fine)*n_a2_1*n_a2_2*shocks. It is nowhere near the 1001 that
+% the one-experience-asset tier can afford.
+
+% aprimeFn for two experience assets. GPU arrayfun is scalar-output only, so the builder calls the
+% aprimeFn once per a2 dimension and selects with the extra integer 'whicha' slot, which sits
+% between the a2 inputs and the parameters.
+vfoptionsbaseline.aprimeFn_2A2=@(d2,a2_1,a2_2,whicha,phi1,phi2,phi3,phi4) ...
+    (whicha==1)*(phi1*(1-d2)+(1-phi2)*a2_1) + ...
+    (whicha==2)*(phi3*d2*a2_1+(1-phi4)*a2_2);
+% a2_1' = phi1*(1-d2)+(1-phi2)*a2_1   (exactly the law of motion of the one-experience-asset tier)
+% a2_2' = phi3*d2*a2_1+(1-phi4)*a2_2  (deliberately COUPLED to a2_1: with an uncoupled second asset
+%         a stride or dim-ordering bug in the nested interpolation could cancel out unnoticed)
+Params.phi3=0.2; % rate at which d2*a2_1 accumulates into a2_2
+Params.phi4=0.2; % depreciation of a2_2. With phi3=phi4 the a2_2 steady state is d2*a2_1, which
+                 % spans the a2_2 grid (0 to 10), so a2_2 stays interior over most of the state
+                 % space while still clamping at the top corner (which exercises the off-grid path)
+Params.pensionrate=0.1; % a2_2 raises the retirement pension. This is what makes V actually depend
+                        % on a2_2 -- were a2_2 absent from the ReturnFn, V would be flat in that
+                        % dimension and every check in the with2A2 tier would be vacuous.
+
 % setup z
 [z_grid,pi_z]=discretizeAR1_FarmerToda(0,0.9,0.03,n_z);
 z_grid=exp(z_grid);
