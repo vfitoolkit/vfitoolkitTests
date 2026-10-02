@@ -10,12 +10,14 @@
 %   EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz
 %   EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz
 %   SimPanelValues_FHorz_Case1
-%   EvalFnOnAgentDist_AutoCorrTransProbs_FHorz (all three configs; config 3 in detail, incl. timehorizons)
+%   EvalFnOnAgentDist_AutoCorrTransProbs_FHorz (all configs; config 3 in detail; config 4 is its timehorizons and
+%                                              conditionalrestrictions against a brute-force calculation)
 %
 % Configs:
 %   d_z_e_nosemiz    -- with d, with z, with e, without semiz
 %   nod1_z_noe_semiz -- without d1 (only d2), with z, without e, with semiz
 %   d_z_noe_nosemiz  -- with d, with z, no e, no semiz (AutoCorrTransProbs in detail)
+%   nod_z_e_nosemiz  -- no d, with z, with e, no semiz (AutoCorrTransProbs timehorizons/restrictions vs brute force)
 
 addpath('./CoreFHorzTests_subcodes/')
 addpath('./CoreFHorzTests_Setup/')
@@ -39,6 +41,10 @@ total_fail_count=total_fail_count+out2.fail_count;
 %% Config 3: with d, with z, no e, no semiz (AutoCorrTransProbs_FHorz in detail)
 out3=TestFnsToEvaluate_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 total_fail_count=total_fail_count+out3.fail_count;
+
+%% Config 4: no d, with z, with e (AutoCorrTransProbs_FHorz timehorizons and conditional restrictions vs a brute-force calculation)
+out4=TestFnsToEvaluate_AutoCorrBruteForce(n_a,n_z,n_e,N_j,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames);
+total_fail_count=total_fail_count+out4.fail_count;
 
 %% Final report
 if total_fail_count==0
