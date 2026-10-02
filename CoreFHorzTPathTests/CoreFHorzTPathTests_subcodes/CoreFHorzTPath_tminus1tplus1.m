@@ -195,6 +195,18 @@ fprintf('EvalFnOnTransPath_AggVars: (9) assets vs inside the transition path, th
 fprintf('EvalFnOnTransPath_AggVars: (9) x with r_tminus1, r_tplus1, w_tminus1 vs inside the transition path, this should be zero: %.3e \n',max(abs(gather(AggVarsPath9.x.Mean(1:T-1))-gather(GEcondnPath5.g))))
 fprintf('EvalFnOnTransPath_AggVars: (9) y with assets_tminus1 vs inside the transition path, this should be zero: %.3e \n',max(abs(gather(AggVarsPath9.y.Mean(1:T-1))-gather(GEcondnPath6.g))))
 
+%% (10) LifeCycleProfiles_TransPath_FHorz_Case1 with lagged and led FnsToEvaluate
+% The age-conditional means of x and y must be the same whether they use the lags or the shifted
+% paths, for the ages alive at the start of the transition and for those born during it. Both outputs
+% are NaN where an age-period combination does not exist, in the same places, so those are skipped.
+FnsToEvaluate10O=FnsToEvaluate;
+FnsToEvaluate10O.x=FnsToEvaluate5O.x;
+FnsToEvaluate10O.y=FnsToEvaluate6O.y;
+LCP10=LifeCycleProfiles_TransPath_FHorz_Case1(FnsToEvaluate9, AgentDistPath9, PolicyPath9, PricePath, ParamPathO, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid, z_grid, transpathoptions9, simoptions);
+LCP10O=LifeCycleProfiles_TransPath_FHorz_Case1(FnsToEvaluate10O, AgentDistPath9, PolicyPath9, PricePath, ParamPathO, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid, z_grid, transpathoptions9, simoptions);
+fprintf('LifeCycleProfiles_TransPath: (10) x with r_tminus1, r_tplus1, w_tminus1, age-conditional means vs the shifted paths, this should be zero: %.3e \n',max([max(abs(LCP10.x.initialages.Mean(:)-LCP10O.x.initialages.Mean(:)),[],'omitnan'), max(abs(LCP10.x.bornduringtranstion.Mean(:)-LCP10O.x.bornduringtranstion.Mean(:)),[],'omitnan')]))
+fprintf('LifeCycleProfiles_TransPath: (10) y with assets_tminus1, age-conditional means vs the shifted path, this should be zero: %.3e \n',max([max(abs(LCP10.y.initialages.Mean(:)-LCP10O.y.initialages.Mean(:)),[],'omitnan'), max(abs(LCP10.y.bornduringtranstion.Mean(:)-LCP10O.y.bornduringtranstion.Mean(:)),[],'omitnan')]))
+
 output=struct();
 
 end
