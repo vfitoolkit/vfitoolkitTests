@@ -19,6 +19,7 @@
 % doPart(3): figs 9-16
 % doPart(4): cross-tests 2
 % doPart(5): cross-tests 3
+% doPart(6): _tminus1 and _tplus1 (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -27,7 +28,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1];
+doPart=[1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -216,6 +217,14 @@ if doPart(5)==1
 
     output=CoreFHorzTPath_CrossTests2_d1_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(5): cross-tests 3
+
+%% ===== doPart(6): _tminus1 and _tplus1 =====
+if doPart(6)==1
+    fprintf('\n===== doPart(6): _tminus1 and _tplus1 =====\n')
+    %% _tminus1 and _tplus1 in GeneralEqmEqns, FnsToEvaluate and intermediateEqns, each against the same shift done by hand
+    % Also a GE path whose condition uses lags, and EvalFnOnTransPath_AggVars with lags. See the header of the subcode.
+    output=CoreFHorzTPath_tminus1tplus1(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(6): _tminus1 and _tplus1
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 
