@@ -160,6 +160,16 @@ AgentDistPath8=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial, jequaloneDist
 AggVarsPath8=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPath8, PolicyPath8, PricePath, ParamPath1, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptions8, simoptions);
 fprintf('Demographics: (8) AgentDistOnTransPath+EvalFnOnTransPath_AggVars with the mewj path vs inside the path, this should be zero: %.3e \n',max(abs(gather(AggVarsPath8.assets.Mean(1:T-1)+10*AggVarsPath8.earnings.Mean(1:T-1))-gather(GEcondnPath1keep.g))))
 
+%% (12) The agent dist laid out the slow way (simoptions.fastOLG=0), inside the path
+% It is then (a,z,j) rather than (a,j,z), and Step4tt_AggVars puts it into the (a,j,z) order the
+% FnsToEvaluate are evaluated in before aggregating. Before that, nothing did, and nothing tested it.
+transpathoptions12=transpathoptionsE;
+transpathoptions12.fastOLG=0; % simoptions.fastOLG=0 requires transpathoptions.fastOLG=0
+simoptions12=simoptions;
+simoptions12.fastOLG=0;
+[~,GEcondnPath12]=TransitionPath_Case1_FHorz(PricePath, ParamPath1, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqnsAE, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptions12, simoptions12, vfoptions);
+fprintf('Demographics: (12) simoptions.fastOLG=0 vs =1, aggregates inside the path with the mewj path, this should be zero: %.3e \n',max(abs(GEcondnPath12.g-GEcondnPath1keep.g)))
+
 %% (9) A general eqm path through the demographic transition
 % r_t = 0.05*(1+K_t)^(-0.5), with K_t assets plus last period's bequests, and bequests (1-sj)*aprime.
 % sj is on the ParamPath twice over: in the discount factor and in the bequests.

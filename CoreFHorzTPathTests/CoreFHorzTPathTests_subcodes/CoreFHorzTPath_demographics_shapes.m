@@ -123,6 +123,16 @@ for ff=1:length(fastOLGopts)
 end
 
 
+% (12) the agent dist laid out the slow way (simoptions.fastOLG=0) vs the fast way, inside the path
+transpathoptionsE.fastOLG=1;
+[~,GEcondnPath12F]=TransitionPath_Case1_FHorz(PricePath, ParamPath1, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqnsAE, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsE, simoptions, vfoptions);
+transpathoptionsE.fastOLG=0; % simoptions.fastOLG=0 requires transpathoptions.fastOLG=0
+simoptions12=simoptions;
+simoptions12.fastOLG=0;
+[~,GEcondnPath12S]=TransitionPath_Case1_FHorz(PricePath, ParamPath1, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqnsAE, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsE, simoptions12, vfoptions);
+fprintf('Demographics, z and e: (12) simoptions.fastOLG=0 vs =1, aggregates inside the path with the mewj path, this should be zero: %.3e \n',max(abs(GEcondnPath12S.g-GEcondnPath12F.g)))
+
+
 %% Model with a semi-exogenous state (binary d2 drives it)
 vfoptions=struct();
 simoptions=struct();
@@ -166,6 +176,15 @@ transpathoptions11=transpathoptionsbaseline;
 AgentDistPath11=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial, jequaloneDist, PricePath, ParamPath1, PolicyPath11, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptions11, simoptions);
 AggVarsPath11=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPath11, PolicyPath11, PricePath, ParamPath1, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptions11, simoptions);
 fprintf('Demographics, semiz: (11) aggregates inside the path vs AgentDistOnTransPath+EvalFnOnTransPath_AggVars, with the mewj path, this should be zero: %.3e \n',max(abs(gather(AggVarsPath11.assets.Mean(1:T-1)+10*AggVarsPath11.earnings.Mean(1:T-1))-gather(GEcondnPath11.g))))
+
+% (12) the agent dist laid out the slow way (simoptions.fastOLG=0) vs the fast way, inside the path
+transpathoptionsE.fastOLG=1;
+[~,GEcondnPath12F]=TransitionPath_Case1_FHorz(PricePath, ParamPath1, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqnsAE, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsE, simoptions, vfoptions);
+transpathoptionsE.fastOLG=0; % simoptions.fastOLG=0 requires transpathoptions.fastOLG=0
+simoptions12=simoptions;
+simoptions12.fastOLG=0;
+[~,GEcondnPath12S]=TransitionPath_Case1_FHorz(PricePath, ParamPath1, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqnsAE, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsE, simoptions12, vfoptions);
+fprintf('Demographics, semiz: (12) simoptions.fastOLG=0 vs =1, aggregates inside the path with the mewj path, this should be zero: %.3e \n',max(abs(GEcondnPath12S.g-GEcondnPath12F.g)))
 
 output=struct();
 
