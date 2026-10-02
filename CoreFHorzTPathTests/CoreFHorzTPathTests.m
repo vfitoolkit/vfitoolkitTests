@@ -20,6 +20,7 @@
 % doPart(4): cross-tests 2
 % doPart(5): cross-tests 3
 % doPart(6): _tminus1 and _tplus1 (no figures)
+% doPart(7): population demographics (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -28,7 +29,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -225,6 +226,16 @@ if doPart(6)==1
     % Also a GE path whose condition uses lags, and EvalFnOnTransPath_AggVars with lags. See the header of the subcode.
     output=CoreFHorzTPath_tminus1tplus1(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
 end % doPart(6): _tminus1 and _tplus1
+
+%% ===== doPart(7): population demographics =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): population demographics =====\n')
+    addpath('./CoreFHorzTPath_ReturnFns/Semiz_ReturnFns/') % the semiz model in (10); also added inside doPart(3), but parts are independent
+    %% Age weights (mewj) and survival (sj) that change over the path, and newborns (jequaloneDist) as a path. See the header of the subcode.
+    output=CoreFHorzTPath_demographics(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,transpathoptionsbaseline);
+    %% (10) the age-weight and newborn checks again, on the models whose reshaping branches differ: no z, z and e, semiz
+    output=CoreFHorzTPath_demographics_shapes(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,n_d2_semiz,d2_grid_semiz,Params,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(7): population demographics
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 
