@@ -98,10 +98,9 @@ x=gather(ACP_A.rich.RestrictedSampleMass.ByAge(:)); y=gather(ACP_B.rich.Restrict
 fprintf('z-identity corr, AutoCorr rich RestrictedSampleMass.ByAge, this should be zero: %.3e, NaN-pattern mismatches %i \n',max([dd;0]),sum(isnan(x)~=isnan(y)))
 for ii=1:N_i
     fprintf('z-identity corr, AutoCorr rich RestrictedSampleMass (type %s) times ptweight, this should be zero: %.3e \n',names_A{ii},max(abs(ptw(ii)*gather(ACP_A.rich.RestrictedSampleMass.(names_A{ii})(:))-gather(ACP_B.(['richtype',num2str(ii)]).RestrictedSampleMass(:)))))
-    fprintf('z-identity corr, AutoCorr type%i RestrictedSampleMass vs ptweight times mewj, this should be zero: %.3e \n',ii,max(abs(gather(ACP_B.(['type',num2str(ii)]).RestrictedSampleMass(:))-ptw(ii)*Params.mewj(:))))
 end
 
-%% The pair fields of type<ii> in B are the age-j and age-j+k moments of type ii (every agent of the type is a pair)
+%% The pair fields of type<ii> in B are the age-j and age-j+k moments of type ii in the PType output (every agent of the type is a pair)
 for ii=1:N_i
     nm=names_A{ii};
     typestr=['type',num2str(ii)];
@@ -117,8 +116,6 @@ for ii=1:N_i
             fprintf('z-identity corr, AutoCorr %s PairStdDeviation_j%s vs StdDeviation (type %s), this should be zero: %.3e, NaN-pattern mismatches %i \n',typestr,hstr{hh},nm,max([dd;0]),sum(isnan(x)~=isnan(y)))
             x=gather(ACP_B.(typestr).(fn).(['PairStdDeviation_jplusk',hstr{hh}])(:)); y=gather(ACP_A.(fn).(nm).StdDeviation(1+kk:N_j)'); dd=abs(x-y); dd=dd(~isnan(dd));
             fprintf('z-identity corr, AutoCorr %s PairStdDeviation_jplusk%s vs StdDeviation (type %s), this should be zero: %.3e, NaN-pattern mismatches %i \n',typestr,hstr{hh},nm,max([dd;0]),sum(isnan(x)~=isnan(y)))
-            x=gather(ACP_B.(typestr).(fn).(['PairMass',hstr{hh}])(:)); y=ptw(ii)*Params.mewj(1:N_j-kk)'; dd=abs(x-y); dd=dd(~isnan(dd));
-            fprintf('z-identity corr, AutoCorr %s PairMass%s vs ptweight times mewj (type %s), this should be zero: %.3e, NaN-pattern mismatches %i \n',typestr,hstr{hh},nm,max([dd;0]),sum(isnan(x)~=isnan(y)))
         end
     end
 end

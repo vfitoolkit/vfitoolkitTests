@@ -10,8 +10,9 @@
 % Parts 18-21 (added 2026-09-29) are the PType counterpart of the model-stats checks at the end of CoreFHorzTests
 % (TestFnsToEvaluate): every PType command downstream of StationaryDist on two shock configs, including the three
 % commands added on 2026-09-29 (CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and
-% AutoCorrTransProbs, each _FHorz_PType), the grouped correlation commands via z-identity, and the AutoCorr
-% timehorizons/conditionalrestrictions/PType grouping against an independent brute-force calculation.
+% AutoCorrTransProbs, each _FHorz_PType), the grouped correlation commands via z-identity, and the AutoCorr PType
+% grouping against a by-hand pooling of brute-force joint distributions (the single-type command's brute-force
+% checks are CoreFHorzTests part 12).
 %
 % The ShockTests (part 7) use all 8 (z,e,semiz) combinations across 8 PTypes and must be set up
 % via Names_i + per-type structures, because the n_z, z_grid, pi_z and vfoptions pieces differ
@@ -44,7 +45,7 @@
 % doPart(18): every stats command, with d, z and e (the PType counterpart of TestFnsToEvaluate config 1)
 % doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
 % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
-% doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation
+% doPart(21): AutoCorr PType grouping (timehorizons, conditional restrictions) vs a by-hand pooling of brute-force joint distributions
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
@@ -221,18 +222,14 @@ if doPart(20)==1
     output=CoreFHorzPType_ZidentityCorr(n_a,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i);
 end % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
 
-%% ===== doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation =====
+%% ===== doPart(21): AutoCorr PType grouping vs a by-hand pooling of brute-force joint distributions =====
 if doPart(21)==1
-    fprintf('\n===== doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation =====\n')
-    %% 21. AutoCorrTransProbs_FHorz (horizon 1 unchanged vs the pre-change command; horizons 2,3,5 and restrictions vs dense
-    % transition kernels built here; lowmemory; gridinterplayer; a cohort started at age 10) and its PType wrapper (per type vs
-    % solo, grouped vs by-hand pooling with different age weights per type, a zero-weight type)
+    fprintf('\n===== doPart(21): AutoCorr PType grouping vs a by-hand pooling of brute-force joint distributions =====\n')
+    %% 21. AutoCorrTransProbs_FHorz_PType: per type vs solo, grouped (unrestricted and restricted, horizons 1,2,3) vs a by-hand pooling
+    % of dense-kernel joint distributions with different age weights per type, a zero-weight type (the single-type command's own
+    % brute-force checks are CoreFHorzTests part 12)
     output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,z_grid,pi_z,vfoptionsbaseline.e_grid,vfoptionsbaseline.pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
-end % doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation
-% doPart(18): every stats command, with d, z and e (the PType counterpart of TestFnsToEvaluate config 1)
-% doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
-% doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
-% doPart(21): AutoCorr timehorizons, conditional restrictions and PType grouping vs a brute-force calculation
+end % doPart(21): AutoCorr PType grouping vs a by-hand pooling of brute-force joint distributions
 
 % All looks good!
 
