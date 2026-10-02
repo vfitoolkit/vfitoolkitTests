@@ -204,7 +204,7 @@ end % doPart(3): figs 9-16
 %% ===== doPart(4): cross-tests 2 =====
 if doPart(4)==1
     fprintf('\n===== doPart(4): cross-tests 2 =====\n')
-    %% Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
+    % Now some cross-tests, things like setting up a markov that is actually just an iid, make sure we get same result as just doing iid
     output=CoreFHorzTPath_CrossTests_nod1_semiz(T,PricePath,ParamPath,n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 
     output=CoreFHorzTPath_CrossTests_d1_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
@@ -213,16 +213,19 @@ end % doPart(4): cross-tests 2
 %% ===== doPart(5): cross-tests 3 =====
 if doPart(5)==1
     fprintf('\n===== doPart(5): cross-tests 3 =====\n')
-    %% Now some further cross-tests, using a semi-exo that is really just a markov
+    % Now some further cross-tests, using a semi-exo that is really just a markov
     output=CoreFHorzTPath_CrossTests2_nod1_semiz(T,PricePath,ParamPath,n_d2_semiz,n_a,n_a_big,n_z,N_j,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 
     output=CoreFHorzTPath_CrossTests2_d1_semiz(T,PricePath,ParamPath,n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(5): cross-tests 3
 
+
+
+
 %% ===== doPart(6): _tminus1 and _tplus1 =====
 if doPart(6)==1
     fprintf('\n===== doPart(6): _tminus1 and _tplus1 =====\n')
-    %% _tminus1 and _tplus1 in GeneralEqmEqns, FnsToEvaluate and intermediateEqns, each against the same shift done by hand
+    % _tminus1 and _tplus1 in GeneralEqmEqns, FnsToEvaluate and intermediateEqns, each against the same shift done by hand
     % Also a GE path whose condition uses lags, and EvalFnOnTransPath_AggVars with lags. See the header of the subcode.
     output=CoreFHorzTPath_tminus1tplus1(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
 end % doPart(6): _tminus1 and _tplus1
@@ -231,9 +234,9 @@ end % doPart(6): _tminus1 and _tplus1
 if doPart(7)==1
     fprintf('\n===== doPart(7): population demographics =====\n')
     addpath('./CoreFHorzTPath_ReturnFns/Semiz_ReturnFns/') % the semiz model in (10); also added inside doPart(3), but parts are independent
-    %% Age weights (mewj) and survival (sj) that change over the path, and newborns (jequaloneDist) as a path. See the header of the subcode.
+    % Age weights (mewj) and survival (sj) that change over the path, and newborns (jequaloneDist) as a path. See the header of the subcode.
     output=CoreFHorzTPath_demographics(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,transpathoptionsbaseline);
-    %% (10) the age-weight and newborn checks again, on the models whose reshaping branches differ: no z, z and e, semiz
+    % (10) the age-weight and newborn checks again, on the models whose reshaping branches differ: no z, z and e, semiz
     output=CoreFHorzTPath_demographics_shapes(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,n_d2_semiz,d2_grid_semiz,Params,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(7): population demographics
 
