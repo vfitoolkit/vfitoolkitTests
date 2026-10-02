@@ -258,6 +258,29 @@ PricePath3B=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final_big, Age
 
 fprintf('One iter of TPath, with/without GI, this should be close to zero: %.3e \n',max(abs(PricePath3A.r-PricePath3B.r)))
 
+
+%% intermediateEqns on the transition path
+% The same general eqm condition written two ways: directly, and with part of it computed by an
+% intermediate eqn first. The path evaluates intermediateEqns after the AggVars are written into
+% Parameters and before the GeneralEqmEqns, writing each result back as a named parameter, so the two
+% are the same calculation and must give the same price path. The condition is a real one (it moves r,
+% unlike the dummy above), and 10 Anderson iterations are run, so the intermediate eqn has to reach the
+% general eqm eqn correctly at every period of every iteration for the paths to agree.
+transpathoptionsIE=transpathoptionsbaseline;
+transpathoptionsIE.maxiter=10;
+transpathoptionsIE.GEnewprice=2;
+transpathoptionsIE.GEnewprice2.howtoupdate={'rmarket','r',0,0.1};
+
+GeneralEqmEqnsIE1.rmarket=@(r,assets) r-0.05*(1+assets)^(-0.5);
+PricePathIE1=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqnsIE1, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsIE, simoptions, vfoptions);
+
+transpathoptionsIE.intermediateEqns.mpk=@(assets) 0.05*(1+assets)^(-0.5);
+GeneralEqmEqnsIE2.rmarket=@(r,mpk) r-mpk;
+PricePathIE2=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqnsIE2, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsIE, simoptions, vfoptions);
+
+fprintf('intermediateEqns: how far the path moved r in 10 Anderson iterations (must not be zero, or the check below is empty): %.3e \n',max(abs(PricePathIE1.r-PricePath.r)))
+fprintf('intermediateEqns: GE eqn written directly vs through an intermediate eqn, this should be zero: %.3e \n',max(abs(PricePathIE1.r-PricePathIE2.r)))
+
 %%
 output=struct(); % Not currently used for anything. Maybe will do so later.
 
