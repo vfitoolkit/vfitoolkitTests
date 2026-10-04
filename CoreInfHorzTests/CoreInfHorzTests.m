@@ -7,7 +7,9 @@
 % NOT tested here:
 %   - divide-and-conquer: not usable for InfHorz (too slow); it is tested in
 %     the InfHorz-TPath test bank instead
-%   - e/semiz: InfHorz core is just with/without d and with/without z here
+%   - e/semiz: InfHorz core is just with/without d and with/without z here (the iid e would appear only in
+%     doPart(6), the AutoCorrTransProbs brute force, whose e-only and z-and-e models are commented out until
+%     ValueFnIter_InfHorz supports e; see the TO RESTORE note in CoreInfHorz_AutoCorrBruteForce)
 
 
 %% Which parts to run
@@ -20,6 +22,7 @@
 % doPart(3): two endogenous states (figs 17-18)
 % doPart(4): two-endo cross-tests: second state ignored
 % doPart(5): two-endo cross-tests: first state ignored
+% doPart(6): AutoCorrTransProbs brute force (z-only; e-only and z-and-e commented out pending InfHorz e; horizons and TransitionProbs vs dense kernels; no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -28,7 +31,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1];
+doPart=[1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -145,6 +148,17 @@ if doPart(5)==1
 
     output=CoreInfHorz_CrossTests_d_nosemiz_1Aignored(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(5): two-endo cross-tests: first state ignored
+
+%% ===== doPart(6): AutoCorrTransProbs brute force =====
+if doPart(6)==1
+    fprintf('\n===== doPart(6): AutoCorrTransProbs brute force =====\n')
+    %% EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz (which pushes the measures with the Tan two-step and never forms the
+    % transition matrix) against dense per-model kernels built here from Policy and pi_z/pi_e: Mean, StdDeviation,
+    % AutoCovariance/AutoCorrelation at horizons 1,2,3,5 (the tperiodsK fields) and TransitionProbs (unique values and
+    % quintiles) at the same horizons, on a z-only model (e-only and z-and-e are commented out in the subcode until
+    % ValueFnIter_InfHorz supports e), with and without the grid interpolation layer
+    output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames);
+end % doPart(6): AutoCorrTransProbs brute force
 
 %% Done!
 

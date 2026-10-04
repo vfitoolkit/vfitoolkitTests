@@ -22,7 +22,7 @@
 % doPart(7):  with2A nosemiz cross-tests
 % doPart(8):  with2A semiz (figs 25-32)
 % doPart(9):  with2A semiz cross-tests
-% doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs, plus the AutoCorr brute force)
+% doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs, plus the AutoCorr brute forces without and with semiz)
 % doPart(11): StatsFromWeightedGrid unit tests (hand-built distributions, plus GPU runtimes)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so Fig 20
@@ -428,7 +428,7 @@ if doPart(10)==1
     fprintf('\n===== doPart(10): TestFnsToEvaluate =====\n')
     %% FnsToEvaluate-focused tests (covers every FHorz FnsToEvaluate consumer + cross-validations + analytical-truth tests)
     TestFnsToEvaluate
-end % doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs, plus the AutoCorr brute force)
+end % doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs, plus the AutoCorr brute forces without and with semiz)
 
 %% ===== doPart(11): StatsFromWeightedGrid unit tests =====
 if doPart(11)==1

@@ -415,10 +415,11 @@ fprintf('AgentDist along TPath with/without grid interp, this should be close to
 % cannot exceed one in absolute value. Both are written into entries 1:T-1 (entry tt-1 pairs
 % period tt with period tt-1) with the last entry left as zero, which is why the checks stop at T-1.
 %
-% TransitionProbs is asked for on assets and nextassets. It is meant to be a transition matrix
-% between consecutive periods' values, so each row should sum to one. Run on the small grid: the
-% command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and TransitionProbs is
-% (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
+% TransitionProbs is asked for on assets. It is meant to be a transition matrix between consecutive
+% periods' values, so each row should sum to one. Run on the small grid: TransitionProbs is (number
+% of distinct values)^2-by-(T-1), which grows fast in n_a, and so does the dense kernel the check
+% below builds (the command itself pushes the measures with the Tan two-step and never forms the
+% transition matrix, which is why that check exists: it is the command's only oracle here).
 %
 % Guarded: the command has no branch for N_z=0, and no e support at all (it defaults simoptions.n_e
 % but never reads it), so the noz and e subcodes would either error or silently return the wrong
@@ -431,8 +432,8 @@ if prod(n_z)>0 && ~isfield(simoptions,'n_e')
     % TransitionProbs at a fixed size from the tt=2 slice, so it errors when that count moves.
     simoptionsAC.transprobs={'assets'};
     % PolicyPath2 was cleared further up, so re-solve the plain path here. Deliberately the small
-    % grid, not n_a_big: the command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and
-    % TransitionProbs is (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
+    % grid, not n_a_big: TransitionProbs is (number of distinct values)^2-by-(T-1) and the dense
+    % kernel check below is (N_a*N_z)-by-(N_a*N_z) per period, both of which grow fast in n_a.
     [~,PolicyPathAC]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
     AgentDistPathAC=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathAC, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptionsAC);
     AggVarsPathAC=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, simoptionsAC);
@@ -466,7 +467,54 @@ if prod(n_z)>0 && ~isfield(simoptions,'n_e')
             fprintf('AutoCorrTransProbs TransitionProbs %s: not returned, the distinct values are not the same in consecutive periods \n',fnname{1})
         end
     end
+
+    % Dense-kernel check of the push (the command never forms the transition matrix, so this is its only oracle):
+    % T_lag(s,s')=1{a'=aprime_{t-1}(s)} pi_z(z,z') is built by loops from PolicyPathAC(:,:,:,tt-1), and
+    % J=dist_{t-1}.*T_lag is the joint distribution of (state at t-1, state at t). AutoCovariance(tt-1) is then the sum
+    % of J.*((x-mu_{t-1})(x-mu_t)'), and TransitionProbs(:,:,tt-1) is J summed over the value bins divided by the origin
+    % bin's mass (NaN where the origin bin has no mass, as the command returns). Done for assets and zval, whose values
+    % do not change along the path (so the bins are the same every period, which the command needs to return
+    % TransitionProbs at all). State s=(a,z) in column-major order, d is the first row of the policy.
+    N_sAC=prod(n_a)*prod(n_z);
+    PolicyPathAC_cpu=reshape(gather(PolicyPathAC),[size(PolicyPathAC,1),prod(n_a),prod(n_z),T]);
+    AgentDistPathAC_cpu=reshape(gather(AgentDistPathAC),[N_sAC,T]);
+    pi_z_cpu=gather(pi_z);
+    xa=gpuArray(repmat(gather(a_grid(:)),prod(n_z),1)); % assets
+    xz=gpuArray(repelem(gather(z_grid(:)),prod(n_a),1)); % zval
+    [~,~,idxa]=unique(gather(xa));
+    Sa=gpuArray(full(sparse(1:N_sAC,idxa,1,N_sAC,max(idxa)))); % bin indicator for assets
+    dev_cov_a=0; dev_cov_z=0; dev_tp=0; nanmismatch=0;
+    for tt=2:T
+        Tlag=zeros(N_sAC,N_sAC);
+        for zz=1:prod(n_z)
+            rows=(1:prod(n_a))'+prod(n_a)*(zz-1);
+            ap=reshape(PolicyPathAC_cpu(length(n_d)+1,:,zz,tt-1),[prod(n_a),1]); % the aprime index
+            for zz2=1:prod(n_z)
+                cols=ap+prod(n_a)*(zz2-1);
+                Tlag(rows+(cols-1)*N_sAC)=Tlag(rows+(cols-1)*N_sAC)+pi_z_cpu(zz,zz2);
+            end
+        end
+        Tlag=gpuArray(Tlag);
+        dlag=gpuArray(AgentDistPathAC_cpu(:,tt-1)); dnow=gpuArray(AgentDistPathAC_cpu(:,tt));
+        J=dlag.*Tlag;
+        mua_lag=sum(dlag.*xa); mua=sum(dnow.*xa);
+        muz_lag=sum(dlag.*xz); muz=sum(dnow.*xz);
+        dev_cov_a=max(dev_cov_a,abs(gather(CorrTransProbsPathAC.assets.AutoCovariance(tt-1))-gather(sum(sum(J.*((xa-mua_lag)*(xa-mua)'))))));
+        dev_cov_z=max(dev_cov_z,abs(gather(CorrTransProbsPathAC.zval.AutoCovariance(tt-1))-gather(sum(sum(J.*((xz-muz_lag)*(xz-muz)'))))));
+        if isfield(CorrTransProbsPathAC.assets,'TransitionProbs')
+            P_bf=gather((Sa'*J*Sa)./(Sa'*dlag));
+            P=gather(CorrTransProbsPathAC.assets.TransitionProbs(:,:,tt-1));
+            dd=abs(P-P_bf); dd=dd(~isnan(dd));
+            dev_tp=max(dev_tp,max([dd(:);0])); nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(P_bf(:)));
+        end
+    end
+    fprintf('AutoCorrTransProbs along TPath, assets AutoCovariance vs dense kernel (max over periods), this should be zero: %.3e \n',dev_cov_a)
+    fprintf('AutoCorrTransProbs along TPath, zval AutoCovariance vs dense kernel (max over periods), this should be zero: %.3e \n',dev_cov_z)
+    if isfield(CorrTransProbsPathAC.assets,'TransitionProbs')
+        fprintf('AutoCorrTransProbs along TPath, assets TransitionProbs vs binned dense kernel (max over periods), this should be zero: %.3e, NaN-pattern mismatches %i \n',dev_tp,nanmismatch)
+    end
     clear simoptionsAC PolicyPathAC AgentDistPathAC AggVarsPathAC AllStatsPathAC CorrTransProbsPathAC TPac sdthis sdlag dev
+    clear N_sAC PolicyPathAC_cpu AgentDistPathAC_cpu pi_z_cpu xa xz idxa Sa Tlag dlag dnow J P_bf P dd dev_cov_a dev_cov_z dev_tp nanmismatch
 else
     fprintf('AutoCorrTransProbs along TPath: skipped, EvalFnOnTransPath_AutoCorrTransProbs_InfHorz has no N_z=0 branch and no e support \n')
 end

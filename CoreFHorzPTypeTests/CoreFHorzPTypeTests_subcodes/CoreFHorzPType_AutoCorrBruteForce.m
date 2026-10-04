@@ -1,6 +1,7 @@
 function output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,n_e,N_j,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames)
 % Test: EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType (added 2026-09-29) against a by-hand pooling of brute-force
-% joint distributions. (The single-type command is tested against the same brute force in CoreFHorzTests part 12.)
+% joint distributions. (The single-type command is tested against the same brute force in CoreFHorzTests part 10,
+% TestFnsToEvaluate configs 4 and 5.)
 %
 % Brute force: for each type and age jj the one-period transition kernel T_jj (N_states x N_states, dense) is built
 % by loops from the Policy indexes and pi_z/pi_e, the k-period kernel is the product T_j0*...*T_{j0+k-1}, and the
@@ -14,7 +15,10 @@ function output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,n_e,N_j,a_grid,z_grid,
 %   grouped Mean/StdDeviation (unrestricted and restricted) and grouped AutoCovariance/AutoCorrelation and the pair
 %   fields at horizons 1,2,3 equal the by-hand pooling; RestrictedSampleMass.ByAge/.Total by hand;
 %   a type of zero weight leaves the grouped output equal to the other type alone;
-%   groupptypesforstats=0 drops the grouped fields.
+%   groupptypesforstats=0 drops the grouped fields;
+%   TransitionProbs (assets, requested through simoptions.transprobs, reported per type only) equal the solo command
+%   and the binned dense kernel of that type (rows summing to one where the origin bin has mass), with their
+%   TransitionValues_j/_jplus1 labels and TransitionMass_j.
 % Zero checks are printed as %.3e; NaN is compared as a pattern (count of entries NaN in one but not the other).
 
 fprintf('\n========== CoreFHorzPType_AutoCorrBruteForce ==========\n')
@@ -68,6 +72,7 @@ hstr_PT={'','_k2','_k3'};
 simoptions_PT=simoptions;
 simoptions_PT.timehorizons=timehorizons_PT;
 simoptions_PT.conditionalrestrictions=Restrictions;
+simoptions_PT.transprobs={'assets'};
 [~,Policy_PT]=ValueFnIter_Case1_FHorz_PType(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn_PT,Params_PT,DiscountFactorParamNames,vfoptions);
 StationaryDist_PT=StationaryDist_Case1_FHorz_PType(jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,Policy_PT,n_d,n_a,n_z,N_j,Names_i,pi_z,Params_PT,simoptions);
 ACP_PT=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist_PT,Policy_PT,FnsToEvaluate_PT,Params_PT,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_PT);
@@ -122,10 +127,30 @@ for ii=1:N_i
         fn=FnNames{ff};
         statnames=fieldnames(ACP_solo.(nm).(fn));
         for ss=1:length(statnames)
-            x=gather(ACP_PT.(fn).(nm).(statnames{ss})(:)); y=gather(ACP_solo.(nm).(fn).(statnames{ss})(:)); dd=abs(x-y); dd=dd(~isnan(dd));
-            fprintf('AutoCorr brute force B, %s %s (type %s) PType vs solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,statnames{ss},nm,max([dd;0]),sum(isnan(x)~=isnan(y)))
-            x=gather(ACP_PT_ng.(fn).(nm).(statnames{ss})(:)); dd=abs(x-y); dd=dd(~isnan(dd));
-            fprintf('AutoCorr brute force B, %s %s (type %s) groupptypesforstats=0 vs solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,statnames{ss},nm,max([dd;0]),sum(isnan(x)~=isnan(y)))
+            if iscell(ACP_solo.(nm).(fn).(statnames{ss})) % TransitionProbs and its labels/masses: cells over ages, compared entry by entry
+                yc=ACP_solo.(nm).(fn).(statnames{ss});
+                for tt=1:2
+                    if tt==1
+                        xc=ACP_PT.(fn).(nm).(statnames{ss}); lbl='PType vs solo';
+                    else
+                        xc=ACP_PT_ng.(fn).(nm).(statnames{ss}); lbl='groupptypesforstats=0 vs solo';
+                    end
+                    dcell=0; nbad=0;
+                    for cc=1:numel(yc)
+                        if numel(xc{cc})~=numel(yc{cc})
+                            nbad=nbad+1;
+                        elseif ~isempty(yc{cc})
+                            dcell=max(dcell,max(abs(gather(xc{cc}(:))-gather(yc{cc}(:)))));
+                        end
+                    end
+                    fprintf('AutoCorr brute force B, %s %s (type %s) %s, this should be zero: %.3e, wrongly sized cells %i \n',fn,statnames{ss},nm,lbl,dcell,nbad)
+                end
+            else
+                x=gather(ACP_PT.(fn).(nm).(statnames{ss})(:)); y=gather(ACP_solo.(nm).(fn).(statnames{ss})(:)); dd=abs(x-y); dd=dd(~isnan(dd));
+                fprintf('AutoCorr brute force B, %s %s (type %s) PType vs solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,statnames{ss},nm,max([dd;0]),sum(isnan(x)~=isnan(y)))
+                x=gather(ACP_PT_ng.(fn).(nm).(statnames{ss})(:)); dd=abs(x-y); dd=dd(~isnan(dd));
+                fprintf('AutoCorr brute force B, %s %s (type %s) groupptypesforstats=0 vs solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,statnames{ss},nm,max([dd;0]),sum(isnan(x)~=isnan(y)))
+            end
         end
         for rr=1:length(RestNames)
             rn=RestNames{rr};
@@ -143,6 +168,49 @@ for ii=1:N_i
 end
 for ff=1:length(FnNames)
     fprintf('AutoCorr brute force B, %s groupptypesforstats=0 has no grouped Mean, this should be zero: %i \n',FnNames{ff},isfield(ACP_PT_ng.(FnNames{ff}),'Mean'))
+end
+
+% Per-type TransitionProbs (assets) vs the binned dense kernel of that type: row b of TransitionProbs{jj} is the age-jj
+% joint distribution dist_jj(s)*T_jj(s,s') summed over the states in origin bin b and in destination bin b', divided by
+% the origin bin's mass (the bins are the unique asset values at each age, which TransitionValues_j/_jplus1 label, and
+% TransitionMass_j is the origin bins' within-age mass). The command puts a zero row where an origin bin has no mass,
+% and normalises the row of every bin with positive mass (however small; GI leaves bins with mass below eps).
+ffa=find(strcmp(FnNames,'assets'));
+for ii=1:N_i
+    nm=Names_i{ii};
+    Dist_u_ii=gpuArray(reshape(gather(Dist_solo.(nm)),[N_s,N_j]));
+    dtp=0; drow=0; dlab=0; dmass=0; nanmm=0;
+    for jj=1:N_j-1
+        massj=gather(sum(Dist_u_ii(:,jj)));
+        if massj==0
+            continue
+        end
+        x=gather(Vals_solo.(nm){ffa}(:,jj)); y=gather(Vals_solo.(nm){ffa}(:,jj+1));
+        [vx,~,ix]=unique(x); [vy,~,iy]=unique(y);
+        Sx=gpuArray(full(sparse(1:N_s,ix,1,N_s,length(vx)))); Sy=gpuArray(full(sparse(1:N_s,iy,1,N_s,length(vy))));
+        distj=Dist_u_ii(:,jj)/massj;
+        massbin=Sx'*distj;
+        massbin_safe=massbin; massbin_safe(massbin==0)=1; % the command puts a zero row where the origin bin has no mass, and normalises every bin with positive mass
+        P_bf=gather((Sx'*(distj.*T_solo.(nm){jj})*Sy)./massbin_safe);
+        P=gather(ACP_PT.assets.(nm).TransitionProbs{jj});
+        if ~isequal(size(P),size(P_bf))
+            dtp=max(dtp,1);
+        else
+            dd=abs(P-P_bf); dd=dd(~isnan(dd)); dtp=max(dtp,max([dd(:);0])); nanmm=nanmm+sum(isnan(P(:))~=isnan(P_bf(:)));
+            rs=sum(P,2); drow=max(drow,max(abs(rs(gather(massbin)>0)-1)));
+        end
+        lx=gather(ACP_PT.assets.(nm).TransitionValues_j{jj}(:)); ly=gather(ACP_PT.assets.(nm).TransitionValues_jplus1{jj}(:)); lm=gather(ACP_PT.assets.(nm).TransitionMass_j{jj}(:));
+        if numel(lx)~=numel(vx) || numel(ly)~=numel(vy) || numel(lm)~=numel(vx)
+            dlab=max(dlab,1); dmass=max(dmass,1);
+        else
+            dlab=max([dlab,max(abs(lx-vx(:))),max(abs(ly-vy(:)))]);
+            dmass=max(dmass,max(abs(lm-gather(massbin(:)))));
+        end
+    end
+    fprintf('AutoCorr brute force B, assets TransitionProbs (type %s) PType vs binned dense kernel (all ages), this should be zero: %.3e, NaN-pattern mismatches %i \n',nm,dtp,nanmm)
+    fprintf('AutoCorr brute force B, assets TransitionProbs (type %s) row sums minus one (bins with mass, all ages), this should be zero: %.3e \n',nm,drow)
+    fprintf('AutoCorr brute force B, assets TransitionValues_j and _jplus1 (type %s) vs the unique values (all ages), this should be zero: %.3e \n',nm,dlab)
+    fprintf('AutoCorr brute force B, assets TransitionMass_j (type %s) vs the origin bin masses (all ages), this should be zero: %.3e \n',nm,dmass)
 end
 
 % Grouped vs by-hand pooling of the two types' brute-force joint distributions

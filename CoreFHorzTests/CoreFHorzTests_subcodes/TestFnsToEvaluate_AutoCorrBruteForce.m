@@ -1,24 +1,33 @@
 function output=TestFnsToEvaluate_AutoCorrBruteForce(n_a,n_z,n_e,N_j,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames)
 % Fourth config of TestFnsToEvaluate: no d, with z, with e. EvalFnOnAgentDist_AutoCorrTransProbs_FHorz with
-% simoptions.timehorizons and simoptions.conditionalrestrictions (added 2026-09-29) against a brute-force calculation
-% written here independently of the toolkit's transition-matrix code. (The PType wrapper is tested the same way in
-% CoreFHorzPTypeTests part 21.) Every check also feeds fail_count, as in the other TestFnsToEvaluate subcodes.
+% simoptions.timehorizons and simoptions.conditionalrestrictions (added 2026-09-29) and simoptions.transprobs against a
+% brute-force calculation written here independently of the toolkit's code (the command pushes measures with the Tan
+% two-step and never forms the transition matrix; the brute force forms it). (The PType wrapper is tested the same way
+% in CoreFHorzPTypeTests part 21, and the semi-exogenous-state version of this config is config 5.) Every check also
+% feeds fail_count, as in the other TestFnsToEvaluate subcodes.
 %
 % Brute force: for each age jj the one-period transition kernel T_jj (N_states x N_states, dense) is built by loops
 % from the Policy indexes and pi_z/pi_e (with the two-point grid-interpolation weights when gridinterplayer=1), the
 % k-period kernel is the product T_j0*...*T_{j0+k-1}, and the joint distribution of (state at j0, state at j0+k) is
 % dist_j0(s)*Pk(s,s'). Every moment is then a plain sum over that joint distribution: means, std devs and the
 % covariance of x_j0 and x_{j0+k}; under a restriction the joint distribution is masked to the pairs that satisfy
-% it at both ages and renormalised (the pair population), which is the definition the command documents.
+% it at both ages and renormalised (the pair population), which is the definition the command documents. The
+% transition probabilities between value bins are the one-period joint distribution summed over the origin and
+% destination bins and divided by the origin bin's mass.
 %
-% Model: no d, markov z, iid e (state (a,z,e), N_states=n_a*n_z*n_e). Checks, all exact identities:
+% Model: no d, markov z, iid e (state (a,z,e), N_states=n_a*n_z*n_e). Checks, all exact identities, done without and
+% with the grid interpolation layer:
 %  A1. horizons 1,2,3,5, unrestricted and restricted (rich: a>0.5; highz: z>1), vs the brute force: AutoCovariance,
 %      AutoCorrelation and, restricted, PairMass, PairMean_j, PairMean_jplusk, PairStdDeviation_j,
 %      PairStdDeviation_jplusk, Mean, StdDeviation (PairMass is zero when nobody at the start age satisfies the
 %      restriction, NaN only when the age has no mass).
-%  A2. lowmemory=1 equals lowmemory=0 (every field).
-%  A3. gridinterplayer=1: the same brute-force checks with the two-point kernel.
-%  A4. a cohort distribution started at age 10 (simoptions.jequaloneDistAge=10, from the age-10 slice of the full
+%  A2. TransitionProbs between unique values (assets, with up to n_a bins so the command's blocks of 64 origin bins
+%      are exercised; and evar) vs the binned brute force at every age, rows summing to one where the origin bin has
+%      mass, TransitionValues_j/_jplus1 equal to the unique values and TransitionMass_j to the origin bin masses; evar
+%      is the iid e, so every row of its TransitionProbs is pi_e; and TransitionProbs between quintiles
+%      (simoptions.transprobquantiles=5, assets) vs the brute force with the same quantile definition (bin q is the
+%      values up to the first sorted value whose within-age cumulative mass exceeds q/5).
+%  A3. a cohort distribution started at age 10 (simoptions.jequaloneDistAge=10, from the age-10 slice of the full
 %      run): NaN at every age/pair before 10, equal to the full run from 10 on, no error.
 % Zero checks are printed as %.3e; NaN is compared as a pattern (count of entries NaN in one but not the other).
 
@@ -30,6 +39,7 @@ TOL_EXACT=1e-10;
 n_d=0;
 d_grid=[];
 N_s=n_a*n_z*n_e;
+nq=5; % quintiles for the quantile TransitionProbs
 
 vfoptions=struct();
 vfoptions.n_e=n_e; vfoptions.e_grid=e_grid; vfoptions.pi_e=pi_e;
@@ -68,7 +78,7 @@ simoptions_gi=simoptions; simoptions_gi.gridinterplayer=1; simoptions_gi.ngridin
 [~,Policy_gi]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions_gi);
 StationaryDist_gi=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy_gi,n_d,n_a,n_z,N_j,pi_z,Params,simoptions_gi);
 
-%% A1-A3. Brute force, without and with the grid interpolation layer
+%% A1-A2. Brute force, without and with the grid interpolation layer
 for cfg=1:2
     if cfg==1
         cfgstr='no GI';
@@ -79,9 +89,12 @@ for cfg=1:2
     end
     simoptions_c.timehorizons=timehorizons;
     simoptions_c.conditionalrestrictions=Restrictions;
+    simoptions_c.transprobs={'assets','evar'};
     ACP=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(Dist_c,Policy_c,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions_c);
-    simoptions_c1=simoptions_c; simoptions_c1.lowmemory=1;
-    ACP1=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(Dist_c,Policy_c,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions_c1);
+    simoptions_q=simoptions_c;
+    simoptions_q.transprobs={'assets'};
+    simoptions_q.transprobquantiles=nq;
+    ACP_q=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(Dist_c,Policy_c,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions_q);
 
     % Values of every function and restriction on the grid, (N_s, N_j)
     ValuesOnGrid=EvalFnOnAgentDist_ValuesOnGrid_FHorz_Case1(Policy_c,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_c);
@@ -222,36 +235,95 @@ for cfg=1:2
             end
         end
     end
-
-    % A3. lowmemory=1 vs lowmemory=0, every field
-    for ff=1:length(FnNames)
-        fn=FnNames{ff};
-        statnames=fieldnames(ACP.(fn));
-        for ss=1:length(statnames)
-            x=gather(ACP1.(fn).(statnames{ss})(:)); y=gather(ACP.(fn).(statnames{ss})(:)); dd=abs(x-y); dd=dd(~isnan(dd));
-            fprintf('AutoCorr brute force A2 (%s), %s %s lowmemory=1 vs =0, this should be zero: %.3e, NaN-pattern mismatches %i \n',cfgstr,fn,statnames{ss},max([dd;0]),sum(isnan(x)~=isnan(y))); fail_count=fail_count+(max([dd;0])>TOL_EXACT)+(sum(isnan(x)~=isnan(y))>0);
-        end
-        for rr=1:nR
-            rn=RestNames{rr};
-            statnames=fieldnames(ACP.(rn).(fn));
-            for ss=1:length(statnames)
-                x=gather(ACP1.(rn).(fn).(statnames{ss})(:)); y=gather(ACP.(rn).(fn).(statnames{ss})(:)); dd=abs(x-y); dd=dd(~isnan(dd));
-                fprintf('AutoCorr brute force A2 (%s), %s %s %s lowmemory=1 vs =0, this should be zero: %.3e, NaN-pattern mismatches %i \n',cfgstr,rn,fn,statnames{ss},max([dd;0]),sum(isnan(x)~=isnan(y))); fail_count=fail_count+(max([dd;0])>TOL_EXACT)+(sum(isnan(x)~=isnan(y))>0);
-            end
-        end
-    end
     for rr=1:nR
         rn=RestNames{rr};
-        fprintf('AutoCorr brute force A2 (%s), %s RestrictedSampleMass lowmemory=1 vs =0, this should be zero: %.3e \n',cfgstr,rn,max(abs(gather(ACP1.(rn).RestrictedSampleMass(:))-gather(ACP.(rn).RestrictedSampleMass(:))))); fail_count=fail_count+(max(abs(gather(ACP1.(rn).RestrictedSampleMass(:))-gather(ACP.(rn).RestrictedSampleMass(:))))>TOL_EXACT);
         fprintf('AutoCorr brute force A1 (%s), %s RestrictedSampleMass vs brute force, this should be zero: %.3e \n',cfgstr,rn,max(abs(gather(ACP.(rn).RestrictedSampleMass(:))-gather(sum(Dist_u.*Rvals{rr},1))'))); fail_count=fail_count+(max(abs(gather(ACP.(rn).RestrictedSampleMass(:))-gather(sum(Dist_u.*Rvals{rr},1))'))>TOL_EXACT);
     end
 
-    if cfg==1
-        ACP_full=ACP; % kept for A4
+    % A2. TransitionProbs between unique values (assets, evar), and between quintiles (assets), vs the binned one-period joint distribution
+    for fn={'assets','evar'}
+        ff=find(strcmp(FnNames,fn{1}));
+        dtp=0; drow=0; dlab=0; dmass=0; nanmm=0; dpie=0;
+        fprintf('AutoCorr brute force A2 (%s), %s TransitionProbs cell length %i (expected %i) \n',cfgstr,fn{1},length(ACP.(fn{1}).TransitionProbs),N_j-1); fail_count=fail_count+(length(ACP.(fn{1}).TransitionProbs)~=N_j-1);
+        for jj=1:N_j-1
+            if agemass(jj)==0
+                continue
+            end
+            x=gather(Vals{ff}(:,jj)); y=gather(Vals{ff}(:,jj+1));
+            [vx,~,ix]=unique(x); [vy,~,iy]=unique(y);
+            Sx=gpuArray(full(sparse(1:N_s,ix,1,N_s,length(vx)))); Sy=gpuArray(full(sparse(1:N_s,iy,1,N_s,length(vy))));
+            distj=Dist_u(:,jj)/agemass(jj);
+            massbin=Sx'*distj;
+            massbin_safe=massbin; massbin_safe(massbin==0)=1; % the command puts a zero row where the origin bin has no mass, and normalises every bin with positive mass
+            P_bf=gather((Sx'*(distj.*T{jj})*Sy)./massbin_safe);
+            P=gather(ACP.(fn{1}).TransitionProbs{jj});
+            if ~isequal(size(P),size(P_bf))
+                dtp=max(dtp,1);
+            else
+                dd=abs(P-P_bf); dd=dd(~isnan(dd)); dtp=max(dtp,max([dd(:);0])); nanmm=nanmm+sum(isnan(P(:))~=isnan(P_bf(:)));
+                rs=sum(P,2); drow=max(drow,max(abs(rs(gather(massbin)>0)-1)));
+                if strcmp(fn{1},'evar') % iid: every row with mass is pi_e
+                    dpie=max(dpie,max(max(abs(P(gather(massbin)>0,:)-pi_e_cpu'))));
+                end
+            end
+            lx=gather(ACP.(fn{1}).TransitionValues_j{jj}(:)); ly=gather(ACP.(fn{1}).TransitionValues_jplus1{jj}(:)); lm=gather(ACP.(fn{1}).TransitionMass_j{jj}(:));
+            if numel(lx)~=numel(vx) || numel(ly)~=numel(vy) || numel(lm)~=numel(vx)
+                dlab=max(dlab,1); dmass=max(dmass,1);
+            else
+                dlab=max([dlab,max(abs(lx-vx(:))),max(abs(ly-vy(:)))]);
+                dmass=max(dmass,max(abs(lm-gather(massbin(:)))));
+            end
+        end
+        fprintf('AutoCorr brute force A2 (%s), %s TransitionProbs vs binned brute force (all ages), this should be zero: %.3e, NaN-pattern mismatches %i \n',cfgstr,fn{1},dtp,nanmm); fail_count=fail_count+(dtp>TOL_EXACT)+(nanmm>0);
+        fprintf('AutoCorr brute force A2 (%s), %s TransitionProbs row sums minus one (bins with mass, all ages), this should be zero: %.3e \n',cfgstr,fn{1},drow); fail_count=fail_count+(drow>TOL_EXACT);
+        fprintf('AutoCorr brute force A2 (%s), %s TransitionValues_j and _jplus1 vs the unique values (all ages), this should be zero: %.3e \n',cfgstr,fn{1},dlab); fail_count=fail_count+(dlab>TOL_EXACT);
+        fprintf('AutoCorr brute force A2 (%s), %s TransitionMass_j vs the origin bin masses (all ages), this should be zero: %.3e \n',cfgstr,fn{1},dmass); fail_count=fail_count+(dmass>TOL_EXACT);
+        if strcmp(fn{1},'evar')
+            fprintf('AutoCorr brute force A2 (%s), evar TransitionProbs rows vs pi_e (iid, all ages), this should be zero: %.3e \n',cfgstr,dpie); fail_count=fail_count+(dpie>TOL_EXACT);
+        end
     end
+    % quintiles (assets): bin q holds the values up to the first sorted value whose within-age cumulative mass exceeds q/nq
+    ff=find(strcmp(FnNames,'assets'));
+    sz=size(ACP_q.assets.TransitionProbs);
+    fprintf('AutoCorr brute force A2 (%s), assets quintile TransitionProbs shape [%i %i %i] (expected [%i %i %i]) \n',cfgstr,sz(1),sz(2),sz(3),nq,nq,N_j-1); fail_count=fail_count+(~isequal(sz,[nq,nq,N_j-1]));
+    dtp=0; nanmm=0; drow=0;
+    for jj=1:N_j-1
+        if agemass(jj)==0 || agemass(jj+1)==0
+            continue
+        end
+        idxq=cell(1,2);
+        for tt=1:2
+            x=gather(Vals{ff}(:,jj+tt-1)); d_cpu=gather(Dist_u(:,jj+tt-1)/agemass(jj+tt-1));
+            [xs,si]=sort(x);
+            cm=cumsum(d_cpu(si));
+            cutoffs=zeros(nq-1,1);
+            for qq=1:nq-1
+                cutoffs(qq)=xs(find(cm>qq/nq,1,'first'));
+            end
+            idxq{tt}=ones(N_s,1);
+            for qq=2:nq
+                idxq{tt}(x>cutoffs(qq-1))=qq;
+            end
+        end
+        Sx=gpuArray(full(sparse(1:N_s,idxq{1},1,N_s,nq))); Sy=gpuArray(full(sparse(1:N_s,idxq{2},1,N_s,nq)));
+        distj=Dist_u(:,jj)/agemass(jj);
+        massbin=Sx'*distj;
+        massbin_safe=massbin; massbin_safe(massbin==0)=1;
+        P_bf=gather((Sx'*(distj.*T{jj})*Sy)./massbin_safe);
+        P=gather(ACP_q.assets.TransitionProbs(:,:,jj));
+        dd=abs(P-P_bf); dd=dd(~isnan(dd)); dtp=max(dtp,max([dd(:);0])); nanmm=nanmm+sum(isnan(P(:))~=isnan(P_bf(:)));
+        rs=sum(P,2); drow=max(drow,max(abs(rs(gather(massbin)>0)-1)));
+    end
+    fprintf('AutoCorr brute force A2 (%s), assets quintile TransitionProbs vs binned brute force (all ages), this should be zero: %.3e, NaN-pattern mismatches %i \n',cfgstr,dtp,nanmm); fail_count=fail_count+(dtp>TOL_EXACT)+(nanmm>0);
+    fprintf('AutoCorr brute force A2 (%s), assets quintile TransitionProbs row sums minus one (bins with mass, all ages), this should be zero: %.3e \n',cfgstr,drow); fail_count=fail_count+(drow>TOL_EXACT);
+
+    if cfg==1
+        ACP_full=ACP; % kept for A3
+    end
+    clear T Pk J Jr Sx Sy
 end
 
-%% A4. Cohort distribution started at age 10: NaN before, equal to the full run from age 10 on
+%% A3. Cohort distribution started at age 10: NaN before, equal to the full run from age 10 on
 j0c=10;
 jequaloneDist10=reshape(gather(StationaryDist),[N_s,N_j]);
 jequaloneDist10=gpuArray(reshape(jequaloneDist10(:,j0c)/sum(jequaloneDist10(:,j0c)),[n_a,n_z,n_e]));
@@ -261,19 +333,19 @@ Dist10=StationaryDist_FHorz_Case1(jequaloneDist10,AgeWeightParamNames,Policy,n_d
 simoptions_c10.timehorizons=timehorizons;
 simoptions_c10.conditionalrestrictions=Restrictions;
 ACP10=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(Dist10,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions_c10);
-fprintf('AutoCorr brute force A4, cohort from age %i, Dist mass at ages 1..%i, this should be zero: %.3e \n',j0c,j0c-1,sum(sum(reshape(gather(Dist10),[N_s,N_j]),1)*[ones(j0c-1,1);zeros(N_j-j0c+1,1)])); fail_count=fail_count+(sum(sum(reshape(gather(Dist10),[N_s,N_j]),1)*[ones(j0c-1,1);zeros(N_j-j0c+1,1)])>TOL_EXACT);
+fprintf('AutoCorr brute force A3, cohort from age %i, Dist mass at ages 1..%i, this should be zero: %.3e \n',j0c,j0c-1,sum(sum(reshape(gather(Dist10),[N_s,N_j]),1)*[ones(j0c-1,1);zeros(N_j-j0c+1,1)])); fail_count=fail_count+(sum(sum(reshape(gather(Dist10),[N_s,N_j]),1)*[ones(j0c-1,1);zeros(N_j-j0c+1,1)])>TOL_EXACT);
 for ff=1:length(FnNames)
     fn=FnNames{ff};
-    fprintf('AutoCorr brute force A4, cohort from age %i, %s Mean non-NaN entries before age %i, this should be zero: %i \n',j0c,fn,j0c,sum(~isnan(gather(ACP10.(fn).Mean(1:j0c-1))))); fail_count=fail_count+(sum(~isnan(gather(ACP10.(fn).Mean(1:j0c-1))))>0);
-    fprintf('AutoCorr brute force A4, cohort from age %i, %s Mean from age %i on vs full run, this should be zero: %.3e \n',j0c,fn,j0c,max(abs(gather(ACP10.(fn).Mean(j0c:end))-gather(ACP_full.(fn).Mean(j0c:end))))); fail_count=fail_count+(max(abs(gather(ACP10.(fn).Mean(j0c:end))-gather(ACP_full.(fn).Mean(j0c:end))))>TOL_EXACT);
+    fprintf('AutoCorr brute force A3, cohort from age %i, %s Mean non-NaN entries before age %i, this should be zero: %i \n',j0c,fn,j0c,sum(~isnan(gather(ACP10.(fn).Mean(1:j0c-1))))); fail_count=fail_count+(sum(~isnan(gather(ACP10.(fn).Mean(1:j0c-1))))>0);
+    fprintf('AutoCorr brute force A3, cohort from age %i, %s Mean from age %i on vs full run, this should be zero: %.3e \n',j0c,fn,j0c,max(abs(gather(ACP10.(fn).Mean(j0c:end))-gather(ACP_full.(fn).Mean(j0c:end))))); fail_count=fail_count+(max(abs(gather(ACP10.(fn).Mean(j0c:end))-gather(ACP_full.(fn).Mean(j0c:end))))>TOL_EXACT);
     for hh=1:length(horizons)
         kk=horizons(hh);
-        fprintf('AutoCorr brute force A4, cohort from age %i, %s AutoCovariance%s non-NaN entries before age %i, this should be zero: %i \n',j0c,fn,hstr{hh},j0c,sum(~isnan(gather(ACP10.(fn).(['AutoCovariance',hstr{hh}])(1:j0c-1))))); fail_count=fail_count+(sum(~isnan(gather(ACP10.(fn).(['AutoCovariance',hstr{hh}])(1:j0c-1))))>0);
+        fprintf('AutoCorr brute force A3, cohort from age %i, %s AutoCovariance%s non-NaN entries before age %i, this should be zero: %i \n',j0c,fn,hstr{hh},j0c,sum(~isnan(gather(ACP10.(fn).(['AutoCovariance',hstr{hh}])(1:j0c-1))))); fail_count=fail_count+(sum(~isnan(gather(ACP10.(fn).(['AutoCovariance',hstr{hh}])(1:j0c-1))))>0);
         x=gather(ACP10.(fn).(['AutoCovariance',hstr{hh}])(j0c:N_j-kk)); y=gather(ACP_full.(fn).(['AutoCovariance',hstr{hh}])(j0c:N_j-kk)); dd=abs(x-y); dd=dd(~isnan(dd));
-        fprintf('AutoCorr brute force A4, cohort from age %i, %s AutoCovariance%s from age %i on vs full run, this should be zero: %.3e, NaN-pattern mismatches %i \n',j0c,fn,hstr{hh},j0c,max([dd,0]),sum(isnan(x)~=isnan(y))); fail_count=fail_count+(max([dd,0])>TOL_EXACT)+(sum(isnan(x)~=isnan(y))>0);
+        fprintf('AutoCorr brute force A3, cohort from age %i, %s AutoCovariance%s from age %i on vs full run, this should be zero: %.3e, NaN-pattern mismatches %i \n',j0c,fn,hstr{hh},j0c,max([dd,0]),sum(isnan(x)~=isnan(y))); fail_count=fail_count+(max([dd,0])>TOL_EXACT)+(sum(isnan(x)~=isnan(y))>0);
         x=gather(ACP10.rich.(fn).(['AutoCovariance',hstr{hh}])(j0c:N_j-kk)); y=gather(ACP_full.rich.(fn).(['AutoCovariance',hstr{hh}])(j0c:N_j-kk)); dd=abs(x-y); dd=dd(~isnan(dd));
-        fprintf('AutoCorr brute force A4, cohort from age %i, rich %s AutoCovariance%s from age %i on vs full run, this should be zero: %.3e, NaN-pattern mismatches %i \n',j0c,fn,hstr{hh},j0c,max([dd,0]),sum(isnan(x)~=isnan(y))); fail_count=fail_count+(max([dd,0])>TOL_EXACT)+(sum(isnan(x)~=isnan(y))>0);
-        fprintf('AutoCorr brute force A4, cohort from age %i, rich %s PairMass%s non-NaN entries before age %i, this should be zero: %i \n',j0c,fn,hstr{hh},j0c,sum(~isnan(gather(ACP10.rich.(fn).(['PairMass',hstr{hh}])(1:j0c-1))))); fail_count=fail_count+(sum(~isnan(gather(ACP10.rich.(fn).(['PairMass',hstr{hh}])(1:j0c-1))))>0);
+        fprintf('AutoCorr brute force A3, cohort from age %i, rich %s AutoCovariance%s from age %i on vs full run, this should be zero: %.3e, NaN-pattern mismatches %i \n',j0c,fn,hstr{hh},j0c,max([dd,0]),sum(isnan(x)~=isnan(y))); fail_count=fail_count+(max([dd,0])>TOL_EXACT)+(sum(isnan(x)~=isnan(y))>0);
+        fprintf('AutoCorr brute force A3, cohort from age %i, rich %s PairMass%s non-NaN entries before age %i, this should be zero: %i \n',j0c,fn,hstr{hh},j0c,sum(~isnan(gather(ACP10.rich.(fn).(['PairMass',hstr{hh}])(1:j0c-1))))); fail_count=fail_count+(sum(~isnan(gather(ACP10.rich.(fn).(['PairMass',hstr{hh}])(1:j0c-1))))>0);
     end
 end
 
