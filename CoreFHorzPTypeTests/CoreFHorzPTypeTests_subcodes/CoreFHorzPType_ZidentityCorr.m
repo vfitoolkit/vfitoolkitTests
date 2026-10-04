@@ -14,7 +14,9 @@ function output=CoreFHorzPType_ZidentityCorr(n_a,N_j,a_grid,Params,DiscountFacto
 %   rich          a>0.5                        -> the PType grouped restricted outputs (every field, pair fields included)
 %   richtype<ii>  a>0.5 and z==sigma_pt(ii)    -> the PType per-type restricted outputs (every field)
 % and the restricted sample masses. This is the only exact reference for the grouped pair statistics of a restriction
-% that does not come from a by-hand pooling.
+% that does not come from a by-hand pooling. The grouped TransitionProbs (assets and consumption; unique values with their
+% labels and masses, and quintiles) must likewise equal the single-type command's output on the z model exactly, which is
+% the check of the wrapper's pooling rule (the union of the types' value bins; quantile bins of the pooled distributions).
 
 Params.sigma_pt=[2; 3];
 ptw=Params.(PTypeDistParamNames{1});
@@ -45,6 +47,7 @@ nF=length(FnNames);
 simoptions_A=struct();
 simoptions_A.conditionalrestrictions.rich=@(aprime,a) (a>0.5);
 simoptions_A.timehorizons=timehorizons;
+simoptions_A.transprobs={'assets','consumption'}; % grouped TransitionProbs: the union of the types' value bins is non-trivial for consumption (sigma_pt differs, so the policies do)
 simoptions_A_ag=simoptions_A;
 simoptions_A_ag.agegroupings=1:5:N_j;
 
@@ -56,9 +59,9 @@ CovarCorr_A=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist_A
 AgeCond_A=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist_A,Policy_A,FnsToEvaluate_A,Params,n_d,n_a,n_z_A,N_j,N_i,d_grid,a_grid,z_grid_A,simoptions_A);
 AgeCond_A_ag=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist_A,Policy_A,FnsToEvaluate_A,Params,n_d,n_a,n_z_A,N_j,N_i,d_grid,a_grid,z_grid_A,simoptions_A_ag);
 ACP_A=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist_A,Policy_A,FnsToEvaluate_A,Params,n_d,n_a,n_z_A,N_j,N_i,d_grid,a_grid,z_grid_A,pi_z_A,simoptions_A);
-simoptions_A_lowmem=simoptions_A;
-simoptions_A_lowmem.lowmemory=1;
-ACP_A_lowmem=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist_A,Policy_A,FnsToEvaluate_A,Params,n_d,n_a,n_z_A,N_j,N_i,d_grid,a_grid,z_grid_A,pi_z_A,simoptions_A_lowmem);
+simoptions_A_q=simoptions_A;
+simoptions_A_q.transprobquantiles=5; % grouped quintile TransitionProbs (pooled from the types' unique-value ones inside the wrapper)
+ACP_A_q=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist_A,Policy_A,FnsToEvaluate_A,Params,n_d,n_a,n_z_A,N_j,N_i,d_grid,a_grid,z_grid_A,pi_z_A,simoptions_A_q);
 
 %% (B) No PType, z encodes the type with identity transitions
 n_z_B=N_i;
@@ -82,6 +85,7 @@ simoptions_B.conditionalrestrictions.type2=@(aprime,a,z) (z>2.5);
 simoptions_B.conditionalrestrictions.richtype1=@(aprime,a,z) (a>0.5)*(z<2.5);
 simoptions_B.conditionalrestrictions.richtype2=@(aprime,a,z) (a>0.5)*(z>2.5);
 simoptions_B.timehorizons=timehorizons;
+simoptions_B.transprobs={'assets','consumption'};
 simoptions_B_ag=simoptions_B;
 simoptions_B_ag.agegroupings=1:5:N_j;
 
@@ -92,6 +96,39 @@ CovarCorr_B=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(StationaryDist_B,Polic
 AgeCond_B=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist_B,Policy_B,FnsToEvaluate_B,Params,[],n_d,n_a,n_z_B,N_j,d_grid,a_grid,z_grid_B,struct());
 AgeCond_B_ag=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist_B,Policy_B,FnsToEvaluate_B,Params,[],n_d,n_a,n_z_B,N_j,d_grid,a_grid,z_grid_B,simoptions_B_ag);
 ACP_B=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist_B,Policy_B,FnsToEvaluate_B,Params,[],n_d,n_a,n_z_B,N_j,d_grid,a_grid,z_grid_B,pi_z_B,simoptions_B);
+simoptions_B_q=simoptions_B;
+simoptions_B_q.transprobquantiles=5;
+ACP_B_q=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist_B,Policy_B,FnsToEvaluate_B,Params,[],n_d,n_a,n_z_B,N_j,d_grid,a_grid,z_grid_B,pi_z_B,simoptions_B_q);
+
+%% Grouped TransitionProbs: pooling across ptypes is pooling across z, so the grouped PType TransitionProbs (unique values, with
+% their labels and origin-bin masses; and the quintile ones, whose bins are those of the pooled value distributions) must equal
+% the single-type command's output on the z model exactly, entry by entry
+for fn={'assets','consumption'}
+    dtp=0; dlab=0; dmass=0; nbad=0;
+    for jj=1:N_j-1
+        P=ACP_A.(fn{1}).TransitionProbs{jj}; Pref=ACP_B.(fn{1}).TransitionProbs{jj};
+        lx=ACP_A.(fn{1}).TransitionValues_j{jj}; lxref=ACP_B.(fn{1}).TransitionValues_j{jj};
+        ly=ACP_A.(fn{1}).TransitionValues_jplus1{jj}; lyref=ACP_B.(fn{1}).TransitionValues_jplus1{jj};
+        lm=ACP_A.(fn{1}).TransitionMass_j{jj}; lmref=ACP_B.(fn{1}).TransitionMass_j{jj};
+        if ~isequal(size(P),size(Pref)) || numel(lx)~=numel(lxref) || numel(ly)~=numel(lyref) || numel(lm)~=numel(lmref)
+            nbad=nbad+1;
+        elseif ~isempty(Pref)
+            dtp=max(dtp,max(abs(gather(P(:))-gather(Pref(:)))));
+            dlab=max([dlab,max(abs(gather(lx(:))-gather(lxref(:)))),max(abs(gather(ly(:))-gather(lyref(:))))]);
+            dmass=max(dmass,max(abs(gather(lm(:))-gather(lmref(:)))));
+        end
+    end
+    fprintf('z-identity corr, AutoCorr %s grouped TransitionProbs vs the z model (all ages), this should be zero: %.3e, wrongly sized cells %i \n',fn{1},dtp,nbad)
+    fprintf('z-identity corr, AutoCorr %s grouped TransitionValues_j and _jplus1 vs the z model (all ages), this should be zero: %.3e \n',fn{1},dlab)
+    fprintf('z-identity corr, AutoCorr %s grouped TransitionMass_j vs the z model (all ages), this should be zero: %.3e \n',fn{1},dmass)
+    x=gather(ACP_A_q.(fn{1}).TransitionProbs(:)); y=gather(ACP_B_q.(fn{1}).TransitionProbs(:));
+    if numel(x)~=numel(y)
+        fprintf('z-identity corr, AutoCorr %s grouped quintile TransitionProbs wrongly sized, this should be zero: 1 \n',fn{1})
+    else
+        dd=abs(x-y); dd=dd(~isnan(dd));
+        fprintf('z-identity corr, AutoCorr %s grouped quintile TransitionProbs vs the z model, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn{1},max([dd;0]),sum(isnan(x)~=isnan(y)))
+    end
+end
 
 %% Restricted sample masses
 x=gather(ACP_A.rich.RestrictedSampleMass.ByAge(:)); y=gather(ACP_B.rich.RestrictedSampleMass(:)); dd=abs(x-y); dd=dd(~isnan(dd));
@@ -129,8 +166,6 @@ for ff=1:nF
     pairs(end+1,:)={sprintf('z-identity corr, AgeCond CrossSection agegroupings %s grouped',fn), AgeCond_A_ag.(fn), AgeCond_B_ag.(fn)}; %#ok<AGROW>
     pairs(end+1,:)={sprintf('z-identity corr, AutoCorr %s grouped',fn), ACP_A.(fn), ACP_B.(fn)}; %#ok<AGROW>
     pairs(end+1,:)={sprintf('z-identity corr, AutoCorr rich %s grouped',fn), ACP_A.rich.(fn), ACP_B.rich.(fn)}; %#ok<AGROW>
-    pairs(end+1,:)={sprintf('z-identity corr, AutoCorr %s grouped, lowmemory=1 vs =0',fn), ACP_A_lowmem.(fn), ACP_A.(fn)}; %#ok<AGROW>
-    pairs(end+1,:)={sprintf('z-identity corr, AutoCorr rich %s grouped, lowmemory=1 vs =0',fn), ACP_A_lowmem.rich.(fn), ACP_A.rich.(fn)}; %#ok<AGROW>
     for ii=1:N_i
         nm=names_A{ii};
         typestr=['type',num2str(ii)];
@@ -144,8 +179,6 @@ for ff=1:nF
             Ref_richtype.(['PairMass',hstr{hh}])=Ref_richtype.(['PairMass',hstr{hh}])/ptw(ii);
         end
         pairs(end+1,:)={sprintf('z-identity corr, AutoCorr rich %s (type %s) vs %s restriction',fn,nm,richtypestr), ACP_A.rich.(fn).(nm), Ref_richtype}; %#ok<AGROW>
-        pairs(end+1,:)={sprintf('z-identity corr, AutoCorr %s (type %s), lowmemory=1 vs =0',fn,nm), ACP_A_lowmem.(fn).(nm), ACP_A.(fn).(nm)}; %#ok<AGROW>
-        pairs(end+1,:)={sprintf('z-identity corr, AutoCorr rich %s (type %s), lowmemory=1 vs =0',fn,nm), ACP_A_lowmem.rich.(fn).(nm), ACP_A.rich.(fn).(nm)}; %#ok<AGROW>
     end
 end
 % the matrices

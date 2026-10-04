@@ -16,9 +16,12 @@ function output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,n_e,N_j,a_grid,z_grid,
 %   fields at horizons 1,2,3 equal the by-hand pooling; RestrictedSampleMass.ByAge/.Total by hand;
 %   a type of zero weight leaves the grouped output equal to the other type alone;
 %   groupptypesforstats=0 drops the grouped fields;
-%   TransitionProbs (assets, requested through simoptions.transprobs, reported per type only) equal the solo command
-%   and the binned dense kernel of that type (rows summing to one where the origin bin has mass), with their
-%   TransitionValues_j/_jplus1 labels and TransitionMass_j.
+%   per-type TransitionProbs (assets, earnings; requested through simoptions.transprobs) equal the solo command, and
+%   those of assets the binned dense kernel of that type (rows summing to one where the origin bin has mass), with
+%   their TransitionValues_j/_jplus1 labels and TransitionMass_j;
+%   grouped TransitionProbs (assets, earnings; unique values with labels and masses, and quintiles) equal a by-hand
+%   pooling of the types' dense-kernel joints with weights ptweights*(type's mass at the age), over the union of the
+%   types' value bins, the quintile bins being those of the pooled age-j and age-(j+1) value distributions.
 % Zero checks are printed as %.3e; NaN is compared as a pattern (count of entries NaN in one but not the other).
 
 fprintf('\n========== CoreFHorzPType_AutoCorrBruteForce ==========\n')
@@ -72,7 +75,7 @@ hstr_PT={'','_k2','_k3'};
 simoptions_PT=simoptions;
 simoptions_PT.timehorizons=timehorizons_PT;
 simoptions_PT.conditionalrestrictions=Restrictions;
-simoptions_PT.transprobs={'assets'};
+simoptions_PT.transprobs={'assets','earnings'}; % earnings differs by type (kappa_j_pt), so the union of the types' value bins in the grouped TransitionProbs is non-trivial
 [~,Policy_PT]=ValueFnIter_Case1_FHorz_PType(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn_PT,Params_PT,DiscountFactorParamNames,vfoptions);
 StationaryDist_PT=StationaryDist_Case1_FHorz_PType(jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,Policy_PT,n_d,n_a,n_z,N_j,Names_i,pi_z,Params_PT,simoptions);
 ACP_PT=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist_PT,Policy_PT,FnsToEvaluate_PT,Params_PT,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_PT);
@@ -218,6 +221,87 @@ Dist_u_solo=struct();
 for ii=1:N_i
     nm=Names_i{ii};
     Dist_u_solo.(nm)=gpuArray(reshape(gather(Dist_solo.(nm)),[N_s,N_j]));
+end
+
+% Grouped TransitionProbs (assets, earnings) vs a by-hand pooling of the types' dense-kernel joints. At age jj the pooled joint
+% of (value at jj, value at jj+1) over the union of the types' value bins is sum over types of ptw(ii)*(type mass at jj) times
+% the type's within-age joint (dist_ii(:,jj) normalised, times T_ii{jj}) binned by value; grouped row b is that divided by the
+% pooled origin-bin mass (zero row if none), TransitionValues_j/_jplus1 are the union values and TransitionMass_j the pooled
+% within-age shares. The grouped quintile TransitionProbs coarsen the same pooled joint to the quintile bins of the pooled
+% age-jj value distribution (origin) and of the pooled age-(jj+1) value distribution (destination, weights
+% ptw(ii)*(type mass at jj+1), from the types' actual age-(jj+1) distributions), bin q being the values up to the first sorted
+% value whose cumulative mass exceeds q/5 (the single-type command's rule; part 20 checks that rule against the z model).
+nq=5;
+simoptions_PT_q=simoptions_PT;
+simoptions_PT_q.transprobquantiles=nq;
+ACP_PT_q=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist_PT,Policy_PT,FnsToEvaluate_PT,Params_PT,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_PT_q);
+for fn={'assets','earnings'}
+    ff=find(strcmp(FnNames,fn{1}));
+    dtp=0; dlab=0; dmass=0; nbad=0; dq=0; nanq=0;
+    for jj=1:N_j-1
+        wj=zeros(N_i,1); wjp=zeros(N_i,1);
+        for ii=1:N_i
+            nm=Names_i{ii};
+            wj(ii)=ptw(ii)*gather(sum(Dist_u_solo.(nm)(:,jj)));
+            wjp(ii)=ptw(ii)*gather(sum(Dist_u_solo.(nm)(:,jj+1)));
+        end
+        if sum(wj)==0
+            nbad=nbad+(~isempty(ACP_PT.(fn{1}).TransitionProbs{jj}));
+            continue
+        end
+        xcell=cell(N_i,1); ycell=cell(N_i,1);
+        for ii=1:N_i
+            if wj(ii)>0
+                xcell{ii}=gather(Vals_solo.(Names_i{ii}){ff}(:,jj));
+                ycell{ii}=gather(Vals_solo.(Names_i{ii}){ff}(:,jj+1));
+            end
+        end
+        vals_j=unique(vertcat(xcell{:})); vals_jp=unique(vertcat(ycell{:}));
+        J_G=zeros(length(vals_j),length(vals_jp)); mass_j=zeros(length(vals_j),1); mass_jp=zeros(length(vals_jp),1);
+        for ii=1:N_i
+            if wj(ii)>0
+                nm=Names_i{ii};
+                [~,ix]=ismember(xcell{ii},vals_j); [~,iy]=ismember(ycell{ii},vals_jp);
+                Sx=gpuArray(full(sparse(1:N_s,ix,1,N_s,length(vals_j)))); Sy=gpuArray(full(sparse(1:N_s,iy,1,N_s,length(vals_jp))));
+                distj=Dist_u_solo.(nm)(:,jj)/sum(Dist_u_solo.(nm)(:,jj));
+                distjp=Dist_u_solo.(nm)(:,jj+1)/sum(Dist_u_solo.(nm)(:,jj+1));
+                J_G=J_G+wj(ii)*gather(Sx'*(distj.*T_solo.(nm){jj})*Sy);
+                mass_j=mass_j+wj(ii)*gather(Sx'*distj);
+                mass_jp=mass_jp+wjp(ii)*gather(Sy'*distjp);
+            end
+        end
+        mass_safe=mass_j; mass_safe(mass_j==0)=1;
+        P_bf=J_G./mass_safe;
+        P=gather(ACP_PT.(fn{1}).TransitionProbs{jj});
+        lx=gather(ACP_PT.(fn{1}).TransitionValues_j{jj}(:)); ly=gather(ACP_PT.(fn{1}).TransitionValues_jplus1{jj}(:)); lm=gather(ACP_PT.(fn{1}).TransitionMass_j{jj}(:));
+        if ~isequal(size(P),size(P_bf)) || numel(lx)~=numel(vals_j) || numel(ly)~=numel(vals_jp) || numel(lm)~=numel(vals_j)
+            nbad=nbad+1;
+        else
+            dtp=max(dtp,max(abs(P(:)-P_bf(:))));
+            dlab=max([dlab,max(abs(lx-vals_j(:))),max(abs(ly-vals_jp(:)))]);
+            dmass=max(dmass,max(abs(lm-mass_j(:)/sum(wj))));
+        end
+        if sum(wjp)>0
+            cum_j=cumsum(mass_j)/sum(wj); idx_j=ones(length(vals_j),1);
+            for qq=1:nq-1
+                cutoff=vals_j(find(cum_j>qq/nq,1,'first')); idx_j(vals_j>cutoff)=qq+1;
+            end
+            cum_jp=cumsum(mass_jp)/sum(wjp); idx_jp=ones(length(vals_jp),1);
+            for qq=1:nq-1
+                cutoff=vals_jp(find(cum_jp>qq/nq,1,'first')); idx_jp(vals_jp>cutoff)=qq+1;
+            end
+            Sq_j=full(sparse(1:length(vals_j),idx_j,1,length(vals_j),nq)); Sq_jp=full(sparse(1:length(vals_jp),idx_jp,1,length(vals_jp),nq));
+            massq=Sq_j'*mass_j; massq(massq==0)=1;
+            Pq_bf=(Sq_j'*J_G*Sq_jp)./massq;
+            Pq=gather(ACP_PT_q.(fn{1}).TransitionProbs(:,:,jj));
+            dd=abs(Pq-Pq_bf); dd=dd(~isnan(dd)); dq=max(dq,max([dd(:);0])); nanq=nanq+sum(isnan(Pq(:))~=isnan(Pq_bf(:)));
+        end
+    end
+    fprintf('AutoCorr brute force B, %s grouped TransitionProbs vs by-hand pooling of the dense-kernel joints (all ages), this should be zero: %.3e, wrongly sized cells %i \n',fn{1},dtp,nbad)
+    fprintf('AutoCorr brute force B, %s grouped TransitionValues_j and _jplus1 vs the union of the types'' values (all ages), this should be zero: %.3e \n',fn{1},dlab)
+    fprintf('AutoCorr brute force B, %s grouped TransitionMass_j vs the pooled origin bin masses (all ages), this should be zero: %.3e \n',fn{1},dmass)
+    fprintf('AutoCorr brute force B, %s grouped quintile TransitionProbs vs by-hand pooling (all ages), this should be zero: %.3e, NaN-pattern mismatches %i \n',fn{1},dq,nanq)
+    fprintf('AutoCorr brute force B, %s grouped quintile TransitionProbs shape [%i %i %i], expected [%i %i %i] \n',fn{1},size(ACP_PT_q.(fn{1}).TransitionProbs,1),size(ACP_PT_q.(fn{1}).TransitionProbs,2),size(ACP_PT_q.(fn{1}).TransitionProbs,3),nq,nq,N_j-1)
 end
 for ff=1:length(FnNames)
     fn=FnNames{ff};
