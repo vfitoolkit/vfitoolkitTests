@@ -46,11 +46,12 @@
 % doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
 % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
 % doPart(21): AutoCorr PType grouping (timehorizons, conditional restrictions) vs a by-hand pooling of brute-force joint distributions
+% doPart(22): simoptions.whichcombos and per-combination simoptions.whichstats (compute only selected (fn, age group, restriction) combinations/statistics) vs the full run
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -230,6 +231,16 @@ if doPart(21)==1
     % brute-force checks are CoreFHorzTests part 12)
     output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,z_grid,pi_z,vfoptionsbaseline.e_grid,vfoptionsbaseline.pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(21): AutoCorr PType grouping vs a by-hand pooling of brute-force joint distributions
+
+%% ===== doPart(22): simoptions.whichcombos vs the full run =====
+if doPart(22)==1
+    fprintf('\n===== doPart(22): simoptions.whichcombos vs the full run =====\n')
+    %% 22. LifeCycleProfiles_FHorz_Case1_PType with simoptions.whichcombos: selected (fn, age group, restriction) combinations equal
+    % the full run, unselected ones are NaN, an all-zero function row and an all-zero restriction page keep their fields,
+    % RestrictedSampleMass is always filled, a 2D input broadcasts over the pages, wrong sizes and non-0/1 entries error. Then
+    % simoptions.whichstats as [nFns, nAgeGroups, 1+nRestr, 7]: on/off per statistic per combination, field presence, 3D broadcast.
+    output=CoreFHorzPType_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(22): simoptions.whichcombos vs the full run
 
 % All looks good!
 
