@@ -47,11 +47,12 @@
 % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
 % doPart(21): AutoCorr PType grouping (timehorizons, conditional restrictions) vs a by-hand pooling of brute-force joint distributions
 % doPart(22): simoptions.whichcombos and per-combination simoptions.whichstats (compute only selected (fn, age group, restriction) combinations/statistics) vs the full run
+% doPart(23): simoptions.whichcombos in the other PType commands (AllStats incl. per-combination whichstats, AggVars, AutoCorr, CrossSection, AgeConditional CrossSection) vs their full runs
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -241,6 +242,16 @@ if doPart(22)==1
     % simoptions.whichstats as [nFns, nAgeGroups, 1+nRestr, 7]: on/off per statistic per combination, field presence, 3D broadcast.
     output=CoreFHorzPType_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(22): simoptions.whichcombos vs the full run
+
+%% ===== doPart(23): simoptions.whichcombos in the other PType commands =====
+if doPart(23)==1
+    fprintf('\n===== doPart(23): simoptions.whichcombos in the other PType commands =====\n')
+    %% 23. whichcombos in AllStats PType ([nFns,1+nRestr], with whichstats [nFns,1+nRestr,7]), AggVars PType ([nFns,1]), AutoCorr PType
+    % ([nFns,N_j,1+nRestr], age dimension validated only), CrossSection PType ([nFns,nFns], upper triangle) and AgeConditional
+    % CrossSection PType ([nFns,nFns,nAgeGroups]): selected leaves equal the full run, unselected ones are absent or NaN, broadcast
+    % inputs equal their expansions, invalid sizes error.
+    output=CoreFHorzPType_WhichCombosSiblings(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(23): simoptions.whichcombos in the other PType commands
 
 % All looks good!
 
