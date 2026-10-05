@@ -117,6 +117,40 @@ tic;
 [PricePathC,GEcondnPathC]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsC, simoptions1, vfoptions1, []);
 time_C=toc;
 
+%% (C2) The two options that exist ONLY in the shooting solver
+% Not an algorithm comparison, which is worth saying in a bank whose job is comparing algorithms.
+% additionalfactor and updatepert are options of TransitionPath_InfHorz_shooting alone (grep either
+% in _Anderson.m or _quasiNewton.m and you get nothing), so GEnewprice=3 is the only algorithm that
+% can exercise them at all. They live here rather than in CoreInfHorzTPathTests because that bank
+% now runs Anderson throughout.
+%
+% They sit in THIS subcode and not the _with2A one because the driver only calls the 1A subcodes;
+% the with2A calls (figs 3-4) are commented out, so anything placed there never executes.
+%
+% (a) additionalfactor with f_add=1 is the identity whatever t_add is, so unset and [1,1,2] must be
+% BIT identical. From the bumped guess so the prices actually move, and for only a few iterations,
+% because a difference in the update rule shows up on the first one.
+transpathoptionsC2=transpathoptionsB;
+transpathoptionsC2.maxiter=5;
+PricePathC2_noAF=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsC2, simoptions1, vfoptions1, []);
+transpathoptionsC2.GEnewprice3.additionalfactor=[1,1,2];
+PricePathC2_withAF=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsC2, simoptions1, vfoptions1, []);
+fprintf('additionalfactor no-op (f_add=1), unset vs [1,1,2], this should be zero, r: %.3e \n',max(abs(PricePathC2_noAF.r-PricePathC2_withAF.r)))
+fprintf('additionalfactor no-op (f_add=1), unset vs [1,1,2], this should be zero, w: %.3e \n',max(abs(PricePathC2_noAF.w-PricePathC2_withAF.w)))
+
+% (b) updatepert=1 builds the new price path period by period inside the loop over t
+% (updatePricePathNew_TPath_tt) rather than from all periods at once after it
+% (updatePricePathNew_TPath_T, the default). For the shooting algorithm the two are the same
+% arithmetic, so the paths must be identical. PricePathC2_noAF above is the same solve at the
+% default updatepert=0, so it is the reference; five iterations is enough, since a difference in
+% WHERE the arithmetic happens would show up on the first one.
+transpathoptionsC2=transpathoptionsB;
+transpathoptionsC2.maxiter=5;
+transpathoptionsC2.updatepert=1;
+PricePathC2_pert1=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsC2, simoptions1, vfoptions1, []);
+fprintf('updatepert=1 (per period) vs updatepert=0 (whole path), same 5-iteration shooting solve, this should be zero, r: %.3e, w: %.3e \n',max(abs(PricePathC2_pert1.r-PricePathC2_noAF.r)),max(abs(PricePathC2_pert1.w-PricePathC2_noAF.w)))
+clear transpathoptionsC2 PricePathC2_noAF PricePathC2_withAF PricePathC2_pert1
+
 %% (F) GEnewprice=2: Anderson acceleration of the same shooting map as (B)
 % Anderson mixes the last m iterates of the shooting map to take a quasi-Newton-like step, without
 % ever building a Jacobian. So an iteration costs the same as a shooting iteration and the hope is
