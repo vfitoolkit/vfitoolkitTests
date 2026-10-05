@@ -16,6 +16,7 @@
 % be finished off by running just the parts that never got to run.
 % doPart(1): one endogenous state (figs 3-4 live)
 % doPart(2): two endogenous states (figs 9-10)
+% doPart(3): _tminus1 and _tplus1 (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -24,7 +25,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1];
+doPart=[1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -101,6 +102,17 @@ if doPart(2)==1
     output=CoreInfHorzTPath_d_z_noe_nosemiz_with2A(T,PricePath_2A,ParamPath_2A,n_d_2A,n_a_2A,n_a_2A_big,n_z_2A,d_grid_2A,a_grid_2A,a_grid_2A_big,z_grid_2A,pi_z_2A,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,n_d_2A,n_a_2A_GE,d_grid_2A,a_grid_2A_GE,figure_c);
     exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 end % doPart(2): two endogenous states (figs 9-10)
+
+%% ===== doPart(3): _tminus1 and _tplus1 =====
+if doPart(3)==1
+    fprintf('\n===== doPart(3): _tminus1 and _tplus1 =====\n')
+    %% _tminus1 and _tplus1 in GeneralEqmEqns, FnsToEvaluate and intermediateEqns, each against the same shift done by hand
+    % The InfHorz counterpart of CoreFHorzTPathTests doPart(6). No figures. Also the only place in the
+    % InfHorz banks where intermediateEqns is checked for CORRECTNESS rather than merely run, and the
+    % only coverage of the lag machinery in EvalFnOnTransPath_AggVars_InfHorz and
+    % SimPanelValues_TransPath_InfHorz (both of which had to be given transpathoptions for it).
+    output=CoreInfHorzTPath_tminus1tplus1(T,PricePath,ParamPath,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end % doPart(3): _tminus1 and _tplus1
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
