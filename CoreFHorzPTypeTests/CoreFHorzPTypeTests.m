@@ -46,13 +46,12 @@
 % doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
 % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
 % doPart(21): AutoCorr PType grouping (timehorizons, conditional restrictions) vs a by-hand pooling of brute-force joint distributions
-% doPart(22): simoptions.whichcombos and per-combination simoptions.whichstats (compute only selected (fn, age group, restriction) combinations/statistics) vs the full run
-% doPart(23): simoptions.whichcombos in the other PType commands (AllStats incl. per-combination whichstats, AggVars, AutoCorr, CrossSection, AgeConditional CrossSection) vs their full runs
+% doPart(22): simoptions.whichcombos (and per-combination whichstats) across the PType commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr, CrossSection, AgeConditional CrossSection, vs their full runs
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -233,25 +232,17 @@ if doPart(21)==1
     output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,z_grid,pi_z,vfoptionsbaseline.e_grid,vfoptionsbaseline.pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(21): AutoCorr PType grouping vs a by-hand pooling of brute-force joint distributions
 
-%% ===== doPart(22): simoptions.whichcombos vs the full run =====
+%% ===== doPart(22): simoptions.whichcombos across the PType commands =====
 if doPart(22)==1
-    fprintf('\n===== doPart(22): simoptions.whichcombos vs the full run =====\n')
-    %% 22. LifeCycleProfiles_FHorz_Case1_PType with simoptions.whichcombos: selected (fn, age group, restriction) combinations equal
-    % the full run, unselected ones are NaN, an all-zero function row and an all-zero restriction page keep their fields,
-    % RestrictedSampleMass is always filled, a 2D input broadcasts over the pages, wrong sizes and non-0/1 entries error. Then
-    % simoptions.whichstats as [nFns, nAgeGroups, 1+nRestr, 7]: on/off per statistic per combination, field presence, 3D broadcast.
+    fprintf('\n===== doPart(22): simoptions.whichcombos across the PType commands =====\n')
+    %% 22. simoptions.whichcombos (and per-combination whichstats where the command has whichstats) in LifeCycleProfiles PType
+    % ([nFns,nAgeGroups,1+nRestr]; whichstats [..,7]), AllStats PType ([nFns,1+nRestr]; whichstats [nFns,1+nRestr,7]), AggVars PType
+    % ([nFns,1]), AutoCorr PType ([nFns,N_j,1+nRestr], age dimension validated only), CrossSection PType ([nFns,nFns], upper triangle)
+    % and AgeConditional CrossSection PType ([nFns,nFns,nAgeGroups]). Each selective run is compared with its full run leaf by leaf:
+    % selected leaves (or age-group columns) equal the full run, unselected ones are NaN (preallocated fields) or absent (whole
+    % structs), RestrictedSampleMass is always filled, broadcast inputs equal their expansions, invalid inputs error.
     output=CoreFHorzPType_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
-end % doPart(22): simoptions.whichcombos vs the full run
-
-%% ===== doPart(23): simoptions.whichcombos in the other PType commands =====
-if doPart(23)==1
-    fprintf('\n===== doPart(23): simoptions.whichcombos in the other PType commands =====\n')
-    %% 23. whichcombos in AllStats PType ([nFns,1+nRestr], with whichstats [nFns,1+nRestr,7]), AggVars PType ([nFns,1]), AutoCorr PType
-    % ([nFns,N_j,1+nRestr], age dimension validated only), CrossSection PType ([nFns,nFns], upper triangle) and AgeConditional
-    % CrossSection PType ([nFns,nFns,nAgeGroups]): selected leaves equal the full run, unselected ones are absent or NaN, broadcast
-    % inputs equal their expansions, invalid sizes error.
-    output=CoreFHorzPType_WhichCombosSiblings(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
-end % doPart(23): simoptions.whichcombos in the other PType commands
+end % doPart(22): simoptions.whichcombos across the PType commands
 
 % All looks good!
 

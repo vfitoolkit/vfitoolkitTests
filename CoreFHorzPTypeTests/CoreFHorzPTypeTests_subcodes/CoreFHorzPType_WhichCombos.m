@@ -1,26 +1,22 @@
 function output=CoreFHorzPType_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames)
-% Test: simoptions.whichcombos, and simoptions.whichstats per combination, in LifeCycleProfiles_FHorz_Case1_PType.
+% Test: simoptions.whichcombos (and per-combination simoptions.whichstats where the command has whichstats) across the PType commands:
+%   LifeCycleProfiles_FHorz_Case1_PType                                whichcombos [nFns, nAgeGroups, 1+nRestr], whichstats [.., 7]
+%   EvalFnOnAgentDist_AllStats_FHorz_Case1_PType                       whichcombos [nFns, 1+nRestr], whichstats [nFns, 1+nRestr, 7]
+%   EvalFnOnAgentDist_AggVars_FHorz_Case1_PType                        whichcombos [nFns, 1]
+%   EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType                   whichcombos [nFns, N_j, 1+nRestr] (age dimension validated, not acted on)
+%   EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType                whichcombos [nFns, nFns] (upper triangle; diagonal = own Mean/StdDev)
+%   EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType   whichcombos [nFns, nFns, nAgeGroups]
+% Pages are the unrestricted output first, then the restrictions in the fieldnames order of simoptions.conditionalrestrictions.
 %
-% whichcombos is [nFns, nAgeGroups, 1+nRestr] (page 1 unrestricted, pages 2:end the restrictions in fieldnames order; the third
-% dimension is dropped when there are no restrictions). Ones are computed, zeros skipped; skipped entries stay NaN; the output has
-% the same fields either way; RestrictedSampleMass is always filled.
-%
-% Checks (all against a full run with the default, which must itself equal an explicit all-ones whichcombos):
-%  1. Explicit all-ones equals the default, every field.
-%  2. Checkerboard selection: every selected (fn, age group, page) entry, per-ptype and grouped, every statistic, equals the full
-%     run exactly (same code path); every unselected entry is NaN.
-%  3. An all-zero function row and an all-zero restriction page: the fields are still present, all NaN; RestrictedSampleMass of the
-%     zeroed restriction equals the full run.
-%  4. A 2D whichcombos with restrictions present equals the 3D repmat of it, NaN pattern included.
-%  5. Age groups of five ages: the second dimension is the number of age groups, checkerboard vs full run as in 2.
-%  6. Wrong size, and entries other than 0/1, error.
-%  7. Runtime of the full run vs a one-row selection is printed (information, not a check).
-% Without restrictions (2D whichcombos) check 2 is repeated.
-% whichstats per combination ([nFns, nAgeGroups, 1+nRestr, 7]): (a) all-ones equals the full run; (b) a per-combination pattern:
-% entries with a statistic on equal the full run, off ones are NaN, every field present; (c) a statistic off at every age of one
-% (fn, page) removes its field, the rest equals the full run; (d) a [nFns, nAgeGroups, 7] input equals its 4D repmat; (e) a
-% combination with every statistic off is skipped like a whichcombos zero; (f) mixed Gini 3/1 across ages keeps the Lorenz curve
-% where asked; (g) wrong sizes error.
+% Every check compares a selective run against the full run leaf by leaf (CoreFHorzPType_StructLeaves lists every numeric leaf with
+% its dotted path): a leaf (or, for the age-indexed commands, an age-group column of a leaf) the selection asks for must be present
+% and equal to the full run, NaN pattern included; one it does not ask for must be NaN where the command preallocates its fields
+% (LifeCycleProfiles, AggVars, CrossSection) or absent where it assigns whole structs (AllStats, AutoCorr). RestrictedSampleMass is
+% always filled. The per-type covariance matrices of the CrossSection commands shrink to the evaluated functions and are checked
+% separately. Broadcast inputs equal their expansions; invalid inputs error.
+% LifeCycleProfiles specifics: an all-zero function row / restriction page keeps its (NaN) fields; a combination asking for no
+% statistic is skipped like a whichcombos zero and then has no struct at all; mixed Gini 3/1 across ages keeps the Lorenz curve where
+% asked. AllStats specifics: StatsFromWeightedGrid reports Minimum/Maximum whenever quantiles are requested (they are the end cutoffs).
 
 Names_i={'low','high'};
 N_i=length(Names_i);
@@ -57,355 +53,191 @@ npages=1+nRestr;
 [~,Policy]=ValueFnIter_Case1_FHorz_PType(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn_PT,Params,DiscountFactorParamNames,vfoptions);
 StationaryDist=StationaryDist_Case1_FHorz_PType(jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,Policy,n_d,n_a,n_z,N_j,Names_i,pi_z,Params,struct());
 
-%% Full run (default whichcombos) and explicit all-ones
-tic;
+%% ===================== LifeCycleProfiles PType =====================
 Full=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
-time_full=toc;
-simoptions_ones=simoptions;
-simoptions_ones.whichcombos=ones(nFns,N_j,npages);
-Ones=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_ones);
+[pF,vF]=CoreFHorzPType_StructLeaves(Full);
 
-% Walk every leaf of the two outputs (page level -> fn -> grouped stats, per-ptype stats, MoreInequality) and compare
+% (1) explicit all-ones whichcombos equals the default
+simoptions_1=simoptions; simoptions_1.whichcombos=ones(nFns,N_j,npages);
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_1);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
 maxd=0; nanmis=0;
-for pp=1:npages
-    for ff=1:nFns
-        if pp==1
-            A=Full.(FnNames{ff}); B=Ones.(FnNames{ff});
-        else
-            A=Full.(RestrNames{pp-1}).(FnNames{ff}); B=Ones.(RestrNames{pp-1}).(FnNames{ff});
-        end
-        levelnames=[{''},Names_i]; % '' is the grouped level, then each ptype
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i)
-                    continue
-                elseif strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    for mm=1:length(minames)
-                        a=gather(SA.MoreInequality.(minames{mm})); b=gather(SB.MoreInequality.(minames{mm}));
-                        nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:)));
-                        d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                    end
-                else
-                    a=gather(SA.(statnames{ss})); b=gather(SB.(statnames{ss}));
-                    nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:)));
-                    d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                end
-            end
-        end
+for k=1:numel(pF)
+    [present,idx]=ismember(pF{k},pS);
+    if present
+        a=vF{k}; b=vS{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
     end
 end
-fprintf('WhichCombos, explicit all-ones vs default, every field, this should be zero: %.3e, NaN-pattern mismatches %i \n',maxd,nanmis)
+fprintf('WhichCombos LifeCycleProfiles PType, explicit all-ones vs default, every leaf, this should be zero: %.3e, NaN-pattern + leaf-set mismatches %i \n',maxd,nanmis+sum(~ismember(pF,pS))+sum(~ismember(pS,pF)))
 
-%% Checkerboard selection, each age its own group (nAgeGroups=N_j)
-whichcombos=zeros(nFns,N_j,npages);
+% (2) checkerboard over (fn, age, page): every field exists; for each leaf the age-group columns the selection asks for equal the full
+% run and the rest are NaN. The rule for a leaf path: a restriction name first means that page, else page 1; the function is the next
+% segment; RestrictedSampleMass leaves are always whole.
+wc=zeros(nFns,N_j,npages);
 for pp=1:npages
     for ff=1:nFns
         for jj=1:N_j
-            whichcombos(ff,jj,pp)=mod(ff+jj+pp,2);
+            wc(ff,jj,pp)=mod(ff+jj+pp,2);
         end
     end
 end
-simoptions_cb=simoptions;
-simoptions_cb.whichcombos=whichcombos;
-tic;
-Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_cb);
-time_cb=toc;
-
-% For every (page, fn): selected age groups equal the full run exactly, unselected ones are NaN; per-ptype and grouped alike
-for pp=1:npages
-    if pp==1
-        pagename='unrestricted';
+simoptions_2=simoptions; simoptions_2.whichcombos=wc;
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_2);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+maxd=0; nanmis=0; notnan_off=0; missing=0;
+for k=1:numel(pF)
+    segs=strsplit(pF{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1}));
+        if strcmp(segs{2},'RestrictedSampleMass')
+            onmask=true(1,size(vF{k},2));
+        else
+            onmask=reshape(wc(find(strcmp(FnNames,segs{2})),:,pp)==1,[1,N_j]);
+        end
     else
-        pagename=RestrNames{pp-1};
+        onmask=reshape(wc(find(strcmp(FnNames,segs{1})),:,1)==1,[1,N_j]);
     end
-    for ff=1:nFns
-        if pp==1
-            A=Full.(FnNames{ff}); B=Sub.(FnNames{ff});
+    [present,idx]=ismember(pF{k},pS);
+    if ~present
+        missing=missing+1;
+    else
+        a=vF{k}; b=vS{idx};
+        if ~isequal(size(a),size(b)) || size(a,2)~=numel(onmask)
+            missing=missing+1;
         else
-            A=Full.(RestrNames{pp-1}).(FnNames{ff}); B=Sub.(RestrNames{pp-1}).(FnNames{ff});
+            nanmis=nanmis+sum(sum(isnan(a(:,onmask))~=isnan(b(:,onmask)))); d=abs(a(:,onmask)-b(:,onmask)); d=d(~isnan(d)); maxd=max([maxd;d(:)]);
+            notnan_off=notnan_off+sum(sum(~isnan(b(:,~onmask))));
         end
-        maxd_sel=0; nonnan_unsel=0; nleaves=0;
-        levelnames=[{''},Names_i];
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i)
-                    continue
-                elseif strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    leavesA=cell(length(minames),1); leavesB=cell(length(minames),1);
-                    for mm=1:length(minames)
-                        leavesA{mm}=gather(SA.MoreInequality.(minames{mm})); leavesB{mm}=gather(SB.MoreInequality.(minames{mm}));
-                    end
-                else
-                    leavesA={gather(SA.(statnames{ss}))}; leavesB={gather(SB.(statnames{ss}))};
-                end
-                for kk=1:length(leavesA)
-                    a=leavesA{kk}; b=leavesB{kk}; % columns are age groups (a row vector or an npoints/nquantiles-by-ngroups matrix)
-                    nleaves=nleaves+1;
-                    for jj=1:N_j
-                        if whichcombos(ff,jj,pp)==1
-                            d=abs(a(:,jj)-b(:,jj)); d=d(~isnan(d)); maxd_sel=max([maxd_sel;d]);
-                            nonnan_unsel=nonnan_unsel+sum(isnan(a(:,jj))~=isnan(b(:,jj))); % a selected entry must have the full run's NaN pattern
-                        else
-                            nonnan_unsel=nonnan_unsel+sum(~isnan(b(:,jj)));
-                        end
-                    end
-                end
-            end
-        end
-        fprintf('WhichCombos checkerboard, %s %s (%i leaves): selected entries vs full run, this should be zero: %.3e; unselected entries that are not NaN (and selected NaN-pattern mismatches), this should be zero: %.3e \n',pagename,FnNames{ff},nleaves,maxd_sel,nonnan_unsel)
     end
 end
-% RestrictedSampleMass is always filled
-for rr=1:nRestr
-    a=gather(Full.(RestrNames{rr}).RestrictedSampleMass.ByAge); b=gather(Sub.(RestrNames{rr}).RestrictedSampleMass.ByAge);
-    fprintf('WhichCombos checkerboard, RestrictedSampleMass.ByAge of %s vs full run, this should be zero: %.3e \n',RestrNames{rr},max(abs(a-b)))
-end
-fprintf('WhichCombos, runtime: full run %.3f s, checkerboard (half the combinations) %.3f s \n',time_full,time_cb)
+fprintf('WhichCombos LifeCycleProfiles PType, checkerboard over (fn, age, page): selected columns vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected columns not NaN + leaves missing + extra leaves, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+sum(~ismember(pS,pF)))
+fprintf('WhichCombos LifeCycleProfiles PType, runtime: full run vs checkerboard (half the combinations), information only: ')
+tic; LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions); t1=toc;
+tic; LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_2); t2=toc;
+fprintf('%.3f s vs %.3f s \n',t1,t2)
 
-%% All-zero function row (earnings) and all-zero restriction page (poor)
-whichcombos=ones(nFns,N_j,npages);
-whichcombos(2,:,:)=0; % earnings: nothing
-whichcombos(:,:,1+2)=0; % poor: nothing
-simoptions_z=simoptions;
-simoptions_z.whichcombos=whichcombos;
-tic;
-Zrow=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_z);
-time_z=toc;
-fprintf('WhichCombos all-zero row/page, earnings field present at top level and under each restriction, this should be zero: %.3e \n',double(~isfield(Zrow,'earnings'))+double(~isfield(Zrow.rich,'earnings'))+double(~isfield(Zrow.poor,'earnings')))
-% everything under Zrow.earnings and everything under Zrow.poor (except RestrictedSampleMass) must be NaN
-nonnan=0;
-checkstructs={Zrow.earnings,Zrow.rich.earnings,Zrow.poor.assets,Zrow.poor.earnings,Zrow.poor.richind};
-for cc=1:length(checkstructs)
-    S=checkstructs{cc};
-    levelnames=[{''},Names_i];
-    for ll=1:length(levelnames)
-        if isempty(levelnames{ll})
-            SA=S;
+% (3) an all-zero function row (earnings) and an all-zero restriction page (poor): their fields exist and are NaN (RestrictedSampleMass
+% of poor still equals the full run); everything else equals the full run
+wc3=ones(nFns,N_j,npages); wc3(2,:,:)=0; wc3(:,:,3)=0;
+simoptions_3=simoptions; simoptions_3.whichcombos=wc3;
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_3);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+maxd=0; nanmis=0; notnan_off=0; missing=0;
+for k=1:numel(pF)
+    segs=strsplit(pF{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1}));
+        if strcmp(segs{2},'RestrictedSampleMass')
+            on=true;
         else
-            SA=S.(levelnames{ll});
+            on=(wc3(find(strcmp(FnNames,segs{2})),1,pp)==1);
         end
-        statnames=fieldnames(SA);
-        for ss=1:length(statnames)
-            if ismember(statnames{ss},Names_i)
-                continue
-            elseif strcmp(statnames{ss},'MoreInequality')
-                minames=fieldnames(SA.MoreInequality);
-                for mm=1:length(minames)
-                    a=gather(SA.MoreInequality.(minames{mm})); nonnan=nonnan+sum(~isnan(a(:)));
-                end
-            else
-                a=gather(SA.(statnames{ss})); nonnan=nonnan+sum(~isnan(a(:)));
-            end
-        end
+    else
+        on=(wc3(find(strcmp(FnNames,segs{1})),1,1)==1);
+    end
+    [present,idx]=ismember(pF{k},pS);
+    if ~present
+        missing=missing+1;
+    elseif on
+        a=vF{k}; b=vS{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        notnan_off=notnan_off+sum(~isnan(vS{idx}(:)));
     end
 end
-fprintf('WhichCombos all-zero row/page, non-NaN entries under earnings and under poor, this should be zero: %.3e \n',nonnan)
-a=gather(Full.poor.RestrictedSampleMass.ByAge); b=gather(Zrow.poor.RestrictedSampleMass.ByAge);
-fprintf('WhichCombos all-zero page, RestrictedSampleMass.ByAge of poor vs full run, this should be zero: %.3e \n',max(abs(a-b)))
-fprintf('WhichCombos all-zero page, RestrictedSampleMass.Total of poor vs full run, this should be zero: %.3e \n',abs(gather(Full.poor.RestrictedSampleMass.Total)-gather(Zrow.poor.RestrictedSampleMass.Total)))
-% the remaining (assets, richind; unrestricted and rich) equal the full run
-maxd=0; nanmis=0;
-for pp=1:2 % unrestricted, rich
-    for ff=[1,3]
-        if pp==1
-            A=Full.(FnNames{ff}); B=Zrow.(FnNames{ff});
-        else
-            A=Full.rich.(FnNames{ff}); B=Zrow.rich.(FnNames{ff});
-        end
-        levelnames=[{''},Names_i];
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i)
-                    continue
-                elseif strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    for mm=1:length(minames)
-                        a=gather(SA.MoreInequality.(minames{mm})); b=gather(SB.MoreInequality.(minames{mm}));
-                        nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                    end
-                else
-                    a=gather(SA.(statnames{ss})); b=gather(SB.(statnames{ss}));
-                    nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                end
-            end
-        end
-    end
-end
-fprintf('WhichCombos all-zero row/page, the other combinations vs full run, this should be zero: %.3e, NaN-pattern mismatches %i \n',maxd,nanmis)
-fprintf('WhichCombos, runtime: full run %.3f s, one fn and one restriction dropped %.3f s \n',time_full,time_z)
+fprintf('WhichCombos LifeCycleProfiles PType, all-zero row (earnings) and page (poor): the other leaves vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; zeroed leaves not NaN + leaves missing + extra leaves, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+sum(~ismember(pS,pF)))
 
-%% 2D whichcombos with restrictions present broadcasts over the pages
+% (4) a 2D whichcombos with restrictions equals its 3D repmat
 wc2=zeros(nFns,N_j);
 for ff=1:nFns
     for jj=1:N_j
         wc2(ff,jj)=mod(ff+jj,2);
     end
 end
-simoptions_2d=simoptions; simoptions_2d.whichcombos=wc2;
-simoptions_3d=simoptions; simoptions_3d.whichcombos=repmat(wc2,[1,1,npages]);
-Two=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_2d);
-Three=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_3d);
+simoptions_4=simoptions; simoptions_4.whichcombos=wc2;
+A=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_4);
+simoptions_4.whichcombos=repmat(wc2,[1,1,npages]);
+B=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_4);
+[pA,vA]=CoreFHorzPType_StructLeaves(A); [pB,vB]=CoreFHorzPType_StructLeaves(B);
 maxd=0; nanmis=0;
-for pp=1:npages
-    for ff=1:nFns
-        if pp==1
-            A=Two.(FnNames{ff}); B=Three.(FnNames{ff});
-        else
-            A=Two.(RestrNames{pp-1}).(FnNames{ff}); B=Three.(RestrNames{pp-1}).(FnNames{ff});
-        end
-        levelnames=[{''},Names_i];
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i)
-                    continue
-                elseif strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    for mm=1:length(minames)
-                        a=gather(SA.MoreInequality.(minames{mm})); b=gather(SB.MoreInequality.(minames{mm}));
-                        nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                    end
-                else
-                    a=gather(SA.(statnames{ss})); b=gather(SB.(statnames{ss}));
-                    nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                end
-            end
-        end
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
     end
 end
-fprintf('WhichCombos, 2D input vs its 3D repmat, every field, this should be zero: %.3e, NaN-pattern mismatches %i \n',maxd,nanmis)
+fprintf('WhichCombos LifeCycleProfiles PType, 2D input vs its 3D repmat, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
 
-%% Age groups of five ages: the second dimension is the number of age groups
-simoptions_ag=simoptions;
-simoptions_ag.agegroupings=1:5:N_j;
-ngroups=length(simoptions_ag.agegroupings);
-Full_ag=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_ag);
-whichcombos=zeros(nFns,ngroups,npages);
+% (5) age groups of five ages: the second dimension is the number of age groups
+simoptions_5=simoptions; simoptions_5.agegroupings=1:5:N_j; ngroups=length(simoptions_5.agegroupings);
+Full5=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_5);
+wc5=zeros(nFns,ngroups,npages);
 for pp=1:npages
     for ff=1:nFns
         for jj=1:ngroups
-            whichcombos(ff,jj,pp)=mod(ff+jj+pp,2);
+            wc5(ff,jj,pp)=mod(ff+jj+pp,2);
         end
     end
 end
-simoptions_ag.whichcombos=whichcombos;
-Sub_ag=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_ag);
-maxd_sel=0; nonnan_unsel=0;
-for pp=1:npages
-    for ff=1:nFns
-        if pp==1
-            A=Full_ag.(FnNames{ff}); B=Sub_ag.(FnNames{ff});
+simoptions_5.whichcombos=wc5;
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_5);
+[pF5,vF5]=CoreFHorzPType_StructLeaves(Full5); [pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+maxd=0; nanmis=0; notnan_off=0; missing=0;
+for k=1:numel(pF5)
+    segs=strsplit(pF5{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    ncol=size(vF5{k},2); % grouped arrays are sized by the number of ages, per-type ones by the number of age groups; only the first ngroups columns are age groups, the rest are NaN in both
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1}));
+        if strcmp(segs{2},'RestrictedSampleMass')
+            onmask=true(1,ncol);
         else
-            A=Full_ag.(RestrNames{pp-1}).(FnNames{ff}); B=Sub_ag.(RestrNames{pp-1}).(FnNames{ff});
+            onmask=false(1,ncol); onmask(1:ngroups)=(wc5(find(strcmp(FnNames,segs{2})),:,pp)==1);
         end
-        levelnames=[{''},Names_i];
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i)
-                    continue
-                elseif strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    leavesA=cell(length(minames),1); leavesB=cell(length(minames),1);
-                    for mm=1:length(minames)
-                        leavesA{mm}=gather(SA.MoreInequality.(minames{mm})); leavesB{mm}=gather(SB.MoreInequality.(minames{mm}));
-                    end
-                else
-                    leavesA={gather(SA.(statnames{ss}))}; leavesB={gather(SB.(statnames{ss}))};
-                end
-                for kk=1:length(leavesA)
-                    a=leavesA{kk}; b=leavesB{kk};
-                    for jj=1:ngroups % (grouped arrays are sized by the number of ages, only the first ngroups columns are filled; the rest are NaN in both)
-                        if whichcombos(ff,jj,pp)==1
-                            d=abs(a(:,jj)-b(:,jj)); d=d(~isnan(d)); maxd_sel=max([maxd_sel;d]);
-                            nonnan_unsel=nonnan_unsel+sum(isnan(a(:,jj))~=isnan(b(:,jj)));
-                        else
-                            nonnan_unsel=nonnan_unsel+sum(~isnan(b(:,jj)));
-                        end
-                    end
-                end
-            end
-        end
+    else
+        onmask=false(1,ncol); onmask(1:ngroups)=(wc5(find(strcmp(FnNames,segs{1})),:,1)==1);
     end
-end
-fprintf('WhichCombos checkerboard with age groups of five ages: selected entries vs full run, this should be zero: %.3e; unselected entries that are not NaN, this should be zero: %.3e \n',maxd_sel,nonnan_unsel)
-
-%% Without restrictions: 2D whichcombos
-simoptions_nr=struct();
-simoptions_nr.whichstats=ones(1,7);
-Full_nr=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_nr);
-simoptions_nr.whichcombos=wc2;
-Sub_nr=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_nr);
-maxd_sel=0; nonnan_unsel=0;
-for ff=1:nFns
-    A=Full_nr.(FnNames{ff}); B=Sub_nr.(FnNames{ff});
-    levelnames=[{''},Names_i];
-    for ll=1:length(levelnames)
-        if isempty(levelnames{ll})
-            SA=A; SB=B;
+    [present,idx]=ismember(pF5{k},pS);
+    if ~present
+        missing=missing+1;
+    else
+        a=vF5{k}; b=vS{idx};
+        if ~isequal(size(a),size(b))
+            missing=missing+1;
         else
-            SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-        end
-        statnames=fieldnames(SA);
-        for ss=1:length(statnames)
-            if ismember(statnames{ss},Names_i)
-                continue
-            elseif strcmp(statnames{ss},'MoreInequality')
-                minames=fieldnames(SA.MoreInequality);
-                leavesA=cell(length(minames),1); leavesB=cell(length(minames),1);
-                for mm=1:length(minames)
-                    leavesA{mm}=gather(SA.MoreInequality.(minames{mm})); leavesB{mm}=gather(SB.MoreInequality.(minames{mm}));
-                end
-            else
-                leavesA={gather(SA.(statnames{ss}))}; leavesB={gather(SB.(statnames{ss}))};
-            end
-            for kk=1:length(leavesA)
-                a=leavesA{kk}; b=leavesB{kk};
-                for jj=1:N_j
-                    if wc2(ff,jj)==1
-                        d=abs(a(:,jj)-b(:,jj)); d=d(~isnan(d)); maxd_sel=max([maxd_sel;d]);
-                        nonnan_unsel=nonnan_unsel+sum(isnan(a(:,jj))~=isnan(b(:,jj)));
-                    else
-                        nonnan_unsel=nonnan_unsel+sum(~isnan(b(:,jj)));
-                    end
-                end
-            end
+            nanmis=nanmis+sum(sum(isnan(a(:,onmask))~=isnan(b(:,onmask)))); d=abs(a(:,onmask)-b(:,onmask)); d=d(~isnan(d)); maxd=max([maxd;d(:)]);
+            notnan_off=notnan_off+sum(sum(~isnan(b(:,~onmask))));
         end
     end
 end
-fprintf('WhichCombos without restrictions (2D): selected entries vs full run, this should be zero: %.3e; unselected entries that are not NaN, this should be zero: %.3e \n',maxd_sel,nonnan_unsel)
+fprintf('WhichCombos LifeCycleProfiles PType, checkerboard with age groups of five ages: selected columns vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected columns not NaN + missing + extra, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+sum(~ismember(pS,pF5)))
 
-%% Wrong size and non-0/1 entries must error
+% (6) without restrictions (2D whichcombos)
+simoptions_6=struct(); simoptions_6.whichstats=ones(1,7);
+Full6=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_6);
+simoptions_6.whichcombos=wc2;
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_6);
+[pF6,vF6]=CoreFHorzPType_StructLeaves(Full6); [pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+maxd=0; nanmis=0; notnan_off=0; missing=0;
+for k=1:numel(pF6)
+    segs=strsplit(pF6{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    onmask=reshape(wc2(find(strcmp(FnNames,segs{1})),:)==1,[1,N_j]);
+    [present,idx]=ismember(pF6{k},pS);
+    if ~present
+        missing=missing+1;
+    else
+        a=vF6{k}; b=vS{idx};
+        if ~isequal(size(a),size(b)) || size(a,2)~=N_j
+            missing=missing+1;
+        else
+            nanmis=nanmis+sum(sum(isnan(a(:,onmask))~=isnan(b(:,onmask)))); d=abs(a(:,onmask)-b(:,onmask)); d=d(~isnan(d)); maxd=max([maxd;d(:)]);
+            notnan_off=notnan_off+sum(sum(~isnan(b(:,~onmask))));
+        end
+    end
+end
+fprintf('WhichCombos LifeCycleProfiles PType, without restrictions (2D): selected columns vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected columns not NaN + missing + extra, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+sum(~ismember(pS,pF6)))
+
+% (7) invalid inputs error
 errored=0;
 simoptions_bad=simoptions; simoptions_bad.whichcombos=ones(nFns,N_j+1,npages);
 try
@@ -419,57 +251,31 @@ try
 catch
     errored=errored+1;
 end
-simoptions_bad=simoptions_nr; simoptions_bad.whichcombos=ones(nFns,N_j,2); % no restrictions, but a 3D input
+simoptions_bad=struct(); simoptions_bad.whichstats=ones(1,7); simoptions_bad.whichcombos=ones(nFns,N_j,2); % no restrictions, but a 3D input
 try
     LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_bad);
 catch
     errored=errored+1;
 end
-fprintf('WhichCombos, three invalid inputs (wrong age dimension, an entry of 2, 3D without restrictions) must all error, this should be zero: %.3e \n',3-errored)
+fprintf('WhichCombos LifeCycleProfiles PType, three invalid inputs (wrong age dimension, an entry of 2, 3D without restrictions) must all error, this should be zero: %.3e \n',3-errored)
 
-%% whichstats per combination: [nFns, nAgeGroups, 1+nRestr, 7]
-% (a) a 4D whichstats of all ones equals the full run (which used the 1x7 vector of ones)
-simoptions_w=simoptions;
-simoptions_w.whichstats=ones(nFns,N_j,npages,7);
-W1=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
+%% whichstats per combination in LifeCycleProfiles PType: [nFns, nAgeGroups, 1+nRestr, 7]
+% (a) a 4D all-ones equals the full run
+simoptions_w=simoptions; simoptions_w.whichstats=ones(nFns,N_j,npages,7);
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
 maxd=0; nanmis=0;
-for pp=1:npages
-    for ff=1:nFns
-        if pp==1
-            A=Full.(FnNames{ff}); B=W1.(FnNames{ff});
-        else
-            A=Full.(RestrNames{pp-1}).(FnNames{ff}); B=W1.(RestrNames{pp-1}).(FnNames{ff});
-        end
-        levelnames=[{''},Names_i];
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i)
-                    continue
-                elseif strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    for mm=1:length(minames)
-                        a=gather(SA.MoreInequality.(minames{mm})); b=gather(SB.MoreInequality.(minames{mm}));
-                        nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                    end
-                else
-                    a=gather(SA.(statnames{ss})); b=gather(SB.(statnames{ss}));
-                    nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                end
-            end
-        end
+for k=1:numel(pF)
+    [present,idx]=ismember(pF{k},pS);
+    if present
+        a=vF{k}; b=vS{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
     end
 end
-fprintf('WhichStats 4D all-ones vs the full run, every field, this should be zero: %.3e, NaN-pattern mismatches %i \n',maxd,nanmis)
+fprintf('WhichStats LifeCycleProfiles PType, 4D all-ones vs the full run, every leaf, this should be zero: %.3e, NaN-pattern + leaf-set mismatches %i \n',maxd,nanmis+sum(~ismember(pF,pS))+sum(~ismember(pS,pF)))
 
 % (b) per-combination pattern: statistic kk is on for (fn ff, age jj, page pp) iff mod(ff+jj+pp+kk,2)==1, so every statistic is on for
-% about half the ages of every (fn, page) and every field is present. Entries at ages where the statistic is on equal the full run,
-% the rest are NaN. Field -> statistic: Mean 1, Median 2, RatioMeanToMedian 1 and 2, Variance/StdDeviation 3, Gini/LorenzCurve 4,
+% about half the ages of every (fn, page) and every field exists; a leaf's columns where its statistic is on equal the full run, the
+% rest are NaN. Field -> statistic: Mean 1, Median 2, RatioMeanToMedian 1 and 2, Variance/StdDeviation 3, Gini/LorenzCurve 4,
 % Minimum/Maximum 5, QuantileCutoffs/QuantileMeans 6, MoreInequality.* 7.
 wsarr=zeros(nFns,N_j,npages,7);
 for pp=1:npages
@@ -482,179 +288,112 @@ for pp=1:npages
     end
 end
 simoptions_w.whichstats=wsarr;
-W2=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
-maxd_on=0; bad_off=0; missingfields=0;
-for pp=1:npages
-    for ff=1:nFns
-        if pp==1
-            A=Full.(FnNames{ff}); B=W2.(FnNames{ff});
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+maxd=0; nanmis=0; notnan_off=0; missing=0;
+for k=1:numel(pF)
+    segs=strsplit(pF{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1}));
+        isRSM=strcmp(segs{2},'RestrictedSampleMass');
+        ff=find(strcmp(FnNames,segs{2}));
+    else
+        pp=1; isRSM=false;
+        ff=find(strcmp(FnNames,segs{1}));
+    end
+    if isRSM
+        onmask=true(1,size(vF{k},2));
+    else
+        if any(strcmp(segs,'MoreInequality'))
+            kk=7;
         else
-            A=Full.(RestrNames{pp-1}).(FnNames{ff}); B=W2.(RestrNames{pp-1}).(FnNames{ff});
+            switch segs{end}
+                case 'Mean'
+                    kk=1;
+                case 'Median'
+                    kk=2;
+                case 'RatioMeanToMedian'
+                    kk=[1,2];
+                case {'Variance','StdDeviation'}
+                    kk=3;
+                case {'Gini','LorenzCurve'}
+                    kk=4;
+                case {'Minimum','Maximum'}
+                    kk=5;
+                case {'QuantileCutoffs','QuantileMeans'}
+                    kk=6;
+            end
         end
-        levelnames=[{''},Names_i];
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i)
-                    continue
-                end
-                switch statnames{ss}
-                    case 'Mean'
-                        kk=1;
-                    case 'Median'
-                        kk=2;
-                    case 'RatioMeanToMedian'
-                        kk=[1,2];
-                    case {'Variance','StdDeviation'}
-                        kk=3;
-                    case {'Gini','LorenzCurve'}
-                        kk=4;
-                    case {'Minimum','Maximum'}
-                        kk=5;
-                    case {'QuantileCutoffs','QuantileMeans'}
-                        kk=6;
-                    case 'MoreInequality'
-                        kk=7;
-                end
-                if ~isfield(SB,statnames{ss})
-                    missingfields=missingfields+1;
-                    continue
-                end
-                if strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    leavesA=cell(length(minames),1); leavesB=cell(length(minames),1);
-                    for mm=1:length(minames)
-                        leavesA{mm}=gather(SA.MoreInequality.(minames{mm})); leavesB{mm}=gather(SB.MoreInequality.(minames{mm}));
-                    end
-                else
-                    leavesA={gather(SA.(statnames{ss}))}; leavesB={gather(SB.(statnames{ss}))};
-                end
-                for ll2=1:length(leavesA)
-                    a=leavesA{ll2}; b=leavesB{ll2};
-                    for jj=1:N_j
-                        if all(wsarr(ff,jj,pp,kk)==1)
-                            d=abs(a(:,jj)-b(:,jj)); d=d(~isnan(d)); maxd_on=max([maxd_on;d]);
-                            bad_off=bad_off+sum(isnan(a(:,jj))~=isnan(b(:,jj)));
-                        else
-                            bad_off=bad_off+sum(~isnan(b(:,jj)));
-                        end
-                    end
-                end
-            end
+        onmask=reshape(all(wsarr(ff,:,pp,kk)==1,4),[1,N_j]);
+    end
+    [present,idx]=ismember(pF{k},pS);
+    if ~present
+        missing=missing+1;
+    else
+        a=vF{k}; b=vS{idx};
+        if ~isequal(size(a),size(b)) || size(a,2)~=numel(onmask)
+            missing=missing+1;
+        else
+            nanmis=nanmis+sum(sum(isnan(a(:,onmask))~=isnan(b(:,onmask)))); d=abs(a(:,onmask)-b(:,onmask)); d=d(~isnan(d)); maxd=max([maxd;d(:)]);
+            notnan_off=notnan_off+sum(sum(~isnan(b(:,~onmask))));
         end
     end
 end
-fprintf('WhichStats per-combination pattern: entries with the statistic on vs the full run, this should be zero: %.3e; entries with it off that are not NaN (and on-entry NaN-pattern mismatches), this should be zero: %.3e; fields missing, this should be zero: %.3e \n',maxd_on,bad_off,missingfields)
+fprintf('WhichStats LifeCycleProfiles PType, per-combination pattern: columns with the statistic on vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; columns with it off not NaN + leaves missing + extra leaves, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+sum(~ismember(pS,pF)))
 
-% (c) a statistic off for every age of one (fn, page) removes its field: Median off for assets unrestricted (so RatioMeanToMedian too),
+% (c) a statistic off at every age of one (fn, page) removes its field: Median off for assets unrestricted (so RatioMeanToMedian too),
 % QuantileCutoffs/QuantileMeans off for rich earnings; everything else equals the full run
-wsarr3=ones(nFns,N_j,npages,7);
-wsarr3(1,:,1,2)=0;
-wsarr3(2,:,2,6)=0;
+wsarr3=ones(nFns,N_j,npages,7); wsarr3(1,:,1,2)=0; wsarr3(2,:,2,6)=0;
 simoptions_w.whichstats=wsarr3;
-W3=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
-present=isfield(W3.assets,'Median')+isfield(W3.assets,'RatioMeanToMedian')+isfield(W3.assets.low,'Median')+isfield(W3.assets.high,'RatioMeanToMedian')+isfield(W3.rich.earnings,'QuantileCutoffs')+isfield(W3.rich.earnings.low,'QuantileMeans')+isfield(W3.rich.earnings.high,'QuantileCutoffs');
-fprintf('WhichStats all-ages-off statistic: fields that must be absent (7 looked for), this should be zero: %.3e \n',present)
-maxd=0; nanmis=0; nleaves=0;
-for pp=1:npages
-    for ff=1:nFns
-        if pp==1
-            A=Full.(FnNames{ff}); B=W3.(FnNames{ff});
-        else
-            A=Full.(RestrNames{pp-1}).(FnNames{ff}); B=W3.(RestrNames{pp-1}).(FnNames{ff});
-        end
-        levelnames=[{''},Names_i];
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i) || ~isfield(SB,statnames{ss})
-                    continue
-                elseif strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    for mm=1:length(minames)
-                        a=gather(SA.MoreInequality.(minames{mm})); b=gather(SB.MoreInequality.(minames{mm}));
-                        nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]); nleaves=nleaves+1;
-                    end
-                else
-                    a=gather(SA.(statnames{ss})); b=gather(SB.(statnames{ss}));
-                    nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]); nleaves=nleaves+1;
-                end
-            end
-        end
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+maxd=0; nanmis=0; missing=0; extra=0;
+for k=1:numel(pF)
+    segs=strsplit(pF{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    removed=false;
+    if strcmp(segs{1},'assets') && any(strcmp(segs{end},{'Median','RatioMeanToMedian'}))
+        removed=true;
+    elseif strcmp(segs{1},'rich') && numel(segs)>=2 && strcmp(segs{2},'earnings') && any(strcmp(segs{end},{'QuantileCutoffs','QuantileMeans'}))
+        removed=true;
+    end
+    [present,idx]=ismember(pF{k},pS);
+    if removed
+        extra=extra+double(present);
+    elseif ~present
+        missing=missing+1;
+    else
+        a=vF{k}; b=vS{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
     end
 end
-fprintf('WhichStats all-ages-off statistic: the other fields (%i leaves) vs the full run, this should be zero: %.3e, NaN-pattern mismatches %i \n',nleaves,maxd,nanmis)
+fprintf('WhichStats LifeCycleProfiles PType, a statistic off at every age: the other leaves vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; removed fields present + other fields missing + extra leaves, this should be zero: %.3e \n',maxd,nanmis,extra+missing+sum(~ismember(pS,pF)))
 
-% (d) [nFns, nAgeGroups, 7] with restrictions present equals its 4D repmat over the pages
+% (d) [nFns, nAgeGroups, 7] with restrictions equals its 4D repmat over the pages
 simoptions_w.whichstats=reshape(wsarr(:,:,1,:),[nFns,N_j,7]);
-W4=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
+A=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
 simoptions_w.whichstats=repmat(reshape(wsarr(:,:,1,:),[nFns,N_j,1,7]),[1,1,npages,1]);
-W5=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
-maxd=0; nanmis=0; fieldmis=0;
-for pp=1:npages
-    for ff=1:nFns
-        if pp==1
-            A=W4.(FnNames{ff}); B=W5.(FnNames{ff});
-        else
-            A=W4.(RestrNames{pp-1}).(FnNames{ff}); B=W5.(RestrNames{pp-1}).(FnNames{ff});
-        end
-        levelnames=[{''},Names_i];
-        for ll=1:length(levelnames)
-            if isempty(levelnames{ll})
-                SA=A; SB=B;
-            else
-                SA=A.(levelnames{ll}); SB=B.(levelnames{ll});
-            end
-            fieldmis=fieldmis+numel(setxor(fieldnames(SA),fieldnames(SB)));
-            statnames=fieldnames(SA);
-            for ss=1:length(statnames)
-                if ismember(statnames{ss},Names_i) || ~isfield(SB,statnames{ss})
-                    continue
-                elseif strcmp(statnames{ss},'MoreInequality')
-                    minames=fieldnames(SA.MoreInequality);
-                    for mm=1:length(minames)
-                        a=gather(SA.MoreInequality.(minames{mm})); b=gather(SB.MoreInequality.(minames{mm}));
-                        nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                    end
-                else
-                    a=gather(SA.(statnames{ss})); b=gather(SB.(statnames{ss}));
-                    nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
-                end
-            end
-        end
+B=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
+[pA,vA]=CoreFHorzPType_StructLeaves(A); [pB,vB]=CoreFHorzPType_StructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
     end
 end
-fprintf('WhichStats 3D input vs its 4D repmat, every field, this should be zero: %.3e, NaN-pattern mismatches + field-set mismatches %i \n',maxd,nanmis+fieldmis)
+fprintf('WhichStats LifeCycleProfiles PType, 3D input vs its 4D repmat, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
 
-% (e) a combination with every statistic off is skipped like a whichcombos zero: richind unrestricted all off leaves no statistic
-% fields under richind (grouped) or under richind.(ptype); rich.richind is unaffected
-wsarr5=ones(nFns,N_j,npages,7);
-wsarr5(3,:,1,:)=0;
+% (e) a combination with every statistic off is skipped like a whichcombos zero: richind unrestricted all off leaves no richind struct
+% (or one with no statistic fields); rich.richind is unaffected
+wsarr5=ones(nFns,N_j,npages,7); wsarr5(3,:,1,:)=0;
 simoptions_w.whichstats=wsarr5;
-W6=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
-if isfield(W6,'richind') % with nothing asked for, the richind struct need not exist at all; if it does it must hold no statistic fields
-    nstatfields=numel(setdiff(fieldnames(W6.richind),Names_i));
-    for ii=1:N_i
-        if isfield(W6.richind,Names_i{ii})
-            nstatfields=nstatfields+numel(fieldnames(W6.richind.(Names_i{ii})));
-        end
-    end
-else
-    nstatfields=0;
-end
-fprintf('WhichStats all-off combination (richind unrestricted): statistic fields present, this should be zero: %.3e \n',nstatfields)
-a=gather(Full.rich.richind.Mean); b=gather(W6.rich.richind.Mean);
-fprintf('WhichStats all-off combination: rich richind grouped Mean vs the full run, this should be zero: %.3e \n',max(abs(a-b)))
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+nstat=sum(cellfun(@(p) strncmp(p,'.richind.',9),pS));
+fprintf('WhichStats LifeCycleProfiles PType, all-off combination (richind unrestricted): leaves under richind, this should be zero: %.3e \n',nstat)
+a=gather(Full.rich.richind.Mean); b=gather(Sub.rich.richind.Mean);
+fprintf('WhichStats LifeCycleProfiles PType, all-off combination: rich richind grouped Mean vs the full run, this should be zero: %.3e \n',max(abs(a-b)))
 
 % (f) mixed Gini settings across ages: whichstats(4)=3 (Gini only) at odd ages and 1 (Gini and Lorenz curve) at even ages, for assets
 % unrestricted: LorenzCurve is present, NaN at the odd ages and equal to the full run at the even ages; Gini equals the full run at all ages
@@ -663,13 +402,13 @@ for jj=1:2:N_j
     wsarr6(1,jj,1,4)=3;
 end
 simoptions_w.whichstats=wsarr6;
-W7=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
-fprintf('WhichStats mixed Gini 3/1 across ages: assets LorenzCurve field present (grouped and both ptypes), this should be zero: %.3e \n',3-isfield(W7.assets,'LorenzCurve')-isfield(W7.assets.low,'LorenzCurve')-isfield(W7.assets.high,'LorenzCurve'))
-LC_full=gather(Full.assets.LorenzCurve); LC=gather(W7.assets.LorenzCurve);
-fprintf('WhichStats mixed Gini 3/1 across ages: grouped assets LorenzCurve at even ages vs the full run, this should be zero: %.3e; non-NaN entries at odd ages, this should be zero: %.3e \n',max(max(abs(LC_full(:,2:2:N_j)-LC(:,2:2:N_j)))),sum(sum(~isnan(LC(:,1:2:N_j)))))
-LC_full=gather(Full.assets.low.LorenzCurve); LC=gather(W7.assets.low.LorenzCurve);
-fprintf('WhichStats mixed Gini 3/1 across ages: ptype low assets LorenzCurve at even ages vs the full run, this should be zero: %.3e; non-NaN entries at odd ages, this should be zero: %.3e \n',max(max(abs(LC_full(:,2:2:N_j)-LC(:,2:2:N_j)))),sum(sum(~isnan(LC(:,1:2:N_j)))))
-fprintf('WhichStats mixed Gini 3/1 across ages: grouped assets Gini vs the full run, this should be zero: %.3e \n',max(abs(gather(Full.assets.Gini)-gather(W7.assets.Gini))))
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_w);
+fprintf('WhichStats LifeCycleProfiles PType, mixed Gini 3/1 across ages: assets LorenzCurve field present (grouped and both ptypes), this should be zero: %.3e \n',3-isfield(Sub.assets,'LorenzCurve')-isfield(Sub.assets.low,'LorenzCurve')-isfield(Sub.assets.high,'LorenzCurve'))
+LC_full=gather(Full.assets.LorenzCurve); LC=gather(Sub.assets.LorenzCurve);
+fprintf('WhichStats LifeCycleProfiles PType, mixed Gini 3/1 across ages: grouped assets LorenzCurve at even ages vs the full run, this should be zero: %.3e; non-NaN entries at odd ages, this should be zero: %.3e \n',max(max(abs(LC_full(:,2:2:N_j)-LC(:,2:2:N_j)))),sum(sum(~isnan(LC(:,1:2:N_j)))))
+LC_full=gather(Full.assets.low.LorenzCurve); LC=gather(Sub.assets.low.LorenzCurve);
+fprintf('WhichStats LifeCycleProfiles PType, mixed Gini 3/1 across ages: ptype low assets LorenzCurve at even ages vs the full run, this should be zero: %.3e; non-NaN entries at odd ages, this should be zero: %.3e \n',max(max(abs(LC_full(:,2:2:N_j)-LC(:,2:2:N_j)))),sum(sum(~isnan(LC(:,1:2:N_j)))))
+fprintf('WhichStats LifeCycleProfiles PType, mixed Gini 3/1 across ages: grouped assets Gini vs the full run, this should be zero: %.3e \n',max(abs(gather(Full.assets.Gini)-gather(Sub.assets.Gini))))
 
 % (g) wrong sizes must error
 errored=0;
@@ -685,10 +424,454 @@ try
 catch
     errored=errored+1;
 end
-fprintf('WhichStats, two invalid sizes must both error, this should be zero: %.3e \n',2-errored)
+fprintf('WhichStats LifeCycleProfiles PType, two invalid sizes must both error, this should be zero: %.3e \n',2-errored)
+
+%% ===================== AllStats PType =====================
+FullAS=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
+[pF,vF]=CoreFHorzPType_StructLeaves(FullAS);
+
+% (a) checkerboard over (fn, page): a skipped (fn, page) has no per-type struct and no grouped fields
+wcA=zeros(nFns,npages);
+for pp=1:npages
+    for ff=1:nFns
+        wcA(ff,pp)=mod(ff+pp,2);
+    end
+end
+simoptions_a=simoptions; simoptions_a.whichcombos=wcA;
+Sub=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_a);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+maxd=0; nanmis=0; missing=0; extra=0;
+for k=1:numel(pF)
+    segs=strsplit(pF{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1}));
+        if strcmp(segs{2},'RestrictedSampleMass')
+            expectpresent=true;
+        else
+            expectpresent=(wcA(find(strcmp(FnNames,segs{2})),pp)==1);
+        end
+    else
+        expectpresent=(wcA(find(strcmp(FnNames,segs{1})),1)==1);
+    end
+    [present,idx]=ismember(pF{k},pS);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        else
+            a=vF{k}; b=vS{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichCombos AllStats PType, checkerboard over (fn, page): selected leaves vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; selected leaves missing + unselected leaves present, this should be zero: %.3e \n',maxd,nanmis,missing+extra+sum(~ismember(pS,pF)))
+
+% (b) whichstats per combination: statistic kk on for (fn ff, page pp) iff mod(ff+pp+kk,2)==1; a leaf is present iff its statistic is on
+% (Minimum/Maximum also whenever quantiles are on: StatsFromWeightedGrid reports them with the cutoffs)
+wsA=zeros(nFns,npages,7);
+for pp=1:npages
+    for ff=1:nFns
+        for kk=1:7
+            wsA(ff,pp,kk)=mod(ff+pp+kk,2);
+        end
+    end
+end
+simoptions_b=simoptions; simoptions_b.whichstats=wsA;
+Sub=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_b);
+[pS,vS]=CoreFHorzPType_StructLeaves(Sub);
+maxd=0; nanmis=0; missing=0; extra=0;
+for k=1:numel(pF)
+    segs=strsplit(pF{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1}));
+        isRSM=strcmp(segs{2},'RestrictedSampleMass');
+        ff=find(strcmp(FnNames,segs{2}));
+    else
+        pp=1; isRSM=false;
+        ff=find(strcmp(FnNames,segs{1}));
+    end
+    if isRSM
+        expectpresent=true;
+    else
+        statname=segs{end};
+        if any(strcmp(segs,'MoreInequality'))
+            kk=7;
+        else
+            switch statname
+                case 'Mean'
+                    kk=1;
+                case 'Median'
+                    kk=2;
+                case 'RatioMeanToMedian'
+                    kk=[1,2];
+                case {'Variance','StdDeviation'}
+                    kk=3;
+                case {'Gini','LorenzCurve'}
+                    kk=4;
+                case {'Minimum','Maximum'}
+                    kk=5;
+                case {'QuantileCutoffs','QuantileMeans'}
+                    kk=6;
+            end
+        end
+        expectpresent=all(wsA(ff,pp,kk)==1);
+        if any(strcmp(statname,{'Minimum','Maximum'}))
+            expectpresent=(wsA(ff,pp,5)==1 || wsA(ff,pp,6)>=1);
+        end
+    end
+    [present,idx]=ismember(pF{k},pS);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        else
+            a=vF{k}; b=vS{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichStats AllStats PType, per-combination pattern: leaves with the statistic on vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; on-leaves missing + off-leaves present, this should be zero: %.3e \n',maxd,nanmis,missing+extra+sum(~ismember(pS,pF)))
+
+% (c) [nFns,7] whichstats equals its repmat over pages, [nFns,1] whichcombos its repmat; invalid inputs error
+simoptions_c=simoptions; simoptions_c.whichstats=reshape(wsA(:,1,:),[nFns,7]); simoptions_c.whichcombos=[1;0;1];
+A=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_c);
+simoptions_c.whichstats=repmat(reshape(wsA(:,1,:),[nFns,1,7]),[1,npages,1]); simoptions_c.whichcombos=repmat([1;0;1],[1,npages]);
+B=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_c);
+[pA,vA]=CoreFHorzPType_StructLeaves(A); [pB,vB]=CoreFHorzPType_StructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    end
+end
+fprintf('WhichCombos/WhichStats AllStats PType, broadcast inputs vs their repmats, every leaf, this should be zero: %.3e, NaN-pattern + leaf-set mismatches %i \n',maxd,nanmis+sum(~ismember(pA,pB))+sum(~ismember(pB,pA)))
+errored=0;
+simoptions_bad=simoptions; simoptions_bad.whichcombos=ones(nFns+1,npages);
+try
+    EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_bad);
+catch
+    errored=errored+1;
+end
+simoptions_bad=simoptions; simoptions_bad.whichstats=ones(nFns,npages,6);
+try
+    EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_bad);
+catch
+    errored=errored+1;
+end
+fprintf('WhichCombos AllStats PType, two invalid inputs must both error, this should be zero: %.3e \n',2-errored)
+
+%% ===================== AggVars PType =====================
+simoptions_ag=struct();
+FullAg=EvalFnOnAgentDist_AggVars_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_ag);
+simoptions_ag.whichcombos=[1,0,1];
+SubAg=EvalFnOnAgentDist_AggVars_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_ag);
+[pF2,vF2]=CoreFHorzPType_StructLeaves(FullAg); [pS2,vS2]=CoreFHorzPType_StructLeaves(SubAg);
+maxd=0; notnan_off=0; missing=0;
+for k=1:numel(pF2)
+    segs=strsplit(pF2{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    ff=find(strcmp(FnNames,segs{1}));
+    [present,idx]=ismember(pF2{k},pS2);
+    if ~present
+        missing=missing+1;
+    elseif simoptions_ag.whichcombos(ff)==1
+        maxd=max(maxd,abs(vF2{k}-vS2{idx}));
+    else
+        notnan_off=notnan_off+double(~isnan(vS2{idx}));
+    end
+end
+fprintf('WhichCombos AggVars PType, [1,0,1]: selected Means vs full run, this should be zero: %.3e; unselected Means that are not NaN + leaves missing + extra leaves, this should be zero: %.3e \n',maxd,notnan_off+missing+sum(~ismember(pS2,pF2)))
+simoptions_ag.whichcombos=[0;0;0];
+ZAg=EvalFnOnAgentDist_AggVars_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_ag);
+[pZ,vZ]=CoreFHorzPType_StructLeaves(ZAg);
+fprintf('WhichCombos AggVars PType, all zeros: leaves present %i (full run has %i), non-NaN entries, this should be zero: %.3e \n',numel(pZ),numel(pF2),sum(cellfun(@(x) sum(~isnan(x(:))),vZ)))
+errored=0;
+simoptions_bad=struct(); simoptions_bad.whichcombos=[1,0];
+try
+    EvalFnOnAgentDist_AggVars_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_bad);
+catch
+    errored=errored+1;
+end
+fprintf('WhichCombos AggVars PType, a wrong-length whichcombos must error, this should be zero: %.3e \n',1-errored)
+
+%% ===================== AutoCorrTransProbs PType =====================
+simoptions_ac=struct();
+simoptions_ac.timehorizons=2;
+simoptions_ac.conditionalrestrictions=simoptions.conditionalrestrictions;
+FullAC=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
+[pF3,vF3]=CoreFHorzPType_StructLeaves(FullAC);
+% (a) (fn, page) checkerboard, every start age
+wc3=zeros(nFns,N_j,npages);
+for pp=1:npages
+    for ff=1:nFns
+        wc3(ff,:,pp)=mod(ff+pp,2);
+    end
+end
+simoptions_ac.whichcombos=wc3;
+SubAC=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
+[pS3,vS3]=CoreFHorzPType_StructLeaves(SubAC);
+maxd=0; nanmis=0; missing=0; extra=0;
+for k=1:numel(pF3)
+    segs=strsplit(pF3{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1}));
+        if strcmp(segs{2},'RestrictedSampleMass')
+            expectpresent=true;
+        else
+            expectpresent=(wc3(find(strcmp(FnNames,segs{2})),1,pp)==1);
+        end
+    else
+        expectpresent=(wc3(find(strcmp(FnNames,segs{1})),1,1)==1);
+    end
+    [present,idx]=ismember(pF3{k},pS3);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        else
+            a=vF3{k}; b=vS3{idx};
+            if ~isequal(size(a),size(b))
+                missing=missing+1;
+            else
+                nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+            end
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichCombos AutoCorr PType, checkerboard over (fn, page): selected leaves vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; selected leaves missing + unselected leaves present, this should be zero: %.3e \n',maxd,nanmis,missing+extra+sum(~ismember(pS3,pF3)))
+% (b) the age dimension is validated but not acted on: selecting only the first start age of (assets, unrestricted) gives the same output for it as the full run
+wc3b=ones(nFns,N_j,npages); wc3b(1,2:end,1)=0;
+simoptions_ac.whichcombos=wc3b;
+SubAC=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
+[pS3,vS3]=CoreFHorzPType_StructLeaves(SubAC);
+maxd=0; nanmis=0;
+for k=1:numel(pF3)
+    [present,idx]=ismember(pF3{k},pS3);
+    if present && isequal(size(vF3{k}),size(vS3{idx}))
+        a=vF3{k}; b=vS3{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos AutoCorr PType, a partial start-age selection (not acted on yet) vs full run, every leaf, this should be zero: %.3e, NaN-pattern + leaf-set mismatches %i \n',maxd,nanmis+sum(~ismember(pS3,pF3)))
+% (c) the two 2D forms expand to the same 3D selection; invalid sizes error
+simoptions_ac.whichcombos=reshape(wc3(:,1,:),[nFns,npages]);
+A=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
+simoptions_ac.whichcombos=wc3;
+B=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
+[pA,vA]=CoreFHorzPType_StructLeaves(A); [pB,vB]=CoreFHorzPType_StructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos AutoCorr PType, (fn, page) input vs its expansion over start ages, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
+errored=0;
+simoptions_bad=simoptions_ac; simoptions_bad.whichcombos=ones(nFns,N_j+1,npages);
+try
+    EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_bad);
+catch
+    errored=errored+1;
+end
+fprintf('WhichCombos AutoCorr PType, a wrong-size whichcombos must error, this should be zero: %.3e \n',1-errored)
+
+%% ===================== CrossSectionCovarCorr PType =====================
+simoptions_cs=struct();
+FullCS=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_cs);
+% wc: assets own stats + pair (assets,richind); earnings: nothing at all; richind: own stats + pair with assets
+wcs=[1,0,1; 0,0,0; 0,0,1];
+wcsym=max(wcs,wcs');
+fnwanted=any(wcsym,2);
+simoptions_cs.whichcombos=wcs;
+SubCS=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_cs);
+[pF4,vF4]=CoreFHorzPType_StructLeaves(FullCS); [pS4,vS4]=CoreFHorzPType_StructLeaves(SubCS);
+maxd=0; nanmis=0; missing=0; extra=0; notnan_off=0;
+for k=1:numel(pF4)
+    segs=strsplit(pF4{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if any(strcmp(segs{1},{'CovarianceMatrix_ptype','CorrelationMatrix_ptype','CovarianceMatrix','CorrelationMatrix'}))
+        continue % the matrices are checked below
+    end
+    ff=find(strcmp(FnNames,segs{1}));
+    if ismember(segs{2},Names_i) % per-type leaf
+        if numel(segs)==3 % .fn.ptype.Mean / .StdDeviation / .fn (self): present iff the function is evaluated, equal
+            expectpresent=fnwanted(ff); on=1;
+        else % .fn.ptype.CovarianceWith.fn2: present iff both evaluated, equal iff the pair is selected else NaN
+            ff2=find(strcmp(FnNames,segs{4}));
+            expectpresent=fnwanted(ff) && fnwanted(ff2); on=wcsym(ff,ff2);
+        end
+    else % grouped leaf: always present; equal iff selected (the diagonal for Mean/StdDeviation/self, the pair otherwise) else NaN
+        expectpresent=true;
+        if numel(segs)==2
+            on=wcsym(ff,ff);
+        else
+            ff2=find(strcmp(FnNames,segs{3}));
+            on=wcsym(ff,ff2);
+        end
+    end
+    [present,idx]=ismember(pF4{k},pS4);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        elseif on==1
+            a=vF4{k}; b=vS4{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+        else
+            notnan_off=notnan_off+sum(~isnan(vS4{idx}(:)));
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichCombos CrossSection PType, pair selection: selected leaves vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected leaves not NaN + missing + extra, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+extra+sum(~ismember(pS4,pF4)))
+Mf=gather(FullCS.CovarianceMatrix); Ms=gather(SubCS.CovarianceMatrix); Rf=gather(FullCS.CorrelationMatrix); Rs=gather(SubCS.CorrelationMatrix);
+on=(wcsym==1);
+fprintf('WhichCombos CrossSection PType, grouped matrices: selected entries vs full run, this should be zero: %.3e; unselected entries not NaN, this should be zero: %.3e \n',max([abs(Mf(on)-Ms(on));abs(Rf(on)-Rs(on))]),sum(~isnan(Ms(~on)))+sum(~isnan(Rs(~on))))
+dmat=0; badmat=0;
+sel=find(fnwanted);
+for ii=1:N_i
+    Mf_ii=gather(FullCS.CovarianceMatrix_ptype.(Names_i{ii})); Ms_ii=gather(SubCS.CovarianceMatrix_ptype.(Names_i{ii}));
+    if ~isequal(size(Ms_ii),[numel(sel),numel(sel)])
+        badmat=badmat+1;
+    else
+        onsub=max(wcsym(sel,sel),eye(numel(sel)))==1;
+        Mf_sub=Mf_ii(sel,sel);
+        dmat=max(dmat,max(abs(Mf_sub(onsub)-Ms_ii(onsub))));
+        badmat=badmat+sum(~isnan(Ms_ii(~onsub)));
+    end
+end
+fprintf('WhichCombos CrossSection PType, per-type covariance matrices (shrunk to the evaluated functions): selected entries vs full run, this should be zero: %.3e; wrong size or unselected entries not NaN, this should be zero: %.3e \n',dmat,badmat)
+simoptions_cs.whichcombos=wcsym;
+SymCS=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_cs);
+[pY,vY]=CoreFHorzPType_StructLeaves(SymCS);
+maxd=0; nanmis=0;
+for k=1:numel(pS4)
+    [present,idx]=ismember(pS4{k},pY);
+    if present && isequal(size(vS4{k}),size(vY{idx}))
+        a=vS4{k}; b=vY{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos CrossSection PType, symmetric input vs upper-triangle input, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pY,pS4)))
+errored=0;
+simoptions_bad=struct(); simoptions_bad.whichcombos=ones(nFns,nFns+1);
+try
+    EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_bad);
+catch
+    errored=errored+1;
+end
+fprintf('WhichCombos CrossSection PType, a wrong-size whichcombos must error, this should be zero: %.3e \n',1-errored)
+
+%% ===================== AgeConditionalStats CrossSectionCovarCorr PType =====================
+simoptions_acs=struct();
+simoptions_acs.agegroupings=1:5:N_j;
+ngroups=length(simoptions_acs.agegroupings);
+FullACS=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_acs);
+% selection: earnings nothing at all; assets/richind own stats and their pair on a checkerboard over age groups
+wca=zeros(nFns,nFns,ngroups);
+for kk=1:ngroups
+    wca(1,1,kk)=mod(kk,2); wca(3,3,kk)=mod(kk+1,2); wca(1,3,kk)=mod(kk,2);
+end
+wcasym=wca;
+for kk=1:ngroups
+    wcasym(:,:,kk)=max(wca(:,:,kk),wca(:,:,kk)');
+end
+fnwanted=any(any(wcasym,2),3);
+simoptions_acs.whichcombos=wca;
+SubACS=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_acs);
+[pF5,vF5]=CoreFHorzPType_StructLeaves(FullACS); [pS5,vS5]=CoreFHorzPType_StructLeaves(SubACS);
+maxd=0; nanmis=0; missing=0; extra=0; notnan_off=0;
+for k=1:numel(pF5)
+    segs=strsplit(pF5{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if any(strcmp(segs{1},{'CovarianceMatrix_ptype','CorrelationMatrix_ptype','CovarianceMatrix','CorrelationMatrix'}))
+        continue
+    end
+    ff=find(strcmp(FnNames,segs{1}));
+    if ismember(segs{2},Names_i)
+        if numel(segs)==3
+            expectpresent=fnwanted(ff); onmask=true(1,ngroups);
+        else
+            ff2=find(strcmp(FnNames,segs{4}));
+            expectpresent=fnwanted(ff) && fnwanted(ff2); onmask=reshape(wcasym(ff,ff2,:)==1,[1,ngroups]);
+        end
+    else
+        expectpresent=true;
+        if numel(segs)==2
+            onmask=reshape(wcasym(ff,ff,:)==1,[1,ngroups]);
+        else
+            ff2=find(strcmp(FnNames,segs{3}));
+            onmask=reshape(wcasym(ff,ff2,:)==1,[1,ngroups]);
+        end
+    end
+    [present,idx]=ismember(pF5{k},pS5);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        else
+            a=vF5{k}; b=vS5{idx};
+            if ~isequal(size(a),size(b)) || numel(a)~=ngroups
+                missing=missing+1;
+            else
+                a=reshape(a,[1,ngroups]); b=reshape(b,[1,ngroups]);
+                nanmis=nanmis+sum(isnan(a(onmask))~=isnan(b(onmask))); d=abs(a(onmask)-b(onmask)); d=d(~isnan(d)); maxd=max([maxd,d]);
+                notnan_off=notnan_off+sum(~isnan(b(~onmask)));
+            end
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichCombos AgeConditional CrossSection PType, pair x age-group selection: selected entries vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected entries not NaN + missing + extra, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+extra+sum(~ismember(pS5,pF5)))
+Mf=gather(FullACS.CovarianceMatrix); Ms=gather(SubACS.CovarianceMatrix); Rf=gather(FullACS.CorrelationMatrix); Rs=gather(SubACS.CorrelationMatrix);
+on=(wcasym==1);
+fprintf('WhichCombos AgeConditional CrossSection PType, grouped matrices: selected entries vs full run, this should be zero: %.3e; unselected entries not NaN, this should be zero: %.3e \n',max([abs(Mf(on)-Ms(on));abs(Rf(on)-Rs(on))]),sum(~isnan(Ms(~on)))+sum(~isnan(Rs(~on))))
+dmat=0; badmat=0;
+sel=find(fnwanted);
+for ii=1:N_i
+    Mf_ii=gather(FullACS.CovarianceMatrix_ptype.(Names_i{ii})); Ms_ii=gather(SubACS.CovarianceMatrix_ptype.(Names_i{ii}));
+    if ~isequal(size(Ms_ii),[numel(sel),numel(sel),ngroups])
+        badmat=badmat+1;
+    else
+        onsub=false(numel(sel),numel(sel),ngroups);
+        for kk=1:ngroups
+            onsub(:,:,kk)=max(wcasym(sel,sel,kk),eye(numel(sel)))==1;
+        end
+        Mf_sub=Mf_ii(sel,sel,:);
+        dmat=max(dmat,max(abs(Mf_sub(onsub)-Ms_ii(onsub))));
+        badmat=badmat+sum(~isnan(Ms_ii(~onsub)));
+    end
+end
+fprintf('WhichCombos AgeConditional CrossSection PType, per-type covariance matrices (shrunk to the evaluated functions): selected entries vs full run, this should be zero: %.3e; wrong size or unselected entries not NaN, this should be zero: %.3e \n',dmat,badmat)
+simoptions_acs.whichcombos=wcs;
+A=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_acs);
+simoptions_acs.whichcombos=repmat(wcs,[1,1,ngroups]);
+B=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_acs);
+[pA,vA]=CoreFHorzPType_StructLeaves(A); [pB,vB]=CoreFHorzPType_StructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos AgeConditional CrossSection PType, 2D input vs its repmat over age groups, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
+errored=0;
+simoptions_bad=struct(); simoptions_bad.agegroupings=1:5:N_j; simoptions_bad.whichcombos=ones(nFns,nFns,ngroups+1);
+try
+    EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_bad);
+catch
+    errored=errored+1;
+end
+fprintf('WhichCombos AgeConditional CrossSection PType, a wrong-size whichcombos must error, this should be zero: %.3e \n',1-errored)
 
 output=struct();
-output.Full=Full;
-output.Sub=Sub;
+output.LifeCycleProfiles_full=Full;
+output.AllStats_full=FullAS;
 
 end
