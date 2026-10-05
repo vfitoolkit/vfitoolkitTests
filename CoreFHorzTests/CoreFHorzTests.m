@@ -24,6 +24,7 @@
 % doPart(9):  with2A semiz cross-tests
 % doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs, plus the AutoCorr brute forces without and with semiz)
 % doPart(11): StatsFromWeightedGrid unit tests (hand-built distributions, plus GPU runtimes)
+% doPart(12): simoptions.whichcombos (and per-combination whichstats) in the single-type stats commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr (start-age dimension), CrossSection, AgeConditional CrossSection, vs their full runs
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so Fig 20
 % is the same test whatever doPart says, and a png from a previous run is never overwritten by a
@@ -32,7 +33,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -441,6 +442,18 @@ if doPart(11)==1
         warning('TestStatsFromWeightedGrid: %d test(s) outside tolerance -- scroll up to find the failing line(s).', fail_count_SFWG)
     end
 end % doPart(11): StatsFromWeightedGrid unit tests
+
+%% ===== doPart(12): simoptions.whichcombos in the single-type stats commands =====
+if doPart(12)==1
+    fprintf('\n===== doPart(12): simoptions.whichcombos in the single-type stats commands =====\n')
+    %% 12. simoptions.whichcombos (and per-combination whichstats where the command has whichstats) in LifeCycleProfiles_FHorz_Case1
+    % ([nFns,nAgeGroups,1+nRestr]; whichstats [..,7]), AllStats ([nFns,1+nRestr]; whichstats [nFns,1+nRestr,7]), AggVars ([nFns,1]),
+    % AutoCorrTransProbs ([nFns,N_j,1+nRestr], the second dimension the start age, acted on), CrossSectionCovarCorr ([nFns,nFns], upper
+    % triangle) and AgeConditionalStats_CrossSectionCovarCorr ([nFns,nFns,nAgeGroups]). Each selective run is compared with its full run
+    % leaf by leaf (CoreStructLeaves): selected leaves/columns equal the full run, unselected ones are NaN or absent, RestrictedSampleMass
+    % is always filled, broadcast inputs equal their expansions, invalid inputs error. The PType counterpart is CoreFHorzPTypeTests part 22.
+    output=CoreFHorz_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames);
+end % doPart(12): simoptions.whichcombos in the single-type stats commands
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 %% One verdict for the whole run
