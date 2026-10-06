@@ -18,6 +18,7 @@
 % doPart(2): two endogenous states (figs 9-10)
 % doPart(3): _tminus1 and _tplus1 (no figures)
 % doPart(4): localsearch, the local-search value fn step (no figures, no general eqm)
+% doPart(5): localsearch with a decision variable (no figures, no general eqm)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -26,7 +27,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[0,0,0,1];
+doPart=[0,0,0,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -131,6 +132,18 @@ if doPart(4)==1
     % then local search has nothing to win.
     output=CoreInfHorzTPath_localsearch(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end % doPart(4): localsearch, the local-search value fn step
+
+%% ===== doPart(5): localsearch with a decision variable =====
+if doPart(5)==1
+    fprintf('\n===== doPart(5): localsearch with a decision variable =====\n')
+    %% vfoptions.localsearch=1 on a model WITH d, where the reference is conditional on d
+    % The counterpart of doPart(4), which is the no-d case. The reference is [N_d,N_a,N_z], one
+    % aprime index per (d,a,z), because d enters the budget and so the optimal aprime moves with it.
+    % d itself is searched in full, since an unordered d makes a window in the d index meaningless.
+    % Also the only coverage of the raws' third output, the aprime chosen for EACH d, which no other
+    % raw in the toolkit produces and which is what a warm start from a previous pass would use.
+    output=CoreInfHorzTPath_localsearch_d(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end % doPart(5): localsearch with a decision variable
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run

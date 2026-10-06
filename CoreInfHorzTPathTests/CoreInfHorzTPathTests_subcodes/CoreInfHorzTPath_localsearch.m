@@ -83,9 +83,6 @@ vfoptions=struct();
 
 ReturnFn=@(aprime,a,z,r,w,sigma) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,sigma);
 
-% The bank's d grid is kept aside, used only by the with-d refusal check at the end
-n_d_withd=n_d; d_grid_withd=d_grid;
-
 n_d=0; d_grid=[]; % local search is currently implemented for no d
 
 N_a=prod(n_a);
@@ -228,11 +225,12 @@ fprintf('localsearch: (7) for scale, the same step with the default reference in
 
 %% (8) The five documented refusals, each checked by its own message
 % Each is tested at the level that raises it: the three nlocalsearch refusals are the command's own
-% validation, the two combination refusals are the dispatcher's. Going through the command for the
-% last two would not work -- a with-d Policy_final has two channels, so the command would throw on
-% the size of its own Policy path before the dispatcher was ever reached, and the check would pass
-% on the wrong error.
-err=zeros(1,5);
+% validation, the divide-and-conquer one is the dispatcher's.
+% There is no with-d refusal to check any more. It was here until d was implemented, and it is now
+% doPart(5) that covers that case -- the same thing that happened to the gridinterplayer refusal when
+% the interpolation layer was implemented. A refusal check has to be deleted the moment the thing it
+% refuses starts working, or it fails for the best possible reason.
+err=zeros(1,4);
 
 vfoptionsE=vfoptions; vfoptionsE.localsearch=1; % no nlocalsearch
 try
@@ -262,19 +260,10 @@ catch ME
     err(4)=contains(ME.message,'combined with vfoptions.divideandconquer');
 end
 
-% With d. Nothing after the refusal is reached, so the d grid is all that has to be real here.
-vfoptionsE=vfoptionsS; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1;
-try
-    ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d_withd,n_a,n_z,gpuArray(d_grid_withd), a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsE);
-catch ME
-    err(5)=contains(ME.message,'only implemented for one endogenous state');
-end
-
 fprintf('localsearch: (8) nlocalsearch unset is refused by name, should be one: %i \n',err(1))
 fprintf('localsearch: (8) nlocalsearch too large for the grid is refused by name, should be one: %i \n',err(2))
 fprintf('localsearch: (8) nlocalsearch=0 is refused by name, should be one: %i \n',err(3))
 fprintf('localsearch: (8) combination with divide-and-conquer is refused by name, should be one: %i \n',err(4))
-fprintf('localsearch: (8) a model with d is refused by name, should be one: %i \n',err(5))
 
 %% (9) The same thing on the big grid, where speed can actually be measured
 % n_a_big=1001, so the predicted saving at nlocalsearch=1 is 1001/3=334. Everything here is the same
@@ -551,6 +540,33 @@ for l_c=1:length(level1nlist)
 end
 fprintf('DC comparison: big grid, with GI: the best divide-and-conquer is level1n=%i at %6.2f s, and the local search is %5.2fx ITS time (below one means the local search wins) \n',bestlevel1nGI,bestDCGI,timeLSbGI/bestDCGI)
 fprintf('DC comparison: (15) divide-and-conquer with GI, V vs the unrestricted GI path, worst over the level1n swept, this should be zero: %.3e \n',dcVgapGI)
+
+%% (16) The third output
+% LS1_nod: the new reference is just the chosen aprime, so it must equal Policy.
+% LS1_GI1_nod: the answer is a fine point and the reference is coarse, so it must be the nearest
+% coarse point to it, recomputed here from Policy channels 1 and 2 rather than taken on trust.
+vfoptions16=vfoptionsS;
+vfoptions16.gridinterplayer=0;
+vfoptions16.localsearch=1;
+vfoptions16.nlocalsearch=2;
+[V16,P16,ref16]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions16);
+fprintf('localsearch: (16) the new reference vs Policy, no d and no GI, this should be zero: %.3e \n',max(abs(gather(ref16)-gather(P16)),[],'all'))
+
+vfoptions16GI=vfoptions16;
+vfoptions16GI.gridinterplayer=1;
+vfoptions16GI.ngridinterp=ngi;
+[~,P16GI,ref16GI]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions16GI);
+nearestcoarse=gather(P16GI(1,:,:))+round((gather(P16GI(2,:,:))-1)/(1+ngi));
+fprintf('localsearch: (16) the new reference vs the nearest coarse point to Policy, no d with GI, this should be zero: %.3e \n',max(abs(gather(ref16GI)-nearestcoarse),[],'all'))
+
+%% (17) Feeding the new reference back in cannot lower V
+% The window re-centred on the previous answer still contains it, so V can only improve. This is the
+% step of the reference iteration a warm start would do, and the direction is all that is claimed:
+% it is NOT an identity, because the re-centred window may contain a better point than the one it
+% was centred on.
+[V17,~,~]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, ref16, vfoptions16);
+fprintf('localsearch: (17) the new reference fed back in, V cannot fall below the V it came from, should be one: %i \n',min(gather(V17)-gather(V16),[],'all')>=0)
+fprintf('localsearch: (17) for information, feeding it back raised V at %i of %i states \n',sum(gather(V17)>gather(V16),'all'),N_a*N_z)
 
 output=struct();
 
