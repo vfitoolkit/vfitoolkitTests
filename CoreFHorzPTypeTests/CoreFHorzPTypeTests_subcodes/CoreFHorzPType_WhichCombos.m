@@ -426,6 +426,120 @@ catch
 end
 fprintf('WhichStats LifeCycleProfiles PType, two invalid sizes must both error, this should be zero: %.3e \n',2-errored)
 
+% (t1) the trailing type dimension (2026-10-07): a 3D whichcombos equals its 4D broadcast over the ptypes and the grouped slot, leaf by leaf
+[pF,vF]=CoreStructLeaves(Full);
+wc3=zeros(nFns,N_j,npages);
+for pp=1:npages
+    for ff=1:nFns
+        for jj=1:N_j
+            wc3(ff,jj,pp)=mod(ff+jj+pp,2);
+        end
+    end
+end
+simoptions_t=simoptions; simoptions_t.whichcombos=wc3;
+A=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_t);
+simoptions_t.whichcombos=repmat(wc3,[1,1,1,N_i+1]);
+B=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_t);
+[pA,vA]=CoreStructLeaves(A); [pB,vB]=CoreStructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos LifeCycleProfiles PType, type dimension: 3D input vs its 4D broadcast over the ptypes and the grouped slot, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
+
+% (t2) type-specific selection: type low gets assets at every age (page 1), type high nothing of its own, the grouped slot gets earnings
+% at odd ages on page 1 and on the rich page. A grouped slot forces the per-type stats of that combination for every type (the grouped
+% Mean, StdDeviation, Minimum and Maximum are built from them), so earnings at odd ages must be present for both types too; everything
+% else unselected is NaN, or absent when nothing of its leaf is selected; RestrictedSampleMass leaves are always whole.
+wcT=zeros(nFns,N_j,npages,N_i+1);
+fa=find(strcmp(FnNames,'assets')); fe=find(strcmp(FnNames,'earnings'));
+ilow=find(strcmp(Names_i,'low')); prich=1+find(strcmp(RestrNames,'rich'));
+wcT(fa,:,1,ilow)=1;
+wcT(fe,1:2:N_j,1,N_i+1)=1;
+wcT(fe,1:2:N_j,prich,N_i+1)=1;
+simoptions_t=simoptions; simoptions_t.whichcombos=wcT;
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_t);
+[pS,vS]=CoreStructLeaves(Sub);
+maxd=0; nanmis=0; notnan_off=0; missing=0;
+for k=1:numel(pF)
+    segs=strsplit(pF{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    pp=1;
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1})); segs=segs(2:end);
+    end
+    if strcmp(segs{1},'RestrictedSampleMass')
+        onmask=true(1,size(vF{k},2));
+    else
+        ff=find(strcmp(FnNames,segs{1}));
+        if numel(segs)>=2 && ismember(segs{2},Names_i)
+            slot=find(strcmp(Names_i,segs{2}));
+            onmask=reshape(wcT(ff,:,pp,slot)==1 | wcT(ff,:,pp,N_i+1)==1,[1,N_j]); % own slot, or forced by the grouped slot
+        else
+            onmask=reshape(wcT(ff,:,pp,N_i+1)==1,[1,N_j]);
+        end
+    end
+    [present,idx]=ismember(pF{k},pS);
+    if ~present
+        missing=missing+any(onmask); % a leaf with nothing selected may be absent
+    else
+        a=vF{k}; b=vS{idx};
+        if ~isequal(size(a),size(b)) || size(a,2)~=numel(onmask)
+            missing=missing+1;
+        else
+            nanmis=nanmis+sum(sum(isnan(a(:,onmask))~=isnan(b(:,onmask)))); d=abs(a(:,onmask)-b(:,onmask)); d=d(~isnan(d)); maxd=max([maxd;d(:)]);
+            notnan_off=notnan_off+sum(sum(~isnan(b(:,~onmask))));
+        end
+    end
+end
+fprintf('WhichCombos LifeCycleProfiles PType, type-specific selection (low: assets; grouped: earnings at odd ages, unrestricted and rich): selected columns, incl. the per-type stats a grouped slot forces, vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected columns not NaN + selected leaves missing + extra leaves, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+sum(~ismember(pS,pF)))
+
+% (t3) whichstats with the type dimension (whichcombos default): type low asks for the Mean only, type high for nothing, the grouped slot
+% for the Median only, all on page 1. Expected: low has Mean (own) and Median (forced by the grouped slot) and so RatioMeanToMedian too;
+% high has the Median only; the grouped stats have the Median only; nothing on the restriction pages; every present leaf equals the full run.
+wsT=zeros(nFns,N_j,npages,N_i+1,7);
+wsT(:,:,1,ilow,1)=1;
+wsT(:,:,1,N_i+1,2)=1;
+simoptions_t=simoptions; simoptions_t.whichstats=wsT;
+Sub=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_t);
+[pS,vS]=CoreStructLeaves(Sub);
+maxd=0; nanmis=0; bad=0; expectedleaves=0; foundleaves=0;
+allowed=cell(N_i+1,1);
+allowed{ilow}={'Mean','Median','RatioMeanToMedian'}; allowed{3-ilow}={'Median'}; allowed{N_i+1}={'Median'};
+for k=1:numel(pS)
+    segs=strsplit(pS{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if ismember(segs{1},RestrNames)
+        if ~strcmp(segs{2},'RestrictedSampleMass')
+            bad=bad+sum(~isnan(vS{k}(:))); % nothing on the restriction pages
+        end
+        continue
+    end
+    if numel(segs)>=2 && ismember(segs{2},Names_i)
+        slot=find(strcmp(Names_i,segs{2})); stat=segs{3};
+    else
+        slot=N_i+1; stat=segs{2};
+    end
+    if ~ismember(stat,allowed{slot})
+        bad=bad+sum(~isnan(vS{k}(:)));
+    else
+        foundleaves=foundleaves+1;
+        [present,idx]=ismember(pS{k},pF);
+        if present && isequal(size(vS{k}),size(vF{idx}))
+            a=vF{idx}; b=vS{k}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+        else
+            bad=bad+1;
+        end
+    end
+end
+for ff=1:nFns
+    expectedleaves=expectedleaves+numel(allowed{ilow})+numel(allowed{3-ilow})+numel(allowed{N_i+1});
+end
+fprintf('WhichCombos LifeCycleProfiles PType, whichstats with the type dimension (low: Mean; grouped: Median): the expected leaves vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; leaves that should not be there (non-NaN) + expected leaves missing, this should be zero: %.3e \n',maxd,nanmis,bad+abs(expectedleaves-foundleaves))
+
 %% ===================== AllStats PType =====================
 FullAS=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
 [pF,vF]=CoreStructLeaves(FullAS);
@@ -560,6 +674,74 @@ catch
     errored=errored+1;
 end
 fprintf('WhichCombos AllStats PType, two invalid inputs must both error, this should be zero: %.3e \n',2-errored)
+
+% (t1) the trailing type dimension (2026-10-07): a 2D whichcombos equals its 3D broadcast over the ptypes and the grouped slot, leaf by leaf
+[pF,vF]=CoreStructLeaves(FullAS);
+wcA2=zeros(nFns,npages);
+for pp=1:npages
+    for ff=1:nFns
+        wcA2(ff,pp)=mod(ff+pp,2);
+    end
+end
+simoptions_t=simoptions; simoptions_t.whichcombos=wcA2;
+A=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_t);
+simoptions_t.whichcombos=repmat(wcA2,[1,1,N_i+1]);
+B=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_t);
+[pA,vA]=CoreStructLeaves(A); [pB,vB]=CoreStructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos AllStats PType, type dimension: 2D input vs its 3D broadcast over the ptypes and the grouped slot, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
+
+% (t2) type-specific selection: type low gets assets (page 1), type high nothing of its own, the grouped slot gets earnings on page 1 and on
+% the rich page. A grouped slot forces the per-type stats of that combination for every type, so earnings must be present for both
+% types too. AllStats assigns whole structs, so a per-type or grouped leaf is present iff selected (own slot, or forced); RestrictedSampleMass
+% leaves are always present.
+wcAT=zeros(nFns,npages,N_i+1);
+fa=find(strcmp(FnNames,'assets')); fe=find(strcmp(FnNames,'earnings'));
+ilow=find(strcmp(Names_i,'low')); prich=1+find(strcmp(RestrNames,'rich'));
+wcAT(fa,1,ilow)=1;
+wcAT(fe,1,N_i+1)=1;
+wcAT(fe,prich,N_i+1)=1;
+simoptions_t=simoptions; simoptions_t.whichcombos=wcAT;
+Sub=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_t);
+[pS,vS]=CoreStructLeaves(Sub);
+maxd=0; nanmis=0; missing=0; extra=0;
+for k=1:numel(pF)
+    segs=strsplit(pF{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    pp=1;
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1})); segs=segs(2:end);
+    end
+    if strcmp(segs{1},'RestrictedSampleMass')
+        expectpresent=true;
+    else
+        ff=find(strcmp(FnNames,segs{1}));
+        if numel(segs)>=2 && ismember(segs{2},Names_i)
+            slot=find(strcmp(Names_i,segs{2}));
+            expectpresent=(wcAT(ff,pp,slot)==1 || wcAT(ff,pp,N_i+1)==1); % own slot, or forced by the grouped slot
+        else
+            expectpresent=(wcAT(ff,pp,N_i+1)==1);
+        end
+    end
+    [present,idx]=ismember(pF{k},pS);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        else
+            a=vF{k}; b=vS{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichCombos AllStats PType, type-specific selection (low: assets; grouped: earnings, unrestricted and rich): selected leaves, incl. the per-type stats a grouped slot forces, vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; selected leaves missing + unselected leaves present, this should be zero: %.3e \n',maxd,nanmis,missing+extra+sum(~ismember(pS,pF)))
 
 %% ===================== AggVars PType =====================
 simoptions_ag=struct();
