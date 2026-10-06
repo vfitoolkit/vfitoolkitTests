@@ -252,8 +252,8 @@ fprintf('localsearch d: (10) a reference of the no-d shape on a model with d is 
 
 %% (11) Divide-and-conquer gives the same V, on the coarse grid where there is no memory risk
 % The identity that makes the timings below comparable. It is done at n_a rather than n_a_big because
-% with d the unrestricted return matrix is N_d times larger and the big grid is near the edge of what
-% fits; the timings there are diagnostics and are allowed to fail, a check is not.
+% with d the unrestricted return matrix is N_d times larger, so the big grid needs about 360MB for it
+% and another for entireRHS. Keeping the identity on the coarse grid means it does not ride on that.
 dcVgap=0;
 for l_c=[7,10,15]
     vfoptionsDC=vfoptions;
@@ -265,46 +265,90 @@ for l_c=[7,10,15]
 end
 fprintf('localsearch d: (11) divide-and-conquer V vs the unrestricted path, worst over level1n 7, 10 and 15, this should be zero: %.3e \n',dcVgap)
 
-%% (12) Speed on the big grid, with d. Diagnostics only.
+%% (12) Speed on the big grid, with d and no grid interpolation layer. Diagnostics only.
 % With d the unrestricted return matrix is [N_d*N_a,N_a,N_z], which at n_a_big=1001 and N_d=9 is
-% about 360MB, and entireRHS is another. That is near the edge, so the whole block is allowed to
-% fail without taking the part down with it -- the checks above do not depend on it.
+% about 360MB, and entireRHS is another. It fits, measured below; noted because it is the largest
+% allocation anywhere in this part.
 % THE PREDICTION, recorded before the run decides it. The no-d part measured about 4.8x and argued
 % that the ceiling was the kernel launch floor, not the arithmetic: at n_a=1001 and N_z=5 the
 % unrestricted step sat only ~4x above that floor. With N_d=9 it sits nine times further above it
 % while the restricted step stays near it, so the measured speed-up should be in the TENS. If it
 % comes back near 5x again then the floor is not what is limiting it and I have the wrong model.
-try
-    [V_finalB,Policy_finalB]=ValueFnIter_InfHorz(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions);
-    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions);
-    wait(gpudev)
+[V_finalB,Policy_finalB]=ValueFnIter_InfHorz(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions);
+ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions);
+wait(gpudev)
+tic;
+ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions);
+wait(gpudev)
+time0B=toc;
+fprintf('localsearch d: big grid (n_a=%i, N_d=%i), the unrestricted sweep took %6.2f seconds \n',prod(n_a_big),N_d,time0B)
+for nls=[1,2,5,10]
+    vfoptionsB=vfoptions;
+    vfoptionsB.localsearch=1;
+    vfoptionsB.nlocalsearch=nls;
     tic;
-    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions);
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsB);
     wait(gpudev)
-    time0B=toc;
-    fprintf('localsearch d: big grid (n_a=%i, N_d=%i), the unrestricted sweep took %6.2f seconds \n',prod(n_a_big),N_d,time0B)
-    for nls=[1,2,5,10]
-        vfoptionsB=vfoptions;
-        vfoptionsB.localsearch=1;
-        vfoptionsB.nlocalsearch=nls;
-        tic;
-        ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsB);
-        wait(gpudev)
-        timeB=toc;
-        fprintf('localsearch d: big grid, nlocalsearch=%4i: %6.2f seconds, measured speed-up %7.1fx against a predicted %7.1fx \n',nls,timeB,time0B/timeB,prod(n_a_big)/(2*nls+1))
-    end
-    for l_c=[7,10,15]
-        vfoptionsDCB=vfoptions;
-        vfoptionsDCB.divideandconquer=1;
-        vfoptionsDCB.level1n=l_c;
-        tic;
-        ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsDCB);
-        wait(gpudev)
-        timeDCB=toc;
-        fprintf('localsearch d: big grid, divide-and-conquer at level1n=%3i took %6.2f seconds, a %5.2fx speed-up on the unrestricted sweep \n',l_c,timeDCB,time0B/timeDCB)
-    end
-catch ME
-    fprintf('localsearch d: the big grid timing block did not run (%s). No checks depend on it. \n',ME.message)
+    timeB=toc;
+    fprintf('localsearch d: big grid, nlocalsearch=%4i: %6.2f seconds, measured speed-up %7.1fx against a predicted %7.1fx \n',nls,timeB,time0B/timeB,prod(n_a_big)/(2*nls+1))
+end
+for l_c=[7,10,15]
+    vfoptionsDCB=vfoptions;
+    vfoptionsDCB.divideandconquer=1;
+    vfoptionsDCB.level1n=l_c;
+    tic;
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsDCB);
+    wait(gpudev)
+    timeDCB=toc;
+    fprintf('localsearch d: big grid, divide-and-conquer at level1n=%3i took %6.2f seconds, a %5.2fx speed-up on the unrestricted sweep \n',l_c,timeDCB,time0B/timeDCB)
+end
+
+%% (13) Speed on the big grid, with d AND the grid interpolation layer. Diagnostics only.
+% The fourth corner of the table, and the one the earlier runs left blank.
+% THE PREDICTION, recorded before the run decided it: the unrestricted GI step pays its full coarse
+% layer, [N_d,N_a,N_a,N_z], plus a second layer negligible beside it, so about what the unrestricted
+% no-GI step costs -- 4.5 to 5.0 seconds. The restricted step searches 2*n*(1+ngridinterp)+1 fine
+% points per d, 13 at n=1 and ngi=5 against 3 without GI, so about 4.3x the arithmetic of the no-GI
+% local search but still near the launch floor. On the no-d grid that floor cost GI a factor of 1.43
+% (0.10s against 0.07s), so expect roughly 0.20s and a measured speed-up around 23x, against an
+% arithmetic ratio of (N_a+2*ngi+3)/(2*(1+ngi)+1)=78x.
+% MEASURED 2026-10-07: the unrestricted side came in at 4.94s as predicted, but the restricted side
+% took 0.31s not 0.20s, so 16.0x and not 23x. The prediction over-applied the launch floor: on the
+% no-d grid the GI restricted step was 65k elements, far enough below the floor that GI cost only
+% launches, a factor of 1.43. With d it is 585k and starting to pay arithmetic, so the factor is 2.2.
+% The decay in n is the sharper result: 16.0, 11.3, 5.0, 2.6 at n=1,2,5,10 against 31.2, 27.7, 18.2,
+% 12.0 without GI. The GI search set grows (1+ngridinterp) times faster in n, so by n=10 the GI local
+% search (1.89s) is a tie with divide-and-conquer (2.05s). GI pays only at very small windows.
+vfoptionsGI=vfoptions;
+vfoptionsGI.gridinterplayer=1;
+vfoptionsGI.ngridinterp=ngi;
+[V_finalBGI,Policy_finalBGI]=ValueFnIter_InfHorz(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsGI);
+ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGI);
+wait(gpudev)
+tic;
+ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGI);
+wait(gpudev)
+time0BGI=toc;
+fprintf('localsearch d + GI: big grid (n_a=%i, N_d=%i, ngridinterp=%i), the unrestricted GI sweep took %6.2f seconds \n',prod(n_a_big),N_d,ngi,time0BGI)
+for nls=[1,2,5,10]
+    vfoptionsBGI=vfoptionsGI;
+    vfoptionsBGI.localsearch=1;
+    vfoptionsBGI.nlocalsearch=nls;
+    tic;
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsBGI);
+    wait(gpudev)
+    timeBGI=toc;
+    fprintf('localsearch d + GI: big grid, nlocalsearch=%4i: %6.2f seconds, measured speed-up %7.1fx against a predicted %7.1fx, over %5i fine points per d instead of %6i \n',nls,timeBGI,time0BGI/timeBGI,(prod(n_a_big)+2*ngi+3)/(2*nls*(1+ngi)+1),2*nls*(1+ngi)+1,prod(n_a_big)+2*ngi+3)
+end
+for l_c=[7,10,15]
+    vfoptionsDCBGI=vfoptionsGI;
+    vfoptionsDCBGI.divideandconquer=1;
+    vfoptionsDCBGI.level1n=l_c;
+    tic;
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsDCBGI);
+    wait(gpudev)
+    timeDCBGI=toc;
+    fprintf('localsearch d + GI: big grid, divide-and-conquer at level1n=%3i took %6.2f seconds, a %5.2fx speed-up on the unrestricted GI sweep \n',l_c,timeDCBGI,time0BGI/timeDCBGI)
 end
 
 output=struct();
