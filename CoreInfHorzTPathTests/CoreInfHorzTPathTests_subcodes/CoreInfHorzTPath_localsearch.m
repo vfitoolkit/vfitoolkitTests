@@ -70,6 +70,14 @@ function output=CoreInfHorzTPath_localsearch(T,PricePath,ParamPath,n_d,n_a,n_a_b
 % and not the arithmetic. The times are measurements and carry no checks - a bar on a runtime is a bar
 % on the machine - but the two exactness identities are repeated at 1001 so the index arithmetic is
 % confirmed at a size where it is doing real work.
+%
+% AND THE BENCHMARK THAT ACTUALLY MATTERS, section (15). Every speed number here is against the
+% UNRESTRICTED sweep, which no one would use on a large model. Divide-and-conquer attacks the same
+% coarse max, is already in the toolkit, and is exact under monotonicity of the policy in a without
+% needing a reference at all. (15) times it, at several level1n since the toolkit says the default is
+% not its best setting, and checks that it gives the same V so the times are comparable. If DC
+% already banks the saving then local search has nothing left to win and the reference work should be
+% dropped; (15) states the prediction either way before the run decides it.
 
 vfoptions=struct();
 
@@ -442,9 +450,11 @@ fprintf('localsearch+GI: (13) lowmemory with local search and the interpolation 
 ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGI);
 wait(gpudev)
 tic;
-ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGI);
+[VPathB0GI,~]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGI);
 wait(gpudev)
 time0BGI=toc;
+VPathB0GI=gather(VPathB0GI);
+VB0GI=VPathB0GI(:,:,1:T-1); % (15) uses this, so the sweep is not paid for twice
 fprintf('localsearch+GI: big grid (n_a=%i, ngridinterp=%i), the unrestricted GI sweep took %6.2f seconds \n',N_a_big,ngi,time0BGI)
 
 for nls=[1,2,5,10]
@@ -457,6 +467,90 @@ for nls=[1,2,5,10]
     timeBGI=toc;
     fprintf('localsearch+GI: big grid, nlocalsearch=%4i: %6.2f seconds, measured speed-up %7.1fx against a predicted %7.1fx, over %5i fine points instead of %5i \n',nls,timeBGI,time0BGI/timeBGI,(N_a_big+2*ngi+3)/(2*nls*(1+ngi)+1),2*nls*(1+ngi)+1,N_a_big+2*ngi+3)
 end
+
+%% (15) Divide-and-conquer: the competitor that is already in the toolkit
+% Every speed number above compares local search against the UNRESTRICTED sweep, which is not the
+% benchmark that matters. Divide-and-conquer attacks the same N_a-by-N_a-by-N_z coarse max, is already
+% implemented and tested, and is exact under its own assumption -- monotonicity of the policy in a --
+% without needing a reference at all. If it already banks the saving, then a local search with a real
+% reference policy would be competing for something that is not there to win, and is not worth
+% building. That is what this section is for.
+%
+% level1n is swept rather than left at its default of floor(sqrt(n_a)), because the toolkit itself
+% says in ValueFnOnTransPath_InfHorz that the default is not the best setting on a large model, and
+% DC should be met at its best.
+%
+% A PREDICTION, so the run adjudicates it rather than confirming whatever is convenient. The DC raw
+% LOOPS over its level1n-1 intervals, serially, inside every one of the T-1 steps. So its kernel
+% launch count scales with level1n: at level1n=31 that is about 30*99 launches against a handful for
+% the local search. Section (9) showed the unrestricted step sits only about 4x above the launch
+% floor on this grid, so DC has very little room, and I expect its best to come at a SMALL level1n
+% and to land no better than, and possibly worse than, the local search at nlocalsearch=1. If DC
+% instead comes back comfortably faster, the reference work should be dropped.
+%
+% The two identities keep the comparison honest: DC must give the same V, or it is not solving the
+% same problem and the times mean nothing. V and not Policy, because a coarse-level tie can send DC
+% and the full search to different optima of equal value, which is a known and accepted artefact of
+% this bank and not something to re-litigate inside a timing section.
+level1nlist=[15,21,31,51];
+
+%% No grid interpolation layer
+vfoptionsLSb=vfoptions;
+vfoptionsLSb.localsearch=1;
+vfoptionsLSb.nlocalsearch=1;
+tic;
+ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsLSb);
+wait(gpudev)
+timeLSb=toc;
+fprintf('DC comparison: big grid, no GI: unrestricted %6.2f s, local search at nlocalsearch=1 %6.2f s \n',time0B,timeLSb)
+
+dcVgap=0; bestDC=Inf; bestlevel1n=0;
+for l_c=1:length(level1nlist)
+    vfoptionsDC=vfoptions;
+    vfoptionsDC.divideandconquer=1;
+    vfoptionsDC.level1n=level1nlist(l_c);
+    tic;
+    [VPathDC,~]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsDC);
+    wait(gpudev)
+    timeDC=toc;
+    VPathDC=gather(VPathDC);
+    dcVgap=max(dcVgap,max(abs(VPathDC(:,:,1:T-1)-VB0),[],'all'));
+    if timeDC<bestDC
+        bestDC=timeDC; bestlevel1n=level1nlist(l_c);
+    end
+    fprintf('DC comparison: big grid, no GI: divide-and-conquer at level1n=%3i took %6.2f s, a %5.2fx speed-up on the unrestricted sweep \n',level1nlist(l_c),timeDC,time0B/timeDC)
+end
+fprintf('DC comparison: big grid, no GI: the best divide-and-conquer is level1n=%i at %6.2f s, and the local search is %5.2fx ITS time (below one means the local search wins) \n',bestlevel1n,bestDC,timeLSb/bestDC)
+fprintf('DC comparison: (15) divide-and-conquer V vs the unrestricted path, worst over the level1n swept, this should be zero: %.3e \n',dcVgap)
+
+%% With the grid interpolation layer
+vfoptionsLSbGI=vfoptionsGI;
+vfoptionsLSbGI.localsearch=1;
+vfoptionsLSbGI.nlocalsearch=1;
+tic;
+ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsLSbGI);
+wait(gpudev)
+timeLSbGI=toc;
+fprintf('DC comparison: big grid, with GI: unrestricted %6.2f s, local search at nlocalsearch=1 %6.2f s \n',time0BGI,timeLSbGI)
+
+dcVgapGI=0; bestDCGI=Inf; bestlevel1nGI=0;
+for l_c=1:length(level1nlist)
+    vfoptionsDCGI=vfoptionsGI;
+    vfoptionsDCGI.divideandconquer=1;
+    vfoptionsDCGI.level1n=level1nlist(l_c);
+    tic;
+    [VPathDCGI,~]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsDCGI);
+    wait(gpudev)
+    timeDCGI=toc;
+    VPathDCGI=gather(VPathDCGI);
+    dcVgapGI=max(dcVgapGI,max(abs(VPathDCGI(:,:,1:T-1)-VB0GI),[],'all'));
+    if timeDCGI<bestDCGI
+        bestDCGI=timeDCGI; bestlevel1nGI=level1nlist(l_c);
+    end
+    fprintf('DC comparison: big grid, with GI: divide-and-conquer at level1n=%3i took %6.2f s, a %5.2fx speed-up on the unrestricted GI sweep \n',level1nlist(l_c),timeDCGI,time0BGI/timeDCGI)
+end
+fprintf('DC comparison: big grid, with GI: the best divide-and-conquer is level1n=%i at %6.2f s, and the local search is %5.2fx ITS time (below one means the local search wins) \n',bestlevel1nGI,bestDCGI,timeLSbGI/bestDCGI)
+fprintf('DC comparison: (15) divide-and-conquer with GI, V vs the unrestricted GI path, worst over the level1n swept, this should be zero: %.3e \n',dcVgapGI)
 
 output=struct();
 
