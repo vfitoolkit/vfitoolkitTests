@@ -1,6 +1,6 @@
 function output=CoreFHorzTPathPType_GETPath_1iter(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i)
 % Test 4: Run the GE transition path (TransitionPath_Case1_FHorz_PType) with
-% transpathoptions.maxiter=1, so it ends after one iteration. With N_i=2
+% transpathoptions.maxiter=2, so it returns the path after one update. With N_i=2
 % identical types (and ptypeweights summing to one) the aggregates equal the
 % no-PType aggregates, so the one-iteration price path update must equal the
 % no-PType TransitionPath_Case1_FHorz one. Checked with fastOLG=1 and
@@ -46,11 +46,14 @@ AgentDist_initial_PT=StationaryDist_Case1_FHorz_PType(jequaloneDist,AgeWeightPar
 clear PolicyPath_PT
 
 %% One iteration of the GE transition path, with fastOLG=1
-transpathoptions.maxiter=1;
+% maxiter=2: since the shooting algorithm returns the path whose general eqm conditions it evaluated,
+% maxiter=1 would return the starting path unchanged and compare it with itself. The general eqm
+% condition depends on earnings, which depend on w on the ParamPath, so the update does too.
+transpathoptions.maxiter=2;
 transpathoptions.GEnewprice=3; % the shooting algorithm (GEnewprice has no default: 1 is quasi-Newton, 2 Anderson, 3 shooting)
 transpathoptions.GEnewprice3.howtoupdate={'dummy','r',0,0.1};
 
-GeneralEqmEqns.dummy=@(earnings) 0;
+GeneralEqmEqns.dummy=@(r,earnings) r-0.02-0.01*earnings;
 
 transpathoptions.fastOLG=1;
 PricePath_PT1=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, N_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);

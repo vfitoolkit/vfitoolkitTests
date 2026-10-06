@@ -57,15 +57,22 @@ for ii=1:N_i
 end
 
 %% One iteration of the GE transition path: single vs per-type FnsToEvaluate
+% maxiter=2: since the shooting algorithm returns the path whose general eqm conditions it evaluated,
+% maxiter=1 would return the starting path unchanged and compare it with itself. The general eqm
+% condition depends on assets, so the update does too.
 transpathoptions=transpathoptionsbaseline;
-transpathoptions.maxiter=1;
+transpathoptions.maxiter=2;
+transpathoptions.GEnewprice=3; % the shooting algorithm
+transpathoptions.GEnewprice3.howtoupdate={'dummy','r',0,0.1};
 
-GeneralEqmEqns.dummy=@(assets) 0;
+GeneralEqmEqns.dummy=@(r,assets) r-0.02-0.01*assets;
 
-PricePath_A=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate_single, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);
-PricePath_B=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate_pertype, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);
+[PricePath_A,GEcondnPath_A]=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate_single, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);
+[PricePath_B,GEcondnPath_B]=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate_pertype, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions, simoptions, vfoptions);
 
 fprintf('per-type FnsToEvaluate, one iter of GE TPath, this should be zero: %.3e \n',max(abs(PricePath_A.r(:)-PricePath_B.r(:))))
+fprintf('per-type FnsToEvaluate, one iter of GE TPath, GEcondnPath, this should be zero: %.3e \n',max(abs(GEcondnPath_A.dummy(:)-GEcondnPath_B.dummy(:))))
+fprintf('per-type FnsToEvaluate, one iter of GE TPath, for scale the update moved r by %.3e (must not be zero, or the two checks above are empty) \n',max(abs(PricePath_A.r(:)-PricePath.r(:))))
 
 %% AllStats on the transition path: single vs per-type FnsToEvaluate
 % NOT YET IMPLEMENTED: there is no EvalFnOnTransPath_AllStats_Case1_FHorz_PType

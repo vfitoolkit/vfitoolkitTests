@@ -16,6 +16,26 @@
 %
 % Note: per-type N_j is not allowed for TPath (unlike the core FHorz PType
 % commands), so there is no PerTypeNj test here.
+%
+% Parts 4-9 test the general eqm transition path with permanent types (TransitionPath_Case1_FHorz_PType),
+% which solves each ptype with the same single path iteration as TransitionPath_Case1_FHorz and only
+% evaluates the general eqm conditions across ptypes. Each runs the shooting algorithm for maxiter=2,
+% which returns the price path after one update together with the general eqm conditions on it, and
+% each has an exact oracle:
+%   4-7: N_i=1, and N_i=2 identical types, against the solver without permanent types, for all 16
+%        combinations of d, z, e and semiz, fastOLG 1 and 0; and with two different types, the general
+%        eqm conditions the solver returns against those evaluated by hand on the aggregates of the
+%        standalone PType commands (so the in-path aggregates must see the period-t parameters).
+%   8:   four types that differ in shocks, z_grid, n_a, d, divide-and-conquer, age weights, survival and
+%        the age-1 distribution path, with general eqm conditions by ptype (GEptype), against four solo
+%        solves (so each ptype must use its own shocks on the path).
+%   9:   _tminus1 and _tplus1 (prices, a parameter, an aggregate) with initial values by ptype, GEptype,
+%        against two solo solves.
+%   10:  age weights (mewj), survival (sj) and the age-1 distribution, constant and as paths, common to all
+%        ptypes and differing by ptype, against solo solves (GEptype) and their ptweight-weighted sum; the
+%        standalone PType commands with an age-weights path by ptype; and a general eqm path with bequests
+%        through a demographic transition that differs by ptype (shooting vs solo, Anderson vs shooting).
+% The algorithms themselves (shooting vs Anderson) are compared in with_CoreFHorzTPathPTypeAlgoTests.
 %% Which parts to run
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
 % That is for building and for rerunning: while one tier is being worked on there is no reason to
@@ -24,6 +44,13 @@
 % doPart(1): N_i numeric vs Names_i cell
 % doPart(2): N_i all types identical vs one solve
 % doPart(3): figs 1-2
+% doPart(4): GE vs no-PType, without semiz (fastOLG=1)
+% doPart(5): GE vs no-PType, without semiz (fastOLG=0)
+% doPart(6): GE vs no-PType, with semiz (fastOLG=1)
+% doPart(7): GE vs no-PType, with semiz (fastOLG=0)
+% doPart(8): GE with decoupled types (GEptype) vs solo solves
+% doPart(9): GE with _tminus1/_tplus1 by ptype vs solo solves
+% doPart(10): age weights and demographics by ptype (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -32,7 +59,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -53,6 +80,7 @@ addpath('./CoreFHorzTPathPType_ReturnFns/')
 
 % Reuse return functions and the existing setup from CoreFHorzTPathTests
 addpath('../CoreFHorzTPathTests/CoreFHorzTPath_ReturnFns/')
+addpath('../CoreFHorzTPathTests/CoreFHorzTPath_ReturnFns/Semiz_ReturnFns/')
 addpath('../CoreFHorzTPathTests/CoreFHorzTPathTests_Setup/')
 
 % Setup: builds on CoreFHorzTPath_setup and adds PType-specific pieces
@@ -103,6 +131,81 @@ if doPart(3)==1
     output=CoreFHorzTPathPType_GEptype_Bequests(T,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i,Names_i,figure_c);
     exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathPTypeTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 end % doPart(3): figs 1-2
+
+%% ===== doPart(4): GE vs no-PType, without semiz (fastOLG=1) =====
+if doPart(4)==1
+    fprintf('\n===== doPart(4): GE vs no-PType, without semiz (fastOLG=1) =====\n')
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod_noz_noe_nosemiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d_noz_noe_nosemiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod_z_noe_nosemiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d_z_noe_nosemiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod_noz_e_nosemiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d_noz_e_nosemiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod_z_e_nosemiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d_z_e_nosemiz',1);
+end % doPart(4): GE vs no-PType, without semiz (fastOLG=1)
+
+%% ===== doPart(5): GE vs no-PType, without semiz (fastOLG=0) =====
+if doPart(5)==1
+    fprintf('\n===== doPart(5): GE vs no-PType, without semiz (fastOLG=0) =====\n')
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod_noz_noe_nosemiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d_noz_noe_nosemiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod_z_noe_nosemiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d_z_noe_nosemiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod_noz_e_nosemiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d_noz_e_nosemiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod_z_e_nosemiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d_z_e_nosemiz',0);
+end % doPart(5): GE vs no-PType, without semiz (fastOLG=0)
+
+%% ===== doPart(6): GE vs no-PType, with semiz (fastOLG=1) =====
+% Models without d1 use n_d2_semiz and d2_grid_semiz, models with d1 use n_d_semiz and d_grid_semiz
+if doPart(6)==1
+    fprintf('\n===== doPart(6): GE vs no-PType, with semiz (fastOLG=1) =====\n')
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod1_noz_noe_semiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d_semiz,n_a,n_z,N_j,d_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d1_noz_noe_semiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod1_z_noe_semiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d_semiz,n_a,n_z,N_j,d_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d1_z_noe_semiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod1_noz_e_semiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d_semiz,n_a,n_z,N_j,d_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d1_noz_e_semiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod1_z_e_semiz',1);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d_semiz,n_a,n_z,N_j,d_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d1_z_e_semiz',1);
+end % doPart(6): GE vs no-PType, with semiz (fastOLG=1)
+
+%% ===== doPart(7): GE vs no-PType, with semiz (fastOLG=0) =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): GE vs no-PType, with semiz (fastOLG=0) =====\n')
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod1_noz_noe_semiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d_semiz,n_a,n_z,N_j,d_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d1_noz_noe_semiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod1_z_noe_semiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d_semiz,n_a,n_z,N_j,d_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d1_z_noe_semiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod1_noz_e_semiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d_semiz,n_a,n_z,N_j,d_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d1_noz_e_semiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'nod1_z_e_semiz',0);
+    output=CoreFHorzTPathPType_GE_vsNoPType(T,PricePath,ParamPath,n_d_semiz,n_a,n_z,N_j,d_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,'d1_z_e_semiz',0);
+end % doPart(7): GE vs no-PType, with semiz (fastOLG=0)
+
+%% ===== doPart(8): GE with decoupled types (GEptype) vs solo solves =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): GE with decoupled types (GEptype) vs solo solves =====\n')
+    output=CoreFHorzTPathPType_GE_DecoupledTypes(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,1);
+    output=CoreFHorzTPathPType_GE_DecoupledTypes(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,0);
+end % doPart(8): GE with decoupled types (GEptype) vs solo solves
+
+%% ===== doPart(9): GE with _tminus1/_tplus1 by ptype vs solo solves =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): GE with _tminus1/_tplus1 by ptype vs solo solves =====\n')
+    output=CoreFHorzTPathPType_GE_tminus1tplus1(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,1);
+    output=CoreFHorzTPathPType_GE_tminus1tplus1(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,0);
+end % doPart(9): GE with _tminus1/_tplus1 by ptype vs solo solves
+
+%% ===== doPart(10): age weights and demographics by ptype (no figures) =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): age weights and demographics by ptype (no figures) =====\n')
+    output=CoreFHorzTPathPType_Demographics(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,1);
+    output=CoreFHorzTPathPType_Demographics(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,0);
+    output=CoreFHorzTPathPType_Demographics_GEbequests(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(10): age weights and demographics by ptype (no figures)
 
 % All looks good!
 
