@@ -17,6 +17,7 @@
 % doPart(1): one endogenous state (figs 3-4 live)
 % doPart(2): two endogenous states (figs 9-10)
 % doPart(3): _tminus1 and _tplus1 (no figures)
+% doPart(4): localsearch, the local-search value fn step (no figures, no general eqm)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -25,7 +26,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1];
+doPart=[0,0,0,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -113,6 +114,18 @@ if doPart(3)==1
     % SimPanelValues_TransPath_InfHorz (both of which had to be given transpathoptions for it).
     output=CoreInfHorzTPath_tminus1tplus1(T,PricePath,ParamPath,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end % doPart(3): _tminus1 and _tplus1
+
+%% ===== doPart(4): localsearch, the local-search value fn step =====
+if doPart(4)==1
+    fprintf('\n===== doPart(4): localsearch, the local-search value fn step =====\n')
+    %% vfoptions.localsearch=1: aprime restricted to a window around an aprimeReferencePolicy
+    % No figures and NO GENERAL EQM: the feature is tested here purely as a value function solver,
+    % through ValueFnOnTransPath_InfHorz and one direct call to the single-step dispatcher. Working it
+    % into the general eqm transition path is separate and comes later.
+    % Runs on n_a as well as n_a_big: the saving the method promises is N_a/(2*nlocalsearch+1), and at
+    % n_a=101 the step is kernel-launch bound, so it can only be measured on the big grid.
+    output=CoreInfHorzTPath_localsearch(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end % doPart(4): localsearch, the local-search value fn step
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
