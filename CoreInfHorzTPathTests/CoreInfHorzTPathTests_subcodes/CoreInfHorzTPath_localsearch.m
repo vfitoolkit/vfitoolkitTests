@@ -44,6 +44,23 @@ function output=CoreInfHorzTPath_localsearch(T,PricePath,ParamPath,n_d,n_a,n_a_b
 % moves from the current a index (the window the model actually needs). Those numbers are the whole
 % case for or against the method, and a bar on them would be invented rather than derived.
 %
+% WITH THE GRID INTERPOLATION LAYER, sections (10) to (14). There the window is still 2*nlocalsearch+1
+% COARSE points around the same coarse reference, with ngridinterp points put between each consecutive
+% pair, and the search is one max over all of those fine points. There is no coarse layer at all,
+% which is where the saving comes from: the GI raw pays a full N_a coarse max before its second layer,
+% and this pays nothing.
+% That makes the two solvers DIFFERENT, not two routes to one answer, and the checks are written to
+% that. At nlocalsearch=1 centred on the midpoint the GI raw itself would use, the two search exactly
+% the same fine points and the answer is an identity -- check (10), which is the backbone. With the
+% window covering the whole grid the search is the entire fine grid, which is the exact maximum the
+% interpolation layer approximates, so it can only be weakly BETTER than the GI raw -- check (11),
+% which also measures how often the GI two-layer search mislocates.
+% Policy is compared as the DECODED fine grid point, (1+ngridinterp)*(P1-1)+L2, never as the raw
+% channels: a point sitting on a coarse node has two legal spellings and neither raw is canonical
+% about which it gives, so a channel comparison would report a difference that is not one.
+%
+% nlocalsearch=0 is refused everywhere, which is why there is no point-search rung here.
+%
 % SPEED, AND WHY IT NEEDS THE BIG GRID. The whole point of the method is that the step costs
 % N_a/(2n+1) less, and at n_a=101 that cannot be seen: the step is kernel-launch bound there and every
 % sweep, restricted or not, comes in at the timer's resolution. Section (9) therefore repeats the
@@ -94,14 +111,14 @@ maxmove=max(abs(Pol0-aindex),[],'all'); % aindex is [N_a,1] and Pol0 is [N_a,N_z
 fprintf('localsearch: the unrestricted policy moves at most %i grid points from the current a index on this path, so that is the window this model would need, and the unrestricted sweep took %5.1f seconds \n',maxmove,time0)
 
 %% The ladder in nlocalsearch
-nladder=unique([0,1,2,5,10,25,nwide]); % unique also sorts, which the monotonicity check needs; the trim keeps it honest if the bank's n_a ever shrinks
+nladder=unique([1,2,5,10,25,nwide]); % unique also sorts, which the monotonicity check needs; the trim keeps it honest if the bank's n_a ever shrinks
 nladder=nladder(nladder<=nwide);
 Vgap=zeros(1,length(nladder));
 Polsame=zeros(1,length(nladder));
 timen=zeros(1,length(nladder));
 monotone=1; windowall=1; windowint=1;
 Vprev=[];
-Vn0=[]; Poln0=[]; Vn1=[]; Vnwide=[]; Polnwide=[];
+Vn1=[]; Vnwide=[]; Polnwide=[];
 for n_c=1:length(nladder)
     vfoptionsLS=vfoptions;
     vfoptionsLS.localsearch=1;
@@ -131,9 +148,7 @@ for n_c=1:length(nladder)
 
     fprintf('localsearch: nlocalsearch=%3i: max|V-Vfull|=%.3e, share of Policy entries equal to unrestricted %6.2f, sweep took %5.1f seconds \n',nladder(n_c),Vgap(n_c),Polsame(n_c),timen(n_c))
 
-    if nladder(n_c)==0
-        Vn0=Vn; Poln0=Poln;
-    elseif nladder(n_c)==1
+    if nladder(n_c)==1
         Vn1=Vn;
     end
     if nladder(n_c)==nwide
@@ -147,21 +162,11 @@ fprintf('localsearch: (1) nlocalsearch=%i covers the grid, Policy vs the unrestr
 
 %% (2) For scale: a narrow window must NOT give the unrestricted answer, or (1) is empty
 fprintf('localsearch: (2) for scale, nlocalsearch=1 vs the unrestricted path, V, should NOT be zero: %.3e \n',max(abs(Vn1-V0),[],'all'))
-fprintf('localsearch: (2) for scale, nlocalsearch=0 vs the unrestricted path, V, should NOT be zero: %.3e \n',max(abs(Vn0-V0),[],'all'))
 
-%% (3) nlocalsearch=0 with the default reference leaves aprime at the current a index
-% The window is then the single point the reference names, so this is what the default reference IS.
-fprintf('localsearch: (3) nlocalsearch=0 with the default reference, Policy vs the current a index, this should be zero: %.3e \n',max(abs(Poln0-aindex),[],'all'))
-
-%% (4) V non-decreasing in nlocalsearch, (5)-(6) the window
-fprintf('localsearch: (4) V is non-decreasing in nlocalsearch at every state and period, should be one: %i \n',monotone)
-fprintf('localsearch: (5) |aprime-reference|<=2*nlocalsearch at every state, should be one: %i \n',windowall)
-fprintf('localsearch: (6) |aprime-reference|<=nlocalsearch at every interior state, should be one: %i \n',windowint)
-
-%% (7) The reference is honoured: pin it to the unrestricted optimum and the restriction stops binding
-% One single step, called straight on the dispatcher, because ValueFnOnTransPath_InfHorz takes no
-% aprimeReferencePolicy input (it builds the default internally). The dispatcher expects grids on the
-% GPU and vfoptions already fully filled in, both of which its callers do for it.
+%% The single-step dispatcher, used by (3), (7), (10) and (11)
+% ValueFnOnTransPath_InfHorz takes no aprimeReferencePolicy input, so every check that is about the
+% reference itself has to go one level down. The dispatcher expects grids on the GPU and vfoptions
+% already fully filled in, both of which its callers do for it.
 ParamsS=Params;
 ParamsS.r=PricePath.r(1);
 ParamsS.w=ParamPath.w(1);
@@ -178,9 +183,29 @@ vfoptionsS.divideandconquer=0;
 vfoptionsS.localsearch=0;
 [V1,P1]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsS);
 
-% P1 is [1,N_a,N_z], which is exactly the shape aprimeReferencePolicy is documented to take
+%% (3) The default reference IS the current a index
+% Passing [] and passing the current a index explicitly must give the same thing, bit for bit. This
+% is what makes the default a documented object rather than whatever the dispatcher happens to do,
+% and nlocalsearch=0 is no longer available to show it the short way.
+vfoptionsD=vfoptionsS;
+vfoptionsD.localsearch=1;
+vfoptionsD.nlocalsearch=1;
+[VD1,PD1]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsD);
+[VD2,PD2]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, repmat((1:1:N_a),[1,1,N_z]), vfoptionsD);
+fprintf('localsearch: (3) the default reference vs the current a index passed explicitly, V, this should be zero: %.3e \n',max(abs(gather(VD1)-gather(VD2)),[],'all'))
+fprintf('localsearch: (3) the default reference vs the current a index passed explicitly, Policy, this should be zero: %.3e \n',max(abs(gather(PD1)-gather(PD2)),[],'all'))
+
+%% (4) V non-decreasing in nlocalsearch, (5)-(6) the window
+fprintf('localsearch: (4) V is non-decreasing in nlocalsearch at every state and period, should be one: %i \n',monotone)
+fprintf('localsearch: (5) |aprime-reference|<=2*nlocalsearch at every state, should be one: %i \n',windowall)
+fprintf('localsearch: (6) |aprime-reference|<=nlocalsearch at every interior state, should be one: %i \n',windowint)
+
+%% (7) The reference is honoured: pin it to the unrestricted optimum and the restriction stops binding
+% P1 (above) is [1,N_a,N_z], which is exactly the shape aprimeReferencePolicy is documented to take.
+% The window always contains its own centre, so pinning the reference to the unrestricted optimum
+% makes the restricted max the unrestricted max at every n.
 vfoptionsS.localsearch=1;
-for nls=[0,1,5]
+for nls=[1,5]
     vfoptionsS.nlocalsearch=nls;
     [VLS,PLS]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, P1, vfoptionsS);
     fprintf('localsearch: (7) reference pinned to the unrestricted optimum, nlocalsearch=%i, V, this should be zero: %.3e \n',nls,max(abs(gather(VLS)-gather(V1)),[],'all'))
@@ -194,11 +219,11 @@ vfoptionsS.nlocalsearch=1;
 fprintf('localsearch: (7) for scale, the same step with the default reference instead, V, should NOT be zero: %.3e \n',max(abs(gather(VLSd)-gather(V1)),[],'all'))
 
 %% (8) The five documented refusals, each checked by its own message
-% Each is tested at the level that raises it: nlocalsearch unset and nlocalsearch too large for the
-% grid are the command's own validation, the three combination refusals are the dispatcher's. Going
-% through the command for the last three would not work -- a gridinterplayer Policy_final has three
-% channels and a with-d one has two, so the command would throw on the size of its own Policy path
-% before the dispatcher was ever reached, and the check would pass on the wrong error.
+% Each is tested at the level that raises it: the three nlocalsearch refusals are the command's own
+% validation, the two combination refusals are the dispatcher's. Going through the command for the
+% last two would not work -- a with-d Policy_final has two channels, so the command would throw on
+% the size of its own Policy path before the dispatcher was ever reached, and the check would pass
+% on the wrong error.
 err=zeros(1,5);
 
 vfoptionsE=vfoptions; vfoptionsE.localsearch=1; % no nlocalsearch
@@ -215,11 +240,11 @@ catch ME
     err(2)=contains(ME.message,'too large for the grid');
 end
 
-vfoptionsE=vfoptionsS; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.gridinterplayer=1;
+vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=0; % a single grid point, so no search at all
 try
-    ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsE);
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
 catch ME
-    err(3)=contains(ME.message,'combined with vfoptions.gridinterplayer');
+    err(3)=contains(ME.message,'must be at least 1');
 end
 
 vfoptionsE=vfoptionsS; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.divideandconquer=1;
@@ -239,7 +264,7 @@ end
 
 fprintf('localsearch: (8) nlocalsearch unset is refused by name, should be one: %i \n',err(1))
 fprintf('localsearch: (8) nlocalsearch too large for the grid is refused by name, should be one: %i \n',err(2))
-fprintf('localsearch: (8) combination with the grid interpolation layer is refused by name, should be one: %i \n',err(3))
+fprintf('localsearch: (8) nlocalsearch=0 is refused by name, should be one: %i \n',err(3))
 fprintf('localsearch: (8) combination with divide-and-conquer is refused by name, should be one: %i \n',err(4))
 fprintf('localsearch: (8) a model with d is refused by name, should be one: %i \n',err(5))
 
@@ -292,6 +317,145 @@ for n_c=1:length(nladderB)
         fprintf('localsearch: (9) big grid, nlocalsearch=%i covers the grid, V vs the unrestricted path, this should be zero: %.3e \n',nwide_big,max(abs(VBn-VB0),[],'all'))
         fprintf('localsearch: (9) big grid, nlocalsearch=%i covers the grid, Policy vs the unrestricted path, this should be zero: %.3e \n',nwide_big,max(abs(PolBn-PolB0),[],'all'))
     end
+end
+
+%% (10) Grid interpolation layer: reproducing the GI raw exactly at nlocalsearch=1
+% The GI raw takes a full max over all N_a coarse points, turns the winner into a midpoint, and
+% searches the 2*ngridinterp+3 fine points one coarse step either side. Its coarse max is the SAME
+% max the plain raw does -- same return matrix command, same entireRHS -- so P1 above IS that
+% maxindex, and the GI midpoint is P1 clamped to [2,N_a-1]. A window of nlocalsearch=1 around that
+% has loweredge=midpoint-1 and therefore spans exactly the fine points the GI raw looks at.
+% Same points, same EVinterp, same ReturnFn: an identity, not a comparison. It is the one check that
+% validates the fine indexing, the Policy decode and the L2flag derivation all at once.
+ngi=5; % the value the rest of this bank uses for ngridinterp
+vfoptionsG=vfoptionsS;
+vfoptionsG.localsearch=0;
+vfoptionsG.gridinterplayer=1;
+vfoptionsG.ngridinterp=ngi;
+[VG,PG]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsG);
+
+refGI=max(min(P1,N_a-1),2); % the midpoint the GI raw uses
+vfoptionsLG=vfoptionsG;
+vfoptionsLG.localsearch=1;
+vfoptionsLG.nlocalsearch=1;
+[VLG,PLG]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, refGI, vfoptionsLG);
+
+% The decoded fine grid point is what the two encodings agree on even where the channels do not: the
+% LS raw always names a point sitting on a coarse node as (that node, L2=1), while the GI raw may
+% name it (previous node, L2=ngridinterp+2). Same aprime, two spellings.
+fineG =(1+ngi)*(gather(PG(1,:,:)) -1)+gather(PG(2,:,:));
+fineLG=(1+ngi)*(gather(PLG(1,:,:))-1)+gather(PLG(2,:,:));
+fprintf('localsearch+GI: (10) nlocalsearch=1 centred where the GI raw centres, V, this should be zero: %.3e \n',max(abs(gather(VLG)-gather(VG)),[],'all'))
+fprintf('localsearch+GI: (10) same, the decoded aprime fine grid point, this should be zero: %.3e \n',max(abs(fineLG-fineG),[],'all'))
+% HOW TO READ A FAILURE OF THE FLAG LINE. The LS raw tests BOTH endpoints of the cell the optimum
+% landed in; the GI raw only ever tests the far one, because its near endpoint is the midpoint and
+% the midpoint is its coarse argmax and so feasible. The one case where they can part is when the
+% clamp to [2,N_a-1] bit, so the midpoint is NOT the argmax, AND the ReturnFn is -Inf there. That
+% cannot happen in this model, and if it ever does the LS raw is the one that is right.
+fprintf('localsearch+GI: (10) same, the L2flag channel, this should be zero: %.3e \n',max(abs(gather(PLG(3,:,:))-gather(PG(3,:,:))),[],'all'))
+fprintf('localsearch+GI: for information, the raw Policy channels differ at %i of %i states, which is the two spellings of one fine point and not a different aprime \n',sum(gather(PLG(1,:,:))~=gather(PG(1,:,:)),'all'),N_a*N_z)
+
+%% (11) The whole-grid window is the exact fine-grid optimum, so it cannot fall below the GI raw
+% With the window covering every coarse point, the search is every point of the fine grid, which is
+% the exact maximum the interpolation layer is an approximation to. The GI raw only ever looks one
+% coarse step either side of its coarse argmax, so it must be weakly worse. The comparison is exact
+% rather than tolerant: where both find the same point the arithmetic is bit-identical.
+% How often it is STRICTLY better is a measurement of how often the two-layer search mislocates.
+vfoptionsLGw=vfoptionsG;
+vfoptionsLGw.localsearch=1;
+vfoptionsLGw.nlocalsearch=nwide;
+[VLGw,~]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsLGw);
+fprintf('localsearch+GI: (11) the whole-grid window is the exact max over the entire fine grid, so it cannot fall below the GI raw, should be one: %i \n',min(gather(VLGw)-gather(VG),[],'all')>=0)
+fprintf('localsearch+GI: (11) for information, it is strictly above the GI raw at %i of %i states, which is how often the GI two-layer search mislocates the fine optimum \n',sum(gather(VLGw)>gather(VG),'all'),N_a*N_z)
+
+%% (12) The ladder again, along a path, with the grid interpolation layer on
+% Measured against the whole-grid window of the same family rather than against the GI raw, because
+% by (11) the GI raw is not the exact object here and the wide window is.
+vfoptionsGI=vfoptions;
+vfoptionsGI.gridinterplayer=1;
+vfoptionsGI.ngridinterp=ngi;
+[V_finalGI,Policy_finalGI]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsGI);
+
+vfoptionsGIw=vfoptionsGI;
+vfoptionsGIw.localsearch=1;
+vfoptionsGIw.nlocalsearch=nwide;
+[VPathGIw,~]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGIw);
+VPathGIw=gather(VPathGIw);
+VGIw=VPathGIw(:,:,1:T-1);
+
+nladderGI=unique([1,2,5,10,25,nwide]);
+nladderGI=nladderGI(nladderGI<=nwide);
+monotoneGI=1; windowallGI=1; windowintGI=1;
+VprevGI=[];
+for n_c=1:length(nladderGI)
+    vfoptionsGIn=vfoptionsGI;
+    vfoptionsGIn.localsearch=1;
+    vfoptionsGIn.nlocalsearch=nladderGI(n_c);
+    [VPathGIn,PolicyPathGIn]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGIn);
+    VPathGIn=gather(VPathGIn);
+    VGIn=VPathGIn(:,:,1:T-1);
+    % Channel 1 is the lower coarse grid point, which is where the window constrains the answer
+    PolGIn=gather(reshape(PolicyPathGIn(1,:,:,1:T-1),[N_a,N_z,T-1]));
+
+    if ~isempty(VprevGI)
+        monotoneGI=monotoneGI*(min(VGIn-VprevGI,[],'all')>=0);
+    end
+    VprevGI=VGIn;
+
+    devGI=abs(PolGIn-aindex);
+    windowallGI=windowallGI*(max(devGI,[],'all')<=2*nladderGI(n_c));
+    interiorGI=(aindex-nladderGI(n_c)>=1 & aindex+nladderGI(n_c)<=N_a);
+    windowintGI=windowintGI*(max(devGI(interiorGI,:,:),[],'all')<=nladderGI(n_c));
+
+    fprintf('localsearch+GI: nlocalsearch=%3i: %5i fine points searched, max|V-Vwide|=%.3e \n',nladderGI(n_c),2*nladderGI(n_c)*(1+ngi)+1,max(abs(VGIn-VGIw),[],'all'))
+end
+fprintf('localsearch+GI: (12) V is non-decreasing in nlocalsearch at every state and period, should be one: %i \n',monotoneGI)
+fprintf('localsearch+GI: (12) the lower coarse point of aprime is within 2*nlocalsearch of the reference at every state, should be one: %i \n',windowallGI)
+fprintf('localsearch+GI: (12) and within nlocalsearch at every interior state, should be one: %i \n',windowintGI)
+
+%% (13) lowmemory is refused with local search, with and without the interpolation layer
+errLS=zeros(1,2);
+vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.lowmemory=1;
+try
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
+catch ME
+    errLS(1)=contains(ME.message,'lowmemory is not used with vfoptions.localsearch');
+end
+vfoptionsE=vfoptionsGI; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.lowmemory=1;
+try
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
+catch ME
+    errLS(2)=contains(ME.message,'lowmemory is not used with vfoptions.localsearch');
+end
+fprintf('localsearch: (13) lowmemory with local search is refused by name, should be one: %i \n',errLS(1))
+fprintf('localsearch+GI: (13) lowmemory with local search and the interpolation layer is refused by name, should be one: %i \n',errLS(2))
+
+%% (14) Speed on the big grid, with the interpolation layer on
+% The unrestricted GI step costs its full coarse layer plus its second layer, about N_a+2*ngi+3
+% points per state. The local search costs 2*n*(1+ngi)+1 and no coarse layer at all, so at n=1 and
+% ngi=5 the predicted factor is 1014/13, about 78. Expect the measured number to be well below that
+% and in fact below the 4.6x the no-GI section reports, for the reason section (9) gives: the
+% restricted side is launch bound, and the GI step has strictly more kernel launches than the plain
+% one. If it comes back above 4.6x then that reading of the floor is wrong, which is worth knowing.
+[V_finalBGI,Policy_finalBGI]=ValueFnIter_InfHorz(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsGI);
+
+ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGI);
+wait(gpudev)
+tic;
+ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGI);
+wait(gpudev)
+time0BGI=toc;
+fprintf('localsearch+GI: big grid (n_a=%i, ngridinterp=%i), the unrestricted GI sweep took %6.2f seconds \n',N_a_big,ngi,time0BGI)
+
+for nls=[1,2,5,10]
+    vfoptionsBGI=vfoptionsGI;
+    vfoptionsBGI.localsearch=1;
+    vfoptionsBGI.nlocalsearch=nls;
+    tic;
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsBGI);
+    wait(gpudev)
+    timeBGI=toc;
+    fprintf('localsearch+GI: big grid, nlocalsearch=%4i: %6.2f seconds, measured speed-up %7.1fx against a predicted %7.1fx, over %5i fine points instead of %5i \n',nls,timeBGI,time0BGI/timeBGI,(N_a_big+2*ngi+3)/(2*nls*(1+ngi)+1),2*nls*(1+ngi)+1,N_a_big+2*ngi+3)
 end
 
 output=struct();

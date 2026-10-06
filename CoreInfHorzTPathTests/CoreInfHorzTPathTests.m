@@ -124,6 +124,8 @@ if doPart(4)==1
     % into the general eqm transition path is separate and comes later.
     % Runs on n_a as well as n_a_big: the saving the method promises is N_a/(2*nlocalsearch+1), and at
     % n_a=101 the step is kernel-launch bound, so it can only be measured on the big grid.
+    % Sections (10)-(14) are the same thing with the grid interpolation layer on, where the window is
+    % the same 2*nlocalsearch+1 coarse points with ngridinterp between each consecutive pair.
     output=CoreInfHorzTPath_localsearch(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end % doPart(4): localsearch, the local-search value fn step
 
