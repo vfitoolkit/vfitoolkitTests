@@ -1,17 +1,49 @@
-function m=EstimFHorzPType_ModelMoments(paramvec,EstimParamNames,TargetMoments,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,FnsToEvaluate,vfoptions,simoptions,logmoments,omitestimparam)
+function m=EstimFHorzPType_ModelMoments(paramvec,EstimParamNames,TargetMoments,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,FnsToEvaluate,vfoptions,simoptions,logmoments,omitestimparam,ParametrizeParamsFn)
 % EstimFHorzPTypeTests: the vector of model moments at the targeted entries for a parameter vector, by the same route as the PType
 % estimation command's Jacobian handle: SetupTargetMoments_FHorz (useptype=1), the grids as the driver sets them up, then
 % CalibrateLifeCycleModel_PType_objectivefn with vectoroutput=1 and no constraints. paramvec stacks the estimated parameters in
 % EstimParamNames order, a per-type parameter (a structure over the types, or a matrix with N_i as one dimension) contributing one block
 % per type in Names_i order (an omitted parameter contributes only its NaN entries of omitestimparam, the same mask for every type).
 % logmoments is a vector with one entry per target entry (NaN entries included), or 0. omitestimparam is a structure as
-% estimoptions.omitestimparam, or [].
-
+% estimoptions.omitestimparam, or []. ParametrizeParamsFn (optional) is applied inside the objective. When a shock function
+% (vfoptions.ExogShockFn / EiidShockFn, possibly a structure over the types) takes an estimated parameter the grids are rebuilt inside
+% the objective at every call (calibrateshocks=1), as the driver does; when jequaloneDist is a function the user's grids are kept for it.
+if nargin<24
+    ParametrizeParamsFn=[];
+end
 N_i=length(Names_i);
 vfoptions_m=vfoptions; simoptions_m=simoptions;
-[z_gridvals_J,pi_z_J,vfoptions_m]=ExogShockSetup_FHorz_PType(n_z,z_grid,pi_z,N_j,Names_i,Params,vfoptions_m,3,0);
-simoptions_m.e_gridvals_J=vfoptions_m.e_gridvals_J;
-simoptions_m.pi_e_J=vfoptions_m.pi_e_J;
+calibrateshocks=0;
+for fnm={'ExogShockFn','EiidShockFn'}
+    if isfield(vfoptions_m,fnm{1})
+        F=vfoptions_m.(fnm{1});
+        if isstruct(F)
+            fns=fieldnames(F);
+            for ii=1:length(fns)
+                if ~isempty(intersect(getAnonymousFnInputNames(F.(fns{ii})),EstimParamNames))
+                    calibrateshocks=1;
+                end
+            end
+        elseif ~isempty(intersect(getAnonymousFnInputNames(F),EstimParamNames))
+            calibrateshocks=1;
+        end
+    end
+end
+if ~isfield(simoptions_m,'jequaloneDist_usergrids')
+    simoptions_m.jequaloneDist_usergrids=1;
+end
+if calibrateshocks==0
+    KeepOriginalGrid=(simoptions_m.jequaloneDist_usergrids==1);
+    [z_gridvals_J,pi_z_J,vfoptions_m]=ExogShockSetup_FHorz_PType(n_z,z_grid,pi_z,N_j,Names_i,Params,vfoptions_m,3,KeepOriginalGrid);
+    simoptions_m.e_gridvals_J=vfoptions_m.e_gridvals_J;
+    simoptions_m.pi_e_J=vfoptions_m.pi_e_J;
+    if simoptions_m.jequaloneDist_usergrids==1
+        simoptions_m.user_z_grid=vfoptions_m.user_z_grid;
+        simoptions_m.user_pi_z=vfoptions_m.user_pi_z;
+    end
+else
+    z_gridvals_J=z_grid; pi_z_J=pi_z; % passed through as the drivers do: the objective rebuilds the grids that depend on the current parameters, and with only an EiidShockFn these ARE the z grids (empty placeholders broke the setup, 2026-10-07)
+end
 vfoptions_m.alreadygridvals=1;
 simoptions_m.alreadygridvals=1;
 if ~isfield(simoptions_m,'warnjequaloneptypeasdim')
@@ -71,7 +103,7 @@ caliboptions.metric='sum_squared';
 caliboptions.simulatemoments=0;
 caliboptions.vectoroutput=1;
 caliboptions.useCustomModelStats=0;
-caliboptions.calibrateshocks=0;
+caliboptions.calibrateshocks=calibrateshocks;
 caliboptions.calibsemiexo=0;
 caliboptions.whichcombos=1;
 caliboptions.selectors=selectors;
@@ -82,7 +114,7 @@ else
     caliboptions.logmoments=reshape(logmoments,[],1);
 end
 [~,caliboptions]=ParameterConstraints_PType_TransformParamsToUnconstrained(paramvec(:),calibparamsvecindex,EstimParamNames,nCalibParamsFinder,caliboptions,1); % (no constraints: the empty name lists become zero vectors)
-m=gather(CalibrateLifeCycleModel_PType_objectivefn(paramvec(:),EstimParamNames,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec,nCalibParams,nCalibParamsFinder,calibparamsvecindex,calibparamssizes,calibomitparams_counter,calibomitparamsmatrix,caliboptions,vfoptions_m,simoptions_m));
+m=gather(CalibrateLifeCycleModel_PType_objectivefn(paramvec(:),EstimParamNames,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,ParametrizeParamsFn,FnsToEvaluate,usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec,nCalibParams,nCalibParamsFinder,calibparamsvecindex,calibparamssizes,calibomitparams_counter,calibomitparamsmatrix,caliboptions,vfoptions_m,simoptions_m));
 m=m(:);
 
 end

@@ -1,4 +1,5 @@
-% Tests for EstimateLifeCycleModel_PType_MethodOfMoments (the FHorz method-of-moments estimator with permanent types).
+% Tests for EstimateLifeCycleModel_PType_MethodOfMoments (the FHorz method-of-moments estimator with permanent types). (EstimateLifeCycleModel_MomentDerivatives
+% has no permanent-type version; it is tested in EstimFHorzTests part 7.)
 %
 % The model is the CoreFHorzPTypeTests part-22 model (two permanent types, low and high, with a per-type earnings profile kappa_j_pt,
 % type weights 0.7 and 0.3 and geometric age weights) on small grids, as in CalibFHorzPTypeTests, with the
@@ -25,10 +26,15 @@
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
 % doPart(1): the standard-error machinery at the truth (skipestimation=1): J vs finite differences at the four step sizes, Sigma, std devs, confidence intervals, sensitivity matrix, identification, efficientW, logmoments forms, inputs that must error
 % doPart(2): point estimates: start at the truth (exact) and away (close), lsqnonlin and fminsearch, a diagonal W (objective identity), constraints (J unaffected), omitestimparam on the per-type kappa_j_pt (J of a vector-valued per-type parameter), a per-type pension as a structure
+% doPart(3): ExogShockFn common and per type, EiidShockFn, with estimated shock parameters (J with the grids rebuilt), jequaloneDist as a function (both usergrids), CustomModelStats (both usergrids)
+% doPart(4): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets, grouped and per type, one restricted: truth, J, whichcombos 1 vs 0 identical, a recovery
+% doPart(5): sensitivity to calibrated parameters (Jorgensen) vs finite differences, Lambda*Jcalib identity; an unidentified pair (rank(J) short)
+% doPart(6): cohorts entering at different ages, by type: hand-built cohort moments (grouped and per type), the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs
+% doPart(7): runtime of skipestimation with whichcombos=1 vs =0 (informational)
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -88,6 +94,36 @@ if doPart(2)==1
     fprintf('\n===== doPart(2): point estimates: truth and away, lsqnonlin and fminsearch, a diagonal W, constraints, omitestimparam =====\n')
     output=EstimFHorzPType_PointEstimates(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
 end % doPart(2)
+
+%% ===== doPart(3): shocks with estimated parameters (common and per type), jequaloneDist as a function, CustomModelStats =====
+if doPart(3)==1
+    fprintf('\n===== doPart(3): shocks with estimated parameters (common and per type), jequaloneDist as a function, CustomModelStats =====\n')
+    output=EstimFHorzPType_ShocksCustomStats(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(3)
+
+%% ===== doPart(4): AutoCorr and cross-section targets, grouped and per type: truth, J, whichcombos 1 vs 0, a recovery =====
+if doPart(4)==1
+    fprintf('\n===== doPart(4): AutoCorr and cross-section targets, grouped and per type: truth, J, whichcombos 1 vs 0, a recovery =====\n')
+    output=EstimFHorzPType_NewTargets(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(4)
+
+%% ===== doPart(5): sensitivity to calibrated parameters and local identification =====
+if doPart(5)==1
+    fprintf('\n===== doPart(5): sensitivity to calibrated parameters and local identification =====\n')
+    output=EstimFHorzPType_Sensitivity(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(5)
+
+%% ===== doPart(6): cohorts entering at different ages, by type =====
+if doPart(6)==1
+    fprintf('\n===== doPart(6): cohorts entering at different ages, by type =====\n')
+    output=EstimFHorzPType_Cohorts(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(6)
+
+%% ===== doPart(7): runtime, whichcombos=1 vs =0 (informational) =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): runtime, whichcombos=1 vs =0 (informational) =====\n')
+    output=EstimFHorzPType_Runtime(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(7)
 
 % All looks good!
 

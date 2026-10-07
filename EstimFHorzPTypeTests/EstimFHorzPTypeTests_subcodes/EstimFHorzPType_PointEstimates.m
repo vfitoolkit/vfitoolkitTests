@@ -60,7 +60,7 @@ for cc=1:4
         t0=tic;
         [EstimParams,~,estsummary]=EstimateLifeCycleModel_PType_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params_start,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,estimoptions_t,vfoptions,simoptions);
         tt=toc(t0);
-        ran=1; objv=estsummary.objectivefnval; rec=[EstimParams.beta;EstimParams.pension]; perr=max(abs(rec-truth));
+        ran=1; objv=estsummary.objectivefnval; rec=[EstimParams.beta;EstimParams.pension]; perr=CoreMaxAbs(rec-truth);
         m=EstimFHorzPType_ModelMoments(rec,EstimParamNames,TM,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,FnsToEvaluate,vfoptions,simoptions,0,[]);
         handobj=(m-tvec)'*W*(m-tvec);
     catch err
@@ -81,13 +81,13 @@ try
     t0=tic;
     [EstimParams,~,estsummary]=EstimateLifeCycleModel_PType_MethodOfMoments(EstimParamNames,TM,Wd,Omega,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params_away,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,estimoptions_e,vfoptions,simoptions);
     tt=toc(t0);
-    ran=1; objv=estsummary.objectivefnval; rec=[EstimParams.beta;EstimParams.pension]; perr=max(abs(rec-truth));
+    ran=1; objv=estsummary.objectivefnval; rec=[EstimParams.beta;EstimParams.pension]; perr=CoreMaxAbs(rec-truth);
     m=EstimFHorzPType_ModelMoments(rec,EstimParamNames,TM,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,FnsToEvaluate,vfoptions,simoptions,0,[]);
     handobj=(m-tvec)'*Wd*(m-tvec);
 catch err
     fprintf('PointEstimates PType (e): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
 end
-fprintf('PointEstimates PType (e) diagonal W, lsqnonlin, started away (%.1f s): did not run, this should be zero: %.3e; max parameter error, this should be close to zero: %.3e; objectivefnval vs (M_d-M_m)''W(M_d-M_m) at the estimate, this should be zero: %.3e; W reported as input, this should be zero: %.3e \n',tt,1-ran,perr,abs(objv-handobj),max(abs(estsummary.variousmatrices.W(:)-Wd(:))))
+fprintf('PointEstimates PType (e) diagonal W, lsqnonlin, started away (%.1f s): did not run, this should be zero: %.3e; max parameter error, this should be close to zero: %.3e; objectivefnval vs (M_d-M_m)''W(M_d-M_m) at the estimate, this should be zero: %.3e; W reported as input, this should be zero: %.3e \n',tt,1-ran,perr,abs(objv-handobj),CoreMaxAbs(estsummary.variousmatrices.W(:)-Wd(:)))
 
 %% (f) constraints, started away, lsqnonlin: recovered, and J unaffected by the constraints
 labels={'constrainpositive pension (softplus)','constrain0to1 beta','constrainAtoB beta in [0.9,0.99]'};
@@ -109,7 +109,7 @@ for cc=1:3
         t0=tic;
         [EstimParams,~,estsummary]=EstimateLifeCycleModel_PType_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params_start,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,estimoptions_f,vfoptions,simoptions);
         tt=toc(t0);
-        ran=1; rec=[EstimParams.beta;EstimParams.pension]; perr=max(abs(rec-truth));
+        ran=1; rec=[EstimParams.beta;EstimParams.pension]; perr=CoreMaxAbs(rec-truth);
         dc=estsummary.doublechecks.epsilon10000;
         x0=dc.estimparamsvec(:); xu=dc.estimparamsvecup(:); xd=dc.estimparamsvecdown(:);
         Jc=zeros(nT,2);
@@ -118,8 +118,8 @@ for cc=1:3
             xp=x0; xp(pp)=xd(pp); md=EstimFHorzPType_ModelMoments(xp,EstimParamNames,TM,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,FnsToEvaluate,vfoptions,simoptions,0,[]);
             Jc(:,pp)=(mu-md)/(xu(pp)-xd(pp));
         end
-        maxd=max(abs(dc.J_centered(:)-Jc(:)));
-        pointd=max(abs(x0-rec)); % the Jacobian must be taken at the model-parameter estimate
+        maxd=CoreMaxAbs(dc.J_centered(:)-Jc(:));
+        pointd=CoreMaxAbs(x0-rec); % the Jacobian must be taken at the model-parameter estimate
     catch err
         fprintf('PointEstimates PType (f) %s: the estimation command errored with: %s \n',labels{cc},[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
     end
@@ -151,7 +151,7 @@ try
     k=EstimParams.kappa_j_pt;
     shapebad=~isequal(size(k),size(Params_gt.kappa_j_pt)); % returned as a matrix of the input shape (N_i as the first dimension)
     if shapebad==0
-        perr=max(max(abs(k(:,1:6)-Params_gt.kappa_j_pt(:,1:6)))); fixedmove=max(max(abs(k(:,7:end)-Params_gt.kappa_j_pt(:,7:end))));
+        perr=max(CoreMaxAbs(k(:,1:6)-Params_gt.kappa_j_pt(:,1:6))); fixedmove=max(CoreMaxAbs(k(:,7:end)-Params_gt.kappa_j_pt(:,7:end)));
     end
     dc=estsummary.doublechecks.epsilon10000;
     x0=dc.estimparamsvec(:); xu=dc.estimparamsvecup(:); xd=dc.estimparamsvecdown(:);
@@ -163,7 +163,7 @@ try
             xp=x0; xp(pp)=xd(pp); md=EstimFHorzPType_ModelMoments(xp,{'kappa_j_pt'},TMg,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,EstimParamsPType_to_Params(Params_gt,EstimParams),DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,FnsToEvaluate_g,vfoptions,simoptions,0,estimoptions_g.omitestimparam);
             Jc(:,pp)=(mu-md)/(xu(pp)-xd(pp));
         end
-        maxd=max(abs(dc.J_centered(:)-Jc(:)));
+        maxd=CoreMaxAbs(dc.J_centered(:)-Jc(:));
     else
         maxd=1;
     end
@@ -197,7 +197,7 @@ try
     if formbad==0
         rec=[EstimParams.beta;EstimParams.pension.low;EstimParams.pension.high];
     end
-    perr=max(abs(rec-truth_pt));
+    perr=CoreMaxAbs(rec-truth_pt);
 catch err
     fprintf('PointEstimates PType (h): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
 end

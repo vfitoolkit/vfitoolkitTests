@@ -52,7 +52,7 @@ estimoptions.skipestimation=1;
 ran=0; objv=NaN; pmove=NaN;
 try
     [EstimParams,EstimParamsConfInts,estsummary]=EstimateLifeCycleModel_PType_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,estimoptions,vfoptions,simoptions);
-    ran=1; objv=estsummary.objectivefnval; pmove=max(abs([EstimParams.beta;EstimParams.pension]-truth));
+    ran=1; objv=estsummary.objectivefnval; pmove=CoreMaxAbs([EstimParams.beta;EstimParams.pension]-truth);
 catch err
     fprintf('StdErrors PType (a): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
 end
@@ -90,7 +90,7 @@ fprintf('StdErrors PType (b) Jacobian at the four step sizes: J_centered, J_up, 
 J=estsummary.variousmatrices.J;
 SigmaHand=((J'*W*J)\(J'*W))*Omega*((J'*W*J)\(J'*W))';
 Sigma=estsummary.variousmatrices.Sigma;
-fprintf('StdErrors PType (c) Sigma vs inv(J''WJ) J''W Omega W J inv(J''WJ) from the reported J, W, Omega, relative, this should be zero: %.3e; W and Omega reported as input, this should be zero: %.3e \n',max(abs(Sigma(:)-SigmaHand(:)))/max(abs(SigmaHand(:))),max(abs(estsummary.variousmatrices.W(:)-W(:)))+max(abs(estsummary.variousmatrices.Omega(:)-Omega(:))))
+fprintf('StdErrors PType (c) Sigma vs inv(J''WJ) J''W Omega W J inv(J''WJ) from the reported J, W, Omega, relative, this should be zero: %.3e; W and Omega reported as input, this should be zero: %.3e \n',CoreMaxAbs(Sigma(:)-SigmaHand(:))/CoreMaxAbs(SigmaHand(:)),CoreMaxAbs(estsummary.variousmatrices.W(:)-W(:))+CoreMaxAbs(estsummary.variousmatrices.Omega(:)-Omega(:)))
 
 %% (d) standard deviations and confidence intervals
 sd=sqrt(diag(Sigma));
@@ -101,7 +101,7 @@ fprintf('StdErrors PType (d) standard deviations vs sqrt(diag(Sigma)), 90/95/68 
 
 %% (e) sensitivity and identification
 Lambda=-((J'*W*J)\(J'*W));
-fprintf('StdErrors PType (e) sensitivity matrix vs -inv(J''WJ) J''W, relative, this should be zero: %.3e; rank(J) is %i (hand %i), identified flag true, this should be zero: %.3e \n',max(abs(estsummary.sensitivitymatrix(:)-Lambda(:)))/max(abs(Lambda(:))),estsummary.localidentification.rankJ,nP,abs(estsummary.localidentification.rankJ-nP)+~estsummary.localidentification.yesidentified)
+fprintf('StdErrors PType (e) sensitivity matrix vs -inv(J''WJ) J''W, relative, this should be zero: %.3e; rank(J) is %i (hand %i), identified flag true, this should be zero: %.3e \n',CoreMaxAbs(estsummary.sensitivitymatrix(:)-Lambda(:))/CoreMaxAbs(Lambda(:)),estsummary.localidentification.rankJ,nP,abs(estsummary.localidentification.rankJ-nP)+~estsummary.localidentification.yesidentified)
 
 %% (f) efficient weighting
 ran=0; d=NaN; omegaempty=NaN;
@@ -112,7 +112,7 @@ try
     ran=1;
     Jf=estsummary_f.variousmatrices.J;
     SigmaHand_f=inv(Jf'*Winv*Jf);
-    d=max(abs(estsummary_f.variousmatrices.Sigma(:)-SigmaHand_f(:)))/max(abs(SigmaHand_f(:)));
+    d=CoreMaxAbs(estsummary_f.variousmatrices.Sigma(:)-SigmaHand_f(:))/CoreMaxAbs(SigmaHand_f(:));
     omegaempty=~isempty(estsummary_f.variousmatrices.Omega);
 catch err
     fprintf('StdErrors PType (f): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
@@ -171,7 +171,7 @@ for ff=1:4
             Jc(:,pp)=(mu-md)/(xu(pp)-xd(pp));
         end
         if isequal(size(dc.J_centered),[nT,nP])
-            maxd=max(abs(dc.J_centered(:)-Jc(:)));
+            maxd=CoreMaxAbs(dc.J_centered(:)-Jc(:));
         else
             maxd=1;
         end
