@@ -142,7 +142,7 @@ PricePath_PT_fast=TransitionPath_Case1_FHorz_PType(PricePath0, ParamPathLocal, T
 
 % Verify bequests left equal bequests received along the converged path
 [~,PolicyPath_fast]=ValueFnOnTransPath_Case1_FHorz_PType(PricePath_PT_fast, ParamPathLocal, T, V_final_PT, Policy_final_PT, Params, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptions_fast, vfoptions);
-AgentDistPath_fast=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_PT, jequaloneDist, PricePath_PT_fast, ParamPathLocal, PolicyPath_fast, AgeWeightParamNames,n_d,n_a,n_z,N_j,Names_i,pi_z, T,Params, transpathoptions_fast, simoptions);
+AgentDistPath_fast=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_PT, jequaloneDist, PricePath_PT_fast, ParamPathLocal, PolicyPath_fast, AgeWeightParamNames, PTypeDistParamNames,n_d,n_a,n_z,N_j,Names_i,pi_z, T,Params, transpathoptions_fast, simoptions);
 AggVarsPath_fast=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, AgentDistPath_fast, PolicyPath_fast, PricePath_PT_fast, ParamPathLocal, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptions_fast, simoptions);
 
 for ii=1:N_i
@@ -177,7 +177,7 @@ PricePath_PT_slow=TransitionPath_Case1_FHorz_PType(PricePath0, ParamPathLocal, T
 
 % Verify bequests left equal bequests received along the converged path
 [~,PolicyPath_slow]=ValueFnOnTransPath_Case1_FHorz_PType(PricePath_PT_slow, ParamPathLocal, T, V_final_PT, Policy_final_PT, Params, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptions_slow, vfoptions);
-AgentDistPath_slow=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_PT, jequaloneDist, PricePath_PT_slow, ParamPathLocal, PolicyPath_slow, AgeWeightParamNames,n_d,n_a,n_z,N_j,Names_i,pi_z, T,Params, transpathoptions_slow, simoptions);
+AgentDistPath_slow=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_PT, jequaloneDist, PricePath_PT_slow, ParamPathLocal, PolicyPath_slow, AgeWeightParamNames, PTypeDistParamNames,n_d,n_a,n_z,N_j,Names_i,pi_z, T,Params, transpathoptions_slow, simoptions);
 AggVarsPath_slow=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, AgentDistPath_slow, PolicyPath_slow, PricePath_PT_slow, ParamPathLocal, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptions_slow, simoptions);
 
 for ii=1:N_i

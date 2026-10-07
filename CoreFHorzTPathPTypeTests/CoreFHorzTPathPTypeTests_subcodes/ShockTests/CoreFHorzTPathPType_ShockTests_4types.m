@@ -88,7 +88,7 @@ Policy_init_PT.e=PolicyPath_PT.e(:,:,:,:,1);
 Policy_init_PT.ze=PolicyPath_PT.ze(:,:,:,:,:,1);
 
 AgentDist_initial_PT=StationaryDist_Case1_FHorz_PType(jequaloneDist_PT,AgeWeightParamNames,PTypeDistParamNames,Policy_init_PT,n_d,n_a,n_z_PT,N_j,Names_i,pi_z_PT,Params,simopt_PT);
-AgentDistPath_PT=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_PT, jequaloneDist_PT, PricePath, ParamPath, PolicyPath_PT, AgeWeightParamNames,n_d,n_a,n_z_PT,N_j,Names_i,pi_z_PT, T,Params, transpathoptionsbaseline, simopt_PT);
+AgentDistPath_PT=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_PT, jequaloneDist_PT, PricePath, ParamPath, PolicyPath_PT, AgeWeightParamNames, PTypeDistParamNames,n_d,n_a,n_z_PT,N_j,Names_i,pi_z_PT, T,Params, transpathoptionsbaseline, simopt_PT);
 
 %% Four independent single-type solves
 for ii=1:N_i

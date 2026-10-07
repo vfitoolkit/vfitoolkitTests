@@ -44,7 +44,7 @@ for ii=1:N_i
     Policy_init_A.(names_A{ii})=PolicyPath_A.(names_A{ii})(:,:,:,:,1);
 end
 AgentDist_initial_A=StationaryDist_Case1_FHorz_PType(jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,Policy_init_A,n_d,n_a,n_z,N_j,N_i,pi_z,Params,simoptions);
-AgentDistPath_A=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_A, jequaloneDist, PricePath, ParamPath, PolicyPath_A, AgeWeightParamNames,n_d,n_a,n_z,N_j,N_i,pi_z, T,Params, transpathoptionsbaseline, simoptions);
+AgentDistPath_A=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_A, jequaloneDist, PricePath, ParamPath, PolicyPath_A, AgeWeightParamNames, PTypeDistParamNames,n_d,n_a,n_z,N_j,N_i,pi_z, T,Params, transpathoptionsbaseline, simoptions);
 AggVarsPath_A=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, AgentDistPath_A, PolicyPath_A, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, N_i, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions);
 
 %% Solve with Names_i (cell); jequaloneDist as Names_i-keyed struct
@@ -54,7 +54,7 @@ for ii=1:N_i
     Policy_init_B.(Names_i{ii})=PolicyPath_B.(Names_i{ii})(:,:,:,:,1);
 end
 AgentDist_initial_B=StationaryDist_Case1_FHorz_PType(jequaloneDist_B,AgeWeightParamNames,PTypeDistParamNames,Policy_init_B,n_d,n_a,n_z,N_j,Names_i,pi_z,Params,simoptions);
-AgentDistPath_B=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_B, jequaloneDist_B, PricePath, ParamPath, PolicyPath_B, AgeWeightParamNames,n_d,n_a,n_z,N_j,Names_i,pi_z, T,Params, transpathoptionsbaseline, simoptions);
+AgentDistPath_B=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_B, jequaloneDist_B, PricePath, ParamPath, PolicyPath_B, AgeWeightParamNames, PTypeDistParamNames,n_d,n_a,n_z,N_j,Names_i,pi_z, T,Params, transpathoptionsbaseline, simoptions);
 AggVarsPath_B=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, AgentDistPath_B, PolicyPath_B, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions);
 
 %% Compare per-type (struct fields are ordered by ii, regardless of name)

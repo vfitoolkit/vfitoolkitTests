@@ -35,6 +35,10 @@
 %        ptypes and differing by ptype, against solo solves (GEptype) and their ptweight-weighted sum; the
 %        standalone PType commands with an age-weights path by ptype; and a general eqm path with bequests
 %        through a demographic transition that differs by ptype (shooting vs solo, Anderson vs shooting).
+%   11:  the ptype weights (PTypeDistParamNames) on the ParamPath, as N_i-by-T, T-by-N_i or a structure:
+%        pooled aggregates against the weighted solo ones period by period, GEptype unaffected, the
+%        standalone commands, with mewj paths by ptype, a general eqm path, and weights that differ from
+%        AgentDist_initial.ptweights.
 % The algorithms themselves (shooting vs Anderson) are compared in with_CoreFHorzTPathPTypeAlgoTests.
 %% Which parts to run
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
@@ -51,6 +55,7 @@
 % doPart(8): GE with decoupled types (GEptype) vs solo solves
 % doPart(9): GE with _tminus1/_tplus1 by ptype vs solo solves
 % doPart(10): age weights and demographics by ptype (no figures)
+% doPart(11): permanent type masses changing over the path (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -59,7 +64,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -206,6 +211,13 @@ if doPart(10)==1
     output=CoreFHorzTPathPType_Demographics(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,0);
     output=CoreFHorzTPathPType_Demographics_GEbequests(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,transpathoptionsbaseline);
 end % doPart(10): age weights and demographics by ptype (no figures)
+
+%% ===== doPart(11): permanent type masses changing over the path (no figures) =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): permanent type masses changing over the path (no figures) =====\n')
+    output=CoreFHorzTPathPType_TypeMasses(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,transpathoptionsbaseline,1);
+    output=CoreFHorzTPathPType_TypeMasses(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,transpathoptionsbaseline,0);
+end % doPart(11): permanent type masses changing over the path (no figures)
 
 % All looks good!
 
