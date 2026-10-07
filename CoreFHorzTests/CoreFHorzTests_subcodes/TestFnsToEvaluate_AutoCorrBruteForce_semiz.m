@@ -1,8 +1,8 @@
 function output=TestFnsToEvaluate_AutoCorrBruteForce_semiz(n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
-% Fifth config of TestFnsToEvaluate: no d1 (only the binary d2 that drives the semi-exogenous state), with z, with e,
+% CoreFHorzTests doPart(12) (conditional restrictions; was config 5 of TestFnsToEvaluate): no d1 (only the binary d2 that drives the semi-exogenous state), with z, with e,
 % with semiz. EvalFnOnAgentDist_AutoCorrTransProbs_FHorz with a semi-exogenous state (its Tan step goes from (a,semiz,z,e)
 % to (a',semiz',z) with the semiz transition selected by the d2 chosen at the state, as the SemiExo stationary
-% distribution raws do) against the same brute force as config 4 (TestFnsToEvaluate_AutoCorrBruteForce), here with the
+% distribution raws do) against the same brute force as TestFnsToEvaluate_AutoCorrBruteForce, here with the
 % d2-dependent semiz transitions in the dense kernel. Every check also feeds fail_count.
 %
 % Brute force: for each age jj the one-period kernel T_jj (N_states x N_states, dense) is

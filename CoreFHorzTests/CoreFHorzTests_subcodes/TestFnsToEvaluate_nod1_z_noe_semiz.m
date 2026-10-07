@@ -133,17 +133,6 @@ for ff=1:length(FnNames)
     fail_count=fail_count+(err>TOL_EXACT);
 end
 
-% (33) Trivial conditional restriction
-simoptions_TR=simoptions;
-simoptions_TR.conditionalrestrictions.always=@(d2,aprime,a,semiz,z) 1;
-AllStats_TR=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_TR);
-for ff=1:length(FnNames)
-    fn=FnNames{ff};
-    err=abs(gather(AllStats.(fn).Mean)-gather(AllStats_TR.always.(fn).Mean));
-    fprintf('Trivial-restriction Mean(%-11s), should be zero: %.3e\n', fn, err)
-    fail_count=fail_count+(err>TOL_EXACT);
-end
-
 %% ===== Section E: Analytical-truth checks =====
 fprintf('\n-- Section E: analytical-truth checks --\n')
 
@@ -202,24 +191,6 @@ fprintf('T3 retired Var analytical vs AllStats, should be zero: %.3e\n',err); fa
 % T4. atJ1
 err=abs(AgeMass(Params.J1)-gather(AggVars.atJ1.Mean));
 fprintf('T4 atJ1 Mean - AgeMass(J1), should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
-
-% "at age J1" conditional restriction: restricted moments == LifeCycle.Mean at J1.
-% Use condJ1 as the restriction name to avoid colliding with the atJ1 FnsToEvaluate field
-% (the per-fn loop would otherwise overwrite AllStats.atJ1 when ff hits the atJ1 fn).
-simoptions_J1=simoptions;
-simoptions_J1.conditionalrestrictions.condJ1=@(d2,aprime,a,semiz,z,agej,J1) (agej==J1);
-AllStats_J1=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_J1);
-for ff=1:length(FnNames)
-    fn=FnNames{ff};
-    if strcmp(fn,'one') || strcmp(fn,'atJ1')
-        continue
-    end
-    m_res=gather(AllStats_J1.condJ1.(fn).Mean);
-    m_lcJ1=gather(LifeCycle.(fn).Mean(Params.J1));
-    err=abs(m_res-m_lcJ1);
-    fprintf('T4 ConditionalRestriction at age J1 vs LifeCycle.Mean(J1) for %-11s, should be zero: %.3e\n', fn, err)
-    fail_count=fail_count+(err>TOL_EXACT);
-end
 
 % T5. Law of total covariance for (Jnumbers, assets)
 m_a_kj=gather(LifeCycle.assets.Mean);

@@ -22,9 +22,10 @@
 % doPart(7):  with2A nosemiz cross-tests
 % doPart(8):  with2A semiz (figs 25-32)
 % doPart(9):  with2A semiz cross-tests
-% doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs, plus the AutoCorr brute forces without and with semiz)
+% doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs)
 % doPart(11): StatsFromWeightedGrid unit tests (hand-built distributions, plus GPU runtimes)
-% doPart(12): simoptions.whichcombos (and per-combination whichstats) in the single-type stats commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr (start-age dimension), CrossSection, AgeConditional CrossSection, vs their full runs
+% doPart(12): simoptions.conditionalrestrictions in every statistic vs brute force: CrossSection, AgeConditional CrossSection, AllStats, LifeCycleProfiles, and the AutoCorrTransProbs brute forces without and with semiz (restriction pages of whichcombos are in doPart(13))
+% doPart(13): simoptions.whichcombos (and per-combination whichstats) in the single-type stats commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr (start-age dimension), CrossSection, AgeConditional CrossSection, vs their full runs
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so Fig 20
 % is the same test whatever doPart says, and a png from a previous run is never overwritten by a
@@ -33,7 +34,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -429,7 +430,7 @@ if doPart(10)==1
     fprintf('\n===== doPart(10): TestFnsToEvaluate =====\n')
     %% FnsToEvaluate-focused tests (covers every FHorz FnsToEvaluate consumer + cross-validations + analytical-truth tests)
     TestFnsToEvaluate
-end % doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs, plus the AutoCorr brute forces without and with semiz)
+end % doPart(10): TestFnsToEvaluate (every FnsToEvaluate consumer on three shock configs)
 
 %% ===== doPart(11): StatsFromWeightedGrid unit tests =====
 if doPart(11)==1
@@ -443,17 +444,36 @@ if doPart(11)==1
     end
 end % doPart(11): StatsFromWeightedGrid unit tests
 
-%% ===== doPart(12): simoptions.whichcombos in the single-type stats commands =====
+%% ===== doPart(12): simoptions.conditionalrestrictions in the stats commands =====
 if doPart(12)==1
-    fprintf('\n===== doPart(12): simoptions.whichcombos in the single-type stats commands =====\n')
-    %% 12. simoptions.whichcombos (and per-combination whichstats where the command has whichstats) in LifeCycleProfiles_FHorz_Case1
+    fprintf('\n===== doPart(12): simoptions.conditionalrestrictions in the stats commands =====\n')
+    %% 12. simoptions.conditionalrestrictions in EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz,
+    % EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz, EvalFnOnAgentDist_AllStats_FHorz_Case1 and
+    % LifeCycleProfiles_FHorz_Case1 (per age, age groups of five, one age group), with d,z,e, with none of them, and with semiz:
+    % every restricted statistic and RestrictedSampleMass vs a brute-force calculation from ValuesOnGrid; the commands against each
+    % other; an always-true restriction reproduces the unrestricted output; a zero-mass restriction is all NaN; whichcombos with a
+    % page dimension (1+number of restrictions) in the two CrossSection commands.
+    output=CoreFHorz_CrossSecCondlRest(n_d,n_d2_semiz,n_a,n_z,N_j,d_grid,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+    %% AutoCorrTransProbs: timehorizons, conditionalrestrictions and TransitionProbs vs a brute force that forms the transition
+    % matrices (the command never does), no d, with z, with e, without and with the grid interpolation layer
+    output=TestFnsToEvaluate_AutoCorrBruteForce(n_a,n_z,n_e,N_j,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames);
+
+    %% The same with a semi-exogenous state (no d1, only d2), with z, with e: the semi-exogenous Tan step
+    output=TestFnsToEvaluate_AutoCorrBruteForce_semiz(n_d2_semiz,n_a,n_z,n_e,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(12): simoptions.conditionalrestrictions in the stats commands
+
+%% ===== doPart(13): simoptions.whichcombos in the single-type stats commands =====
+if doPart(13)==1
+    fprintf('\n===== doPart(13): simoptions.whichcombos in the single-type stats commands =====\n')
+    %% 13. simoptions.whichcombos (and per-combination whichstats where the command has whichstats) in LifeCycleProfiles_FHorz_Case1
     % ([nFns,nAgeGroups,1+nRestr]; whichstats [..,7]), AllStats ([nFns,1+nRestr]; whichstats [nFns,1+nRestr,7]), AggVars ([nFns,1]),
     % AutoCorrTransProbs ([nFns,N_j,1+nRestr], the second dimension the start age, acted on), CrossSectionCovarCorr ([nFns,nFns], upper
     % triangle) and AgeConditionalStats_CrossSectionCovarCorr ([nFns,nFns,nAgeGroups]). Each selective run is compared with its full run
     % leaf by leaf (CoreStructLeaves): selected leaves/columns equal the full run, unselected ones are NaN or absent, RestrictedSampleMass
     % is always filled, broadcast inputs equal their expansions, invalid inputs error. The PType counterpart is CoreFHorzPTypeTests part 22.
     output=CoreFHorz_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames);
-end % doPart(12): simoptions.whichcombos in the single-type stats commands
+end % doPart(13): simoptions.whichcombos in the single-type stats commands
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 %% One verdict for the whole run

@@ -133,17 +133,6 @@ for ff=1:length(FnNames)
     fail_count=fail_count+(err>TOL_EXACT);
 end
 
-% (33) Trivial conditional restriction recovers unrestricted moments
-simoptions_TR=simoptions;
-simoptions_TR.conditionalrestrictions.always=@(d,aprime,a,z,e) 1;
-AllStats_TR=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_TR);
-for ff=1:length(FnNames)
-    fn=FnNames{ff};
-    err=abs(gather(AllStats.(fn).Mean)-gather(AllStats_TR.always.(fn).Mean));
-    fprintf('Trivial-restriction Mean(%-11s), should be zero: %.3e\n', fn, err)
-    fail_count=fail_count+(err>TOL_EXACT);
-end
-
 %% ===== Section E: Analytical-truth checks =====
 fprintf('\n-- Section E: analytical-truth checks --\n')
 
@@ -204,24 +193,6 @@ fprintf('T3 retired Var analytical vs AllStats, should be zero: %.3e\n',err); fa
 err=abs(AgeMass(Params.J1)-gather(AggVars.atJ1.Mean));
 fprintf('T4 atJ1 Mean - AgeMass(J1), should be zero: %.3e\n',err); fail_count=fail_count+(err>TOL_EXACT);
 
-% Also: an "at age J1" conditional restriction makes the restricted moments == LifeCycle moments at J1.
-% Name the restriction condJ1 (not atJ1) to avoid the name collision with the atJ1 FnsToEvaluate field
-% (otherwise the per-fn loop's AllStats.atJ1 = stats(...) would overwrite the restricted-output struct).
-simoptions_J1=simoptions;
-simoptions_J1.conditionalrestrictions.condJ1=@(d,aprime,a,z,e,agej,J1) (agej==J1);
-AllStats_J1=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_J1);
-for ff=1:length(FnNames)
-    fn=FnNames{ff};
-    if strcmp(fn,'one') || strcmp(fn,'atJ1') % constant or zero/one indicator — moments still defined
-        continue
-    end
-    m_res=gather(AllStats_J1.condJ1.(fn).Mean);
-    m_lcJ1=gather(LifeCycle.(fn).Mean(Params.J1));
-    err=abs(m_res-m_lcJ1);
-    fprintf('T4 ConditionalRestriction at age J1 vs LifeCycle.Mean(J1) for %-11s, should be zero: %.3e\n', fn, err)
-    fail_count=fail_count+(err>TOL_EXACT);
-end
-
 % T5. Law of total covariance for (Jnumbers, assets): within-age Cov=0 (J is constant), so Cov_pool == Cov(j, E[a|j])
 m_a_kj=gather(LifeCycle.assets.Mean);
 EJ=sum(agej_vec.*AgeMass); Ea=sum(m_a_kj.*AgeMass);
@@ -250,27 +221,6 @@ LC_5bin=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params
 n_bins=length(1:5:N_j);
 fprintf('5-period agegroupings AgeCond CovMat third-dim, expected %d got %d\n',n_bins,size(AgeCond_5bin.CovarianceMatrix,3)); fail_count=fail_count+(size(AgeCond_5bin.CovarianceMatrix,3)~=n_bins);
 fprintf('5-period LifeCycle.assets.Mean length, expected %d got %d\n',n_bins,length(LC_5bin.assets.Mean)); fail_count=fail_count+(length(LC_5bin.assets.Mean)~=n_bins);
-
-% T6b: one agegrouping covering every age, with conditional restrictions, must reproduce the pooled AllStats under the same restrictions.
-% RestrictedStationaryDistVec is normalized age-by-age, so an agegrouping of several ages has to reweight each age by its restricted mass
-% (before this was fixed the weights of the agegrouping summed to the number of ages). 'positiveassets' has a restricted mass that differs by age.
-simoptions_1binR=simoptions_1bin;
-simoptions_1binR.conditionalrestrictions.positiveassets=@(d,aprime,a,z,e) (a>0);
-simoptions_1binR.conditionalrestrictions.always=@(d,aprime,a,z,e) 1;
-simoptions_R=simoptions;
-simoptions_R.conditionalrestrictions=simoptions_1binR.conditionalrestrictions;
-LC_1binR=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_1binR);
-AllStats_R=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_R);
-T6bRestrictions={'positiveassets','always'};
-T6bFns={'assets','earnings','consumption'};
-for rr=1:length(T6bRestrictions)
-    for ff=1:length(T6bFns)
-        LCstats=LC_1binR.(T6bRestrictions{rr}).(T6bFns{ff});
-        ASstats=AllStats_R.(T6bRestrictions{rr}).(T6bFns{ff});
-        err=abs(gather(LCstats.Mean)-gather(ASstats.Mean))+abs(gather(LCstats.Median)-gather(ASstats.Median))+abs(gather(LCstats.Variance)-gather(ASstats.Variance));
-        fprintf('T6b single agegrouping with restriction %s, %s: LifeCycle vs AllStats (Mean+Median+Variance), should be zero: %.3e\n',T6bRestrictions{rr},T6bFns{ff},err); fail_count=fail_count+(err>TOL_EXACT);
-    end
-end
 
 %% ===== Section G: nquantiles / npoints / tolerance =====
 fprintf('\n-- Section G: nquantiles / npoints / tolerance --\n')

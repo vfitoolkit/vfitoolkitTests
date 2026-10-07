@@ -1,7 +1,7 @@
 function output=TestFnsToEvaluate_d_z_noe_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline)
 % Pure markov-z config -- exercises EvalFnOnAgentDist_AutoCorrTransProbs_FHorz in most
 % detail (quantile TransitionProbs, deferred-error guard for agegroupings); e and semiz configs have their own Section J,
-% and timehorizons/conditionalrestrictions have their own config 4 (TestFnsToEvaluate_AutoCorrBruteForce).
+% and timehorizons/conditionalrestrictions have their own brute force (TestFnsToEvaluate_AutoCorrBruteForce, CoreFHorzTests doPart(12)).
 % Focus: smoke-test the 7 consumers on this third config, then exercise AutoCorrTransProbs_FHorz in detail.
 
 fprintf('\n========== TestFnsToEvaluate_d_z_noe_nosemiz ==========\n')
@@ -141,7 +141,7 @@ for jj=1:N_j-1
 end
 fprintf('Quantile TransitionProbs row sums == 1 across all ages: %d\n', all_ok); fail_count=fail_count+(~all_ok);
 
-%% timehorizons (implemented 2026-09-29) are checked against a brute-force calculation in TestFnsToEvaluate_AutoCorrBruteForce (config 4)
+%% timehorizons (implemented 2026-09-29) are checked against a brute-force calculation in TestFnsToEvaluate_AutoCorrBruteForce (CoreFHorzTests doPart(12))
 
 %% Deferred-error guards
 % agegroupings

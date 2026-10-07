@@ -1,7 +1,7 @@
 function output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,n_e,N_j,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames)
 % Test: EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType (added 2026-09-29) against a by-hand pooling of brute-force
-% joint distributions. (The single-type command is tested against the same brute force in CoreFHorzTests part 10,
-% TestFnsToEvaluate configs 4 and 5.)
+% joint distributions. (The single-type command is tested against the same brute force in CoreFHorzTests part 12,
+% TestFnsToEvaluate_AutoCorrBruteForce and TestFnsToEvaluate_AutoCorrBruteForce_semiz.)
 %
 % Brute force: for each type and age jj the one-period transition kernel T_jj (N_states x N_states, dense) is built
 % by loops from the Policy indexes and pi_z/pi_e, the k-period kernel is the product T_j0*...*T_{j0+k-1}, and the
