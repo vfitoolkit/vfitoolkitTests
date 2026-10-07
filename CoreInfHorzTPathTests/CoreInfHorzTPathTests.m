@@ -19,6 +19,7 @@
 % doPart(3): _tminus1 and _tplus1 (no figures)
 % doPart(4): localsearch, the local-search value fn step (no figures, no general eqm)
 % doPart(5): localsearch with a decision variable (no figures, no general eqm)
+% doPart(6): localsearch inside a real general eqm transition path, by shooting (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -27,7 +28,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[0,0,0,1,1];
+doPart=[0,0,0,0,0,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -144,6 +145,18 @@ if doPart(5)==1
     % raw in the toolkit produces and which is what a warm start from a previous pass would use.
     output=CoreInfHorzTPath_localsearch_d(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end % doPart(5): localsearch with a decision variable
+
+%% ===== doPart(6): localsearch inside a general eqm transition path, by shooting =====
+if doPart(6)==1
+    fprintf('\n===== doPart(6): localsearch inside a general eqm transition path, by shooting =====\n')
+    %% The first part where the restricted search sits inside a general eqm solve and so could change the answer
+    % Iteration 1 is a standard sweep and seeds the reference; later iterations restrict the search
+    % around the previous answer; on convergence one standard sweep re-evaluates the same path, and
+    % either certifies it or supplies a fresh reference and local search resumes. Shooting only --
+    % Anderson and quasi-Newton are refused by name, which is checked here, because neither can carry
+    % the reference across iterations and both would silently return a wrong path if allowed to try.
+    output=CoreInfHorzTPath_localsearch_shooting(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end % doPart(6): localsearch inside a general eqm transition path, by shooting
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run

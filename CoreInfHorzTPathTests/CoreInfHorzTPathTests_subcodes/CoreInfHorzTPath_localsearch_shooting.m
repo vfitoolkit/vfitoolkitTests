@@ -1,0 +1,185 @@
+function output=CoreInfHorzTPath_localsearch_shooting(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline)
+% Checks vfoptions.localsearch=1 on a REAL general eqm transition path, solved by shooting.
+% doPart(4) and doPart(5) test the restricted value fn step against a given price path. This is the
+% first part where the restriction is inside a general eqm solve and so can affect the answer.
+%
+% THE SCHEME. Iteration 1 is a standard sweep, whatever divideandconquer and gridinterplayer are set
+% to, and its Policy becomes the reference. Later iterations restrict aprime to a window around the
+% previous iteration's answer, refreshing the reference as they go. When those converge, ONE standard
+% sweep re-evaluates the SAME price path: still converged means done, and moved means its Policy
+% becomes the new reference and local search resumes.
+% So the restriction cannot change the answer, only how fast it is reached, and the certification
+% rests on nothing -- no claim about the problem being single-peaked, no per-step condition. That is
+% what makes this testable as a real check rather than a tolerance.
+%
+% SHOOTING ONLY, and the refusal that enforces it is checked below. Anderson hands a PURE residual
+% function to AndersonAcceleration, which is shared with the stationary general eqm code, so the
+% reference cannot be carried through it without changing that shared contract; quasi-Newton perturbs
+% prices to build a Jacobian, where the reference has to be the baseline path's and not the previous
+% perturbation's. Were they allowed through, they would run every iteration against the stay-put
+% default reference and never take a verification sweep, and return a wrong path in silence.
+%
+% WHAT THIS PART DOES NOT MEASURE: wall clock. At n_a_GE=201 the sweep is about 2e5 elements, far
+% below the kernel launch floor, so every solve here is launch bound and a timing would say nothing.
+% The speed of the restricted sweep is measured in doPart(5) on the big grid. What this part is for
+% is whether the scheme CONVERGES TO THE SAME PLACE, how many verification sweeps it costs, and the
+% rate at which the window binds -- that last being the number that decides whether the Anderson
+% algorithm could be made exact iteration by iteration, which is what it would need and this does not.
+
+vfoptions=struct();
+simoptions=struct();
+
+ReturnFn=@(aprime,a,z,r,w,sigma) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,sigma);
+n_d=0; d_grid=[]; % local search with a d is doPart(5); the general eqm scheme is no-d for now
+
+gpudev=gpuDevice;
+
+%% The model, taken verbatim from the general eqm block of CoreInfHorzTPath_nod_z_noe_nosemiz
+% firm* names because the 2A entrepreneur ReturnFn already uses alpha and delta with its own meanings
+Params.firmalpha=0.36;
+Params.firmdelta=0.05;
+Params.firmA=0.5;
+
+FnsToEvaluateGE.K=@(aprime,a,z) a;
+FnsToEvaluateGE.N=@(aprime,a,z) z;
+
+GeneralEqmEqnsGE.CapitalMarket=@(r,K,N,firmalpha,firmdelta,firmA) r-(firmalpha*firmA*(K^(firmalpha-1))*(N^(1-firmalpha))-firmdelta);
+GeneralEqmEqnsGE.LabourMarket=@(w,K,N,firmalpha,firmA) w-((1-firmalpha)*firmA*(K^firmalpha)*(N^(-firmalpha)));
+
+heteroagentoptionsGE=struct();
+[p_eqm,GEcondns]=HeteroAgentStationaryEqm_InfHorz(n_d, n_a_GE, n_z, 0, pi_z, d_grid, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptions, vfoptions);
+fprintf('localsearch shooting: stationary GE r=%2.8f, w=%2.8f, conditions CapitalMarket=%.3e LabourMarket=%.3e \n',p_eqm.r,p_eqm.w,GEcondns.CapitalMarket,GEcondns.LabourMarket)
+
+ParamsGE=Params;
+ParamsGE.r=p_eqm.r;
+ParamsGE.w=p_eqm.w;
+[V_finalGE,Policy_finalGE]=ValueFnIter_InfHorz(n_d,n_a_GE,n_z,d_grid,a_grid_GE,z_grid,pi_z,ReturnFn,ParamsGE,DiscountFactorParamNames,[],vfoptions);
+AgentDist_initialGE=StationaryDist_InfHorz(Policy_finalGE,n_d,n_a_GE,n_z,pi_z,simoptions,ParamsGE,[]);
+
+PricePathGE.r=p_eqm.r*ones(1,T);
+PricePathGE.w=p_eqm.w*ones(1,T);
+ParamPathGE.sigma=Params.sigma*ones(1,T); % constant: nothing changes, this is a null reform
+
+% A bumped start, so the solver has to travel. Both prices bumped by 1 to 5 per cent, by a different
+% amount in each period, over the first two thirds of the path. A path that is already at the answer
+% converges in one iteration and would never exercise the scheme at all.
+Tbump=floor(2*T/3);
+bumpr=0.01+0.04*linspace(0,1,Tbump);
+bumpw=0.05-0.04*linspace(0,1,Tbump);
+PricePathBumped=PricePathGE;
+PricePathBumped.r(1:Tbump)=PricePathGE.r(1:Tbump).*(1+bumpr);
+PricePathBumped.w(1:Tbump)=PricePathGE.w(1:Tbump).*(1+bumpw);
+
+transpathoptionsS=transpathoptionsbaseline;
+transpathoptionsS.GEnewprice=3; % shooting
+transpathoptionsS.GEnewprice3.howtoupdate={'CapitalMarket','r',0,0.1; ...
+                                           'LabourMarket','w',0,0.1};
+transpathoptionsS.maxiter=1000; % shooting at a damping factor of 0.1 needs far more iterations than Anderson
+transpathoptionsS.verbose=0;
+% Set explicitly rather than left to the defaults inside TransitionPath_InfHorz, because the checks
+% below print them as the scale to read the price comparisons against, and a bare transpathoptions
+% does not carry them.
+% toleranceGEcondns is a MULTIPLE OF THE MEASURED STATIONARY RESIDUAL, not a fixed number. The path
+% cannot satisfy the general eqm conditions any more tightly than the stationary problem does at the
+% same prices, and the default fminalgo leaves CapitalMarket about 6e-4 from zero on this calibration,
+% so a fixed 1e-4 is unreachable and the shooting solve would run to maxiter and return nothing
+% useful. Tying it to the floor the stationary solve actually achieved means a run on a different
+% calibration does not fail for a reason that has nothing to do with local search.
+% toleranceGEprices stays fixed: the shooting update is factor*residual, so the per-iteration price
+% change is about a tenth of the residual and 1e-4 is comfortably reachable.
+GEfloor=max(abs(GEcondns.CapitalMarket),abs(GEcondns.LabourMarket));
+transpathoptionsS.toleranceGEprices=10^(-4);
+transpathoptionsS.toleranceGEcondns=5*GEfloor;
+fprintf('localsearch shooting: the stationary solve leaves a residual of %.3e, so toleranceGEcondns for the path is set to 5 times that, %.3e \n',GEfloor,transpathoptionsS.toleranceGEcondns)
+
+%% (A) standard, (B) local search nlocalsearch=1, (C) local search nlocalsearch=3
+tic;
+[PricePathA,GEcondnPathA]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptions, []);
+wait(gpudev)
+tA=toc;
+
+vfoptionsB=vfoptions;
+vfoptionsB.localsearch=1;
+vfoptionsB.nlocalsearch=1;
+tic;
+[PricePathB,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptionsB, []);
+wait(gpudev)
+tB=toc;
+
+vfoptionsC=vfoptions;
+vfoptionsC.localsearch=1;
+vfoptionsC.nlocalsearch=3;
+tic;
+[PricePathC,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptionsC, []);
+wait(gpudev)
+tC=toc;
+
+fprintf('localsearch shooting: standard solve %6.2fs, nlocalsearch=1 %6.2fs, nlocalsearch=3 %6.2fs (launch bound at this grid size, so read the iteration counts above, not these) \n',tA,tB,tC)
+fprintf('localsearch shooting: max deviation of the standard solve from the stationary eqm, r %.3e, w %.3e, against a stationary CapitalMarket residual of %.3e \n',max(abs(gather(PricePathA.r)-p_eqm.r)),max(abs(gather(PricePathA.w)-p_eqm.w)),abs(GEcondns.CapitalMarket))
+
+%% (1) Shooting still works: the standard shooting solve agrees with Anderson on the same path
+% The regression check on the loop surgery. Every new line in the shooting loop is gated on
+% vfoptions.localsearch, so a standard solve should be untouched, and Anderson is an independent
+% route to the same equilibrium path.
+transpathoptionsAnd=transpathoptionsbaseline;
+transpathoptionsAnd.GEnewprice=2;
+transpathoptionsAnd.GEnewprice2.howtoupdate=transpathoptionsS.GEnewprice3.howtoupdate;
+transpathoptionsAnd.maxiter=200;
+transpathoptionsAnd.verbose=0;
+[PricePathAnd,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsAnd, simoptions, vfoptions, []);
+fprintf('localsearch shooting: (1) standard shooting vs Anderson, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathA.r)-gather(PricePathAnd.r))))
+fprintf('localsearch shooting: (1) standard shooting vs Anderson, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathA.w)-gather(PricePathAnd.w))))
+
+%% (2)-(3) The local search solves land where the standard one lands
+% Not an identity, and deliberately not held to one: the two take different iteration sequences and
+% can stop at different points inside the same tolerance ball. The scale to read these against is
+% transpathoptions.toleranceGEprices, printed beside them.
+fprintf('localsearch shooting: (2) nlocalsearch=1 vs the standard solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathB.r)-gather(PricePathA.r))))
+fprintf('localsearch shooting: (2) nlocalsearch=1 vs the standard solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathB.w)-gather(PricePathA.w))))
+fprintf('localsearch shooting: (3) nlocalsearch=3 vs the standard solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathC.r)-gather(PricePathA.r))))
+fprintf('localsearch shooting: (3) nlocalsearch=3 vs the standard solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathC.w)-gather(PricePathA.w))))
+fprintf('localsearch shooting: for scale, toleranceGEprices is %.3e and toleranceGEcondns is %.3e \n',transpathoptionsS.toleranceGEprices,transpathoptionsS.toleranceGEcondns)
+
+%% (4) The answer is certified from outside
+% Re-evaluate the local search answer with an EXACT sweep and check the general eqm conditions. This
+% does not take the solver's word for it: factor=0 and maxiter=1 make the call a pure evaluation of
+% the path handed in, with vfoptions.localsearch off, so what is tested is whether the path the
+% restricted solve returned satisfies the conditions under a full unrestricted value fn solve.
+transpathoptionsV=transpathoptionsbaseline;
+transpathoptionsV.GEnewprice=3;
+transpathoptionsV.GEnewprice3.howtoupdate={'CapitalMarket','r',0,0; ...
+                                           'LabourMarket','w',0,0};
+transpathoptionsV.maxiter=1;
+transpathoptionsV.verbose=0;
+[~,GEcondnPathV]=TransitionPath_InfHorz(PricePathB, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsV, simoptions, vfoptions, []);
+GEdistV=max(max(abs(gather(GEcondnPathV.CapitalMarket))),max(abs(gather(GEcondnPathV.LabourMarket))));
+fprintf('localsearch shooting: (4) the nlocalsearch=1 answer re-evaluated with an exact sweep, its general eqm conditions are within tolerance, should be one: %i \n',GEdistV<=transpathoptionsS.toleranceGEcondns)
+fprintf('localsearch shooting: (4) that distance is %.3e against toleranceGEcondns %.3e \n',GEdistV,transpathoptionsS.toleranceGEcondns)
+
+%% (5) The refusals that keep the scheme honest
+err=zeros(1,3);
+vfoptionsE=vfoptionsB;
+try
+    TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsAnd, simoptions, vfoptionsE, []);
+catch ME
+    err(1)=contains(ME.message,'requires transpathoptions.GEnewprice=3');
+end
+vfoptionsE=vfoptionsB; vfoptionsE.n_e=3; vfoptionsE.e_grid=linspace(0.9,1.1,3)'; vfoptionsE.pi_e=ones(3,1)/3;
+try
+    TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptionsE, []);
+catch ME
+    err(2)=contains(ME.message,'not implemented with an e variable');
+end
+vfoptionsE=vfoptionsB; vfoptionsE.experienceasset=1;
+try
+    TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptionsE, []);
+catch ME
+    err(3)=contains(ME.message,'not implemented with an experience asset');
+end
+fprintf('localsearch shooting: (5) local search with an algorithm other than shooting is refused by name, should be one: %i \n',err(1))
+fprintf('localsearch shooting: (5) local search with an e variable is refused by name, should be one: %i \n',err(2))
+fprintf('localsearch shooting: (5) local search with an experience asset is refused by name, should be one: %i \n',err(3))
+
+output=struct();
+
+end
