@@ -67,7 +67,10 @@ function CoreSummary(diaryfilename)
 % Note the bank marks its own known-loose checks '(loose: <reason>)', and those are taken at
 % closetol instead - it is saying so itself.
 %
-% A LINE MAY CARRY SEVERAL CHECKS. The cross-tests print
+% A LINE MAY CARRY SEVERAL CHECKS, OF SEVERAL FORMS. Each wording on the line is a check, holding the
+% numbers between its colon and the next wording, each to the bar of its own wording (since 2026-10-07;
+% before that a line was classified by its loosest wording and read from there, so an identity written
+% before a 'close to zero' check on the same line was never evaluated). The cross-tests print
 %    'Cross test (noa1): this should be zero: V 0.000e+00, Policy 0.000e+00, Dist 6.939e-18'
 % which is three checks, and is counted as three. Anything in parentheses after the value is
 % diagnostic detail, not a further check ('(rel 1.3e-16, max|V|=1.1e+07, worst at [3] of [5])',
@@ -126,84 +129,76 @@ for l_c=1:length(lines)
         part=['doPart(',tk{1},'): ',tk{2}];
     end
 
-    % Which form is this line, if any? 'close to zero' must be tested BEFORE 'be zero', since the
-    % looser text contains the stricter pattern's words.
-    % WHICH FORM IS THIS LINE? Order matters: the looser wordings contain the stricter ones.
-    isloose=0; isflag=0; isinv=0; isnear=0;
+    % WHICH FORMS DOES THIS LINE CARRY, AND WHERE? A line may hold several checks of DIFFERENT forms,
+    % e.g. '... did not run, this should be zero: 1.000e+00; max parameter error, this should be close to
+    % zero: 3.9e-05'. Every wording is located, in order of position, and the values of each check are
+    % the numbers between its colon and the next wording. Until 2026-10-07 the line was classified as a
+    % whole by the loosest wording it contained and read from that wording onwards, so an identity check
+    % written before a 'close to zero' check was never evaluated: the EstimFHorzPTypeTests diary of
+    % 2026-10-07 printed 'did not run, this should be zero: 1.000e+00' on such a line and the run was
+    % reported as passed. Where two wordings start at the same place ('should be near zero (loose: ...)'
+    % is both 'near zero' and 'loose'), the looser one wins, as before.
+    pats={'should be (?:close to zero|very similar|small|near zero \(loose)[^:]*:', ...   % 1 loose
+          'should (?:be WELL ABOVE zero|NOT be zero)[^:]*:', ...                          % 2 inverted
+          'should be near zero[^:]*:', ...                                                 % 3 near
+          'should be one\s*:', ...                                                         % 4 flag
+          'should (?:be|give) (?:zero|~?\s*0)[^:]*:'};                                     % 5 identity
     % Loose: 'should be close to zero:', 'should be very similar (small):', 'should be small:', and
-    % 'should be near zero (loose: <reason>)' - that last one is a bank marking its OWN check as
-    % deliberately loose, which is worth honouring, and it must be tested before the plain
-    % 'near zero' below or it would be held to the tighter bar. The InfHorz TPath banks write the
-    % first inside a parenthesis - '(these should be close to zero): Capital=...' - so text is
-    % allowed between the wording and the colon; without that the line is invisible.
-    rest=regexp(l,'should be (?:close to zero|very similar|small|near zero \(loose)[^:]*:\s*(.*)$','tokens','once');
-    if ~isempty(rest)
-        isloose=1;
-    end
-    % Inverted: 'should be WELL ABOVE zero:' and 'should NOT be zero:' are passed by being far FROM
-    % zero, so they are checked the other way up. Tested before the identity form, which would
-    % otherwise read them backwards.
-    if isempty(rest)
-        rest=regexp(l,'should (?:be WELL ABOVE zero|NOT be zero)[^:]*:\s*(.*)$','tokens','once');
-        if ~isempty(rest)
-            isinv=1;
-        end
-    end
-    % Near: the plain 'should be near zero:'. Its own bar - see neartol above.
-    if isempty(rest)
-        rest=regexp(l,'should be near zero[^:]*:\s*(.*)$','tokens','once');
-        if ~isempty(rest)
-            isnear=1;
-        end
-    end
+    % 'should be near zero (loose: <reason>)' - a bank marking its OWN check as deliberately loose.
+    % The InfHorz TPath banks write the first inside a parenthesis - '(these should be close to
+    % zero): Capital=...' - so text is allowed between the wording and the colon.
+    % Inverted: 'should be WELL ABOVE zero:' and 'should NOT be zero:' are passed by being far FROM zero.
+    % Near: the plain 'should be near zero:', with its own bar (neartol).
     % Flag: 'this should be one: 1' fails at 0. DiscSummary carries the same form.
-    if isempty(rest)
-        rest=regexp(l,'should be one\s*:\s*(.*)$','tokens','once');
-        if ~isempty(rest)
-            isflag=1;
+    % Identity: 'should be zero:', 'should give zero:', and the InfHorz banks' 'should be ~0:' and
+    % 'should be  0:'. Text is allowed between the wording and the colon ('this should be zero, Policy: 6.000e+00').
+    st=[]; en=[]; kd=[];
+    for k_c=1:numel(pats)
+        [s1,e1]=regexp(l,pats{k_c},'start','end');
+        for m_c=1:numel(s1)
+            if ~any(st==s1(m_c)) % at the same start the earlier (looser) wording wins
+                st(end+1)=s1(m_c); en(end+1)=e1(m_c); kd(end+1)=k_c; %#ok<AGROW>
+            end
         end
     end
-    % Identity: 'should be zero:', 'should give zero:', and two spellings of the same claim in the
-    % InfHorz banks - 'should be ~0:' (a float residual) and 'should be  0:' (an exact Policy
-    % match). Text is allowed between the wording and the colon, because the TPath banks label the
-    % value there: 'this should be zero, Policy: 6.000e+00'. Without that the Policy comparison on a
-    % constant transition path was invisible, and CoreInfHorzVFIAlgoTests reported 0 checks in 1929
-    % lines of them.
-    if isempty(rest)
-        rest=regexp(l,'should (?:be|give) (?:zero|~?\s*0)[^:]*:\s*(.*)$','tokens','once');
-    end
-    if isempty(rest)
+    if isempty(st)
         continue
     end
-
-    % WHERE THE VALUE IS. Normally it is everything after the colon that follows the wording. Two
-    % different things break that, and they have to be told apart:
-    %   '... should be zero, AgentDist (note: tolerance=1e-6): 4.907e-06'   ONE value; the colon we
-    %       split on sits INSIDE an annotation, so the '1e-6' is not a check.
-    %   '... should be small, r: 0.0727387574, w: 0.3281381734'             TWO values, both checks.
-    % The tell is an unbalanced ')' in what follows: it means the split colon was inside a
-    % parenthetical that opened before it, so the value is after the LAST colon on the line.
-    % Otherwise the text is a list of labelled values and all of them count. Getting this wrong
-    % either invents a check out of a quoted tolerance, or silently drops the first of two.
-    s=rest{1};
-    if sum(s==')')>sum(s=='(')
-        ic=find(l==':',1,'last');
-        s=l(ic+1:end);
+    [st,order]=sort(st); en=en(order); kd=kd(order);
+    segv=cell(numel(st),1); % the values of each check
+    for m_c=1:numel(st)
+        if m_c<numel(st)
+            seg=l(en(m_c)+1:st(m_c+1)-1);
+        else
+            seg=l(en(m_c)+1:end);
+        end
+        % WHERE THE VALUE IS. Normally it is everything after the colon that follows the wording. Two
+        % different things break that, and they have to be told apart:
+        %   '... should be zero, AgentDist (note: tolerance=1e-6): 4.907e-06'   ONE value; the colon we
+        %       split on sits INSIDE an annotation, so the '1e-6' is not a check.
+        %   '... should be small, r: 0.0727387574, w: 0.3281381734'             TWO values, both checks.
+        % The tell is an unbalanced ')' in what follows: it means the split colon was inside a
+        % parenthetical that opened before it, so the value is after the LAST colon of this check's text.
+        % Otherwise the text is a list of labelled values and all of them count.
+        if sum(seg==')')>sum(seg=='(')
+            ic=find(seg==':',1,'last');
+            seg=seg(ic+1:end);
+        end
+        % Then cut any diagnostic parenthetical that trails the value.
+        ip=strfind(seg,'(');
+        if ~isempty(ip)
+            seg=seg(1:ip(1)-1);
+        end
+        % A value is a number standing on its own, never digits embedded in a name. Without the
+        % lookbehind, 'AllStats.a2.Mean 0.000e+00' yields the 2 of 'a2' as a value of 2, and every one
+        % of the RiskyAsset ExpAssetu cross-tests reads as a failure while printing four exact zeros.
+        v=str2double(regexp(seg,'(?<![A-Za-z_0-9.])[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?','match'));
+        v=v(~isnan(v));
+        segv{m_c}=abs(v);
     end
-    % Then cut any diagnostic parenthetical that trails the value.
-    ip=strfind(s,'(');
-    if ~isempty(ip)
-        s=s(1:ip(1)-1);
-    end
-    % A value is a number standing on its own, never digits embedded in a name. Without the
-    % lookbehind, 'AllStats.a2.Mean 0.000e+00' yields the 2 of 'a2' as a value of 2, and every one
-    % of the RiskyAsset ExpAssetu cross-tests reads as a failure while printing four exact zeros.
-    v=str2double(regexp(s,'(?<![A-Za-z_0-9.])[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?','match'));
-    v=v(~isnan(v));
-    if isempty(v)
+    if all(cellfun(@isempty,segv))
         continue
     end
-    v=abs(v);
 
     % Record this part if it is the first check seen under it
     ip=find(strcmp(partnames,part),1);
@@ -212,6 +207,9 @@ for l_c=1:length(lines)
         ip=numel(partnames);
     end
 
+    for m_c=1:numel(st)
+    v=segv{m_c};
+    isloose=(kd(m_c)==1); isinv=(kd(m_c)==2); isnear=(kd(m_c)==3); isflag=(kd(m_c)==4);
     bar=restol;
     if isloose, bar=closetol; elseif isnear, bar=neartol; end
     for v_c=1:numel(v)
@@ -256,6 +254,7 @@ for l_c=1:length(lines)
             failno(end+1,1)=l_c; %#ok<AGROW>
         end
     end
+    end % m_c over the checks of the line
 end
 
 fprintf('\n\n')
