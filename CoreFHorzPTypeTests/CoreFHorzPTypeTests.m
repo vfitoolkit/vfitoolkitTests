@@ -7,12 +7,13 @@
 % Not covered: per-type solver options (divideandconquer, gridinterplayer for one type only),
 % per-type n_a/a_grid, ptypestorecpu=1, N_i>=10 auto-naming.
 %
-% Parts 18-21 (added 2026-09-29) are the PType counterpart of the model-stats checks at the end of CoreFHorzTests
+% Parts 18-20 (added 2026-09-29) are the PType counterpart of the model-stats checks at the end of CoreFHorzTests
 % (TestFnsToEvaluate): every PType command downstream of StationaryDist on two shock configs, including the three
 % commands added on 2026-09-29 (CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and
-% AutoCorrTransProbs, each _FHorz_PType), the grouped correlation commands via z-identity, and the AutoCorr PType
-% grouping against a by-hand pooling of brute-force joint distributions (the single-type command's brute-force
-% checks are CoreFHorzTests part 12).
+% AutoCorrTransProbs, each _FHorz_PType), and the grouped correlation commands via z-identity.
+% Part 17 holds every conditional-restriction test of the bank (the PType counterpart of CoreFHorzTests part 12): every
+% PType stats command, per type and grouped, against a brute force and via z-identity, and the AutoCorr PType grouping
+% against a by-hand pooling of brute-force joint distributions.
 %
 % The ShockTests (part 7) use all 8 (z,e,semiz) combinations across 8 PTypes and must be set up
 % via Names_i + per-type structures, because the n_z, z_grid, pi_z and vfoptions pieces differ
@@ -41,17 +42,16 @@
 % doPart(14): ExogShockFn and EiidShockFn per type
 % doPart(15): DiscountFactorParamNames per type
 % doPart(16): ValuesOnGrid with per-type n_z
-% doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages
+% doPart(17): conditional restrictions in every PType stats command (AllStats, LifeCycleProfiles, CrossSection, AgeConditional CrossSection, AutoCorr), per type and grouped, vs brute force and via z-identity; restricted LifeCycleProfiles vs solo solves; AutoCorr grouping vs brute-force joint distributions
 % doPart(18): every stats command, with d, z and e (the PType counterpart of TestFnsToEvaluate config 1)
 % doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
 % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
-% doPart(21): AutoCorr PType grouping (timehorizons, conditional restrictions) vs a by-hand pooling of brute-force joint distributions
-% doPart(22): simoptions.whichcombos (and per-combination whichstats) across the PType commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr, CrossSection, AgeConditional CrossSection, vs their full runs; every command also with the trailing type dimension (N_i+1 slots: types, then grouped; a grouped slot forces every type)
+% doPart(21): simoptions.whichcombos (and per-combination whichstats) across the PType commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr, CrossSection, AgeConditional CrossSection, vs their full runs; every command also with the trailing type dimension (N_i+1 slots: types, then grouped; a grouped slot forces every type)
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -145,7 +145,7 @@ end % doPart(9): SimPanel exactly, no z
 if doPart(10)==1
     fprintf('\n===== doPart(10): every grouped statistic, via z-identity =====\n')
     %% 10. Grouped AllStats/LifeCycleProfiles equal the no-PType stats when z encodes the type (as part 2);
-    % also conditionalrestrictions, agegroupings, lowmemory, groupptypesforstats and whichstats
+    % also agegroupings, lowmemory, groupptypesforstats and whichstats (the conditional restrictions are in part 17)
     output=CoreFHorzPType_ZidentityStats(n_a,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i);
 end % doPart(10): every grouped statistic, via z-identity
 
@@ -191,19 +191,36 @@ if doPart(16)==1
     output=CoreFHorzPType_ValuesOnGridPerTypeShocks(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
 end % doPart(16): ValuesOnGrid with per-type n_z
 
-%% ===== doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages =====
+%% ===== doPart(17): conditional restrictions in every PType stats command =====
 if doPart(17)==1
-    fprintf('\n===== doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages =====\n')
-    %% 17. Restricted LifeCycleProfiles PType (per-ptype and grouped) vs solo Case1 solves, vs E[X*1_R]/E[1_R], and vs AllStats PType;
+    fprintf('\n===== doPart(17): conditional restrictions in every PType stats command =====\n')
+    %% 17. Every conditional-restriction test of the bank.
+    % Every PType stats command (AllStats, LifeCycleProfiles per age, in age groups of five and in one, CrossSection, AgeConditional
+    % CrossSection, AutoCorr), per type and grouped, every page, vs a brute force from ValuesOnGrid and the agent distributions, on three
+    % configs (d,z,e with per-type age weights; no d,z,e with a zero-weight type; semiz with a restriction on the semi-exogenous state);
+    % RestrictedSampleMass; a restriction that differs by type; the always page; a zero-mass restriction; whichcombos with the page and
+    % type dimensions; AutoCorr per type vs the single-type command (also with GI) and its grouped pairs vs a pooling of the per-type ones
+    output=CoreFHorzPType_CondlRest(n_d,n_d2_semiz,n_a,n_z,N_j,d_grid,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+    %% The restricted outputs of every PType stats command equal the no-PType commands when z encodes the type (as parts 10 and 20),
+    % grouped (restriction rich) and per type (rich and z picking out the type)
+    output=CoreFHorzPType_CondlRest_Zidentity(n_a,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i);
+
+    %% Restricted LifeCycleProfiles PType (per-ptype and grouped) vs solo Case1 solves, vs E[X*1_R]/E[1_R], and vs AllStats PType;
     % unequal ptweights and age weights, and a restriction whose mass differs by age and ptype
     output=CoreFHorzPType_RestrictedLifeCycle(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
-end % doPart(17): LifeCycleProfiles with conditional restrictions, agegroupings of one and of several ages
+
+    %% AutoCorrTransProbs_FHorz_PType: per type vs solo, grouped (unrestricted and restricted, horizons 1,2,3) vs a by-hand pooling
+    % of dense-kernel joint distributions with different age weights per type, a zero-weight type (the single-type command's own
+    % brute-force checks are CoreFHorzTests part 12)
+    output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,z_grid,pi_z,vfoptionsbaseline.e_grid,vfoptionsbaseline.pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(17): conditional restrictions in every PType stats command
 
 %% ===== doPart(18): every stats command, with d, z and e =====
 if doPart(18)==1
     fprintf('\n===== doPart(18): every stats command, with d, z and e =====\n')
     %% 18. All PType commands downstream of StationaryDist (AggVars, AllStats, ValuesOnGrid, LifeCycleProfiles, CrossSectionCovarCorr,
-    % AgeConditionalStats_CrossSectionCovarCorr, AutoCorrTransProbs with timehorizons and a restriction, PolicyInd2Val, SimPanel),
+    % AgeConditionalStats_CrossSectionCovarCorr, AutoCorrTransProbs with timehorizons, PolicyInd2Val, SimPanel),
     % two distinct types vs two solo solves, grouped vs a by-hand pooling of the solo outputs; also gridinterplayer=1 for AutoCorr
     output=CoreFHorzPType_StatsCmds_d_z_e(n_d,n_a,n_z,vfoptionsbaseline.n_e,N_j,d_grid,a_grid,z_grid,pi_z,vfoptionsbaseline.e_grid,vfoptionsbaseline.pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(18): every stats command, with d, z and e
@@ -211,7 +228,7 @@ end % doPart(18): every stats command, with d, z and e
 %% ===== doPart(19): every stats command, without d1, with z and semiz =====
 if doPart(19)==1
     fprintf('\n===== doPart(19): every stats command, without d1, with z and semiz =====\n')
-    %% 19. As part 18 on the semiz config (binary d2 only), with a restriction on the semi-exogenous state
+    %% 19. As part 18 on the semiz config (binary d2 only)
     output=CoreFHorzPType_StatsCmds_nod1_z_semiz(n_d2_semiz,n_a,n_z,N_j,d2_grid_semiz,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(19): every stats command, without d1, with z and semiz
 
@@ -219,30 +236,21 @@ end % doPart(19): every stats command, without d1, with z and semiz
 if doPart(20)==1
     fprintf('\n===== doPart(20): grouped CrossSection and AutoCorr commands, via z-identity =====\n')
     %% 20. Grouped CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and AutoCorrTransProbs PType equal the
-    % no-PType commands when z encodes the type (as part 10); per-type and restricted AutoCorr via restrictions on z
+    % no-PType commands when z encodes the type (as part 10); per-type AutoCorr via restrictions on z (the restricted outputs are in part 17)
     output=CoreFHorzPType_ZidentityCorr(n_a,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i);
 end % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
 
-%% ===== doPart(21): AutoCorr PType grouping vs a by-hand pooling of brute-force joint distributions =====
+%% ===== doPart(21): simoptions.whichcombos across the PType commands =====
 if doPart(21)==1
-    fprintf('\n===== doPart(21): AutoCorr PType grouping vs a by-hand pooling of brute-force joint distributions =====\n')
-    %% 21. AutoCorrTransProbs_FHorz_PType: per type vs solo, grouped (unrestricted and restricted, horizons 1,2,3) vs a by-hand pooling
-    % of dense-kernel joint distributions with different age weights per type, a zero-weight type (the single-type command's own
-    % brute-force checks are CoreFHorzTests part 12)
-    output=CoreFHorzPType_AutoCorrBruteForce(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,z_grid,pi_z,vfoptionsbaseline.e_grid,vfoptionsbaseline.pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
-end % doPart(21): AutoCorr PType grouping vs a by-hand pooling of brute-force joint distributions
-
-%% ===== doPart(22): simoptions.whichcombos across the PType commands =====
-if doPart(22)==1
-    fprintf('\n===== doPart(22): simoptions.whichcombos across the PType commands =====\n')
-    %% 22. simoptions.whichcombos (and per-combination whichstats where the command has whichstats) in LifeCycleProfiles PType
+    fprintf('\n===== doPart(21): simoptions.whichcombos across the PType commands =====\n')
+    %% 21. simoptions.whichcombos (and per-combination whichstats where the command has whichstats) in LifeCycleProfiles PType
     % ([nFns,nAgeGroups,1+nRestr]; whichstats [..,7]), AllStats PType ([nFns,1+nRestr]; whichstats [nFns,1+nRestr,7]), AggVars PType
     % ([nFns,1]), AutoCorr PType ([nFns,N_j,1+nRestr], age dimension validated only), CrossSection PType ([nFns,nFns], upper triangle)
     % and AgeConditional CrossSection PType ([nFns,nFns,nAgeGroups]). Each selective run is compared with its full run leaf by leaf:
     % selected leaves (or age-group columns) equal the full run, unselected ones are NaN (preallocated fields) or absent (whole
     % structs), RestrictedSampleMass is always filled, broadcast inputs equal their expansions, invalid inputs error.
     output=CoreFHorzPType_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
-end % doPart(22): simoptions.whichcombos across the PType commands
+end % doPart(21): simoptions.whichcombos across the PType commands
 
 % All looks good!
 

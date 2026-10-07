@@ -17,7 +17,7 @@ function output=CoreFHorz_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,Disc
 % AutoCorr: a one at (ff, j, page) asks for the age-j Mean/StdDeviation and every horizon output starting at age j; TransitionProbs
 % (a cell, not seen by the leaf lister) are checked separately: empty at unselected start ages, equal at selected ones.
 % AllStats: StatsFromWeightedGrid reports Minimum/Maximum whenever quantiles are requested (they are the end cutoffs).
-% The PType counterpart is CoreFHorzPTypeTests part 22.
+% The PType counterpart is CoreFHorzPTypeTests part 21.
 
 n_d=0;
 d_grid=[];

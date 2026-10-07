@@ -5,7 +5,8 @@ function output=CoreFHorzPType_ZeroWeight(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,p
 %
 % A type of zero mass is not in the population, so every grouped statistic must equal the
 % statistics of the other type alone (a solo solve of it): all of AllStats and of
-% LifeCycleProfiles, the restricted ones too, AggVars, and the restricted sample masses. In
+% LifeCycleProfiles, and AggVars (the restricted ones, with a zero-weight type, are in part 17,
+% CoreFHorzPType_CondlRest, with the other conditional-restriction tests). In
 % particular the grouped Minimum/Maximum and the ends of the QuantileCutoffs must not reach into
 % the values that only the zero-mass type holds. (Until 2026-09-27 the grouped Minimum/Maximum
 % were overwritten by the min/max over every ptype's own Minimum/Maximum, the zero-mass one
@@ -39,7 +40,6 @@ jequaloneDist(1,ceil(n_z/2))=1;
 
 vfoptions=struct();
 simoptions=struct();
-simoptions.conditionalrestrictions.rich=@(aprime,a,z) (a>0.5);
 
 %% PType
 [~,Policy_PT]=ValueFnIter_Case1_FHorz_PType(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn_PT,Params,DiscountFactorParamNames,vfoptions);
@@ -79,10 +79,6 @@ for ff=1:length(FnNames)
         fprintf('Zero-weight ptype, AggVars %s (type %s), this should be zero: %.3e \n',fn,nm,abs(AggVars_PT.(fn).(nm).Mean-AggVars_solo.(nm).(fn).Mean))
     end
 end
-fprintf('Zero-weight ptype, AllStats rich RestrictedSampleMass TotalAllPTypes, this should be zero: %.3e \n',abs(AllStats_PT.rich.RestrictedSampleMass.TotalAllPTypes-AllStats_solo.real.rich.RestrictedSampleMass))
-x=gather(AgeStats_PT.rich.RestrictedSampleMass.ByAge(:)); y=gather(AgeStats_solo.real.rich.RestrictedSampleMass(:));
-dd=abs(x-y); dd=dd(~isnan(dd));
-fprintf('Zero-weight ptype, LifeCycleProfiles rich RestrictedSampleMass ByAge, this should be zero: %.3e, NaN-pattern mismatches %i \n',max([dd;0]),sum(isnan(x)~=isnan(y)))
 
 %% Panel: every sim is of the real type, and none is NaN (loose: the age-conditional mean)
 for ff=1:length(FnNames)
@@ -98,9 +94,7 @@ pairs=cell(0,3);
 for ff=1:length(FnNames)
     fn=FnNames{ff};
     pairs(end+1,:)={sprintf('Zero-weight ptype, AllStats %s grouped',fn), AllStats_PT.(fn), AllStats_solo.real.(fn)}; %#ok<AGROW>
-    pairs(end+1,:)={sprintf('Zero-weight ptype, AllStats rich %s grouped',fn), AllStats_PT.rich.(fn), AllStats_solo.real.rich.(fn)}; %#ok<AGROW>
     pairs(end+1,:)={sprintf('Zero-weight ptype, LifeCycleProfiles %s grouped',fn), AgeStats_PT.(fn), AgeStats_solo.real.(fn)}; %#ok<AGROW>
-    pairs(end+1,:)={sprintf('Zero-weight ptype, LifeCycleProfiles rich %s grouped',fn), AgeStats_PT.rich.(fn), AgeStats_solo.real.rich.(fn)}; %#ok<AGROW>
     for ii=1:N_i
         nm=Names_i{ii};
         pairs(end+1,:)={sprintf('Zero-weight ptype, AllStats %s (type %s)',fn,nm), AllStats_PT.(fn).(nm), AllStats_solo.(nm).(fn)}; %#ok<AGROW>

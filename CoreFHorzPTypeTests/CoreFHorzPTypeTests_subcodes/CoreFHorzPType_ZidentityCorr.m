@@ -11,10 +11,8 @@ function output=CoreFHorzPType_ZidentityCorr(n_a,N_j,a_grid,Params,DiscountFacto
 %   type<ii>      z==sigma_pt(ii)              -> the PType per-type outputs of type ii (Mean, StdDeviation, AutoCovariance,
 %                                                  AutoCorrelation at every horizon; and the pair fields of type<ii> are the
 %                                                  age-j and age-j+k moments of type ii, since every agent of a type is a pair)
-%   rich          a>0.5                        -> the PType grouped restricted outputs (every field, pair fields included)
-%   richtype<ii>  a>0.5 and z==sigma_pt(ii)    -> the PType per-type restricted outputs (every field)
-% and the restricted sample masses. This is the only exact reference for the grouped pair statistics of a restriction
-% that does not come from a by-hand pooling. The grouped TransitionProbs (assets and consumption; unique values with their
+% (The same construction for the PType conditional restrictions, rich and richtype<ii>, of all three commands is in part 17,
+% CoreFHorzPType_CondlRest_Zidentity, with the other conditional-restriction tests.) The grouped TransitionProbs (assets and consumption; unique values with their
 % labels and masses, and quintiles) must likewise equal the single-type command's output on the z model exactly, which is
 % the check of the wrapper's pooling rule (the union of the types' value bins; quantile bins of the pooled distributions).
 
@@ -45,7 +43,6 @@ FnNames=fieldnames(FnsToEvaluate_A);
 nF=length(FnNames);
 
 simoptions_A=struct();
-simoptions_A.conditionalrestrictions.rich=@(aprime,a) (a>0.5);
 simoptions_A.timehorizons=timehorizons;
 simoptions_A.transprobs={'assets','consumption'}; % grouped TransitionProbs: the union of the types' value bins is non-trivial for consumption (sigma_pt differs, so the policies do)
 simoptions_A_ag=simoptions_A;
@@ -77,13 +74,10 @@ FnsToEvaluate_B.assets=@(aprime,a,z) a;
 FnsToEvaluate_B.consumption=@(aprime,a,z,r,w,kappa_j,agej,Jr,pension) (agej<Jr)*((1+r)*a+w*kappa_j-aprime)+(agej>=Jr)*((1+r)*a+pension-aprime);
 FnsToEvaluate_B.earnings=@(aprime,a,z,w,kappa_j) w*kappa_j;
 
-% type<ii> and richtype<ii>: z is sigma_pt, which is 2 or 3, so 2.5 separates the two types
+% type<ii>: z is sigma_pt, which is 2 or 3, so 2.5 separates the two types
 simoptions_B=struct();
-simoptions_B.conditionalrestrictions.rich=@(aprime,a,z) (a>0.5);
 simoptions_B.conditionalrestrictions.type1=@(aprime,a,z) (z<2.5);
 simoptions_B.conditionalrestrictions.type2=@(aprime,a,z) (z>2.5);
-simoptions_B.conditionalrestrictions.richtype1=@(aprime,a,z) (a>0.5)*(z<2.5);
-simoptions_B.conditionalrestrictions.richtype2=@(aprime,a,z) (a>0.5)*(z>2.5);
 simoptions_B.timehorizons=timehorizons;
 simoptions_B.transprobs={'assets','consumption'};
 simoptions_B_ag=simoptions_B;
@@ -130,13 +124,6 @@ for fn={'assets','consumption'}
     end
 end
 
-%% Restricted sample masses
-x=gather(ACP_A.rich.RestrictedSampleMass.ByAge(:)); y=gather(ACP_B.rich.RestrictedSampleMass(:)); dd=abs(x-y); dd=dd(~isnan(dd));
-fprintf('z-identity corr, AutoCorr rich RestrictedSampleMass.ByAge, this should be zero: %.3e, NaN-pattern mismatches %i \n',max([dd;0]),sum(isnan(x)~=isnan(y)))
-for ii=1:N_i
-    fprintf('z-identity corr, AutoCorr rich RestrictedSampleMass (type %s) times ptweight, this should be zero: %.3e \n',names_A{ii},max(abs(ptw(ii)*gather(ACP_A.rich.RestrictedSampleMass.(names_A{ii})(:))-gather(ACP_B.(['richtype',num2str(ii)]).RestrictedSampleMass(:)))))
-end
-
 %% The pair fields of type<ii> in B are the age-j and age-j+k moments of type ii in the PType output (every agent of the type is a pair)
 for ii=1:N_i
     nm=names_A{ii};
@@ -165,20 +152,11 @@ for ff=1:nF
     pairs(end+1,:)={sprintf('z-identity corr, AgeCond CrossSection %s grouped',fn), AgeCond_A.(fn), AgeCond_B.(fn)}; %#ok<AGROW>
     pairs(end+1,:)={sprintf('z-identity corr, AgeCond CrossSection agegroupings %s grouped',fn), AgeCond_A_ag.(fn), AgeCond_B_ag.(fn)}; %#ok<AGROW>
     pairs(end+1,:)={sprintf('z-identity corr, AutoCorr %s grouped',fn), ACP_A.(fn), ACP_B.(fn)}; %#ok<AGROW>
-    pairs(end+1,:)={sprintf('z-identity corr, AutoCorr rich %s grouped',fn), ACP_A.rich.(fn), ACP_B.rich.(fn)}; %#ok<AGROW>
     for ii=1:N_i
         nm=names_A{ii};
         typestr=['type',num2str(ii)];
-        richtypestr=['richtype',num2str(ii)];
         % the per-type unrestricted output has no pair fields, so compare the fields it does have (Ref is the PType output)
         pairs(end+1,:)={sprintf('z-identity corr, AutoCorr %s (type %s) vs %s restriction',fn,nm,typestr), ACP_B.(typestr).(fn), ACP_A.(fn).(nm)}; %#ok<AGROW>
-        % the PairMass fields of the PType per-type output are within-type shares, those of the richtype<ii> restriction are
-        % population shares (ptweight(ii) times the within-type share), so the reference is rescaled before the comparison
-        Ref_richtype=ACP_B.(richtypestr).(fn);
-        for hh=1:length(horizons)
-            Ref_richtype.(['PairMass',hstr{hh}])=Ref_richtype.(['PairMass',hstr{hh}])/ptw(ii);
-        end
-        pairs(end+1,:)={sprintf('z-identity corr, AutoCorr rich %s (type %s) vs %s restriction',fn,nm,richtypestr), ACP_A.rich.(fn).(nm), Ref_richtype}; %#ok<AGROW>
     end
 end
 % the matrices

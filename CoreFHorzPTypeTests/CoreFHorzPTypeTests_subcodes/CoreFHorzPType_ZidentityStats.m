@@ -6,13 +6,10 @@ function output=CoreFHorzPType_ZidentityStats(n_a,N_j,a_grid,Params,DiscountFact
 % statistic (Median, quantiles, Lorenz curve, Gini, StdDeviation, MoreInequality, ...), not just
 % the Mean. That is the only exact reference for the grouped stats beyond the Mean.
 %
-% The no-PType model also gives exact references for the per-type stats and for the conditional
-% restrictions, via conditional restrictions on z:
+% The no-PType model also gives exact references for the per-type stats, via conditional restrictions on z:
 %   type<ii>      z==sigma_pt(ii)                  -> the PType per-type stats of type ii
-%   rich          a>0.5                            -> the PType grouped restricted stats
-%   richtype<ii>  a>0.5 and z==sigma_pt(ii)        -> the PType per-type restricted stats
-% and the restricted sample masses: RestrictedSampleMass of richtype<ii> (a population share) is
-% ptweight(ii) times the PType per-type RestrictedSampleMass (a within-type share).
+% (The same construction for the PType conditional restrictions, rich and richtype<ii>, is in part 17,
+% CoreFHorzPType_CondlRest_Zidentity, with the other conditional-restriction tests.)
 %
 % Also, all against the default-options PType run:
 %   LifeCycleProfiles with agegroupings (5-year bins)
@@ -47,7 +44,6 @@ FnsToEvaluate_A.earnings=@(aprime,a,w,kappa_j) w*kappa_j;
 FnNames=fieldnames(FnsToEvaluate_A);
 
 simoptions_A=struct();
-simoptions_A.conditionalrestrictions.rich=@(aprime,a) (a>0.5);
 
 [~,Policy_A]=ValueFnIter_Case1_FHorz_PType(n_d,n_a,n_z_A,N_j,N_i,d_grid,a_grid,z_grid_A,pi_z_A,ReturnFn_A,Params,DiscountFactorParamNames,vfoptions);
 StationaryDist_A=StationaryDist_Case1_FHorz_PType(jequaloneDist_A,AgeWeightParamNames,PTypeDistParamNames,Policy_A,n_d,n_a,n_z_A,N_j,N_i,pi_z_A,Params,struct());
@@ -60,7 +56,6 @@ simoptions_A_ag=simoptions_A;
 simoptions_A_ag.agegroupings=1:5:N_j;
 AgeStats_A_ag=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist_A,Policy_A,FnsToEvaluate_A,Params,n_d,n_a,n_z_A,N_j,N_i,d_grid,a_grid,z_grid_A,simoptions_A_ag);
 
-% lowmemory=1 cannot be combined with conditionalrestrictions, so compare it against a run without them
 simoptions_A_plain=struct();
 AgeStats_A_plain=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist_A,Policy_A,FnsToEvaluate_A,Params,n_d,n_a,n_z_A,N_j,N_i,d_grid,a_grid,z_grid_A,simoptions_A_plain);
 simoptions_A_lowmem=struct();
@@ -90,13 +85,10 @@ jequaloneDist_B(1,:)=reshape(ptw,1,n_z_B);
 FnsToEvaluate_B.assets=@(aprime,a,z) a;
 FnsToEvaluate_B.earnings=@(aprime,a,z,w,kappa_j) w*kappa_j;
 
-% type<ii> and richtype<ii>: z is sigma_pt, which is 2 or 3, so 2.5 separates the two types
+% type<ii>: z is sigma_pt, which is 2 or 3, so 2.5 separates the two types
 simoptions_B=struct();
-simoptions_B.conditionalrestrictions.rich=@(aprime,a,z) (a>0.5);
 simoptions_B.conditionalrestrictions.type1=@(aprime,a,z) (z<2.5);
 simoptions_B.conditionalrestrictions.type2=@(aprime,a,z) (z>2.5);
-simoptions_B.conditionalrestrictions.richtype1=@(aprime,a,z) (a>0.5)*(z<2.5);
-simoptions_B.conditionalrestrictions.richtype2=@(aprime,a,z) (a>0.5)*(z>2.5);
 
 [~,Policy_B]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z_B,N_j,d_grid,a_grid,z_grid_B,pi_z_B,ReturnFn_B,Params,DiscountFactorParamNames,[],vfoptions);
 StationaryDist_B=StationaryDist_FHorz_Case1(jequaloneDist_B,AgeWeightParamNames,Policy_B,n_d,n_a,n_z_B,N_j,pi_z_B,Params,struct());
@@ -107,20 +99,6 @@ AgeStats_B=LifeCycleProfiles_FHorz_Case1(StationaryDist_B,Policy_B,FnsToEvaluate
 simoptions_B_ag=simoptions_B;
 simoptions_B_ag.agegroupings=1:5:N_j;
 AgeStats_B_ag=LifeCycleProfiles_FHorz_Case1(StationaryDist_B,Policy_B,FnsToEvaluate_B,Params,[],n_d,n_a,n_z_B,N_j,d_grid,a_grid,z_grid_B,simoptions_B_ag);
-
-%% Restricted sample masses
-fprintf('z-identity stats, AllStats rich RestrictedSampleMass TotalAllPTypes, this should be zero: %.3e \n',abs(AllStats_A.rich.RestrictedSampleMass.TotalAllPTypes-AllStats_B.rich.RestrictedSampleMass))
-for ii=1:N_i
-    fprintf('z-identity stats, AllStats rich RestrictedSampleMass (type %s) times ptweight, this should be zero: %.3e \n',names_A{ii},abs(ptw(ii)*AllStats_A.rich.RestrictedSampleMass.(names_A{ii})-AllStats_B.(['richtype',num2str(ii)]).RestrictedSampleMass))
-end
-x=gather(AgeStats_A.rich.RestrictedSampleMass.ByAge(:)); y=gather(AgeStats_B.rich.RestrictedSampleMass(:));
-dd=abs(x-y); dd=dd(~isnan(dd));
-fprintf('z-identity stats, LifeCycleProfiles rich RestrictedSampleMass ByAge, this should be zero: %.3e, NaN-pattern mismatches %i \n',max([dd;0]),sum(isnan(x)~=isnan(y)))
-for ii=1:N_i
-    x=gather(ptw(ii)*AgeStats_A.rich.RestrictedSampleMass.(names_A{ii})(:)); y=gather(AgeStats_B.(['richtype',num2str(ii)]).RestrictedSampleMass(:));
-    dd=abs(x-y); dd=dd(~isnan(dd));
-    fprintf('z-identity stats, LifeCycleProfiles rich RestrictedSampleMass (type %s) times ptweight, this should be zero: %.3e, NaN-pattern mismatches %i \n',names_A{ii},max([dd;0]),sum(isnan(x)~=isnan(y)))
-end
 
 %% groupptypesforstats=0 must drop the grouped LifeCycleProfiles fields
 for ff=1:length(FnNames)
@@ -133,26 +111,20 @@ for ff=1:length(FnNames)
     fn=FnNames{ff};
     % AllStats
     pairs(end+1,:)={sprintf('z-identity stats, AllStats %s grouped',fn), AllStats_A.(fn), AllStats_B.(fn)}; %#ok<AGROW>
-    pairs(end+1,:)={sprintf('z-identity stats, AllStats rich %s grouped',fn), AllStats_A.rich.(fn), AllStats_B.rich.(fn)}; %#ok<AGROW>
     pairs(end+1,:)={sprintf('z-identity stats, AllStats %s grouped, groupptypesforstats=0 vs =1',fn), AllStats_A_ng.(fn), AllStats_A.(fn)}; %#ok<AGROW>
     % whichstats subset: Ref is the subset run, so only the stats it computed are compared
     pairs(end+1,:)={sprintf('z-identity stats, AllStats %s grouped, whichstats subset vs all',fn), AllStats_A.(fn), AllStats_A_ws.(fn)}; %#ok<AGROW>
     % LifeCycleProfiles
     pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles %s grouped',fn), AgeStats_A.(fn), AgeStats_B.(fn)}; %#ok<AGROW>
-    pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles rich %s grouped',fn), AgeStats_A.rich.(fn), AgeStats_B.rich.(fn)}; %#ok<AGROW>
     pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles agegroupings %s grouped',fn), AgeStats_A_ag.(fn), AgeStats_B_ag.(fn)}; %#ok<AGROW>
-    pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles agegroupings rich %s grouped',fn), AgeStats_A_ag.rich.(fn), AgeStats_B_ag.rich.(fn)}; %#ok<AGROW>
     pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles %s grouped, lowmemory=1 vs =0',fn), AgeStats_A_lowmem.(fn), AgeStats_A_plain.(fn)}; %#ok<AGROW>
     for ii=1:N_i
         nm=names_A{ii};
         typestr=['type',num2str(ii)];
-        richtypestr=['richtype',num2str(ii)];
         pairs(end+1,:)={sprintf('z-identity stats, AllStats %s (type %s)',fn,nm), AllStats_A.(fn).(nm), AllStats_B.(typestr).(fn)}; %#ok<AGROW>
-        pairs(end+1,:)={sprintf('z-identity stats, AllStats rich %s (type %s)',fn,nm), AllStats_A.rich.(fn).(nm), AllStats_B.(richtypestr).(fn)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('z-identity stats, AllStats %s (type %s), groupptypesforstats=0 vs =1',fn,nm), AllStats_A_ng.(fn).(nm), AllStats_A.(fn).(nm)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('z-identity stats, AllStats %s (type %s), whichstats subset vs all',fn,nm), AllStats_A.(fn).(nm), AllStats_A_ws.(fn).(nm)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles %s (type %s)',fn,nm), AgeStats_A.(fn).(nm), AgeStats_B.(typestr).(fn)}; %#ok<AGROW>
-        pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles rich %s (type %s)',fn,nm), AgeStats_A.rich.(fn).(nm), AgeStats_B.(richtypestr).(fn)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles agegroupings %s (type %s)',fn,nm), AgeStats_A_ag.(fn).(nm), AgeStats_B_ag.(typestr).(fn)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles %s (type %s), lowmemory=1 vs =0',fn,nm), AgeStats_A_lowmem.(fn).(nm), AgeStats_A_plain.(fn).(nm)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('z-identity stats, LifeCycleProfiles %s (type %s), groupptypesforstats=0 vs =1',fn,nm), AgeStats_A_ng.(fn).(nm), AgeStats_A.(fn).(nm)}; %#ok<AGROW>

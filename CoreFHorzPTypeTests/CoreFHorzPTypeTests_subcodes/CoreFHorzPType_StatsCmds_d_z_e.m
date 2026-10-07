@@ -7,14 +7,14 @@ function output=CoreFHorzPType_StatsCmds_d_z_e(n_d,n_a,n_z,n_e,N_j,d_grid,a_grid
 %   LifeCycleProfiles_FHorz_Case1_PType
 %   EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType                      (new 2026-09-29)
 %   EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType  (new 2026-09-29)
-%   EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType                         (new 2026-09-29; with timehorizons and a conditional restriction)
+%   EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType                         (new 2026-09-29; with timehorizons)
 %   PolicyInd2Val_FHorz_PType
 %   SimPanelValues_FHorz_Case1_PType   (loose only: a panel is random)
 % Two genuinely different types (per-type kappa_j_pt) against two solves without PType. Per-type outputs must
 % equal the solo outputs exactly (every field). Both types have the same mewj, so the grouped outputs are the
 % ptweights-pooling of the solo outputs, computed here by hand: means are the weighted means, variances and
 % covariances add the between-type part about the pooled means, and the pair populations of the AutoCorr
-% command pool with ptweights (unrestricted) or ptweights times the pair mass (restricted). Also:
+% command pool with ptweights. (Restricted outputs are in part 17, CoreFHorzPType_CondlRest.) Also:
 %   AutoCorr Mean/StdDeviation equal LifeCycleProfiles Mean/StdDeviation (per type and grouped),
 %   AgeConditional cross-section with a single age group equals the whole-population cross-section (per type and grouped),
 %   the grouped matrices equal the named grouped fields,
@@ -55,7 +55,6 @@ horizons=[1,2,4];
 simoptions_acp=simoptions;
 simoptions_acp.timehorizons=timehorizons;
 simoptions_acp.transprobs={'assets'};
-simoptions_acp.conditionalrestrictions.rich=@(d,aprime,a,z,e) (a>0.5);
 simoptions_ag=simoptions;
 simoptions_ag.agegroupings=1:5:N_j;
 simoptions_1bin=simoptions;
@@ -191,43 +190,7 @@ for ff=1:nF
         fprintf('Stats cmds d z e, AutoCorr %s grouped AutoCovariance%s vs pooled solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,hstr{hh},max([dd;0]),sum(isnan(x)~=isnan(cG)))
         x=gather(ACP_PT.(fn).(['AutoCorrelation',hstr{hh}])(:)); dd=abs(x-rG); dd=dd(~isnan(dd));
         fprintf('Stats cmds d z e, AutoCorr %s grouped AutoCorrelation%s vs pooled solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,hstr{hh},max([dd;0]),sum(isnan(x)~=isnan(rG)))
-        % restricted: weights ptweights times the pair mass, moments from the pair fields
-        p1=ptw(1)*gather(ACP_solo.low.rich.(fn).(['PairMass',hstr{hh}])(:)); p2=ptw(2)*gather(ACP_solo.high.rich.(fn).(['PairMass',hstr{hh}])(:));
-        m1x=gather(ACP_solo.low.rich.(fn).(['PairMean_j',hstr{hh}])(:)); m2x=gather(ACP_solo.high.rich.(fn).(['PairMean_j',hstr{hh}])(:));
-        m1y=gather(ACP_solo.low.rich.(fn).(['PairMean_jplusk',hstr{hh}])(:)); m2y=gather(ACP_solo.high.rich.(fn).(['PairMean_jplusk',hstr{hh}])(:));
-        s1x=gather(ACP_solo.low.rich.(fn).(['PairStdDeviation_j',hstr{hh}])(:)); s2x=gather(ACP_solo.high.rich.(fn).(['PairStdDeviation_j',hstr{hh}])(:));
-        s1y=gather(ACP_solo.low.rich.(fn).(['PairStdDeviation_jplusk',hstr{hh}])(:)); s2y=gather(ACP_solo.high.rich.(fn).(['PairStdDeviation_jplusk',hstr{hh}])(:));
-        c1=gather(ACP_solo.low.rich.(fn).(['AutoCovariance',hstr{hh}])(:)); c2=gather(ACP_solo.high.rich.(fn).(['AutoCovariance',hstr{hh}])(:));
-        p1(isnan(p1))=0; p2(isnan(p2))=0;
-        w1=p1./(p1+p2); w2=p2./(p1+p2); % NaN where no pairs at all
-        w1(p1==0)=0; w2(p2==0)=0; % a type with no pairs contributes nothing (and its moments are NaN)
-        m1x(p1==0)=0; m1y(p1==0)=0; s1x(p1==0)=0; s1y(p1==0)=0; c1(p1==0)=0;
-        m2x(p2==0)=0; m2y(p2==0)=0; s2x(p2==0)=0; s2y(p2==0)=0; c2(p2==0)=0;
-        mx=w1.*m1x+w2.*m2x; my=w1.*m1y+w2.*m2y;
-        vx=w1.*(s1x.^2+(m1x-mx).^2)+w2.*(s2x.^2+(m2x-mx).^2);
-        vy=w1.*(s1y.^2+(m1y-my).^2)+w2.*(s2y.^2+(m2y-my).^2);
-        cG=w1.*(c1+(m1x-mx).*(m1y-my))+w2.*(c2+(m2x-mx).*(m2y-my));
-        rG=cG./sqrt(vx.*vy); rG(sqrt(vx.*vy)<=1e-15)=NaN;
-        nopairs=(p1+p2==0); mx(nopairs)=NaN; vy(nopairs)=NaN; cG(nopairs)=NaN; rG(nopairs)=NaN;
-        x=gather(ACP_PT.rich.(fn).(['PairMass',hstr{hh}])(:)); y=p1+p2; dd=abs(x-y); dd=dd(~isnan(dd));
-        fprintf('Stats cmds d z e, AutoCorr rich %s grouped PairMass%s vs pooled solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,hstr{hh},max([dd;0]),sum(isnan(x)~=isnan(y)))
-        x=gather(ACP_PT.rich.(fn).(['AutoCovariance',hstr{hh}])(:)); dd=abs(x-cG); dd=dd(~isnan(dd));
-        fprintf('Stats cmds d z e, AutoCorr rich %s grouped AutoCovariance%s vs pooled solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,hstr{hh},max([dd;0]),sum(isnan(x)~=isnan(cG)))
-        x=gather(ACP_PT.rich.(fn).(['AutoCorrelation',hstr{hh}])(:)); dd=abs(x-rG); dd=dd(~isnan(dd));
-        fprintf('Stats cmds d z e, AutoCorr rich %s grouped AutoCorrelation%s vs pooled solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,hstr{hh},max([dd;0]),sum(isnan(x)~=isnan(rG)))
-        x=gather(ACP_PT.rich.(fn).(['PairMean_j',hstr{hh}])(:)); dd=abs(x-mx); dd=dd(~isnan(dd));
-        fprintf('Stats cmds d z e, AutoCorr rich %s grouped PairMean_j%s vs pooled solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,hstr{hh},max([dd;0]),sum(isnan(x)~=isnan(mx)))
-        x=gather(ACP_PT.rich.(fn).(['PairStdDeviation_jplusk',hstr{hh}])(:)); y=sqrt(vy); dd=abs(x-y); dd=dd(~isnan(dd));
-        fprintf('Stats cmds d z e, AutoCorr rich %s grouped PairStdDeviation_jplusk%s vs pooled solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,hstr{hh},max([dd;0]),sum(isnan(x)~=isnan(y)))
     end
-    % AutoCorr grouped restricted Mean: weights ptweights times restricted mass
-    r1=ptw(1)*gather(ACP_solo.low.rich.RestrictedSampleMass(:)); r2=ptw(2)*gather(ACP_solo.high.rich.RestrictedSampleMass(:));
-    m1=gather(ACP_solo.low.rich.(fn).Mean(:)); m2=gather(ACP_solo.high.rich.(fn).Mean(:));
-    m1(r1==0)=0; m2(r2==0)=0;
-    mG=(r1.*m1+r2.*m2)./(r1+r2);
-    x=gather(ACP_PT.rich.(fn).Mean(:)); dd=abs(x-mG); dd=dd(~isnan(dd));
-    fprintf('Stats cmds d z e, AutoCorr rich %s grouped Mean vs pooled solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',fn,max([dd;0]),sum(isnan(x)~=isnan(mG)))
-    fprintf('Stats cmds d z e, AutoCorr rich RestrictedSampleMass.ByAge vs pooled solo, this should be zero: %.3e \n',max(abs(gather(ACP_PT.rich.RestrictedSampleMass.ByAge(:))-(r1+r2))))
 end
 % CrossSection grouped covariances and correlations: pooled about the pooled means
 for ff1=1:nF
@@ -306,16 +269,13 @@ for ii=1:N_i
         pairs(end+1,:)={sprintf('Stats cmds d z e, AgeCond CrossSection %s (type %s)',fn,nm), AgeCondCovarCorr_PT.(fn).(nm), AgeCondCovarCorr_solo.(nm).(fn)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('Stats cmds d z e, AgeCond CrossSection agegroupings %s (type %s)',fn,nm), AgeCondCovarCorr_PT_ag.(fn).(nm), AgeCondCovarCorr_solo_ag.(nm).(fn)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('Stats cmds d z e, AutoCorr %s (type %s)',fn,nm), ACP_PT.(fn).(nm), ACP_solo.(nm).(fn)}; %#ok<AGROW>
-        pairs(end+1,:)={sprintf('Stats cmds d z e, AutoCorr rich %s (type %s)',fn,nm), ACP_PT.rich.(fn).(nm), ACP_solo.(nm).rich.(fn)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('Stats cmds d z e, AutoCorr GI %s (type %s)',fn,nm), ACP_PT_gi.(fn).(nm), ACP_solo_gi.(nm).(fn)}; %#ok<AGROW>
-        pairs(end+1,:)={sprintf('Stats cmds d z e, AutoCorr GI rich %s (type %s)',fn,nm), ACP_PT_gi.rich.(fn).(nm), ACP_solo_gi.(nm).rich.(fn)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('Stats cmds d z e, AutoCorr %s (type %s) groupptypesforstats=0 vs =1',fn,nm), ACP_PT_ng.(fn).(nm), ACP_PT.(fn).(nm)}; %#ok<AGROW>
         pairs(end+1,:)={sprintf('Stats cmds d z e, CrossSection %s (type %s) groupptypesforstats=0 vs =1',fn,nm), CovarCorr_PT_ng.(fn).(nm), CovarCorr_PT.(fn).(nm)}; %#ok<AGROW>
     end
     fprintf('Stats cmds d z e, CrossSection CovarianceMatrix_ptype (type %s) vs solo, this should be zero: %.3e \n',nm,max(abs(gather(CovarCorr_PT.CovarianceMatrix_ptype.(nm)(:))-gather(CovarCorr_solo.(nm).CovarianceMatrix(:)))))
     x=gather(AgeCondCovarCorr_PT.CorrelationMatrix_ptype.(nm)(:)); y=gather(AgeCondCovarCorr_solo.(nm).CorrelationMatrix(:)); dd=abs(x-y); dd=dd(~isnan(dd));
     fprintf('Stats cmds d z e, AgeCond CrossSection CorrelationMatrix_ptype (type %s) vs solo, this should be zero: %.3e, NaN-pattern mismatches %i \n',nm,max([dd;0]),sum(isnan(x)~=isnan(y)))
-    fprintf('Stats cmds d z e, AutoCorr rich RestrictedSampleMass (type %s) vs solo, this should be zero: %.3e \n',nm,max(abs(gather(ACP_PT.rich.RestrictedSampleMass.(nm)(:))-gather(ACP_solo.(nm).rich.RestrictedSampleMass(:)))))
 end
 
 % Compare every field of each (label, Test, Ref) pair. Ref supplies the list of fields; per-ptype substructures and

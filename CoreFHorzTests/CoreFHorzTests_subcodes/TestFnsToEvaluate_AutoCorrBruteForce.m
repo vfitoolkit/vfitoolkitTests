@@ -3,7 +3,7 @@ function output=TestFnsToEvaluate_AutoCorrBruteForce(n_a,n_z,n_e,N_j,a_grid,z_gr
 % simoptions.timehorizons and simoptions.conditionalrestrictions (added 2026-09-29) and simoptions.transprobs against a
 % brute-force calculation written here independently of the toolkit's code (the command pushes measures with the Tan
 % two-step and never forms the transition matrix; the brute force forms it). (The PType wrapper is tested the same way
-% in CoreFHorzPTypeTests part 21, and the semi-exogenous-state version is TestFnsToEvaluate_AutoCorrBruteForce_semiz.) Every check also
+% in CoreFHorzPTypeTests part 17, and the semi-exogenous-state version is TestFnsToEvaluate_AutoCorrBruteForce_semiz.) Every check also
 % feeds fail_count, as in the other TestFnsToEvaluate subcodes.
 %
 % Brute force: for each age jj the one-period transition kernel T_jj (N_states x N_states, dense) is built by loops

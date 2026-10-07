@@ -471,7 +471,7 @@ if doPart(13)==1
     % AutoCorrTransProbs ([nFns,N_j,1+nRestr], the second dimension the start age, acted on), CrossSectionCovarCorr ([nFns,nFns], upper
     % triangle) and AgeConditionalStats_CrossSectionCovarCorr ([nFns,nFns,nAgeGroups]). Each selective run is compared with its full run
     % leaf by leaf (CoreStructLeaves): selected leaves/columns equal the full run, unselected ones are NaN or absent, RestrictedSampleMass
-    % is always filled, broadcast inputs equal their expansions, invalid inputs error. The PType counterpart is CoreFHorzPTypeTests part 22.
+    % is always filled, broadcast inputs equal their expansions, invalid inputs error. The PType counterpart is CoreFHorzPTypeTests part 21.
     output=CoreFHorz_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames);
 end % doPart(13): simoptions.whichcombos in the single-type stats commands
 
