@@ -23,6 +23,7 @@
 % doPart(4): two-endo cross-tests: second state ignored
 % doPart(5): two-endo cross-tests: first state ignored
 % doPart(6): AutoCorrTransProbs brute force (z-only; e-only and z-and-e commented out pending InfHorz e; horizons and TransitionProbs vs dense kernels; no figures)
+% doPart(7): conditional restrictions in CrossSectionCovarCorr and AllStats, every statistic vs brute force (one and two endogenous states; no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -31,7 +32,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -159,6 +160,16 @@ if doPart(6)==1
     % ValueFnIter_InfHorz supports e), with and without the grid interpolation layer
     output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames);
 end % doPart(6): AutoCorrTransProbs brute force
+
+%% ===== doPart(7): conditional restrictions =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): conditional restrictions =====\n')
+    %% EvalFnOnAgentDist_CrossSectionCovarCorr_InfHorz (restrictions new 2026-10-07) and EvalFnOnAgentDist_AllStats_InfHorz with
+    % simoptions.conditionalrestrictions, on a model with d and z and on the two-endogenous-state model of fig 11: every restricted
+    % statistic and RestrictedSampleMass vs a brute force from ValuesOnGrid and the agent distribution; the cross-section command vs
+    % AllStats; the always page equals the unrestricted output; a zero-mass restriction is NaN
+    output=CoreInfHorz_CondlRest(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
+end % doPart(7): conditional restrictions
 
 %% Done!
 
