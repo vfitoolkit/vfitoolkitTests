@@ -1,6 +1,6 @@
 % Tests for CalibrateLifeCycleModel_PType (the FHorz calibration command with permanent types) and its target plumbing.
 %
-% The PType counterpart of CalibFHorzTests, on the CoreFHorzPTypeTests part-22 model: two permanent types, low and high, with a
+% The PType counterpart of CalibFHorzTests, on the CoreFHorzPTypeTests part-21 model: two permanent types, low and high, with a
 % per-type deterministic earnings profile (kappa_j_pt), type weights 0.7 and 0.3 and geometric age weights, on small grids so that
 % one calibration takes seconds. Targets are generated from the model at known parameter values, so the truth is known exactly.
 %
@@ -17,6 +17,11 @@
 % Pre-existing defects pinned here (fixed 2026-10-07 with the wiring): the omit-mask transpose test on the wrong variable, the
 % by-name and per-target-name forms of logmoments, a per-type (structure) ExogShockFn erroring in the calibrated-shocks detection.
 %
+% Added 2026-10-08 (part 8): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets with permanent
+% types, grouped (fn.stat, fn.CovarianceWith.fn2, the grouped matrices) or per type (fn.type.stat, fn.type.CovarianceWith.fn2); the
+% selectors of the three PType commands carry the same trailing type dimension. Not targetable: the self-correlation fn.fn, the per-type
+% matrices (they shrink to the type's evaluated functions), TransitionProbs; not supported: per-type N_j or agejshifter with these kinds.
+%
 % Not covered (later programmes): the estimation commands, the OLG/GE calibration commands, CMA-ES.
 %
 % No figures are drawn anywhere in this bank, so only the diary is saved.
@@ -30,10 +35,11 @@
 % doPart(5): ExogShockFn common and per type with a calibrated parameter, jequaloneDist as a function, CustomModelStats under both grid settings
 % doPart(6): runtime of one objective evaluation, whichcombos=1 vs =0 (informational)
 % doPart(7): extensions: the type weights calibrated (via ParametrizeParamsFn, and the vector itself), per-type N_j with and without agejshifter, an iid shock through EiidShockFn (alone and with ExogShockFn), a semi-exogenous state with SemiExoStateFn common and per type
+% doPart(8): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets with permanent types (grouped and per-type names, type-slot selectors): parsing, the moment vector vs full PType runs, the selectors handed to the three PType commands, round trips (common rho_z, beta + a per-type pension), logmoments by a four-level name, runtime
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -50,7 +56,7 @@ addpath('./CalibFHorzPTypeTests_subcodes/')
 addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
 addpath('../CoreFHorzTests/CoreFHorzTests_Setup/') % CoreFHorzSetup_SemiExoStateFn, for the semi-exogenous model of part 7
 
-%% The model: the CoreFHorzPTypeTests part-22 model on small grids
+%% The model: the CoreFHorzPTypeTests part-21 model on small grids
 n_d=0;
 d_grid=[];
 n_a=101;
@@ -122,6 +128,12 @@ if doPart(7)==1
     fprintf('\n===== doPart(7): type weights calibrated, per-type N_j, EiidShockFn, semi-exogenous state =====\n')
     output=CalibFHorzPType_Extensions(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
 end % doPart(7)
+
+%% ===== doPart(8): AutoCorrTransProbs, CrossSectionCovarCorr, AgeConditionalCrossSectionCovarCorr targets =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets with permanent types: parsing, moment vector, selectors, round trips, logmoments, runtime =====\n')
+    output=CalibFHorzPType_AutoCorrCrossSec(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(8)
 
 % All looks good!
 
