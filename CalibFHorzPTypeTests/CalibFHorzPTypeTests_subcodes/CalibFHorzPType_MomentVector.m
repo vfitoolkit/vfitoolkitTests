@@ -4,7 +4,7 @@ function output=CalibFHorzPType_MomentVector(n_d,n_a,n_z,N_j,Names_i,d_grid,a_gr
 % One solve at the truth, then full PType LifeCycleProfiles and AllStats runs (whichstats all ones). The targets are taken from those
 % runs in every layout (grouped, per type, restricted, restricted per type, MoreInequality sub-statistics, matrix-valued age profiles),
 % with NaN where an entry is omitted. The objective is called directly, as the driver calls it, with vectoroutput=1 under
-% caliboptions.whichcombos=1, =0 and absent. Checks (all exact):
+% caliboptions.whichcombos=1 and =0. Checks (all exact):
 %   (a) each of the three vectors equals the hand-built vector (walk TargetMoments, read the same field of the full run, vectorise
 %       column-major, drop the NaN targets) and has no NaN
 %   (b) the three vectors equal SetupTargetMoments_FHorz's own targetmomentvec at the targeted entries (targets are the model)
@@ -142,16 +142,13 @@ caliboptions_1=caliboptions; caliboptions_1.whichcombos=1; caliboptions_1.select
 m1=gather(CalibrateLifeCycleModel_PType_objectivefn(calibparamsvec0,argcell{:},caliboptions_1,vfoptions,simoptions));
 caliboptions_0=caliboptions; caliboptions_0.whichcombos=0; caliboptions_0.selectors=selectors;
 m0=gather(CalibrateLifeCycleModel_PType_objectivefn(calibparamsvec0,argcell{:},caliboptions_0,vfoptions,simoptions));
-mL=gather(CalibrateLifeCycleModel_PType_objectivefn(calibparamsvec0,argcell{:},caliboptions,vfoptions,simoptions)); % whichcombos absent: the union whichstats
 handA=hand(actual);
 tA=targetmomentvec(actual);
-for mm=1:3
+for mm=1:2 % (caliboptions.whichcombos is always set by the driver, 1 or 0; since 2026-10-07 the objective takes no other value)
     if mm==1
         m=m1; lab='whichcombos=1';
-    elseif mm==2
-        m=m0; lab='whichcombos=0';
     else
-        m=mL; lab='whichcombos absent (union whichstats)';
+        m=m0; lab='whichcombos=0';
     end
     if length(m)==length(handA)
         d=max([abs(m(:)-handA(:));0]); dt=max([abs(m(:)-tA(:));0]);

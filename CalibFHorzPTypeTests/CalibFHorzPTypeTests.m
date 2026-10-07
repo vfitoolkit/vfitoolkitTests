@@ -24,7 +24,7 @@
 %% Which parts to run
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
 % doPart(1): SetupTargetMoments_FHorz with permanent types: target vector, type-slot selectors, per-type age groups and agejshifter, field order, legacy call, invalid inputs
-% doPart(2): the objective's moment vector vs hand-built from full PType LifeCycleProfiles/AllStats runs; whichcombos 1, 0 and absent; the selectors handed to the PType commands
+% doPart(2): the objective's moment vector vs hand-built from full PType LifeCycleProfiles/AllStats runs; whichcombos 1 and 0; the selectors handed to the PType commands
 % doPart(3): objective forms vs their formulas; logmoments (incl. a four-level name) and weights through CalibrateLifeCycleModel_PType
 % doPart(4): round trips: common and per-type parameters (structure and matrix forms), constraints, omitcalibparam, ParametrizeParamsFn
 % doPart(5): ExogShockFn common and per type with a calibrated parameter, jequaloneDist as a function, CustomModelStats under both grid settings

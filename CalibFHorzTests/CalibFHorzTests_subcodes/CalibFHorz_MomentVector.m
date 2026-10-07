@@ -4,7 +4,7 @@ function output=CalibFHorz_MomentVector(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_
 % One solve at the truth, then full LifeCycleProfiles and AllStats runs (whichstats all ones). The targets are taken from those
 % runs, with NaN where an entry is omitted: every statistic kind, four functions, two conditional restrictions, matrix-valued
 % age-conditional targets (LorenzCurve, QuantileCutoffs). The objective is called directly, as CalibrateLifeCycleModel calls it,
-% with vectoroutput=1 (the vector of model moments at the targeted entries) under caliboptions.whichcombos=1, =0 and absent.
+% with vectoroutput=1 (the vector of model moments at the targeted entries) under caliboptions.whichcombos=1 and =0.
 % Checks (all exact):
 %   (a) each of the three vectors equals the hand-built vector (walk TargetMoments, read the same field of the full run,
 %       vectorise column-major, drop the NaN targets) and has no NaN
@@ -127,9 +127,9 @@ caliboptions.vectoroutput=1;
 caliboptions.useCustomModelStats=0;
 caliboptions.calibrateshocks=0;
 [calibparamsvec0,caliboptions]=ParameterConstraints_TransformParamsToUnconstrained(calibparamsvec0,calibparamsvecindex,CalibParamNames,caliboptions,1);
-[targetmomentvec,usingallstats,usinglcp,usingcustomstats,allstatmomentnames,allstatcummomentsizes,AllStats_whichstats,FnsToEvaluate_AllStats,acsmomentnames,acscummomentsizes,ACStats_whichstats,FnsToEvaluate_ACStats,cmsmomentnames,cmscummomentsizes,selectors]=SetupTargetMoments_FHorz(TM,FnsToEvaluate,0,N_j,simoptions);
+[targetmomentvec,usingallstats,usinglcp,usingcustomstats,allstatmomentnames,allstatcummomentsizes,AllStats_whichstats,FnsToEvaluate_AllStats,acsmomentnames,acscummomentsizes,ACStats_whichstats,FnsToEvaluate_ACStats,cmsmomentnames,cmscummomentsizes,selectors,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec]=SetupTargetMoments_FHorz(TM,FnsToEvaluate,0,N_j,simoptions);
 caliboptions.weights=ones(sum(~isnan(targetmomentvec)),1);
-argcell={CalibParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,[],Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,[],FnsToEvaluate,[],usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,calibparamsvecindex,calibomitparams_counter,calibomitparamsmatrix};
+argcell={CalibParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,[],Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,[],FnsToEvaluate,[],usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec,calibparamsvecindex,calibomitparams_counter,calibomitparamsmatrix};
 
 if length(targetmomentvec)==length(tvec)
     d=abs(targetmomentvec-tvec); d=d(:); d=d(~isnan(d));
@@ -143,16 +143,13 @@ caliboptions_1=caliboptions; caliboptions_1.whichcombos=1; caliboptions_1.select
 m1=gather(CalibrateLifeCycleModel_objectivefn(calibparamsvec0,argcell{:},caliboptions_1,vfoptions,simoptions));
 caliboptions_0=caliboptions; caliboptions_0.whichcombos=0; caliboptions_0.selectors=selectors;
 m0=gather(CalibrateLifeCycleModel_objectivefn(calibparamsvec0,argcell{:},caliboptions_0,vfoptions,simoptions));
-mL=gather(CalibrateLifeCycleModel_objectivefn(calibparamsvec0,argcell{:},caliboptions,vfoptions,simoptions)); % whichcombos absent: the union whichstats
 handA=hand(actual);
 tA=targetmomentvec(actual);
-for mm=1:3
+for mm=1:2 % (caliboptions.whichcombos is always set by the driver, 1 or 0; since 2026-10-07 the objective takes no other value)
     if mm==1
         m=m1; lab='whichcombos=1';
-    elseif mm==2
-        m=m0; lab='whichcombos=0';
     else
-        m=mL; lab='whichcombos absent (union whichstats)';
+        m=m0; lab='whichcombos=0';
     end
     if length(m)==length(handA)
         d=max([abs(m(:)-handA(:));0]); dt=max([abs(m(:)-tA(:));0]);

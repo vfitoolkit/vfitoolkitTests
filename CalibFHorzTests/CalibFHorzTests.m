@@ -17,6 +17,12 @@
 % depended on the field order of TargetMoments; caliboptions.logmoments by name read the AgeConditionalStats names from the AllStats
 % branch; and the by-target-name vector form of logmoments had an off-by-one.
 %
+% Added 2026-10-07 (part 8): three more kinds of target standing alongside AllStats and AgeConditionalStats, TargetMoments.AutoCorrTransProbs
+% (the autocorrelation command, horizons read off the _kK suffixes of the target names), .CrossSectionCovarCorr and
+% .AgeConditionalCrossSectionCovarCorr (the two cross-sectional covariance/correlation commands, matrix targets with NaN accepted). The
+% target vector is AllStats, AgeConditionalStats, AutoCorrTransProbs, CrossSectionCovarCorr, AgeConditionalCrossSectionCovarCorr,
+% CustomModelStats. caliboptions.whichcombos is now always 1 or 0 (the objective takes no other value).
+%
 % Not covered (later programmes): CalibrateLifeCycleModel_PType, the estimation commands (MethodOfMoments, MomentDerivatives,
 % cohorts), the OLG/GE calibration commands, the panel-simulation moments, CMA-ES (fminalgo=4).
 %
@@ -25,16 +31,17 @@
 %% Which parts to run
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
 % doPart(1): SetupTargetMoments_FHorz: target vector, selectors (whichcombos/whichstats), reduced FnsToEvaluate, field-order independence, invalid inputs
-% doPart(2): the objective's moment vector vs a hand-built one from full LifeCycleProfiles/AllStats runs; whichcombos 1, 0 and absent
+% doPart(2): the objective's moment vector vs a hand-built one from full LifeCycleProfiles/AllStats runs; whichcombos 1 and 0
 % doPart(3): objective forms (sum_squared, sum_logratiosquared, MethodOfMoments, residual vector, logmoments, weights) vs their formulas; logmoments plumbing through CalibrateLifeCycleModel
 % doPart(4): round trips through CalibrateLifeCycleModel: start at the truth (exact) and away from it (close), lsqnonlin and fminsearch, parameter constraints, omitcalibparam, ParametrizeParamsFn
 % doPart(5): shock grids that depend on a calibrated parameter (ExogShockFn), jequaloneDist as a function, CustomModelStats under both usergrids settings
 % doPart(6): runtime of one objective evaluation, whichcombos=1 vs =0 (informational)
 % doPart(7): an iid shock through EiidShockFn with its dispersion calibrated, alone and together with ExogShockFn
+% doPart(8): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets: parsing and selectors, the moment vector vs full runs, the selectors handed to the three commands, round trips (rho_z, beta), logmoments by name, runtime
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -93,7 +100,7 @@ if doPart(2)==1
     fprintf('\n===== doPart(2): the objective moment vector vs hand-built from full LifeCycleProfiles/AllStats runs =====\n')
     %% 2. One solve at the truth. Targets are taken from full LifeCycleProfiles and AllStats runs (every statistic kind, two restrictions,
     % NaN-omitted ages, matrix-valued age-conditional targets). CalibrateLifeCycleModel_objectivefn with vectoroutput=1 is called with
-    % caliboptions.whichcombos=1, =0 and absent; each vector must equal the hand-built one (the NaN targets dropped). The selectors from
+    % caliboptions.whichcombos=1 and =0; each vector must equal the hand-built one (the NaN targets dropped). The selectors from
     % SetupTargetMoments_FHorz are then handed straight to the two stats commands: untargeted combinations must come back NaN or absent.
     output=CalibFHorz_MomentVector(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
 end % doPart(2): the objective's moment vector
@@ -143,6 +150,12 @@ if doPart(7)==1
     fprintf('\n===== doPart(7): an iid shock through EiidShockFn with its dispersion calibrated, alone and with ExogShockFn =====\n')
     output=CalibFHorz_EiidShock(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
 end % doPart(7): EiidShockFn
+
+%% ===== doPart(8): AutoCorrTransProbs, CrossSectionCovarCorr, AgeConditionalCrossSectionCovarCorr targets =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets: parsing, moment vector, selectors, round trips, logmoments, runtime =====\n')
+    output=CalibFHorz_AutoCorrCrossSec(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
+end % doPart(8): the three new target kinds
 
 % All looks good!
 
