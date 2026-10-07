@@ -30,10 +30,11 @@
 % doPart(4): round trips through CalibrateLifeCycleModel: start at the truth (exact) and away from it (close), lsqnonlin and fminsearch, parameter constraints, omitcalibparam, ParametrizeParamsFn
 % doPart(5): shock grids that depend on a calibrated parameter (ExogShockFn), jequaloneDist as a function, CustomModelStats under both usergrids settings
 % doPart(6): runtime of one objective evaluation, whichcombos=1 vs =0 (informational)
+% doPart(7): an iid shock through EiidShockFn with its dispersion calibrated, alone and together with ExogShockFn
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -136,6 +137,12 @@ if doPart(6)==1
     % and for a dense one, with caliboptions.whichcombos=1 and =0. Prints the ratios; no identity is checked here.
     output=CalibFHorz_Runtime(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
 end % doPart(6): runtime
+
+%% ===== doPart(7): EiidShockFn =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): an iid shock through EiidShockFn with its dispersion calibrated, alone and with ExogShockFn =====\n')
+    output=CalibFHorz_EiidShock(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
+end % doPart(7): EiidShockFn
 
 % All looks good!
 

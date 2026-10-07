@@ -17,8 +17,7 @@
 % Pre-existing defects pinned here (fixed 2026-10-07 with the wiring): the omit-mask transpose test on the wrong variable, the
 % by-name and per-target-name forms of logmoments, a per-type (structure) ExogShockFn erroring in the calibrated-shocks detection.
 %
-% Not covered (later programmes): the estimation commands, the OLG/GE calibration commands, CMA-ES, per-type N_j (the age axis
-% logic for it is in SetupTargetMoments_FHorz and tested on the parsing side only, part 1).
+% Not covered (later programmes): the estimation commands, the OLG/GE calibration commands, CMA-ES.
 %
 % No figures are drawn anywhere in this bank, so only the diary is saved.
 
@@ -30,10 +29,11 @@
 % doPart(4): round trips: common and per-type parameters (structure and matrix forms), constraints, omitcalibparam, ParametrizeParamsFn
 % doPart(5): ExogShockFn common and per type with a calibrated parameter, jequaloneDist as a function, CustomModelStats under both grid settings
 % doPart(6): runtime of one objective evaluation, whichcombos=1 vs =0 (informational)
+% doPart(7): extensions: the type weights calibrated (via ParametrizeParamsFn, and the vector itself), per-type N_j with and without agejshifter, an iid shock through EiidShockFn (alone and with ExogShockFn), a semi-exogenous state with SemiExoStateFn common and per type
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -48,6 +48,7 @@ fprintf('CalibFHorzPTypeTests, run started %s, doPart=[%s] \n',char(datetime('no
 addpath('../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
 addpath('./CalibFHorzPTypeTests_subcodes/')
 addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
+addpath('../CoreFHorzTests/CoreFHorzTests_Setup/') % CoreFHorzSetup_SemiExoStateFn, for the semi-exogenous model of part 7
 
 %% The model: the CoreFHorzPTypeTests part-22 model on small grids
 n_d=0;
@@ -115,6 +116,12 @@ if doPart(6)==1
     fprintf('\n===== doPart(6): runtime of one objective evaluation, whichcombos=1 vs =0 (informational) =====\n')
     output=CalibFHorzPType_Runtime(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
 end % doPart(6)
+
+%% ===== doPart(7): extensions =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): type weights calibrated, per-type N_j, EiidShockFn, semi-exogenous state =====\n')
+    output=CalibFHorzPType_Extensions(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(7)
 
 % All looks good!
 
