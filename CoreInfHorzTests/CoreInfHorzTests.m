@@ -23,7 +23,7 @@
 % doPart(4): two-endo cross-tests: second state ignored
 % doPart(5): two-endo cross-tests: first state ignored
 % doPart(6): AutoCorrTransProbs brute force (z-only; e-only and z-and-e commented out pending InfHorz e; horizons and TransitionProbs vs dense kernels; no figures)
-% doPart(7): conditional restrictions in CrossSectionCovarCorr and AllStats, every statistic vs brute force (one and two endogenous states; no figures)
+% doPart(7): conditional restrictions in CrossSectionCovarCorr, AllStats and AutoCorrTransProbs, every statistic vs brute force (one and two endogenous states; no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -164,7 +164,7 @@ end % doPart(6): AutoCorrTransProbs brute force
 %% ===== doPart(7): conditional restrictions =====
 if doPart(7)==1
     fprintf('\n===== doPart(7): conditional restrictions =====\n')
-    %% EvalFnOnAgentDist_CrossSectionCovarCorr_InfHorz (restrictions new 2026-10-07) and EvalFnOnAgentDist_AllStats_InfHorz with
+    %% EvalFnOnAgentDist_CrossSectionCovarCorr_InfHorz and EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz (restrictions new 2026-10-07) and EvalFnOnAgentDist_AllStats_InfHorz with
     % simoptions.conditionalrestrictions, on a model with d and z and on the two-endogenous-state model of fig 11: every restricted
     % statistic and RestrictedSampleMass vs a brute force from ValuesOnGrid and the agent distribution; the cross-section command vs
     % AllStats; the always page equals the unrestricted output; a zero-mass restriction is NaN

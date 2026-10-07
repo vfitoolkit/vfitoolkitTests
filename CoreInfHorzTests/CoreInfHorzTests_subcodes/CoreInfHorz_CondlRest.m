@@ -4,7 +4,7 @@ function output=CoreInfHorz_CondlRest(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Para
 %   EvalFnOnAgentDist_AllStats_InfHorz                every statistic
 % on two models: with d and z (one endogenous state), and without d, with z and two endogenous states (assets and occupation,
 % the with2A model of fig 11: the cross-section command reshapes the two endogenous states into one joint grid).
-% (EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz does not take conditional restrictions.)
+%   EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz      Mean, StdDeviation, and the pair outputs at horizons 1,2,3 (new 2026-10-07)
 %
 % Checks:
 %   (1) every restricted (and the unrestricted) Mean, StdDeviation, CovarianceMatrix, CorrelationMatrix and RestrictedSampleMass of
@@ -18,6 +18,12 @@ function output=CoreInfHorz_CondlRest(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Para
 %   (4) the always page equals the unrestricted output, every leaf (both commands); the unrestricted cross-section output with
 %       restrictions equals a run without them
 %   (5) a restriction of zero mass in the cross-section command: warning, RestrictedSampleMass zero, NaN
+%   (6) AutoCorrTransProbs: every restricted Mean, StdDeviation, AutoCovariance, AutoCorrelation, PairMass, PairMean_t/_tplusk and
+%       PairStdDeviation_t/_tplusk at horizons 1,2,3 vs a brute force on the dense transition kernel T built here from Policy
+%       and pi_z: the joint distribution of (state now, state k periods on) is dist(s)*T^k(s,s'), the pair population is that
+%       joint distribution where the restriction holds at both ends, and every pair moment is a plain sum over it; the
+%       RestrictedSampleMass; the always page equals the unrestricted output (its autocovariances only up to the convergence
+%       error of the stationary distribution, see the check); a zero-mass restriction (warning, NaN, PairMass 0)
 
 npts=100; nq=20; tol=10^(-12); % the defaults of AllStats
 
@@ -290,8 +296,118 @@ for cc=1:2
     notnan=sum(~isnan(gather(CSN.never.CovarianceMatrix(:))))+sum(~isnan(gather(CSN.never.CorrelationMatrix(:))))+sum(isfield(CSN.never,FnNames));
     fprintf('CondlRest InfHorz CrossSection %s: zero-mass restriction: no warning + RestrictedSampleMass + entries not NaN + fn fields present, this should be zero: %.3e \n',configname,(1-warned)+abs(gather(CSN.never.RestrictedSampleMass))+notnan)
 
+    %% (6) AutoCorrTransProbs under the restrictions vs a brute force on the dense transition kernel
+    simoptions_acp=simoptions_R; simoptions_acp.timehorizons=[2,3];
+    ACP=EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz(StationaryDist,Policy,FnsToEvaluate,Params_c,[],n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,simoptions_acp);
+    horizons=[1,2,3];
+    % One-period kernel T(s,s')=1{a'=aprime(s)} pi_z(z,z'), state s=(a,z) in column-major order (a the joint endogenous state)
+    N_a=prod(n_a); N_z=prod(n_z);
+    if n_d(1)==0
+        l_d=0;
+    else
+        l_d=length(n_d);
+    end
+    Policy_cpu=reshape(gather(Policy),[size(Policy,1),N_a,N_z]);
+    if length(n_a)==1
+        aprimeidx=reshape(Policy_cpu(l_d+1,:,:),[N_a,N_z]);
+    else
+        aprimeidx=reshape(Policy_cpu(l_d+1,:,:)+n_a(1)*(Policy_cpu(l_d+2,:,:)-1),[N_a,N_z]);
+    end
+    pi_z_cpu=gather(pi_z);
+    T=zeros(N_ss,N_ss);
+    for zz=1:N_z
+        rows=(1:N_a)'+N_a*(zz-1);
+        for zz2=1:N_z
+            cols=aprimeidx(:,zz)+N_a*(zz2-1);
+            T(rows+(cols-1)*N_ss)=T(rows+(cols-1)*N_ss)+pi_z_cpu(zz,zz2);
+        end
+    end
+    fprintf('CondlRest InfHorz AutoCorr %s: kernel row sums minus one, this should be zero: %.3e \n',configname,max(abs(sum(T,2)-1)))
+    fprintf('CondlRest InfHorz AutoCorr %s: stationary dist pushed one period minus itself, this should be close to zero: %.3e \n',configname,max(abs(T'*SD-SD)))
+    dm=0; dc=0; nanmis=0; drsm=0;
+    Tk=eye(N_ss);
+    for kk=1:max(horizons)
+        Tk=Tk*T;
+        J=SD.*Tk; % joint distribution of (state now, state kk periods on)
+        for pp=2:npages
+            Rr=R(:,pp-1);
+            Jp=J.*(Rr*Rr'); % the pairs: the restriction holds now and kk periods on
+            PM=sum(Jp(:));
+            wsrc=sum(Jp,2); wdst=sum(Jp,1)';
+            P=ACP.(RestrNames{pp-1});
+            if kk==1
+                drsm=max(drsm,abs(gather(P.RestrictedSampleMass)-sum(SD.*Rr)));
+            end
+            for ff=1:nFns
+                x=V(:,ff);
+                if kk==1 % the restricted Mean and StdDeviation (over those satisfying the restriction now)
+                    w=SD.*Rr;
+                    if sum(w)>0
+                        w=w/sum(w); mu=sum(w.*x); sd=sqrt(sum(w.*(x-mu).^2));
+                    else
+                        mu=NaN; sd=NaN;
+                    end
+                    a=[gather(P.(FnNames{ff}).Mean);gather(P.(FnNames{ff}).StdDeviation)]; b=[mu;sd];
+                    nanmis=nanmis+sum(isnan(a)~=isnan(b)); d=abs(a-b); dm=max([dm;d(~isnan(d))]);
+                    Q=P.(FnNames{ff});
+                else
+                    Q=P.(FnNames{ff}).(['tperiods',num2str(kk)]);
+                end
+                if ~any(horizons==kk)
+                    continue
+                end
+                if PM>0
+                    mux=sum(wsrc.*x)/PM; muy=sum(wdst.*x)/PM;
+                    sdx=sqrt(sum(wsrc.*(x-mux).^2)/PM); sdy=sqrt(sum(wdst.*(x-muy).^2)/PM);
+                    cv=sum(sum(Jp.*((x-mux)*(x-muy)')))/PM;
+                    b=[PM;mux;muy;sdx;sdy;cv];
+                else
+                    b=[0;NaN;NaN;NaN;NaN;NaN];
+                end
+                a=gather([Q.PairMass;Q.PairMean_t;Q.PairMean_tplusk;Q.PairStdDeviation_t;Q.PairStdDeviation_tplusk;Q.AutoCovariance]);
+                nanmis=nanmis+sum(isnan(a)~=isnan(b)); d=abs(a-b); dm=max([dm;d(~isnan(d))]);
+                if PM>0 && sdx*sdy>1e-10 % the correlation, where the std devs are not rounding noise
+                    d=abs(gather(Q.AutoCorrelation)-cv/(sdx*sdy)); dc=max([dc;d(~isnan(d))]); nanmis=nanmis+isnan(gather(Q.AutoCorrelation));
+                end
+            end
+        end
+    end
+    fprintf('CondlRest InfHorz AutoCorr %s, every restriction, horizons 1,2,3: Mean/StdDeviation/PairMass/PairMeans/PairStdDeviations/AutoCovariance vs brute force, this should be zero: %.3e, NaN mismatches %i \n',configname,dm,nanmis)
+    fprintf('CondlRest InfHorz AutoCorr %s, every restriction, horizons 1,2,3: AutoCorrelation vs brute force (where the std devs are nonzero), this should be zero: %.3e \n',configname,dc)
+    fprintf('CondlRest InfHorz AutoCorr %s: RestrictedSampleMass vs brute force, this should be zero: %.3e \n',configname,drsm)
+    % The always page vs the unrestricted output. Exact: the Mean and StdDeviation, the pair population at t is everybody (so
+    % PairMean_t and PairStdDeviation_t equal them) and PairMass is one. Not exact: the unrestricted AutoCovariance takes the
+    % stationary distribution as the distribution both now and k periods on, while the pair outputs use the distribution
+    % actually pushed k periods on, so the two differ by the convergence error of the stationary distribution (the
+    % 'pushed one period minus itself' check above), times the size of the values; the brute force above checks the pair outputs.
+    maxd=0; mis=0; maxd2=0; mis2=0;
+    for ff=1:nFns
+        U=ACP.(FnNames{ff}); A=ACP.always.(FnNames{ff});
+        a=[U.Mean;U.StdDeviation;U.Mean;U.StdDeviation;U.Mean;U.StdDeviation;U.Mean;U.StdDeviation;1;1;1];
+        b=[A.Mean;A.StdDeviation;A.PairMean_t;A.PairStdDeviation_t;A.tperiods2.PairMean_t;A.tperiods2.PairStdDeviation_t;A.tperiods3.PairMean_t;A.tperiods3.PairStdDeviation_t;A.PairMass;A.tperiods2.PairMass;A.tperiods3.PairMass];
+        a=gather(a); b=gather(b);
+        mis=mis+sum(isnan(a)~=isnan(b)); d=abs(a-b); maxd=max([maxd;d(~isnan(d))]);
+        a=gather([U.AutoCovariance;U.AutoCorrelation;U.tperiods2.AutoCovariance;U.tperiods2.AutoCorrelation;U.tperiods3.AutoCovariance;U.tperiods3.AutoCorrelation]);
+        b=gather([A.AutoCovariance;A.AutoCorrelation;A.tperiods2.AutoCovariance;A.tperiods2.AutoCorrelation;A.tperiods3.AutoCovariance;A.tperiods3.AutoCorrelation]);
+        mis2=mis2+sum(isnan(a)~=isnan(b)); d=abs(a-b); maxd2=max([maxd2;d(~isnan(d))]);
+    end
+    fprintf('CondlRest InfHorz AutoCorr %s: page always vs the unrestricted output, Mean/StdDeviation/PairMean_t/PairStdDeviation_t and PairMass one, this should be zero: %.3e, mismatches %i \n',configname,maxd,mis)
+    fprintf('CondlRest InfHorz AutoCorr %s: page always vs the unrestricted output, AutoCovariance/AutoCorrelation (differ by the convergence error of the stationary dist), this should be close to zero: %.3e, mismatches %i \n',configname,maxd2,mis2)
+    % a restriction of zero mass
+    simoptions_N=simoptions; simoptions_N.conditionalrestrictions=NeverRest; simoptions_N.timehorizons=2;
+    lastwarn('');
+    ACPN=EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz(StationaryDist,Policy,FnsToEvaluate,Params_c,[],n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,simoptions_N);
+    warned=~isempty(lastwarn);
+    bad=(1-warned)+abs(gather(ACPN.never.RestrictedSampleMass));
+    for ff=1:nFns
+        Q=ACPN.never.(FnNames{ff});
+        bad=bad+sum(~isnan(gather([Q.Mean;Q.StdDeviation;Q.AutoCovariance;Q.AutoCorrelation;Q.tperiods2.AutoCovariance])))+abs(gather(Q.PairMass))+abs(gather(Q.tperiods2.PairMass));
+    end
+    fprintf('CondlRest InfHorz AutoCorr %s: zero-mass restriction: no warning + RestrictedSampleMass + PairMass + entries not NaN, this should be zero: %.3e \n',configname,bad)
+
     output.(configname).CrossSection=CS;
     output.(configname).AllStats=AS;
+    output.(configname).AutoCorr=ACP;
 end
 
 end
