@@ -24,6 +24,7 @@
 % doPart(5): two-endo cross-tests: first state ignored
 % doPart(6): AutoCorrTransProbs brute force (z-only; e-only and z-and-e commented out pending InfHorz e; horizons and TransitionProbs vs dense kernels; no figures)
 % doPart(7): conditional restrictions in CrossSectionCovarCorr, AllStats and AutoCorrTransProbs, every statistic vs brute force (one and two endogenous states; no figures)
+% doPart(8): simoptions.whichcombos (and per-combination whichstats) in AllStats, AggVars, AutoCorrTransProbs and CrossSectionCovarCorr (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -32,7 +33,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -170,6 +171,16 @@ if doPart(7)==1
     % AllStats; the always page equals the unrestricted output; a zero-mass restriction is NaN
     output=CoreInfHorz_CondlRest(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
 end % doPart(7): conditional restrictions
+
+%% ===== doPart(8): whichcombos =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): whichcombos =====\n')
+    %% simoptions.whichcombos (new 2026-10-07) in EvalFnOnAgentDist_AllStats_InfHorz (with per-combination whichstats),
+    % EvalFnOnAgentDist_AggVars_InfHorz, EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz and EvalFnOnAgentDist_CrossSectionCovarCorr_InfHorz,
+    % on the model with d and z: a selective run vs the full run leaf by leaf (selected leaves equal, unselected NaN or absent),
+    % broadcast inputs vs their expansions, invalid inputs error. The InfHorz counterpart of CoreFHorzTests part 13.
+    output=CoreInfHorz_WhichCombos(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
+end % doPart(8): whichcombos
 
 %% Done!
 

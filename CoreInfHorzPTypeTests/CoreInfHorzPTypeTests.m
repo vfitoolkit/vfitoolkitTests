@@ -6,8 +6,7 @@
 % shared setup (grids, parameters) come from CoreInfHorzTests.
 %
 % Not here, compared with CoreFHorzPTypeTests: there is no jequaloneDist, no N_j (so no per-type lifespans), no age-conditional
-% command, and no iid e (ValueFnIter_InfHorz does not support e yet). simoptions.whichcombos does not exist for the InfHorz
-% commands; adding it (and its part here, as CoreFHorzPTypeTests part 21) is to do once the rest of this bank is green.
+% command, and no iid e (ValueFnIter_InfHorz does not support e yet).
 %
 % No figures are drawn anywhere in this bank, so only the diary is saved.
 
@@ -30,12 +29,13 @@
 % doPart(12): AutoCorrTransProbs PType (new command): per type vs single-type, grouped vs pooled, with timehorizons and conditional restrictions
 % doPart(13): SimPanelValues PType (new command)
 % doPart(14): grouped CrossSection and AutoCorr PType, via z-identity
+% doPart(15): simoptions.whichcombos (and per-combination whichstats) in AllStats, AggVars, AutoCorr and CrossSection PType, with the type dimension
 % Parts 10-14 test the four commands new 2026-10-07 (written test first).
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -166,6 +166,17 @@ if doPart(14)==1
     % commands on the (z, type) model of part 2
     output=CoreInfHorzPType_ZidentityCorr(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,PTypeDistParamNames,simoptionsPT);
 end % doPart(14): grouped CrossSection and AutoCorr PType, via z-identity
+
+%% ===== doPart(15): whichcombos =====
+if doPart(15)==1
+    fprintf('\n===== doPart(15): whichcombos =====\n')
+    %% 15. simoptions.whichcombos (new 2026-10-07) in EvalFnOnAgentDist_AllStats_InfHorz_PType (with per-combination whichstats),
+    % EvalFnOnAgentDist_AggVars_InfHorz_PType, EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz_PType and
+    % EvalFnOnAgentDist_CrossSectionCovarCorr_InfHorz_PType: a selective run vs the full run leaf by leaf, per type and grouped,
+    % including a type-specific selection (the trailing type dimension; a grouped slot forces every type); broadcast inputs vs their
+    % expansions; invalid inputs error. The InfHorz counterpart of CoreFHorzPTypeTests part 21.
+    output=CoreInfHorzPType_WhichCombos(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,PTypeDistParamNames,simoptionsPT);
+end % doPart(15): whichcombos
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
