@@ -6,6 +6,9 @@ function output=CoreFHorzPType_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params
 %   EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType                   whichcombos [nFns, N_j, 1+nRestr] (the start-age dimension acts in the per-type command)
 %   EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType                whichcombos [nFns, nFns] (upper triangle; diagonal = own Mean/StdDev)
 %   EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType   whichcombos [nFns, nFns, nAgeGroups]
+% Every command but AggVars also takes a trailing type dimension of N_i+1 (the types in Names_i order, then the grouped slot; a grouped
+% slot forces every type's computation of that combination; a type's output is reported wherever computed, the grouped output only where
+% the grouped slot asks): LifeCycleProfiles and AllStats since 2026-10-07, AutoCorr and the two CrossSection commands since 2026-10-08.
 % Pages are the unrestricted output first, then the restrictions in the fieldnames order of simoptions.conditionalrestrictions.
 %
 % Every check compares a selective run against the full run leaf by leaf (CoreStructLeaves lists every numeric leaf with
@@ -872,6 +875,80 @@ catch
 end
 fprintf('WhichCombos AutoCorr PType, a wrong-size whichcombos must error, this should be zero: %.3e \n',1-errored)
 
+% (t1) the trailing type dimension (2026-10-08): a 3D whichcombos equals its 4D broadcast over the ptypes and the grouped slot, leaf by leaf
+simoptions_ac.whichcombos=wc3;
+A=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
+simoptions_ac.whichcombos=repmat(wc3,[1,1,1,N_i+1]);
+B=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
+[pA,vA]=CoreStructLeaves(A); [pB,vB]=CoreStructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos AutoCorr PType, type dimension: 3D input vs its 4D broadcast over the ptypes and the grouped slot, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
+% (t2) type-specific selection: type low gets unrestricted assets at every start age, type high nothing of its own, the grouped slot gets
+% earnings at odd start ages, unrestricted and on the rich page. A grouped slot forces that type-level computation for every type (the
+% grouped means, pair outputs and autocovariances at a start age are pooled from every type's), so earnings at odd start ages must be
+% present for both types too, NaN at the other start ages (the age-j Mean/StdDeviation are reported at every age, they are computed
+% anyway); the grouped outputs are NaN at the start ages the grouped slot did not ask for; a (fn, page) with nothing selected for a
+% slot has no leaf there; RestrictedSampleMass leaves are always whole.
+wcT=zeros(nFns,N_j,npages,N_i+1);
+wcT(fa,:,1,ilow)=1;
+wcT(fe,1:2:N_j,1,N_i+1)=1;
+wcT(fe,1:2:N_j,prich,N_i+1)=1;
+simoptions_ac.whichcombos=wcT;
+SubAC=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
+[pS3,vS3]=CoreStructLeaves(SubAC);
+maxd=0; nanmis=0; notnan_off=0; missing=0; extra=0;
+for k=1:numel(pF3)
+    segs=strsplit(pF3{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    pp=1;
+    if ismember(segs{1},RestrNames)
+        pp=1+find(strcmp(RestrNames,segs{1})); segs=segs(2:end);
+    end
+    if strcmp(segs{1},'RestrictedSampleMass')
+        expectpresent=true; sel=true(1,N_j);
+    else
+        ff=find(strcmp(FnNames,segs{1}));
+        if numel(segs)>=2 && ismember(segs{2},Names_i)
+            slot=find(strcmp(Names_i,segs{2}));
+            sel=reshape(max(wcT(ff,:,pp,slot),wcT(ff,:,pp,N_i+1))==1,[1,N_j]); % own slot, or forced by the grouped slot
+        else
+            sel=reshape(wcT(ff,:,pp,N_i+1)==1,[1,N_j]);
+        end
+        expectpresent=any(sel);
+    end
+    [present,idx]=ismember(pF3{k},pS3);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        else
+            a=vF3{k}; b=vS3{idx};
+            if ~isequal(size(a),size(b))
+                missing=missing+1;
+            else
+                n=numel(a);
+                if n==N_j
+                    onmask=true(1,n); % an age-j output (Mean, StdDeviation, RestrictedSampleMass): every age
+                else
+                    onmask=reshape(sel(1:n),[1,n]); % a horizon output: the selected start ages
+                end
+                a=reshape(a,[1,n]); b=reshape(b,[1,n]);
+                nanmis=nanmis+sum(isnan(a(onmask))~=isnan(b(onmask))); d=abs(a(onmask)-b(onmask)); d=d(~isnan(d)); maxd=max([maxd,d]);
+                notnan_off=notnan_off+sum(~isnan(b(~onmask)));
+            end
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichCombos AutoCorr PType, type-specific selection (low: assets; grouped: earnings at odd start ages, unrestricted and rich): selected entries, incl. the per-type outputs a grouped slot forces, vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected start ages not NaN + leaves missing + extra, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+extra+sum(~ismember(pS3,pF3)))
+
 %% ===================== CrossSectionCovarCorr PType =====================
 simoptions_cs=struct();
 FullCS=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_cs);
@@ -958,6 +1035,96 @@ catch
     errored=errored+1;
 end
 fprintf('WhichCombos CrossSection PType, a wrong-size whichcombos must error, this should be zero: %.3e \n',1-errored)
+
+% (t1) the trailing type dimension (2026-10-08): a 2D whichcombos equals its 3D broadcast over the ptypes and the grouped slot, leaf by leaf
+simoptions_cs.whichcombos=wcs;
+A=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_cs);
+simoptions_cs.whichcombos=repmat(wcs,[1,1,N_i+1]);
+B=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_cs);
+[pA,vA]=CoreStructLeaves(A); [pB,vB]=CoreStructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos CrossSection PType, type dimension: 2D input vs its 3D broadcast over the ptypes and the grouped slot, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
+% (t2) type-specific selection: type low gets the own stats of assets and the pair (assets, richind), type high nothing of its own, the
+% grouped slot gets the pair (earnings, richind) only. The grouped pair forces its two functions and their pair for every type (the grouped
+% covariance is pooled from every type's), so for type high earnings and richind are evaluated with that pair only; the own stats of an
+% evaluated function are reported for the type (byproducts); a per-type pair of two evaluated functions is NaN unless selected for that
+% type (own or forced); the grouped leaves are always present and NaN unless the grouped slot asks (the grouped own stats of a function
+% wherever any grouped entry of its row is on). The matrices are checked separately.
+wcT=zeros(nFns,nFns,N_i+1);
+fr=find(strcmp(FnNames,'richind'));
+wcT(fa,fa,ilow)=1; wcT(fa,fr,ilow)=1;
+wcT(fe,fr,N_i+1)=1;
+effG=max(wcT(:,:,N_i+1),wcT(:,:,N_i+1)');
+eff=cell(N_i,1);
+for ii=1:N_i
+    e=max(wcT(:,:,ii),wcT(:,:,N_i+1)); eff{ii}=max(e,e');
+end
+simoptions_cs.whichcombos=wcT;
+SubCS=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_cs);
+[pS4,vS4]=CoreStructLeaves(SubCS);
+maxd=0; nanmis=0; missing=0; extra=0; notnan_off=0;
+for k=1:numel(pF4)
+    segs=strsplit(pF4{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if any(strcmp(segs{1},{'CovarianceMatrix_ptype','CorrelationMatrix_ptype','CovarianceMatrix','CorrelationMatrix'}))
+        continue % the matrices are checked below
+    end
+    ff=find(strcmp(FnNames,segs{1}));
+    if ismember(segs{2},Names_i) % per-type leaf
+        E=eff{find(strcmp(Names_i,segs{2}))}; evaluated=any(E,2);
+        if numel(segs)==3 % .fn.ptype.Mean / .StdDeviation / .fn (self): present iff the function is evaluated for the type, equal
+            expectpresent=evaluated(ff); on=1;
+        else % .fn.ptype.CovarianceWith.fn2: present iff both evaluated for the type, equal iff the pair is selected for it else NaN
+            ff2=find(strcmp(FnNames,segs{4}));
+            expectpresent=evaluated(ff) && evaluated(ff2); on=E(ff,ff2);
+        end
+    else % grouped leaf: always present; equal iff the grouped slot asks else NaN
+        expectpresent=true;
+        if numel(segs)==2
+            on=any(effG(ff,:));
+        else
+            ff2=find(strcmp(FnNames,segs{3}));
+            on=effG(ff,ff2);
+        end
+    end
+    [present,idx]=ismember(pF4{k},pS4);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        elseif on==1
+            a=vF4{k}; b=vS4{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+        else
+            notnan_off=notnan_off+sum(~isnan(vS4{idx}(:)));
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichCombos CrossSection PType, type-specific selection (low: assets own + assets-richind; grouped: earnings-richind): selected leaves, incl. the per-type outputs a grouped slot forces, vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected leaves not NaN + missing + extra, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+extra+sum(~ismember(pS4,pF4)))
+Mf=gather(FullCS.CovarianceMatrix); Ms=gather(SubCS.CovarianceMatrix); Rf=gather(FullCS.CorrelationMatrix); Rs=gather(SubCS.CorrelationMatrix);
+on=(max(effG,diag(any(effG,2)))==1); % grouped pairs where the grouped slot asks; the diagonal (variance) wherever any grouped entry of the row is on
+dd=[abs(Mf(on)-Ms(on));abs(Rf(on)-Rs(on))]; dd=dd(~isnan(dd));
+dmat=0; badmat=sum(~isnan(Ms(~on)))+sum(~isnan(Rs(~on)))+sum(isnan(Ms(on))&~isnan(Mf(on)));
+for ii=1:N_i
+    E=eff{ii}; sel=find(any(E,2));
+    Mf_ii=gather(FullCS.CovarianceMatrix_ptype.(Names_i{ii})); Ms_ii=gather(SubCS.CovarianceMatrix_ptype.(Names_i{ii}));
+    if ~isequal(size(Ms_ii),[numel(sel),numel(sel)])
+        badmat=badmat+1;
+    else
+        onsub=max(E(sel,sel),eye(numel(sel)))==1;
+        Mf_sub=Mf_ii(sel,sel);
+        dmat=max(dmat,max(abs(Mf_sub(onsub)-Ms_ii(onsub))));
+        badmat=badmat+sum(~isnan(Ms_ii(~onsub)));
+    end
+end
+fprintf('WhichCombos CrossSection PType, type-specific selection, grouped and per-type covariance matrices: selected entries vs full run, this should be zero: %.3e; unselected entries not NaN + wrong sizes, this should be zero: %.3e \n',max([dd;dmat;0]),badmat)
 
 %% ===================== AgeConditionalStats CrossSectionCovarCorr PType =====================
 simoptions_acs=struct();
@@ -1067,6 +1234,112 @@ catch
     errored=errored+1;
 end
 fprintf('WhichCombos AgeConditional CrossSection PType, a wrong-size whichcombos must error, this should be zero: %.3e \n',1-errored)
+
+% (t1) the trailing type dimension (2026-10-08): a 3D whichcombos equals its 4D broadcast over the ptypes and the grouped slot, leaf by leaf
+simoptions_acs.whichcombos=wca;
+A=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_acs);
+simoptions_acs.whichcombos=repmat(wca,[1,1,1,N_i+1]);
+B=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_acs);
+[pA,vA]=CoreStructLeaves(A); [pB,vB]=CoreStructLeaves(B);
+maxd=0; nanmis=0;
+for k=1:numel(pA)
+    [present,idx]=ismember(pA{k},pB);
+    if present && isequal(size(vA{k}),size(vB{idx}))
+        a=vA{k}; b=vB{idx}; nanmis=nanmis+sum(isnan(a(:))~=isnan(b(:))); d=abs(a(:)-b(:)); d=d(~isnan(d)); maxd=max([maxd;d]);
+    else
+        nanmis=nanmis+1;
+    end
+end
+fprintf('WhichCombos AgeConditional CrossSection PType, type dimension: 3D input vs its 4D broadcast over the ptypes and the grouped slot, every leaf, this should be zero: %.3e, mismatches %i \n',maxd,nanmis+sum(~ismember(pB,pA)))
+% (t2) type-specific selection: type low gets the own stats of assets and the pair (assets, richind) in the odd age groups, type high nothing
+% of its own, the grouped slot gets the pair (earnings, richind) in the even age groups. The grouped pair forces its functions and their pair
+% for every type in those age groups; the own stats of a function are reported for a type in the age groups where it is evaluated for that
+% type (byproducts); a per-type pair of two evaluated functions is NaN in the age groups where it is not selected for the type; the grouped
+% leaves are always present and NaN except where the grouped slot asks. The matrices are checked separately.
+wcT=zeros(nFns,nFns,ngroups,N_i+1);
+wcT(fa,fa,1:2:ngroups,ilow)=1; wcT(fa,fr,1:2:ngroups,ilow)=1;
+wcT(fe,fr,2:2:ngroups,N_i+1)=1;
+effG=zeros(nFns,nFns,ngroups); eff=cell(N_i,1);
+for kk=1:ngroups
+    effG(:,:,kk)=max(wcT(:,:,kk,N_i+1),wcT(:,:,kk,N_i+1)');
+end
+for ii=1:N_i
+    e=max(wcT(:,:,:,ii),wcT(:,:,:,N_i+1));
+    for kk=1:ngroups
+        e(:,:,kk)=max(e(:,:,kk),e(:,:,kk)');
+    end
+    eff{ii}=e;
+end
+simoptions_acs.whichcombos=wcT;
+SubACS=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions_acs);
+[pS5,vS5]=CoreStructLeaves(SubACS);
+maxd=0; nanmis=0; missing=0; extra=0; notnan_off=0;
+for k=1:numel(pF5)
+    segs=strsplit(pF5{k},'.'); segs=segs(~cellfun(@isempty,segs));
+    if any(strcmp(segs{1},{'CovarianceMatrix_ptype','CorrelationMatrix_ptype','CovarianceMatrix','CorrelationMatrix'}))
+        continue
+    end
+    ff=find(strcmp(FnNames,segs{1}));
+    if ismember(segs{2},Names_i)
+        E=eff{find(strcmp(Names_i,segs{2}))}; evaluated=any(any(E,2),3);
+        if numel(segs)==3
+            expectpresent=evaluated(ff); onmask=reshape(any(E(ff,:,:),2),[1,ngroups]); % own stats: the age groups where the function is evaluated for the type
+        else
+            ff2=find(strcmp(FnNames,segs{4}));
+            expectpresent=evaluated(ff) && evaluated(ff2); onmask=reshape(E(ff,ff2,:)==1,[1,ngroups]);
+        end
+    else
+        expectpresent=true;
+        if numel(segs)==2
+            onmask=reshape(any(effG(ff,:,:),2),[1,ngroups]); % grouped own stats: where any grouped entry of the row is on
+        else
+            ff2=find(strcmp(FnNames,segs{3}));
+            onmask=reshape(effG(ff,ff2,:)==1,[1,ngroups]);
+        end
+    end
+    [present,idx]=ismember(pF5{k},pS5);
+    if expectpresent
+        if ~present
+            missing=missing+1;
+        else
+            a=vF5{k}; b=vS5{idx};
+            if ~isequal(size(a),size(b)) || numel(a)~=ngroups
+                missing=missing+1;
+            else
+                a=reshape(a,[1,ngroups]); b=reshape(b,[1,ngroups]);
+                nanmis=nanmis+sum(isnan(a(onmask))~=isnan(b(onmask))); d=abs(a(onmask)-b(onmask)); d=d(~isnan(d)); maxd=max([maxd,d]);
+                notnan_off=notnan_off+sum(~isnan(b(~onmask)));
+            end
+        end
+    elseif present
+        extra=extra+1;
+    end
+end
+fprintf('WhichCombos AgeConditional CrossSection PType, type-specific selection (low: assets own + assets-richind at odd age groups; grouped: earnings-richind at even age groups): selected entries, incl. the per-type outputs a grouped slot forces, vs full run, this should be zero: %.3e, NaN-pattern mismatches %i; unselected entries not NaN + missing + extra, this should be zero: %.3e \n',maxd,nanmis,notnan_off+missing+extra+sum(~ismember(pS5,pF5)))
+Mf=gather(FullACS.CovarianceMatrix); Ms=gather(SubACS.CovarianceMatrix); Rf=gather(FullACS.CorrelationMatrix); Rs=gather(SubACS.CorrelationMatrix);
+on=(effG==1);
+for kk=1:ngroups
+    on(:,:,kk)=max(on(:,:,kk),diag(any(effG(:,:,kk),2))); % the diagonal (variance) wherever any grouped entry of the row is on in that age group
+end
+dd=[abs(Mf(on)-Ms(on));abs(Rf(on)-Rs(on))]; dd=dd(~isnan(dd));
+dmat=0; badmat=sum(~isnan(Ms(~on)))+sum(~isnan(Rs(~on)))+sum(isnan(Ms(on))&~isnan(Mf(on)));
+for ii=1:N_i
+    E=eff{ii}; sel=find(any(any(E,2),3));
+    Mf_ii=gather(FullACS.CovarianceMatrix_ptype.(Names_i{ii})); Ms_ii=gather(SubACS.CovarianceMatrix_ptype.(Names_i{ii}));
+    if ~isequal(size(Ms_ii),[numel(sel),numel(sel),ngroups])
+        badmat=badmat+1;
+    else
+        onsub=false(numel(sel),numel(sel),ngroups);
+        for kk=1:ngroups
+            onsub(:,:,kk)=max(E(sel,sel,kk),diag(any(E(sel,:,kk),2)))==1;
+        end
+        Mf_sub=Mf_ii(sel,sel,:);
+        badmat=badmat+sum(isnan(Ms_ii(onsub))&~isnan(Mf_sub(onsub)));
+        dmat=max(dmat,max(abs(Mf_sub(onsub)-Ms_ii(onsub))));
+        badmat=badmat+sum(~isnan(Ms_ii(~onsub)));
+    end
+end
+fprintf('WhichCombos AgeConditional CrossSection PType, type-specific selection, grouped and per-type covariance matrices: selected entries vs full run, this should be zero: %.3e; unselected entries not NaN + wrong sizes, this should be zero: %.3e \n',max([dd;dmat;0]),badmat)
 
 output=struct();
 output.LifeCycleProfiles_full=Full;

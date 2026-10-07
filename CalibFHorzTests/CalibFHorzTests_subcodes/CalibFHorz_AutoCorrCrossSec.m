@@ -6,7 +6,7 @@ function output=CalibFHorz_AutoCorrCrossSec(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid
 %       (autocorrtimehorizons), the cumulative sizes; the selectors against hand-built ones (AutoCorr [nFns,N_j,1+nRestr] by start age,
 %       CrossSec [nFns,nFns] pair-shaped and symmetric, AgeCrossSec [nFns,nFns,ngroups]; a matrix target makes the reduced set the full
 %       one); the same targets in another field order give the same vector and selectors (the kinds have a fixed order); a call without
-%       the new fields gives empty new outputs; the three-input legacy call with the new fields errors; nine invalid inputs error
+%       the new fields gives empty new outputs; the three-input legacy call with the new fields errors; ten invalid inputs error
 %   (b) one solve at the truth, full runs of the three commands; targets from them with NaN omissions (start ages, pairs, age groups,
 %       matrix entries) and simoptions.agegroupings for the age-conditional kinds (the AutoCorr targets are per age regardless) and a
 %       user simoptions.timehorizons that the targets' horizons are joined to; the objective's moment vector (vectoroutput=1) under
@@ -46,7 +46,6 @@ TM.AutoCorrTransProbs.rich.assets.PairMass_k2=ones(1,N_j-2);                    
 TM.AutoCorrTransProbs.poor.consumption.StdDeviation=ones(1,N_j);                       % poor, every age
 TM.CrossSectionCovarCorr.assets.CorrelationWith.earnings=0.3;
 TM.CrossSectionCovarCorr.consumption.Mean=1;
-TM.CrossSectionCovarCorr.earnings.earnings=1;                                           % the self-correlation
 TM.AgeConditionalCrossSectionCovarCorr.assets.CovarianceWith.consumption=[NaN,1,1,1];
 t=nan(4,4,ngroups); t(1,2,2:3)=1; t(4,4,1)=1; TM.AgeConditionalCrossSectionCovarCorr.CorrelationMatrix=t; % a matrix: over every FnsToEvaluate
 
@@ -55,7 +54,7 @@ t=nan(4,4,ngroups); t(1,2,2:3)=1; t(4,4,1)=1; TM.AgeConditionalCrossSectionCovar
 % the hand-built target vector: AllStats, AgeConditionalStats, AutoCorrTransProbs, CrossSectionCovarCorr, AgeConditionalCrossSectionCovarCorr, each in its field order, vectorised column-major
 hand=[1.1; [NaN;2;3;4]; TM.AutoCorrTransProbs.earnings.Mean(:); TM.AutoCorrTransProbs.earnings.AutoCorrelation(:); TM.AutoCorrTransProbs.earnings.AutoCovariance_k3(:); ...
     TM.AutoCorrTransProbs.rich.assets.AutoCorrelation(:); TM.AutoCorrTransProbs.rich.assets.PairMass_k2(:); TM.AutoCorrTransProbs.poor.consumption.StdDeviation(:); ...
-    0.3; 1; 1; [NaN;1;1;1]; TM.AgeConditionalCrossSectionCovarCorr.CorrelationMatrix(:)];
+    0.3; 1; [NaN;1;1;1]; TM.AgeConditionalCrossSectionCovarCorr.CorrelationMatrix(:)];
 if length(targetmomentvec)==length(hand)
     d=abs(targetmomentvec-hand); d=d(:); d=d(~isnan(d));
     patternbad=sum(isnan(targetmomentvec)~=isnan(hand));
@@ -63,9 +62,9 @@ else
     d=1; patternbad=abs(length(targetmomentvec)-length(hand));
 end
 fprintf('AutoCorrCrossSec (a) targetmomentvec vs hand-built (%i entries), this should be zero: %.3e; length + NaN-pattern mismatches, this should be zero: %.3e \n',length(hand),max([d;0]),patternbad)
-handAC=N_j+(N_j-1)+(N_j-3)+(N_j-1)+(N_j-2)+N_j; handX=3; handAX=ngroups+16*ngroups;
+handAC=N_j+(N_j-1)+(N_j-3)+(N_j-1)+(N_j-2)+N_j; handX=2; handAX=ngroups+16*ngroups;
 fprintf('AutoCorrCrossSec (a) flags usingautocorr, usingcrosssec, usingagecrosssec = %i %i %i (hand 1 1 1), usingallstats, usinglcp, usingcustomstats = %i %i %i (hand 1 1 0); cumulative sizes end AutoCorr %i (hand %i), CrossSec %i (hand %i), AgeCrossSec %i (hand %i), this should be zero: %.3e \n',usingautocorr,usingcrosssec,usingagecrosssec,usingallstats,usinglcp,usingcustomstats,autocorrcummomentsizes(end),handAC,crossseccummomentsizes(end),handX,agecrossseccummomentsizes(end),handAX,abs(usingautocorr-1)+abs(usingcrosssec-1)+abs(usingagecrosssec-1)+abs(usingallstats-1)+abs(usinglcp-1)+abs(usingcustomstats)+abs(autocorrcummomentsizes(end)-handAC)+abs(crossseccummomentsizes(end)-handX)+abs(agecrossseccummomentsizes(end)-handAX)+abs(allstatcummomentsizes(end)-1)+abs(acscummomentsizes(end)-4)+abs(cmscummomentsizes))
-fprintf('AutoCorrCrossSec (a) autocorrtimehorizons [%s] (hand [2 3]), names tables of %i, %i, %i rows (hand 6, 3, 2): horizons, this should be zero: %.3e; rows, this should be zero: %.3e \n',num2str(autocorrtimehorizons),size(autocorrmomentnames,1),size(crosssecmomentnames,1),size(agecrosssecmomentnames,1),~isequal(autocorrtimehorizons(:)',[2,3]),abs(size(autocorrmomentnames,1)-6)+abs(size(crosssecmomentnames,1)-3)+abs(size(agecrosssecmomentnames,1)-2))
+fprintf('AutoCorrCrossSec (a) autocorrtimehorizons [%s] (hand [2 3]), names tables of %i, %i, %i rows (hand 6, 2, 2): horizons, this should be zero: %.3e; rows, this should be zero: %.3e \n',num2str(autocorrtimehorizons),size(autocorrmomentnames,1),size(crosssecmomentnames,1),size(agecrosssecmomentnames,1),~isequal(autocorrtimehorizons(:)',[2,3]),abs(size(autocorrmomentnames,1)-6)+abs(size(crosssecmomentnames,1)-2)+abs(size(agecrosssecmomentnames,1)-2))
 
 % the selectors: AutoCorr over assets, earnings, consumption (FnsToEvaluate order; richind has no AutoCorr target)
 FnAC=fieldnames(FnsToEvaluate_AutoCorr);
@@ -80,7 +79,7 @@ if fnok
 end
 % CrossSec over assets, earnings, consumption (no matrix target, richind untargeted); AgeCrossSec over all four (the matrix target)
 FnX=fieldnames(FnsToEvaluate_CrossSec);
-wcX=zeros(3,3); wcX(1,2)=1; wcX(2,1)=1; wcX(3,3)=1; wcX(2,2)=1;
+wcX=zeros(3,3); wcX(1,2)=1; wcX(2,1)=1; wcX(3,3)=1; % (earnings is in the set through its pair with assets; its own stats are byproducts, not targets)
 FnAX=fieldnames(FnsToEvaluate_AgeCrossSec);
 wcAX=zeros(4,4,ngroups); wcAX(1,3,2:4)=1; wcAX(3,1,2:4)=1; wcAX(1,2,2:3)=1; wcAX(2,1,2:3)=1; wcAX(4,4,1)=1;
 fnok=isequal(FnX,{'assets';'earnings';'consumption'}); fnok2=isequal(FnAX,FnNames);
@@ -127,7 +126,7 @@ bad=bad+~isempty(selectors0.AutoCorr.whichcombos)+~isempty(selectors0.CrossSec.w
 d=abs(tv0-targetmomentvec(1:5)); d=d(~isnan(d));
 fprintf('AutoCorrCrossSec (a) targets without the new fields: new outputs empty and flags zero, this should be zero: %.3e; target vector vs the first five entries, this should be zero: %.3e \n',bad,max([d;0]))
 
-% invalid inputs must error: the legacy call with the new fields, and nine bad targets
+% invalid inputs must error: the legacy call with the new fields, and ten bad targets
 errored=0;
 try
     SetupTargetMoments_FHorz(TM,FnsToEvaluate,0); % three-input call (no N_j, no simoptions) with the new fields
@@ -188,7 +187,13 @@ try
 catch
     errored=errored+1;
 end
-fprintf('AutoCorrCrossSec (a) the legacy call with the new fields and nine invalid targets must all error, this should be zero: %.3e \n',10-errored)
+TMbad=TM; TMbad.CrossSectionCovarCorr.earnings.earnings=1; % the self-correlation is always one, not a target (dropped 2026-10-08)
+try
+    SetupTargetMoments_FHorz(TMbad,FnsToEvaluate,0,N_j,simoptions);
+catch
+    errored=errored+1;
+end
+fprintf('AutoCorrCrossSec (a) the legacy call with the new fields and ten invalid targets must all error, this should be zero: %.3e \n',11-errored)
 
 %% (b) one solve at the truth, full runs of the three commands, the objective's moment vector
 vfoptions=struct();
@@ -220,7 +225,6 @@ TMb.AutoCorrTransProbs.rich.assets.PairMass_k2=gather(ACFull.rich.assets.PairMas
 TMb.AutoCorrTransProbs.poor.consumption.StdDeviation=gather(ACFull.poor.consumption.StdDeviation);
 TMb.CrossSectionCovarCorr.assets.CorrelationWith.earnings=gather(CSFull.assets.CorrelationWith.earnings);
 TMb.CrossSectionCovarCorr.consumption.Mean=gather(CSFull.consumption.Mean);
-TMb.CrossSectionCovarCorr.earnings.earnings=gather(CSFull.earnings.earnings);
 t=gather(AXFull.assets.CovarianceWith.consumption); t(1)=NaN; TMb.AgeConditionalCrossSectionCovarCorr.assets.CovarianceWith.consumption=t;
 t=gather(AXFull.CorrelationMatrix); m=nan(size(t)); m(1,2,2:3)=t(1,2,2:3); m(4,4,1)=t(4,4,1); TMb.AgeConditionalCrossSectionCovarCorr.CorrelationMatrix=m;
 
@@ -324,7 +328,7 @@ bad=0;
 bad=bad+~isnan(gather(CSsel.assets.CorrelationWith.consumption));                 % an unwanted pair of two evaluated functions
 bad=bad+~isnan(gather(CSsel.CovarianceMatrix(1,3)))+~isnan(gather(CSsel.CovarianceMatrix(2,3)));
 bad=bad+isfield(CSsel,'richind');                                                 % not in the reduced set at all
-d=[abs(gather(CSsel.assets.CorrelationWith.earnings)-gather(CSFull.assets.CorrelationWith.earnings)); abs(gather(CSsel.consumption.Mean)-gather(CSFull.consumption.Mean)); abs(gather(CSsel.earnings.earnings)-1); abs(gather(CSsel.CorrelationMatrix(1,2))-gather(CSFull.CorrelationMatrix(1,2)))];
+d=[abs(gather(CSsel.assets.CorrelationWith.earnings)-gather(CSFull.assets.CorrelationWith.earnings)); abs(gather(CSsel.consumption.Mean)-gather(CSFull.consumption.Mean)); abs(gather(CSsel.CorrelationMatrix(1,2))-gather(CSFull.CorrelationMatrix(1,2)))];
 fprintf('AutoCorrCrossSec (c) CrossSectionCovarCorr with the selectors: targeted entries vs full run, this should be zero: %.3e; unwanted pairs not NaN or function present, this should be zero: %.3e \n',max(d),bad)
 simselAX=simoptions; simselAX.whichcombos=selectors.AgeCrossSec.whichcombos;
 AXsel=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate_AgeCrossSec,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simselAX);

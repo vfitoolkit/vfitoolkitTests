@@ -46,7 +46,7 @@
 % doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
 % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
 % doPart(21): AutoCorr PType grouping (timehorizons, conditional restrictions) vs a by-hand pooling of brute-force joint distributions
-% doPart(22): simoptions.whichcombos (and per-combination whichstats) across the PType commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr, CrossSection, AgeConditional CrossSection, vs their full runs; LifeCycleProfiles and AllStats also with the trailing type dimension (per ptype + grouped, a grouped slot forcing the per-type stats)
+% doPart(22): simoptions.whichcombos (and per-combination whichstats) across the PType commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr, CrossSection, AgeConditional CrossSection, vs their full runs; every command also with the trailing type dimension (N_i+1 slots: types, then grouped; a grouped slot forces every type)
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
