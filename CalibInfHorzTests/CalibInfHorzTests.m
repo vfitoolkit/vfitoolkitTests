@@ -35,10 +35,13 @@
 % doPart(2): the objective's moment vector vs a hand-built one from full AllStats/AutoCorrTransProbs/CrossSectionCovarCorr runs; whichcombos 1 and 0; the selectors handed straight to the three commands
 % doPart(3): objective forms (sum_squared, sum_logratiosquared, MethodOfMoments, residual vector, logmoments, weights) vs their formulas; logmoments and weights plumbing through CalibrateInfHorzAgentModel
 % doPart(4): round trips through CalibrateInfHorzAgentModel: start at the truth (exact) and away from it (close), lsqnonlin and fminsearch, parameter constraints, omitcalibparam, ParametrizeParamsFn
+% doPart(5): shock grids that depend on a calibrated parameter (ExogShockFn, rho_z), CustomModelStats under both usergrids settings and together with ExogShockFn
+% doPart(6): round trips on the AutoCorrTransProbs and CrossSectionCovarCorr targets: restricted, with a horizon suffix (rho_z), a four-level cross-section name (beta), matrix targets, logmoments by their names
+% doPart(7): runtime of one objective evaluation, whichcombos=1 vs =0 (informational)
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -119,6 +122,33 @@ if doPart(4)==1
     % ParametrizeParamsFn each recover from a wrong start.
     output=CalibInfHorz_RoundTrips(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,ReturnFn);
 end % doPart(4): round trips
+
+%% ===== doPart(5): shocks that depend on calibrated parameters, CustomModelStats =====
+if doPart(5)==1
+    fprintf('\n===== doPart(5): ExogShockFn with a calibrated parameter, CustomModelStats =====\n')
+    %% 5. vfoptions.ExogShockFn with the autocorrelation of z calibrated (the shock grids are rebuilt every evaluation): at the truth
+    % the objective is zero, from a wrong start rho_z is recovered. CustomModelStats targets: a by-hand mean of assets (equal to the
+    % AllStats one) and a check that the z_grid handed to the custom function is the user's grid (usergrids=1) or the internal joint
+    % grid (usergrids=0); and usergrids=1 together with ExogShockFn (the user's grid as rebuilt from the current parameters).
+    output=CalibInfHorz_ShocksCustomStats(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,ReturnFn);
+end % doPart(5)
+
+%% ===== doPart(6): restricted AutoCorrTransProbs and CrossSectionCovarCorr targets, round trips and logmoments =====
+if doPart(6)==1
+    fprintf('\n===== doPart(6): round trips on the AutoCorrTransProbs and CrossSectionCovarCorr targets (restricted, horizons, matrices), logmoments by name =====\n')
+    %% 6. rho_z (ExogShockFn) from the autocorrelation of assets among the rich at horizons one and two and the autocorrelation of
+    % earnings; beta from the assets-consumption correlation among the rich and the assets-earnings covariance, with whichcombos=0
+    % identical; the two matrix targets at the truth; caliboptions.logmoments by a three-level and a four-level name.
+    output=CalibInfHorz_RestrictedTargets(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,ReturnFn);
+end % doPart(6)
+
+%% ===== doPart(7): runtime =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): runtime of one objective evaluation, whichcombos=1 vs =0 (informational) =====\n')
+    %% 7. One objective evaluation, timed, for a sparse target set and for a dense one, with caliboptions.whichcombos=1 and =0.
+    % Prints the ratios; no identity is checked here.
+    output=CalibInfHorz_Runtime(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,ReturnFn);
+end % doPart(7)
 
 % All looks good!
 
