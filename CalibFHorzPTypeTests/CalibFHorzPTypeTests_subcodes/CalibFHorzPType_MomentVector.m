@@ -63,6 +63,7 @@ TM.AgeConditionalStats.consumption.low.RatioMeanToMedian=gather(LCPFull.consumpt
 t=gather(LCPFull.rich.earnings.Mean); t(1:3)=NaN; TM.AgeConditionalStats.rich.earnings.Mean=t;
 t=gather(LCPFull.rich.earnings.low.Mean); t(1:3)=NaN; TM.AgeConditionalStats.rich.earnings.low.Mean=t;
 TM.AgeConditionalStats.poor.assets.high.Mean=gather(LCPFull.poor.assets.high.Mean);
+TM.AgeConditionalStats.poor.earnings.high.Mean=nan(1,N_j); % a per-type target that is NaN in full: it must warn and be dropped, with whichcombos=1 nothing is computed for it (2026-10-09)
 
 % The hand-built vector: walk TargetMoments (two to four levels) and read the same field of the full run (same nesting); the target
 % vector by the same walk
@@ -126,7 +127,10 @@ caliboptions.useCustomModelStats=0;
 caliboptions.calibrateshocks=0;
 caliboptions.calibsemiexo=0;
 [calibparamsvec0,caliboptions]=ParameterConstraints_PType_TransformParamsToUnconstrained(calibparamsvec0,calibparamsvecindex,CalibParamNames,nCalibParamsFinder,caliboptions,1);
+lastwarn('');
 [targetmomentvec,usingallstats,usinglcp,usingcustomstats,allstatmomentnames,allstatcummomentsizes,AllStats_whichstats,FnsToEvaluate_AllStats,acsmomentnames,acscummomentsizes,ACStats_whichstats,FnsToEvaluate_ACStats,cmsmomentnames,cmscummomentsizes,selectors,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec]=SetupTargetMoments_FHorz(TM,FnsToEvaluate,1,N_j,simoptions,Names_i);
+wmsg=lastwarn;
+fprintf('MomentVector: the target that is NaN in full makes SetupTargetMoments_FHorz warn (the warning names it), did not, this should be zero: %.3e \n',~contains(wmsg,'poor.earnings.high.Mean is NaN in full'))
 caliboptions.weights=ones(sum(~isnan(targetmomentvec)),1);
 argcell={CalibParamNames,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec,nCalibParams,nCalibParamsFinder,calibparamsvecindex,calibparamssizes,calibomitparams_counter,calibomitparamsmatrix};
 

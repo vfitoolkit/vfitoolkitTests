@@ -67,6 +67,8 @@ TM.AgeConditionalStats.consumption.RatioMeanToMedian=gather(LCPFull.consumption.
 t=gather(LCPFull.rich.earnings.Mean); t(1:3)=NaN; TM.AgeConditionalStats.rich.earnings.Mean=t;
 TM.AgeConditionalStats.poor.assets.Mean=gather(LCPFull.poor.assets.Mean);
 TM.AgeConditionalStats.rich.consumption.Minimum=gather(LCPFull.rich.consumption.Minimum);
+TM.AgeConditionalStats.poor.earnings.Mean=nan(1,N_j); % a target that is NaN in full: it must warn and be dropped, with whichcombos=1 nothing is computed for it (2026-10-09)
+TM.AllStats.poor.richind.Gini=NaN; % the same for an AllStats target
 
 % The hand-built vector: walk TargetMoments in field order and read the same field of the full run (the full-run structs have the
 % same nesting as the targets, for restrictions and for MoreInequality alike); then the target vector by the same walk
@@ -127,7 +129,10 @@ caliboptions.vectoroutput=1;
 caliboptions.useCustomModelStats=0;
 caliboptions.calibrateshocks=0;
 [calibparamsvec0,caliboptions]=ParameterConstraints_TransformParamsToUnconstrained(calibparamsvec0,calibparamsvecindex,CalibParamNames,caliboptions,1);
+lastwarn('');
 [targetmomentvec,usingallstats,usinglcp,usingcustomstats,allstatmomentnames,allstatcummomentsizes,AllStats_whichstats,FnsToEvaluate_AllStats,acsmomentnames,acscummomentsizes,ACStats_whichstats,FnsToEvaluate_ACStats,cmsmomentnames,cmscummomentsizes,selectors,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec]=SetupTargetMoments_FHorz(TM,FnsToEvaluate,0,N_j,simoptions);
+wmsg=lastwarn;
+fprintf('MomentVector: the two targets that are NaN in full make SetupTargetMoments_FHorz warn (the last warning names one), did not, this should be zero: %.3e; the selectors leave them off, this should be zero: %.3e \n',~contains(wmsg,'is NaN in full'),selectors.AllStats.whichcombos(strcmp(fieldnames(FnsToEvaluate_AllStats),'richind'),3)+any(selectors.ACStats.whichcombos(strcmp(fieldnames(FnsToEvaluate_ACStats),'earnings'),:,3)))
 caliboptions.weights=ones(sum(~isnan(targetmomentvec)),1);
 argcell={CalibParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,[],Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,[],FnsToEvaluate,[],usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec,calibparamsvecindex,calibomitparams_counter,calibomitparamsmatrix};
 
@@ -187,6 +192,7 @@ if isfield(AllSel.poor,'consumption')
 end
 bad=bad+isfield(AllSel.richind,'Gini'); % only richind's Mean is targeted
 bad=bad+isfield(AllSel.rich,'consumption'); % nothing of consumption under rich
+bad=bad+isfield(AllSel.poor,'richind'); % the target that is NaN in full selects nothing
 fprintf('MomentVector (c) AllStats with the selectors: targeted assets Mean vs full run, this should be zero: %.3e; untargeted structs present, this should be zero: %.3e \n',abs(gather(AllSel.assets.Mean)-gather(AllFull.assets.Mean)),bad)
 
 output=struct();

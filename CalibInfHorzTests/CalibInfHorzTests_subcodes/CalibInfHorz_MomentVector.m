@@ -134,14 +134,16 @@ caliboptions.vectoroutput=1;
 caliboptions.useCustomModelStats=0;
 caliboptions.calibrateshocks=0;
 [calibparamsvec0,caliboptions]=ParameterConstraints_TransformParamsToUnconstrained(calibparamsvec0,calibparamsvecindex,CalibParamNames,caliboptions,1);
-ran=0;
+ran=0; wmsg='';
+lastwarn('');
 try
     [targetmomentvec,usingallstats,usingautocorr,usingcrosssec,usingcustomstats,allstatmomentnames,allstatcummomentsizes,AllStats_whichstats,FnsToEvaluate_AllStats,autocorrmomentnames,autocorrcummomentsizes,AutoCorrStats_whichstats,FnsToEvaluate_AutoCorr,crosssecmomentnames,crossseccummomentsizes,CrossSecStats_whichstats,FnsToEvaluate_CrossSec,cmsmomentnames,cmscummomentsizes,selectors,autocorrtimehorizons]=SetupTargetMoments_InfHorz(TM,FnsToEvaluate,0,simoptions);
-    ran=1;
+    ran=1; wmsg=lastwarn;
 catch err
     fprintf('MomentVector: SetupTargetMoments_InfHorz errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
 end
 fprintf('MomentVector: SetupTargetMoments_InfHorz with simoptions, did not run, this should be zero: %.3e \n',1-ran)
+fprintf('MomentVector: the target that is NaN in full (poor.earnings.AutoCorrelation) makes SetupTargetMoments_InfHorz warn (the warning names it), did not, this should be zero: %.3e \n',~contains(wmsg,'poor.earnings.AutoCorrelation is NaN in full'))
 output=struct();
 output.TargetMoments=TM;
 output.hand=hand(actual);
