@@ -34,8 +34,9 @@ function output=CoreInfHorzTPath_localsearch_shooting(T,n_a_GE,n_z,a_grid_GE,z_g
 % below the kernel launch floor, so every solve here is launch bound and a timing would say nothing.
 % The speed of the restricted sweep is measured in doPart(5) on the big grid. What this part is for
 % is whether the scheme CONVERGES TO THE SAME PLACE, how many verification sweeps it costs, and the
-% rate at which the window binds -- that last being the number that decides whether the Anderson
-% algorithm could be made exact iteration by iteration, which is what it would need and this does not.
+% window trajectory the ratchet settles on. Check (7) adds the measurements that bear on whether the
+% Anderson algorithm could be given local search at all; the edge-hit RATE is not that number, since
+% the ratchet drives it towards zero by construction and so it says nothing about accuracy.
 
 vfoptions=struct();
 simoptions=struct();
@@ -212,6 +213,73 @@ catch ME
     err6=contains(ME.message,'must both be at least 1');
 end
 fprintf('localsearch shooting: (6) a ratchet step below one is refused by name, should be one: %i \n',err6)
+
+%% (7) THE GRID INTERPOLATION LAYER, which is the GE scheme's untested half
+% doPart(4) and doPart(5) cover the restricted value fn STEP with GI. What they cannot cover is the
+% two GI paths that only exist inside the general eqm scheme, and that nothing had ever run before
+% this block:
+%   - Step1 converting a STANDARD sweep's Policy into a coarse reference, which under GI means
+%     compressing (lower coarse point, L2) to the nearest coarse point.
+%   - The GI branch of the EDGE TEST that drives the ratchet. Choosing a fine point strictly inside
+%     the window's end coarse points must NOT ratchet; only the two extreme coarse points count.
+% Both are statically sound, and both are the same kind of code that has twice been statically sound
+% and wrong in this programme -- the linidx_upper overrun, and the GI refusal that outlived the
+% feature it refused. So they get run.
+%
+% The comparison is GI-LOCALSEARCH AGAINST GI-STANDARD, not against the no-GI standard solve of (A).
+% GI changes the discretisation and so moves the answer by a little on its own; comparing across that
+% would mix the discretisation difference into a check that is supposed to isolate the restriction.
+% Terminal V and initial distribution are likewise recomputed with GI, so the pair solves one problem.
+ngi=5; % the value the rest of this bank uses for ngridinterp
+vfoptionsGI=vfoptions;
+vfoptionsGI.gridinterplayer=1;
+vfoptionsGI.ngridinterp=ngi;
+simoptionsGI=simoptions;
+simoptionsGI.gridinterplayer=vfoptionsGI.gridinterplayer;
+simoptionsGI.ngridinterp=vfoptionsGI.ngridinterp;
+[V_finalGE_GI,Policy_finalGE_GI]=ValueFnIter_InfHorz(n_d,n_a_GE,n_z,d_grid,a_grid_GE,z_grid,pi_z,ReturnFn,ParamsGE,DiscountFactorParamNames,[],vfoptionsGI);
+AgentDist_initialGE_GI=StationaryDist_InfHorz(Policy_finalGE_GI,n_d,n_a_GE,n_z,pi_z,simoptionsGI,ParamsGE,[]);
+
+[PricePathGIstd,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptionsGI, vfoptionsGI, []);
+
+vfoptionsGIls=vfoptionsGI;
+vfoptionsGIls.localsearch=1;
+vfoptionsGIls.nlocalsearch=3;
+[PricePathGIls,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptionsGI, vfoptionsGIls, []);
+
+fprintf('localsearch shooting: (7) GI, nlocalsearch starting at 3 vs the standard GI solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathGIls.r)-gather(PricePathGIstd.r))))
+fprintf('localsearch shooting: (7) GI, nlocalsearch starting at 3 vs the standard GI solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathGIls.w)-gather(PricePathGIstd.w))))
+
+%% (8) The Anderson diagnostic, measured on the nlocalsearch=3 solve
+% transpathoptions.localsearchdiagnostic=1 turns on two measurements inside the shooting loop, both
+% aimed at ONE question: could Anderson be given local search, and if so with what reference.
+%   - CUMULATIVE movement. How far the policy ends up from the reference the FIRST standard sweep
+%     produced, against the per-iteration movement. A FROZEN reference is what Anderson could have
+%     without forking AndersonAcceleration, because a pure residual closure can capture one by value.
+%     It has to span the cumulative figure, so if that is far larger than the per-iteration one then
+%     a frozen reference needs a window wide enough to give most of the speed-up back.
+%   - RESIDUAL CONTAMINATION, per iteration: the restricted sweep's general eqm residual against the
+%     residual an EXACT sweep gives at the SAME prices, divided by the genuine change in residual
+%     from the previous iteration. That is precisely the signal-to-noise of what Anderson would store
+%     in DeltaF. Small means a per-iteration reference is safe to hand it; of order one means the
+%     differences Anderson extrapolates from are mostly the error the restriction introduced.
+% The ratio is taken per iteration and NOT as one maximum over another, because the genuine change is
+% largest early while contamination matters most late, so two separately-maximised numbers would be
+% drawn from different iterations and read far too favourably.
+%
+% The measurement costs a second full iteration every restricted sweep, which is why it is off by
+% default and why this runs on one solve rather than all of them.
+transpathoptionsDiag=transpathoptionsS;
+transpathoptionsDiag.localsearchdiagnostic=1;
+[PricePathDiag,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsDiag, simoptions, vfoptionsC, []);
+
+% The diagnostic must be PURE OBSERVATION. Its extra sweep takes only the first output, so nothing it
+% computes is written back to the reference path, the Policy path or the loop's own state, and the
+% solve it watches must therefore follow a bit-identical trajectory to the same solve without it.
+% Held as an IDENTITY, not a tolerance: anything other than exact agreement means the measurement is
+% changing what it measures, which would make every number above describe a different solve.
+fprintf('localsearch shooting: (8) the diagnostic is pure observation, its solve vs the same solve without it, r, this should be zero: %2.8f \n',max(abs(gather(PricePathDiag.r)-gather(PricePathC.r))))
+fprintf('localsearch shooting: (8) the diagnostic is pure observation, its solve vs the same solve without it, w, this should be zero: %2.8f \n',max(abs(gather(PricePathDiag.w)-gather(PricePathC.w))))
 
 output=struct();
 
