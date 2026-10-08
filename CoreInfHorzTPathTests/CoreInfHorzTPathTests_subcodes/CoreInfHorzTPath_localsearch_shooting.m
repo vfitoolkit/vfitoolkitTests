@@ -19,6 +19,17 @@ function output=CoreInfHorzTPath_localsearch_shooting(T,n_a_GE,n_z,a_grid_GE,z_g
 % perturbation's. Were they allowed through, they would run every iteration against the stay-put
 % default reference and never take a verification sweep, and return a wrong path in silence.
 %
+% NLOCALSEARCH IS A STARTING WINDOW, NOT THE WINDOW. The shooting loop ratchets it up by
+% vfoptions.nlocalsearchup (default 2) whenever the answer sat on a window edge anywhere, and down by
+% nlocalsearchdown (default 1) otherwise, resetting to the input value after every standard sweep.
+% Edges at the GRID's own ends do not count: those are corner solutions, and counting them would
+% ratchet the window to its cap forever on any model with a top-of-grid saver or a constrained
+% household -- which is to say, on all of them.
+% So the three starts below (1, 3 and 25) test that the controller reaches a workable window from
+% BOTH directions: 1 has to ratchet up, 25 has to ratchet down. The trajectory each one took is in
+% the Local search report lines, and is the real diagnostic -- it is the window this application
+% needed, found by the solver instead of guessed.
+%
 % WHAT THIS PART DOES NOT MEASURE: wall clock. At n_a_GE=201 the sweep is about 2e5 elements, far
 % below the kernel launch floor, so every solve here is launch bound and a timing would say nothing.
 % The speed of the restricted sweep is measured in doPart(5) on the big grid. What this part is for
@@ -134,10 +145,22 @@ fprintf('localsearch shooting: (1) standard shooting vs Anderson, w, this should
 % Not an identity, and deliberately not held to one: the two take different iteration sequences and
 % can stop at different points inside the same tolerance ball. The scale to read these against is
 % transpathoptions.toleranceGEprices, printed beside them.
-fprintf('localsearch shooting: (2) nlocalsearch=1 vs the standard solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathB.r)-gather(PricePathA.r))))
-fprintf('localsearch shooting: (2) nlocalsearch=1 vs the standard solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathB.w)-gather(PricePathA.w))))
-fprintf('localsearch shooting: (3) nlocalsearch=3 vs the standard solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathC.r)-gather(PricePathA.r))))
-fprintf('localsearch shooting: (3) nlocalsearch=3 vs the standard solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathC.w)-gather(PricePathA.w))))
+fprintf('localsearch shooting: (2) nlocalsearch starting at 1 vs the standard solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathB.r)-gather(PricePathA.r))))
+fprintf('localsearch shooting: (2) nlocalsearch starting at 1 vs the standard solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathB.w)-gather(PricePathA.w))))
+fprintf('localsearch shooting: (3) nlocalsearch starting at 3 vs the standard solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathC.r)-gather(PricePathA.r))))
+fprintf('localsearch shooting: (3) nlocalsearch starting at 3 vs the standard solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathC.w)-gather(PricePathA.w))))
+
+%% (3b) A deliberately TOO WIDE start, which the ratchet has to walk down
+% The complement of the nlocalsearch=1 start above. 25 is far wider than this model needs, so the
+% window should ratchet down towards whatever it actually requires, and the answer must be unaffected
+% either way. Together the two starts say the controller recovers from a bad guess in both directions,
+% which is what makes nlocalsearch a starting value a user does not have to get right.
+vfoptionsD=vfoptions;
+vfoptionsD.localsearch=1;
+vfoptionsD.nlocalsearch=25;
+[PricePathD,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptionsD, []);
+fprintf('localsearch shooting: (3b) nlocalsearch starting at 25 vs the standard solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathD.r)-gather(PricePathA.r))))
+fprintf('localsearch shooting: (3b) nlocalsearch starting at 25 vs the standard solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathD.w)-gather(PricePathA.w))))
 fprintf('localsearch shooting: for scale, toleranceGEprices is %.3e and toleranceGEcondns is %.3e \n',transpathoptionsS.toleranceGEprices,transpathoptionsS.toleranceGEcondns)
 
 %% (4) The answer is certified from outside
@@ -179,6 +202,16 @@ end
 fprintf('localsearch shooting: (5) local search with an algorithm other than shooting is refused by name, should be one: %i \n',err(1))
 fprintf('localsearch shooting: (5) local search with an e variable is refused by name, should be one: %i \n',err(2))
 fprintf('localsearch shooting: (5) local search with an experience asset is refused by name, should be one: %i \n',err(3))
+
+%% (6) The ratchet options are validated
+err6=0;
+vfoptionsE=vfoptionsB; vfoptionsE.nlocalsearchup=0;
+try
+    TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptionsE, []);
+catch ME
+    err6=contains(ME.message,'must both be at least 1');
+end
+fprintf('localsearch shooting: (6) a ratchet step below one is refused by name, should be one: %i \n',err6)
 
 output=struct();
 
