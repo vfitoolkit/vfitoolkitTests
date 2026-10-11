@@ -1,8 +1,8 @@
 function output=CoreStationaryGE_InfHorz_fminalgo(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptions,simoptions,vfoptions)
 % InfHorz stationary GE: solve the same 3-price/3-eqn model with
-% fminalgo=1 (fminsearch), 5 (shooting), 8 (lsqnonlin), 4 (CMA-ES),
-% 9 (Anderson acceleration of the shooting map) and confirm they agree
-% (CMA-ES is stochastic/lower-accuracy, so a looser match).
+% fminalgo=1 (fminsearch), 5 (shooting), 8 (lsqnonlin), 9 (Anderson acceleration
+% of the shooting map, Type-II and Type-I) and confirm they agree. CMA-ES (fminalgo=4)
+% runs only in the FHorz twin.
 %
 % GE prices: r (capital market), Tr (gov budget), tau_c (consumption-tax budget).
 % w is hardcoded from r via the firm FOC (computed inside the ReturnFn, and
@@ -69,22 +69,9 @@ tt=tic;
 [p_eqm8,GEcondns8]=HeteroAgentStationaryEqm_InfHorz(n_d, n_a, n_z, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptions8, simoptions, vfoptions);
 time8=toc(tt); nsolves8=StationaryGeneralEqm_subcode_GEsolvecounter('get');
 
-%% fminalgo=4 (CMA-ES; slow but very globally robust)
-heteroagentoptions4=heteroagentoptions;
-heteroagentoptions4.fminalgo=4;
-% insigma and MaxFunEvals are set here rather than left to the defaults. The default insigma is 30% of
-% |p0|, which at p0=[0.04,0.2,0.1] is a 1-sigma spread on r of +-0.012: CMA-ES then routinely samples r
-% near zero and negative, and most of its evaluations go on shrinking that ellipsoid rather than
-% locating the equilibrium (4,595 model solves, 1.4 hours, in the 2026-09-20 run of this part - and it
-% is what the search looks like when watched, prices jumping back and forth). 5% keeps it a stochastic
-% search without the excursions. MaxFunEvals then bounds the part: the default is Inf, with only
-% StopFitness and stagnation detection to stop it. CMA-ES returns its best-so-far, which is all the
-% 1-vs-4 comparison below needs - and that comparison is deliberately the loosest in the file.
-heteroagentoptions4.insigma=0.05*abs([Params.r;Params.Tr;Params.tau_c]); % in GEPriceParamNames order
-heteroagentoptions4.inopts.MaxFunEvals=1500;
-tt=tic;
-[p_eqm4,GEcondns4]=HeteroAgentStationaryEqm_InfHorz(n_d, n_a, n_z, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptions4, simoptions, vfoptions);
-time4=toc(tt); nsolves4=StationaryGeneralEqm_subcode_GEsolvecounter('get');
+% fminalgo=4 (CMA-ES) is NOT run here. It reaches the equilibrium through the same scalar objective as
+% fminalgo=1, so one family is enough to cover it: it runs in CoreStationaryGE_FHorz_fminalgo (doPart(4),
+% 374 solves). Here it cost 1,508 solves, 28 minutes, in the 2026-10-08 run.
 
 %% fminalgo=9 (Anderson acceleration of the shooting fixed-point map)
 % Accelerates the same map as fminalgo=5, using the same howtoupdate rules.
@@ -112,6 +99,10 @@ time9=toc(tt); nsolves9=StationaryGeneralEqm_subcode_GEsolvecounter('get');
 %% fminalgo=9 with Anderson Type-I (Zhang, O'Donoghue & Boyd 2020; globally convergent)
 heteroagentoptions9I=heteroagentoptions9;   % same fminalgo9.howtoupdate as the Type-II run
 heteroagentoptions9I.anderson.type='I';
+% Capped at 500 iterations, so its check below is labelled loose. Type-I on this InfHorz model took
+% 8,989 solves, 2.8 hours, to converge in the 2026-10-08 run (Type-II takes 158). It still runs
+% uncapped in doPart(4), (6) and (8), where it converges in 41-139 solves, so this cap loses no code path.
+heteroagentoptions9I.anderson.maxiter=500;
 tt=tic;
 [p_eqm9I,GEcondns9I]=HeteroAgentStationaryEqm_InfHorz(n_d, n_a, n_z, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptions9I, simoptions, vfoptions);
 time9I=toc(tt); nsolves9I=StationaryGeneralEqm_subcode_GEsolvecounter('get');
@@ -121,46 +112,39 @@ fprintf('\n=== InfHorz: fminalgo agreement (r,Tr,tau_c) ===\n')
 fprintf('fminalgo=1: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm1.r,p_eqm1.Tr,p_eqm1.tau_c)
 fprintf('fminalgo=5: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm5.r,p_eqm5.Tr,p_eqm5.tau_c)
 fprintf('fminalgo=8: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm8.r,p_eqm8.Tr,p_eqm8.tau_c)
-fprintf('fminalgo=4: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm4.r,p_eqm4.Tr,p_eqm4.tau_c)
 fprintf('fminalgo=9: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm9.r,p_eqm9.Tr,p_eqm9.tau_c)
 fprintf('fminalgo=9I (Type-I): r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm9I.r,p_eqm9I.Tr,p_eqm9I.tau_c)
 d15=max(abs([p_eqm1.r-p_eqm5.r,p_eqm1.Tr-p_eqm5.Tr,p_eqm1.tau_c-p_eqm5.tau_c]));
 d18=max(abs([p_eqm1.r-p_eqm8.r,p_eqm1.Tr-p_eqm8.Tr,p_eqm1.tau_c-p_eqm8.tau_c]));
-d14=max(abs([p_eqm1.r-p_eqm4.r,p_eqm1.Tr-p_eqm4.Tr,p_eqm1.tau_c-p_eqm4.tau_c]));
 d19=max(abs([p_eqm1.r-p_eqm9.r,p_eqm1.Tr-p_eqm9.Tr,p_eqm1.tau_c-p_eqm9.tau_c]));
 d19I=max(abs([p_eqm1.r-p_eqm9I.r,p_eqm1.Tr-p_eqm9I.Tr,p_eqm1.tau_c-p_eqm9I.tau_c]));
 fprintf('fminalgo 1 vs 5, this should be near zero: %.8f \n',d15)
 fprintf('fminalgo 1 vs 8, this should be near zero: %.8f \n',d18)
-fprintf('fminalgo 1 vs 4 (CMA-ES, lower accuracy), this should be small: %.8f \n',d14)
 fprintf('fminalgo 1 vs 9, this should be near zero: %.8f \n',d19)
-fprintf('fminalgo 1 vs 9I (Type-I), this should be near zero: %.8f \n',d19I)
+fprintf('fminalgo 1 vs 9I (Type-I), this should be near zero (loose: Type-I capped at 500 iterations on InfHorz): %.8f \n',d19I)
 
 fprintf('\n=== InfHorz: fminalgo runtime & model solves ===\n')
 fprintf('fminalgo=1 (fminsearch): time=%7.2fs, model solves=%d \n',time1,nsolves1)
 fprintf('fminalgo=5 (shooting):   time=%7.2fs, model solves=%d \n',time5,nsolves5)
 fprintf('fminalgo=8 (lsqnonlin):  time=%7.2fs, model solves=%d \n',time8,nsolves8)
-fprintf('fminalgo=4 (CMA-ES):     time=%7.2fs, model solves=%d \n',time4,nsolves4)
 fprintf('fminalgo=9 (Anderson):   time=%7.2fs, model solves=%d \n',time9,nsolves9)
 fprintf('fminalgo=9 Type-I (Anders.I): time=%7.2fs, model solves=%d \n',time9I,nsolves9I)
 
 output.p_eqm1=p_eqm1;
 output.p_eqm5=p_eqm5;
 output.p_eqm8=p_eqm8;
-output.p_eqm4=p_eqm4;
 output.p_eqm9=p_eqm9;
 output.p_eqm9I=p_eqm9I;
 
 output.time1=time1;   output.nsolves1=nsolves1;
 output.time5=time5;   output.nsolves5=nsolves5;
 output.time8=time8;   output.nsolves8=nsolves8;
-output.time4=time4;   output.nsolves4=nsolves4;
 output.time9=time9;   output.nsolves9=nsolves9;
 output.time9I=time9I; output.nsolves9I=nsolves9I;
 
 output.GEcondns1=GEcondns1;
 output.GEcondns5=GEcondns5;
 output.GEcondns8=GEcondns8;
-output.GEcondns4=GEcondns4;
 output.GEcondns9=GEcondns9;
 output.GEcondns9I=GEcondns9I;
 

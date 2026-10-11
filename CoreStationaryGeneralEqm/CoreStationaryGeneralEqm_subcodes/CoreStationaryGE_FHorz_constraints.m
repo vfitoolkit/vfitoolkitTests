@@ -11,6 +11,11 @@ function output=CoreStationaryGE_FHorz_constraints(jequaloneDist,AgeWeightParamN
 % and then all three at once. All equilibria are interior, so the constrained
 % solves must reproduce the unconstrained answer.
 %
+% SINCE 2026-10-09 the single constrain0to1-on-r and constrainAtoB-on-tau_c solves are not run: 'all
+% three at once' puts both transforms through a full solve, so they are covered there (if that check ever
+% fails, putting the singles back says which transform broke). This cut the part from 7 converged solves
+% to 4, as part of getting the bank under a day.
+%
 % GE prices: r (capital market), Tr (gov budget), tau_c (consumption-tax budget).
 % w is hardcoded from r via the firm FOC, so it is NOT a GE price.
 
@@ -34,27 +39,25 @@ heteroagentoptions.fminalgo=1;
 %% Unconstrained reference
 [p_eqm0,GEcondns0]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptions, simoptions, vfoptions);
 
-%% constrain0to1 on r
-heteroagentoptionsA=heteroagentoptions;
-heteroagentoptionsA.constrain0to1={'r'};
-[p_eqmA,GEcondnsA]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptionsA, simoptions, vfoptions);
-
 %% constrainpositive on Tr (constrainpositivemethod left unset, so this is the default)
 heteroagentoptionsB=heteroagentoptions;
 heteroagentoptionsB.constrainpositive={'Tr'};
 [p_eqmB,GEcondnsB]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptionsB, simoptions, vfoptions);
 
-%% constrainpositive on Tr, with softplus requested explicitly
-% uparam=log(exp(cparam)-1), cparam=log(1+exp(uparam)). Sends the real line to
-% (0,infty) just as log does, so it must find the SAME equilibrium as case B.
-% softplus has been the default since 2026-09-12, so case B (option unset) is
-% already softplus: this run must reproduce case B EXACTLY, not merely to
-% tolerance, and what it checks is that the default in this solver's own option
-% handling has not silently reverted to log.
-heteroagentoptionsB2=heteroagentoptions;
-heteroagentoptionsB2.constrainpositive={'Tr'};
+%% constrainpositive on Tr: default vs softplus requested explicitly, both stopped by maxiter=20
+% softplus has been the default since 2026-09-12, so case B (option unset) is already softplus, and the
+% two must agree EXACTLY, not merely to tolerance: what this checks is that the default in this solver's
+% own option handling has not silently reverted to log. An exact identity holds along the whole path,
+% not only at the answer, so neither solve needs to converge: both are stopped by maxiter=20 (for fminsearch that is 20 model
+% solves, MaxIter=MaxFunEvals=maxiter) instead of two full solves. (Until 2026-10-09 the softplus run went to convergence
+% and was compared only to the unconstrained answer, never directly to case B.)
+heteroagentoptionsB1=heteroagentoptions;
+heteroagentoptionsB1.constrainpositive={'Tr'};
+heteroagentoptionsB1.maxiter=20;
+[p_eqmB1,~]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptionsB1, simoptions, vfoptions);
+heteroagentoptionsB2=heteroagentoptionsB1;
 heteroagentoptionsB2.constrainpositivemethod='softplus';
-[p_eqmB2,GEcondnsB2]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptionsB2, simoptions, vfoptions);
+[p_eqmB2,~]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptionsB2, simoptions, vfoptions);
 
 %% constrainpositive on Tr, with log requested explicitly
 % uparam=log(cparam), cparam=exp(uparam). The other map onto (0,infty), and the
@@ -71,12 +74,6 @@ heteroagentoptionsB3.constrainpositive={'Tr'};
 heteroagentoptionsB3.constrainpositivemethod='log';
 [p_eqmB3,GEcondnsB3]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptionsB3, simoptions, vfoptions);
 
-%% constrainAtoB on tau_c (limits [0,1])
-heteroagentoptionsC=heteroagentoptions;
-heteroagentoptionsC.constrainAtoB={'tau_c'};
-heteroagentoptionsC.constrainAtoBlimits.tau_c=[0,1];
-[p_eqmC,GEcondnsC]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptionsC, simoptions, vfoptions);
-
 %% all three constraints at once
 heteroagentoptionsD=heteroagentoptions;
 heteroagentoptionsD.constrain0to1={'r'};
@@ -88,42 +85,33 @@ heteroagentoptionsD.constrainAtoBlimits.tau_c=[0,1];
 %% Compare each constrained solve to the unconstrained reference
 fprintf('\n=== FHorz: parameter-constraint invariance ===\n')
 fprintf('unconstrained:        r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqm0.r,p_eqm0.Tr,p_eqm0.tau_c)
-fprintf('constrain0to1 on r:   r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqmA.r,p_eqmA.Tr,p_eqmA.tau_c)
 fprintf('constrainpos default: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqmB.r,p_eqmB.Tr,p_eqmB.tau_c)
-fprintf('constrainpos softplus:r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqmB2.r,p_eqmB2.Tr,p_eqmB2.tau_c)
+fprintf('constrainpos default,  stopped by maxiter=20: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqmB1.r,p_eqmB1.Tr,p_eqmB1.tau_c)
+fprintf('constrainpos softplus, stopped by maxiter=20: r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqmB2.r,p_eqmB2.Tr,p_eqmB2.tau_c)
 fprintf('constrainpos log:     r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqmB3.r,p_eqmB3.Tr,p_eqmB3.tau_c)
-fprintf('constrainAtoB tau_c:  r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqmC.r,p_eqmC.Tr,p_eqmC.tau_c)
 fprintf('constrain all three:  r=%.6f Tr=%.6f tau_c=%.6f \n',p_eqmD.r,p_eqmD.Tr,p_eqmD.tau_c)
-dA=max(abs([p_eqm0.r-p_eqmA.r,p_eqm0.Tr-p_eqmA.Tr,p_eqm0.tau_c-p_eqmA.tau_c]));
 dB=max(abs([p_eqm0.r-p_eqmB.r,p_eqm0.Tr-p_eqmB.Tr,p_eqm0.tau_c-p_eqmB.tau_c]));
-dB2=max(abs([p_eqm0.r-p_eqmB2.r,p_eqm0.Tr-p_eqmB2.Tr,p_eqm0.tau_c-p_eqmB2.tau_c]));
+dB1B2=max(abs([p_eqmB1.r-p_eqmB2.r,p_eqmB1.Tr-p_eqmB2.Tr,p_eqmB1.tau_c-p_eqmB2.tau_c]));
 dB3=max(abs([p_eqm0.r-p_eqmB3.r,p_eqm0.Tr-p_eqmB3.Tr,p_eqm0.tau_c-p_eqmB3.tau_c]));
-dB2B3=max(abs([p_eqmB2.r-p_eqmB3.r,p_eqmB2.Tr-p_eqmB3.Tr,p_eqmB2.tau_c-p_eqmB3.tau_c]));
-dC=max(abs([p_eqm0.r-p_eqmC.r,p_eqm0.Tr-p_eqmC.Tr,p_eqm0.tau_c-p_eqmC.tau_c]));
+dBB3=max(abs([p_eqmB.r-p_eqmB3.r,p_eqmB.Tr-p_eqmB3.Tr,p_eqmB.tau_c-p_eqmB3.tau_c]));
 dD=max(abs([p_eqm0.r-p_eqmD.r,p_eqm0.Tr-p_eqmD.Tr,p_eqm0.tau_c-p_eqmD.tau_c]));
-fprintf('constrain0to1 on r, this should be near zero: %.8f \n',dA)
 fprintf('constrainpositive on Tr, default method, this should be near zero: %.8f \n',dB)
-fprintf('constrainpositive on Tr with softplus, this should be near zero: %.8f \n',dB2)
+fprintf('constrainpositive on Tr, default vs softplus requested explicitly (both stopped by maxiter=20), this should be zero: %.3e \n',dB1B2)
 fprintf('constrainpositive on Tr with log, this should be near zero (loose: log is the worse transform on this model): %.8f \n',dB3)
-fprintf('  ratio of the log error to the softplus error, log is expected to be the larger: %.1f \n',dB3/dB2)
-fprintf('log vs softplus, this should NOT be zero: %.3e \n',dB2B3)
-fprintf('constrainAtoB on tau_c, this should be near zero: %.8f \n',dC)
+fprintf('  ratio of the log error to the softplus error, log is expected to be the larger: %.1f \n',dB3/dB)
+fprintf('log vs softplus (the default), this should NOT be zero: %.3e \n',dBB3)
 fprintf('constrain all three, this should be near zero: %.8f \n',dD)
 
 output.p_eqm0=p_eqm0;
-output.p_eqmA=p_eqmA;
 output.p_eqmB=p_eqmB;
+output.p_eqmB1=p_eqmB1;
 output.p_eqmB2=p_eqmB2;
 output.p_eqmB3=p_eqmB3;
-output.p_eqmC=p_eqmC;
 output.p_eqmD=p_eqmD;
 
 output.GEcondns0=GEcondns0;
-output.GEcondnsA=GEcondnsA;
 output.GEcondnsB=GEcondnsB;
-output.GEcondnsB2=GEcondnsB2;
 output.GEcondnsB3=GEcondnsB3;
-output.GEcondnsC=GEcondnsC;
 output.GEcondnsD=GEcondnsD;
 
 end

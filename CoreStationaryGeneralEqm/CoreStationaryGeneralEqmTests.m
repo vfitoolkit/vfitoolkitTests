@@ -7,8 +7,8 @@
 % See the setup file for details.
 %
 % For each horizon we:
-%  (i)  solve with fminalgo=1, 5, 8, 4 and confirm all give the same answer
-%        (fminalgo=4 is CMA-ES, stochastic/lower-accuracy, so a looser match)
+%  (i)  solve with fminalgo=1, 5, 8, 9 (Anderson, Type-II and Type-I) and confirm all give the same
+%        answer; fminalgo=4 (CMA-ES, stochastic/lower-accuracy, so a looser match) only for FHorz
 %  (ii) re-solve using all three kinds of parameter constraint, each applied to
 %        one of the prices: constrain0to1 on r, constrainpositive on Tr,
 %        constrainAtoB on tau_c (and then all three at once); confirm each
@@ -43,8 +43,9 @@
 % be finished off by running just the parts that never got to run.
 % doPart(1): constrainpositivemethod round trips
 %            (pure transform checks - no model and no GE solve, so this part costs seconds;
-%             the fminalgo and constraints parts are GE solves: 6 for each fminalgo part, 7 for
-%             each constraints part, 52 in all. The extraoptions parts (10 to 13) are mostly NOT
+%             the fminalgo and constraints parts are GE solves: 5 for each fminalgo part (6 in FHorz,
+%             which alone keeps CMA-ES), 4 converged plus 2 stopped by maxiter=20 for each
+%             constraints part. The extraoptions parts (10 to 13) are mostly NOT
 %             solves: they use heteroagentoptions.maxiter=0, which evaluates the general eqm
 %             conditions at the prices in Params and returns them, one model solve rather than a
 %             hundred and fifty. Six real solves in the four of them, all told)
@@ -67,6 +68,16 @@
 % doPart(16): FHorz PType GEptype parameter-constraint invariance (fminalgo 1, 5 and 9)
 % doPart(17): InfHorz PType GEptype parameter-constraint invariance (fminalgo 1, 5 and 9)
 %             [ON again 2026-09-23, same reason as doPart(15)]
+% doPart(18): FHorz multiGEweights reach lsqnonlin (fminalgo=8), on 4 conditions in 3 prices
+%             [added 2026-10-07: the weights were dropped before lsqnonlin until then. Redesigned
+%              2026-10-09 with a conflicting fourth condition, because weights cannot move a square
+%              system's Gauss-Newton step. Three solves, ~6 min]
+%
+% CUT FROM ABOUT 25 HOURS, 2026-10-09 (the 2026-10-08 full run took that long). CMA-ES runs in doPart(4)
+% only; InfHorz Anderson Type-I is capped at 500 iterations in doPart(2); FHorz shooting factors retuned
+% in doPart(4) and (8); doPart(17)'s shooting uses toleranceGEcondns=3e-5 (its grid floor is 1.08e-5);
+% the constraints parts drop the single 0to1/AtoB solves (covered by 'all three') and check the
+% default-vs-softplus identity on runs stopped by maxiter=20. Each change is explained in its subcode.
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -75,7 +86,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -366,6 +377,12 @@ if doPart(17)==1
     fprintf('\n===== doPart(17): InfHorz PType GEptype parameter-constraint invariance =====\n')
     output10ptype=CoreStationaryGE_InfHorz_PType_GEptype_constraints(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
 end % doPart(17): InfHorz PType GEptype parameter-constraint invariance
+
+%% ===== doPart(18): FHorz multiGEweights reach lsqnonlin =====
+if doPart(18)==1
+    fprintf('\n===== doPart(18): FHorz multiGEweights reach lsqnonlin =====\n')
+    output11=CoreStationaryGE_FHorz_lsqnonlinweights(jequaloneDist,AgeWeightParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,GEPriceParamNames,heteroagentoptionsbaseline,simoptionsbaseline,vfoptionsbaseline);
+end % doPart(18): FHorz multiGEweights reach lsqnonlin
 
 
 %% One verdict for the whole run

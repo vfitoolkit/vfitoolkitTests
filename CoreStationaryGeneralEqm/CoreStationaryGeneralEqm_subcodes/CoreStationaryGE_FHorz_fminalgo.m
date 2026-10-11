@@ -43,12 +43,20 @@ plot(a_grid,cumsum(assetdist))
 title('FHorz: cumulative distribution over asset grid'); xlabel('assets'); ylabel('cumulative probability')
 
 %% fminalgo=5 (shooting; one row per GE eqn: {GEeqnName, PriceName, add, factor})
+% THE FACTORS ARE r 0.04, Tr 0.3, tau_c 0.3 (were 0.005, 0.05, 0.05), set from the 2026-10-08 run, where
+% the old factors took 703 iterations. There CapitalMarket halved only every ~50 iterations, so near the
+% answer factor*dc/dr was about 0.014, i.e. dc/dr is about 2.8; lower down (r from 0.04 to 0.05 at the
+% start) dc/dr is about 30, so r's factor must stay below 2/30 to stay stable there - 0.04 keeps
+% 0.04*30=1.2 against that boundary of 2, and makes the near-answer multiplier 1-0.04*2.8=0.89 instead of
+% 0.986. dc/dTr is -1 and dc/dtau_c is C~1.2, so at 0.05 those two had multipliers 0.95 and 0.94 and
+% would become the bottleneck once r was fixed; 0.3 makes them 0.7 and 0.64. The Anderson runs below keep
+% the old rules on purpose: they already converge in tens of iterations, and Anderson is what is tested there.
 heteroagentoptions5=heteroagentoptions;
 heteroagentoptions5.fminalgo=5;
 heteroagentoptions5.fminalgo5.howtoupdate={...
-    'CapitalMarket','r',0,0.005;   % r_new = r - factor*(r-MPK)
-    'GovBudget','Tr',1,0.05;        % Tr_new = Tr + factor*(tau*w*N-Tr)
-    'ConsTax','tau_c',0,0.05};      % tau_c_new = tau_c - factor*(tau_c*C-G)
+    'CapitalMarket','r',0,0.04;    % r_new = r - factor*(r-MPK)
+    'GovBudget','Tr',1,0.3;         % Tr_new = Tr + factor*(tau*w*N-Tr)
+    'ConsTax','tau_c',0,0.3};       % tau_c_new = tau_c - factor*(tau_c*C-G)
 heteroagentoptions5.maxiter=1e4;
 tt=tic;
 [p_eqm5,GEcondns5]=HeteroAgentStationaryEqm_Case1_FHorz(jequaloneDist,AgeWeightParamNames, n_d, n_a, n_z, N_j, n_p, pi_z, d_grid, a_grid, z_grid, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, [], [], [], GEPriceParamNames,heteroagentoptions5, simoptions, vfoptions);
@@ -69,7 +77,8 @@ tt=tic;
 time4=toc(tt); nsolves4=StationaryGeneralEqm_subcode_GEsolvecounter('get');
 
 %% fminalgo=9 (Anderson acceleration of the shooting fixed-point map)
-% Accelerates the same map as fminalgo=5, using the same howtoupdate rules.
+% Accelerates the shooting map with the ORIGINAL howtoupdate rules (r 0.005, Tr 0.05, tau_c 0.05), not the
+% retuned ones fminalgo=5 now uses above: it converges in tens of iterations with these.
 heteroagentoptions9=heteroagentoptions;
 heteroagentoptions9.fminalgo=9;
 heteroagentoptions9.fminalgo9.howtoupdate={...

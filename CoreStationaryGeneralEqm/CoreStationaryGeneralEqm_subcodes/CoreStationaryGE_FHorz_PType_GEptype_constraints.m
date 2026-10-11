@@ -73,9 +73,14 @@ howtoupdate={...
     'ConsTax','tau_c',0,0.05};      % tau_c_new = tau_c - factor*(tau_c*C-G)
 
 algonames={'fminalgo=1 (fminsearch)','fminalgo=5 (shooting)  ','fminalgo=9 (Anderson)  '};
-varnames={'unconstrained        ','constrainpos default ','constrainpos softplus','constrainpos log     ','constrain all three  '};
-p_eqm=cell(3,5);
-GEcondns=cell(3,5);
+% cc=3 and cc=6 are the default-vs-softplus identity pair, BOTH STOPPED AFTER 20 ITERATIONS. softplus has
+% been the default since 2026-09-12, so the two are the same transform and must agree exactly along the
+% whole path, not only at the answer, so neither needs to converge (until 2026-10-09 cc=3 ran to
+% convergence and was compared only to the unconstrained answer). Every solver here honours the cap:
+% maxiter for fminsearch and shooting, anderson.maxiter for Anderson.
+varnames={'unconstrained        ','constrainpos default ','softplus, maxiter 20 ','constrainpos log     ','constrain all three  ','default, maxiter 20  '};
+p_eqm=cell(3,6);
+GEcondns=cell(3,6);
 
 for aa=1:3
     % Solver, and where it starts from
@@ -102,13 +107,19 @@ for aa=1:3
         end
     end
 
-    for cc=1:5
+    for cc=1:6
         heteroagentoptionsC=heteroagentoptionsA;
         if cc==2 % constrainpositive on the per-type price, method left unset (so softplus since 2026-09-12)
             heteroagentoptionsC.constrainpositive={'Tr'};
-        elseif cc==3 % the same transform, asked for explicitly: must agree with cc=2 exactly
+        elseif cc==3 % the same transform, asked for explicitly: must agree with cc=6 exactly
             heteroagentoptionsC.constrainpositive={'Tr'};
             heteroagentoptionsC.constrainpositivemethod='softplus';
+            heteroagentoptionsC.maxiter=20;
+            heteroagentoptionsC.anderson.maxiter=20;
+        elseif cc==6 % method left unset, stopped at the same point as cc=3
+            heteroagentoptionsC.constrainpositive={'Tr'};
+            heteroagentoptionsC.maxiter=20;
+            heteroagentoptionsC.anderson.maxiter=20;
         elseif cc==4 % the other map onto (0,infty): same equilibrium, less accurately on this model
             heteroagentoptionsC.constrainpositive={'Tr'};
             heteroagentoptionsC.constrainpositivemethod='log';
@@ -149,9 +160,9 @@ end
 %% Compare
 % Each equilibrium is the four numbers [r, tau_c, Tr_ptype001, Tr_ptype002], so a difference is the
 % largest gap across all four - the two per-type transfers included, which is the point here.
-pvec=zeros(3,5,2+N_i);
+pvec=zeros(3,6,2+N_i);
 for aa=1:3
-    for cc=1:5
+    for cc=1:6
         pvec(aa,cc,1)=p_eqm{aa,cc}.r;
         pvec(aa,cc,2)=p_eqm{aa,cc}.tau_c;
         for ii=1:N_i
@@ -163,21 +174,21 @@ end
 fprintf('\n=== FHorz PType GEptype: parameter-constraint invariance ===\n')
 for aa=1:3
     fprintf('%s \n',algonames{aa})
-    for cc=1:5
+    for cc=1:6
         fprintf('  %s r=%.6f tau_c=%.6f Tr=(%.6f, %.6f) \n',varnames{cc},pvec(aa,cc,1),pvec(aa,cc,2),pvec(aa,cc,3),pvec(aa,cc,4))
     end
 end
 for aa=1:3
     dB=max(abs(pvec(aa,2,:)-pvec(aa,1,:)));
-    dB2=max(abs(pvec(aa,3,:)-pvec(aa,1,:)));
+    dB2B6=max(abs(pvec(aa,3,:)-pvec(aa,6,:)));
     dB3=max(abs(pvec(aa,4,:)-pvec(aa,1,:)));
     dD=max(abs(pvec(aa,5,:)-pvec(aa,1,:)));
-    dB2B3=max(abs(pvec(aa,4,:)-pvec(aa,3,:)));
+    dBB3=max(abs(pvec(aa,4,:)-pvec(aa,2,:)));
     fprintf('%s constrainpositive on the per-type Tr, default method, this should be near zero: %.3e \n',algonames{aa},dB)
-    fprintf('%s constrainpositive on the per-type Tr with softplus, this should be near zero: %.3e \n',algonames{aa},dB2)
+    fprintf('%s constrainpositive on the per-type Tr, default vs softplus requested explicitly (both stopped by maxiter=20), this should be zero: %.3e \n',algonames{aa},dB2B6)
     fprintf('%s constrainpositive on the per-type Tr with log, this should be near zero (loose: log is the worse transform on this model): %.3e \n',algonames{aa},dB3)
     fprintf('%s constrain all three, economy-wide and per-type together, this should be near zero: %.3e \n',algonames{aa},dD)
-    fprintf('%s log vs softplus, this should NOT be zero: %.3e \n',algonames{aa},dB2B3)
+    fprintf('%s log vs softplus (the default), this should NOT be zero: %.3e \n',algonames{aa},dBB3)
 end
 % And the two update-rule solvers must reach the same equilibrium as fminsearch did
 for aa=2:3
