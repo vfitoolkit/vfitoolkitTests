@@ -1,4 +1,4 @@
-function m=EstimFHorz_ModelMoments(paramvec,EstimParamNames,TargetMoments,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,FnsToEvaluate,vfoptions,simoptions,logmoments,omitestimparam,ParametrizeParamsFn)
+function m=EstimFHorz_ModelMoments(paramvec,EstimParamNames,TargetMoments,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,FnsToEvaluate,vfoptions,simoptions,logmoments,omitestimparam,ParametrizeParamsFn,forcecalibrateshocks)
 % EstimFHorzTests: the vector of model moments at the targeted entries for a parameter vector, by the same route as the estimation
 % command's Jacobian handle: SetupTargetMoments_FHorz, the grids as the drivers set them up, then CalibrateLifeCycleModel_objectivefn
 % with vectoroutput=1 and no constraints (the Jacobian is taken on the model parameters). paramvec is the stacked vector of the
@@ -17,6 +17,12 @@ if isfield(vfoptions_m,'ExogShockFn') && ~isempty(intersect(getAnonymousFnInputN
 end
 if isfield(vfoptions_m,'EiidShockFn') && ~isempty(intersect(getAnonymousFnInputNames(vfoptions_m.EiidShockFn),EstimParamNames))
     calibrateshocks=1;
+end
+if nargin>=23 && ~isempty(forcecalibrateshocks)
+    % Caller states whether the shocks depend on the estimated parameters. Needed when the dependence runs through parameters
+    % DERIVED by ParametrizeParamsFn (part 9): this helper is the test's independent reference, so it must not share the drivers'
+    % detection machinery (ParseParametrizeParamsFn) -- the test knows the truth and forces it.
+    calibrateshocks=forcecalibrateshocks;
 end
 if ~isfield(simoptions_m,'jequaloneDist_usergrids')
     simoptions_m.jequaloneDist_usergrids=1;

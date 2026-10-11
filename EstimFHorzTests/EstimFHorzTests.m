@@ -30,10 +30,14 @@
 % doPart(6): cohorts entering at different ages: hand-built cohort moments, the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs, the last-age cutoff of a cohort's distribution (simoptions.lastDistAge / estimoptions.cohortlastage)
 % doPart(7): EstimateLifeCycleModel_MomentDerivatives vs finite differences from full AllStats/LifeCycleProfiles runs; omit mask; ExogShockFn; the sorted output
 % doPart(8): runtime of skipestimation with whichcombos=1 vs =0 (informational)
+% doPart(9): parameters DERIVED by ParametrizeParamsFn feeding the shocks and the jequaloneDist function (built 2026-10-12 with the
+%            fix it pins: calibrateshocks used to name-match only EstimParamNames, silently freezing shocks whose dependence runs
+%            through the derived parameters; now ParseParametrizeParamsFn / estimoptions.ParametrizeParamsFn_OutputNames feed the
+%            match, and a user-set estimoptions.calibrateshocks always wins)
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -124,6 +128,12 @@ if doPart(8)==1
     fprintf('\n===== doPart(8): runtime, whichcombos=1 vs =0 (informational) =====\n')
     output=EstimFHorz_Runtime(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
 end % doPart(8)
+
+%% ===== doPart(9): ParametrizeParamsFn-derived parameters feeding the shocks and the jequaloneDist function =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): ParametrizeParamsFn-derived parameters feeding the shocks and the jequaloneDist function =====\n')
+    output=EstimFHorz_ParametrizeParams(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
+end % doPart(9)
 
 % All looks good!
 
