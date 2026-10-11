@@ -27,7 +27,7 @@
 % doPart(3): ExogShockFn and EiidShockFn with estimated shock parameters (J with the grids rebuilt), jequaloneDist as a function (both usergrids), CustomModelStats (both usergrids)
 % doPart(4): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets (one restricted each): truth, J, whichcombos 1 vs 0 identical, a recovery
 % doPart(5): sensitivity to calibrated parameters (Jorgensen) vs finite differences, Lambda*Jcalib identity; an unidentified pair (rank(J) short)
-% doPart(6): cohorts entering at different ages: hand-built cohort moments, the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs
+% doPart(6): cohorts entering at different ages: hand-built cohort moments, the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs, the last-age cutoff of a cohort's distribution (simoptions.lastDistAge / estimoptions.cohortlastage)
 % doPart(7): EstimateLifeCycleModel_MomentDerivatives vs finite differences from full AllStats/LifeCycleProfiles runs; omit mask; ExogShockFn; the sorted output
 % doPart(8): runtime of skipestimation with whichcombos=1 vs =0 (informational)
 %

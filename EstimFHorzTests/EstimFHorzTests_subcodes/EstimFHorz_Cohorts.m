@@ -12,6 +12,10 @@ function output=EstimFHorz_Cohorts(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Par
 %   (c) one cohort entering at age 1 with all the mass: J and current moments equal the standard estimator's on the same targets (exact)
 %   (d) started away (beta 0.90, pension 0.30), lsqnonlin: recovered (close)
 %   (e) must error: the new target kinds with cohorts; logmoments by name with cohorts; a jequaloneDist without the cohort dimension
+%   (f) the cutoff of each cohort's agent distribution at its last targeted age (simoptions.lastDistAge, derived by the estimator; cohort 2's
+%       targets stop four ages before N_j): identical J and moments to forcing N_j with estimoptions.cohortlastage (exact); a cutoff before the entry age must error
+%   (g) simoptions.lastDistAge in StationaryDist_FHorz_Case1 itself (entry age 5, and the standard entry age 1): equal to the full
+%       distribution up to the cutoff, zero after it, mass = the age weights up to the cutoff (exact); larger than N_j must error
 % Each driver run is wrapped so an error in the plumbing is reported as a failed check.
 
 FnsToEvaluate.assets=@(aprime,a,z) a;
@@ -48,9 +52,12 @@ for cc=1:2
         TM.AllStats.cohort1.assets.Gini=gather(All_c.assets.Gini);
         hand=[hand; TM.AllStats.cohort1.assets.Gini; t(:)]; % within a cohort: AllStats, then AgeConditionalStats, then AutoCorr
     else
+        t(end-3:end)=NaN; % the last four ages are not targeted, so the cohort's distribution need not be computed there (check (f))
         TM.AgeConditionalStats.cohort2.assets.Mean=t;
         AC_c=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(Dist_c,Policy,FnsToEvaluate,Params_c,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions_c);
         ta=gather(AC_c.earnings.AutoCorrelation); ta(1:entryages(cc)-1)=NaN; ta(Jr-1:end)=NaN; % (pairs starting before entry have no mass; earnings are zero in retirement)
+        cutoff2=max(find(~isnan(t),1,'last'),find(~isnan(ta),1,'last')+1); % the last age cohort 2's targets need (a horizon-1 pair starting at jj needs age jj+1)
+        Dist_c2=Dist_c; % kept for check (g)
         TM.AutoCorr.cohort2.earnings.AutoCorrelation=ta;
         hand=[hand; t(:); ta(:)];
     end
@@ -61,7 +68,7 @@ EstimParamNames={'beta','pension'};
 truth=[Params.beta;Params.pension];
 
 %% (a) auto-detected cohorts, (b) the explicit vector
-res=cell(2,1);
+res=cell(2,1); tform=zeros(2,1);
 for form=1:2
     estimoptions_t=estimoptions; estimoptions_t.skipestimation=1; simoptions_t=simoptions;
     if form==1
@@ -71,7 +78,9 @@ for form=1:2
     end
     ran=0; objv=NaN; dmom=NaN;
     try
+        t0=tic;
         [~,~,estsummary]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_t,vfoptions,simoptions_t);
+        tform(form)=toc(t0);
         ran=1; objv=estsummary.objectivefnval; res{form}=estsummary;
         if length(estsummary.currentmomentvec)==nT
             dmom=CoreMaxAbs(estsummary.currentmomentvec(:)-hand);
@@ -88,6 +97,30 @@ if ~isempty(res{1}) && ~isempty(res{2})
 else
     fprintf('Cohorts (b) vector vs auto-detected entry ages: one of the two did not run, this should be zero: %.3e \n',1)
 end
+
+%% (f) the cutoff of each cohort's distribution at its last targeted age (simoptions.lastDistAge, derived by SetupTargetMoments_FHorz_withCohorts)
+% Cohort 1 has an AllStats target so it runs to N_j; cohort 2's targets end four ages before N_j. Forcing both to N_j (estimoptions.cohortlastage) must give identical J and moments.
+estimoptions_f=estimoptions; estimoptions_f.skipestimation=1; estimoptions_f.cohortagejshifter=1; estimoptions_f.cohortlastage=[N_j,N_j];
+ran=0; dJ=NaN; dmom=NaN; tf=NaN;
+try
+    t0=tic;
+    [~,~,es_full]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_f,vfoptions,simoptions);
+    tf=toc(t0); ran=1;
+    if ~isempty(res{1})
+        dJ=CoreMaxAbs(res{1}.variousmatrices.J(:)-es_full.variousmatrices.J(:)); dmom=CoreMaxAbs(res{1}.currentmomentvec(:)-es_full.currentmomentvec(:));
+    end
+catch err
+    fprintf('Cohorts (f): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+end
+fprintf('Cohorts (f) cohort 2 cutoff at age %i of %i (derived, %.1f s) vs both cohorts forced to N_j (estimoptions.cohortlastage, %.1f s): did not run, this should be zero: %.3e; cutoff is before N_j, this should be zero: %.3e; J, this should be zero: %.3e; current moments, this should be zero: %.3e \n',cutoff2,N_j,tform(1),tf,1-ran,double(cutoff2>=N_j),dJ,dmom)
+estimoptions_f.cohortlastage=[N_j,entryages(2)-1]; % a cutoff before the entry age must error
+errored=0;
+try
+    EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_f,vfoptions,simoptions);
+catch
+    errored=1;
+end
+fprintf('Cohorts (f) estimoptions.cohortlastage before a cohort''s entry age must error, this should be zero: %.3e \n',1-errored)
 
 %% (c) one cohort at age 1 with all the mass equals the standard estimator
 jequaloneDist_1=zeros(n_a,n_z,N_j,'gpuArray'); jequaloneDist_1(:,:,1)=jequaloneDist;
@@ -143,6 +176,27 @@ catch
     errored=errored+1;
 end
 fprintf('Cohorts (e) the new target kinds, logmoments by name, and a jequaloneDist without the cohort dimension must all error with cohorts, this should be zero: %.3e \n',3-errored)
+
+%% (g) simoptions.lastDistAge in the agent distribution itself: equal to the full distribution up to the cutoff, zero after it
+% (Params_c, simoptions_c and slice are cohort 2's from the loop above: entry age 5)
+L=N_j-4;
+simoptions_g=simoptions_c; simoptions_g.lastDistAge=L;
+t0=tic; Dist_g=StationaryDist_FHorz_Case1(slice,AgeWeightParamNames,Policy,n_d,n_a,n_z,N_j,pi_z,Params_c,simoptions_g); tg=toc(t0);
+t0=tic; StationaryDist_FHorz_Case1(slice,AgeWeightParamNames,Policy,n_d,n_a,n_z,N_j,pi_z,Params_c,simoptions_c); tfull=toc(t0);
+Dg=reshape(Dist_g,[n_a*n_z,N_j]); Df=reshape(Dist_c2,[n_a*n_z,N_j]);
+fprintf('Cohorts (g) cohort 2 (entry age 5) distribution with simoptions.lastDistAge=%i (%.1f s) vs without (%.1f s): up to the cutoff, this should be zero: %.3e; after the cutoff, this should be zero: %.3e; total mass vs the age weights up to the cutoff, this should be zero: %.3e \n',L,tg,tfull,CoreMaxAbs(Dg(:,1:L)-Df(:,1:L)),CoreMaxAbs(Dg(:,L+1:end)),abs(gather(sum(Dg(:)))-sum(mewjc(2,entryages(2):L))))
+% the same with the standard first-period distribution (jequaloneDistAge=1): the cutoff alone routes through the sliced solver
+simoptions_g=simoptions; simoptions_g.lastDistAge=L;
+t0=tic; Dist_g1=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy,n_d,n_a,n_z,N_j,pi_z,Params,simoptions_g); tg1=toc(t0);
+Dg=reshape(Dist_g1,[n_a*n_z,N_j]); Df=reshape(Dist,[n_a*n_z,N_j]);
+fprintf('Cohorts (g) the standard distribution (entry age 1) with simoptions.lastDistAge=%i (%.1f s): up to the cutoff, this should be zero: %.3e; after the cutoff, this should be zero: %.3e \n',L,tg1,CoreMaxAbs(Dg(:,1:L)-Df(:,1:L)),CoreMaxAbs(Dg(:,L+1:end)))
+simoptions_g.lastDistAge=N_j+1; errored=0; % must error
+try
+    StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy,n_d,n_a,n_z,N_j,pi_z,Params,simoptions_g);
+catch
+    errored=1;
+end
+fprintf('Cohorts (g) simoptions.lastDistAge larger than N_j must error, this should be zero: %.3e \n',1-errored)
 
 output=struct();
 output.TM=TM;
