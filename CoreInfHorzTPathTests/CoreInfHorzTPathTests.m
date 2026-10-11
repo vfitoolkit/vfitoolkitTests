@@ -155,7 +155,7 @@ if doPart(6)==1
     % either certifies it or supplies a fresh reference and local search resumes. Shooting only --
     % Anderson and quasi-Newton are refused by name, which is checked here, because neither can carry
     % the reference across iterations and both would silently return a wrong path if allowed to try.
-    output=CoreInfHorzTPath_localsearch_shooting(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+    output=CoreInfHorzTPath_localsearch_shooting(T,n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end % doPart(6): localsearch inside a general eqm transition path, by shooting
 
 %% One verdict for the whole run

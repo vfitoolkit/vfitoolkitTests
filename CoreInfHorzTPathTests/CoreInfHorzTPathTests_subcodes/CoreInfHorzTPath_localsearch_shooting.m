@@ -1,4 +1,4 @@
-function output=CoreInfHorzTPath_localsearch_shooting(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline)
+function output=CoreInfHorzTPath_localsearch_shooting(T,n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline)
 % Checks vfoptions.localsearch=1 on a REAL general eqm transition path, solved by shooting.
 % doPart(4) and doPart(5) test the restricted value fn step against a given price path. This is the
 % first part where the restriction is inside a general eqm solve and so can affect the answer.
@@ -8,9 +8,23 @@ function output=CoreInfHorzTPath_localsearch_shooting(T,n_a_GE,n_z,a_grid_GE,z_g
 % previous iteration's answer, refreshing the reference as they go. When those converge, ONE standard
 % sweep re-evaluates the SAME price path: still converged means done, and moved means its Policy
 % becomes the new reference and local search resumes.
-% So the restriction cannot change the answer, only how fast it is reached, and the certification
-% rests on nothing -- no claim about the problem being single-peaked, no per-step condition. That is
-% what makes this testable as a real check rather than a tolerance.
+% WHAT THE VERIFICATION SWEEP DOES AND DOES NOT CERTIFY. It makes the general eqm conditions hold
+% under an UNRESTRICTED value function solve, so the prices and aggregates are certified to
+% toleranceGEcondns. It does NOT certify that the policy equals the unrestricted policy state by
+% state, because it is accepted on PricePathDist and GEcondnPathDist and never on whether the policy
+% moved. Two gaps follow, and neither is closed here:
+%   - The reference iteration can have a spurious fixed point. Where the objective in aprime is
+%     multi-peaked -- which is what makes a policy function non-monotone -- the restricted sweep can
+%     sit on a local peak while the global one lies outside the window, and the new reference is that
+%     local peak, so the next restricted sweep sits there too. An unrestricted sweep would move. If
+%     the states affected are few, or carry little mass, the aggregate residual moves by less than
+%     toleranceGEcondns and the solve terminates with a policy that is wrong at those states.
+%   - With multiple equilibria the restriction can steer the price trajectory into a different basin,
+%     and both endpoints pass verification.
+% So the restriction does not merely change how fast the answer is reached. Neither gap can occur
+% with a single-peaked objective in aprime, which covers concave problems on convex feasible sets,
+% and the checks below are run on such a model. On a model with non-convexities, fixed costs, or
+% sophisticated quasi-hyperbolic discounting, local search is not a free speed-up.
 %
 % SHOOTING ONLY, and the refusal that enforces it is checked below. Anderson hands a PURE residual
 % function to AndersonAcceleration, which is shared with the stationary general eqm code, so the
@@ -42,7 +56,7 @@ vfoptions=struct();
 simoptions=struct();
 
 ReturnFn=@(aprime,a,z,r,w,sigma) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,sigma);
-n_d=0; d_grid=[]; % local search with a d is doPart(5); the general eqm scheme is no-d for now
+n_d=0; d_grid=[]; % the no-d half of this part; the with-d half is sections (9) to (11) below
 
 gpudev=gpuDevice;
 
@@ -280,6 +294,114 @@ transpathoptionsDiag.localsearchdiagnostic=1;
 % changing what it measures, which would make every number above describe a different solve.
 fprintf('localsearch shooting: (8) the diagnostic is pure observation, its solve vs the same solve without it, r, this should be zero: %2.8f \n',max(abs(gather(PricePathDiag.r)-gather(PricePathC.r))))
 fprintf('localsearch shooting: (8) the diagnostic is pure observation, its solve vs the same solve without it, w, this should be zero: %2.8f \n',max(abs(gather(PricePathDiag.w)-gather(PricePathC.w))))
+
+%% (9)-(11) WITH A d, which needs a SEED SWEEP and is the point of this half of the part
+% A standard sweep returns one (dstar,aprimestar) per state, so it pins the reference only for the d
+% it chose and says nothing about the other N_d-1 values. The next restricted sweep searches a window
+% PER d, so it needs a centre per d. That gap is what kept local search out of a general eqm path
+% with a d, and vfoptions.localsearchseed is what closes it: on iteration 1 and on every verification
+% sweep the dispatcher runs an unrestricted sweep that ALSO returns the coarse aprime argmax per
+% (d,a,z). Without the interpolation layer that comes from a dedicated raw, LSseed_raw, which
+% unfolds (d,aprime) and maxes over aprime first; with it, the standard GI raw already computes
+% exactly that argmax as its midpoint and now returns it.
+%
+% Seed sweeps IGNORE divideandconquer, because a per-d reference has to come from the raw and the DC
+% family would be eight more raws. They are unrestricted either way, so what a verification sweep
+% certifies is unchanged.
+ReturnFnd=@(d,aprime,a,z,r,w,sigma,eta,varphi) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,sigma,eta,varphi);
+FnsToEvaluateGEd.K=@(d,aprime,a,z) a;
+FnsToEvaluateGEd.N=@(d,aprime,a,z) d*z;
+
+[p_eqmd,GEcondnsd]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptions, vfoptions);
+fprintf('localsearch shooting d: stationary GE r=%2.8f, w=%2.8f, conditions CapitalMarket=%.3e LabourMarket=%.3e \n',p_eqmd.r,p_eqmd.w,GEcondnsd.CapitalMarket,GEcondnsd.LabourMarket)
+
+ParamsGEd=Params;
+ParamsGEd.r=p_eqmd.r;
+ParamsGEd.w=p_eqmd.w;
+[V_finalGEd,Policy_finalGEd]=ValueFnIter_InfHorz(n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,ReturnFnd,ParamsGEd,DiscountFactorParamNames,[],vfoptions);
+AgentDist_initialGEd=StationaryDist_InfHorz(Policy_finalGEd,n_d_GE,n_a_GE,n_z,pi_z,simoptions,ParamsGEd,[]);
+
+PricePathBumpedd.r=p_eqmd.r*ones(1,T);
+PricePathBumpedd.w=p_eqmd.w*ones(1,T);
+PricePathBumpedd.r(1:Tbump)=PricePathBumpedd.r(1:Tbump).*(1+bumpr);
+PricePathBumpedd.w(1:Tbump)=PricePathBumpedd.w(1:Tbump).*(1+bumpw);
+
+% Tolerance tied to the stationary residual for this calibration, as in the no-d half: a path cannot
+% satisfy the general eqm conditions more tightly than the stationary problem does at the same prices.
+transpathoptionsSd=transpathoptionsS;
+GEfloord=max(abs(GEcondnsd.CapitalMarket),abs(GEcondnsd.LabourMarket));
+transpathoptionsSd.toleranceGEcondns=5*GEfloord;
+fprintf('localsearch shooting d: the stationary solve leaves a residual of %.3e, so toleranceGEcondns is %.3e \n',GEfloord,transpathoptionsSd.toleranceGEcondns)
+
+%% (9) with d, no interpolation layer
+[PricePathAd,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd, AgentDist_initialGEd, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsSd, simoptions, vfoptions, []);
+vfoptionsBd=vfoptions;
+vfoptionsBd.localsearch=1;
+vfoptionsBd.nlocalsearch=3;
+[PricePathBd,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd, AgentDist_initialGEd, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsSd, simoptions, vfoptionsBd, []);
+fprintf('localsearch shooting d: (9) with d, nlocalsearch starting at 3 vs the standard solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathBd.r)-gather(PricePathAd.r))))
+fprintf('localsearch shooting d: (9) with d, nlocalsearch starting at 3 vs the standard solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathBd.w)-gather(PricePathAd.w))))
+
+%% (10) with d AND the interpolation layer, which is the fourth corner of the table
+% Compared against the standard GI solve, not the no-GI one: GI moves the answer on its own and
+% comparing across that would mix the discretisation difference into a check about the restriction.
+vfoptionsGId=vfoptions;
+vfoptionsGId.gridinterplayer=1;
+vfoptionsGId.ngridinterp=ngi;
+simoptionsGId=simoptions;
+simoptionsGId.gridinterplayer=1;
+simoptionsGId.ngridinterp=ngi;
+[V_finalGEd_GI,Policy_finalGEd_GI]=ValueFnIter_InfHorz(n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,ReturnFnd,ParamsGEd,DiscountFactorParamNames,[],vfoptionsGId);
+AgentDist_initialGEd_GI=StationaryDist_InfHorz(Policy_finalGEd_GI,n_d_GE,n_a_GE,n_z,pi_z,simoptionsGId,ParamsGEd,[]);
+[PricePathGIdstd,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd_GI, AgentDist_initialGEd_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsSd, simoptionsGId, vfoptionsGId, []);
+vfoptionsGIdls=vfoptionsGId;
+vfoptionsGIdls.localsearch=1;
+vfoptionsGIdls.nlocalsearch=3;
+[PricePathGIdls,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd_GI, AgentDist_initialGEd_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsSd, simoptionsGId, vfoptionsGIdls, []);
+fprintf('localsearch shooting d: (10) with d and GI, nlocalsearch starting at 3 vs the standard GI solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathGIdls.r)-gather(PricePathGIdstd.r))))
+fprintf('localsearch shooting d: (10) with d and GI, nlocalsearch starting at 3 vs the standard GI solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathGIdls.w)-gather(PricePathGIdstd.w))))
+
+%% (11) The SEED RAW itself, held to the folded standard raw it replaces
+% LSseed_raw searches the same set as ValueFnIter_InfHorz_TPath_SingleStep_raw -- every (d,aprime) --
+% and differs only in taking the max over aprime per d and then over d, rather than one max over a
+% folded (d,aprime) dimension. So V is an IDENTITY. Policy can differ only at exact ties, where the
+% two orders disagree: folded order runs d fastest and so picks the lowest aprime then the lowest d
+% within it, while the unfolded version picks the lowest d then that d's lowest aprime. The tie count
+% is reported rather than checked, because it is a property of the model and not of the code.
+% This is the check on the one piece of genuinely new arithmetic in the with-d general eqm path. The
+% solves above exercise it too, but only through the general eqm residual, which would hide a small
+% error.
+ReturnFnParamNamesd=ReturnFnParamNamesFn(ReturnFnd,n_d_GE,n_a_GE,n_z,0,vfoptions,ParamsGEd);
+% The same branch doPart(5) uses: with a single d the dispatcher wants the grid itself, and
+% CreateGridvals is only for a joint grid over several d. Passing the wrong one of these is a
+% kind-mismatch that no arity check would catch.
+if isscalar(n_d_GE)
+    d_gridvalsd=gpuArray(d_grid_GE);
+else
+    d_gridvalsd=CreateGridvals(n_d_GE,gpuArray(d_grid_GE),1);
+end
+z_gridvalsd=CreateGridvals(n_z,gpuArray(z_grid),1);
+VnextSd=gpuArray(reshape(V_finalGEd,[prod(n_a_GE),prod(n_z)]));
+vfoptionsSd=vfoptions;
+vfoptionsSd.exoticpreferences='None';
+vfoptionsSd.lowmemory=0;
+vfoptionsSd.gridinterplayer=0;
+vfoptionsSd.divideandconquer=0;
+vfoptionsSd.localsearch=0;
+vfoptionsSd.localsearchseed=0;
+[Vfold,Pfold]=ValueFnIter_InfHorz_TPath_SingleStep(VnextSd,n_d_GE,n_a_GE,n_z,d_gridvalsd, gpuArray(a_grid_GE), z_gridvalsd, gpuArray(pi_z), ReturnFnd, ParamsGEd, DiscountFactorParamNames, ReturnFnParamNamesd, [], vfoptionsSd);
+vfoptionsSeedd=vfoptionsSd;
+vfoptionsSeedd.localsearchseed=1;
+[Vseed,Pseed,refseed]=ValueFnIter_InfHorz_TPath_SingleStep(VnextSd,n_d_GE,n_a_GE,n_z,d_gridvalsd, gpuArray(a_grid_GE), z_gridvalsd, gpuArray(pi_z), ReturnFnd, ParamsGEd, DiscountFactorParamNames, ReturnFnParamNamesd, [], vfoptionsSeedd);
+fprintf('localsearch shooting d: (11) the seed raw searches the same set as the folded standard raw, V, this should be zero: %.3e \n',max(abs(gather(Vseed)-gather(Vfold)),[],'all'))
+fprintf('localsearch shooting d: (11) for information, Policy differs at %i of %i states, which is exact ties broken in a different order \n',sum(gather(Pseed(1,:,:))~=gather(Pfold(1,:,:)),'all'),prod(n_a_GE)*prod(n_z))
+% The reference is a coarse aprime index per (d,a,z), and at the CHOSEN d it must be the aprime the
+% Policy reports -- the one place the per-d lookup could be wired to the wrong index.
+N_dd=prod(n_d_GE); N_ad=prod(n_a_GE); N_zd=prod(n_z);
+refseed=gather(refseed);
+dstarseed=gather(Pseed(1,:,:));
+linseed=dstarseed+N_dd*(0:1:N_ad-1)+N_dd*N_ad*shiftdim((0:1:N_zd-1),-1);
+fprintf('localsearch shooting d: (11) the reference read at the chosen d vs the Policy aprime, this should be zero: %.3e \n',max(abs(refseed(linseed)-gather(Pseed(2,:,:))),[],'all'))
 
 output=struct();
 

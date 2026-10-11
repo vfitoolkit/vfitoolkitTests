@@ -175,11 +175,14 @@ fprintf('localsearch d: (7) Policy aprime vs the new reference read at the chose
 
 %% (8) With the grid interpolation layer: reproducing the GI raw exactly at nlocalsearch=1
 % The GI raw derives its midpoint from a full coarse max over aprime FOR EACH d, which is exactly
-% what refW is. Clamped to [2,N_a-1] it IS the GI raw midpoint, and a window of 1 around it spans
-% exactly the 2*ngridinterp+3 fine points the GI raw searches, per d. Same points, same EVinterp,
-% same ReturnFn: an identity.
-% Policy is compared as the decoded fine point, because a point sitting on a coarse node has two
-% legal spellings and neither raw is canonical about which it gives.
+% what refW is. Clamped to [2,N_a-1] it IS the GI raw midpoint.
+% At nlocalsearch=1 the localsearch raw's interior clamp, [loweredge+1, loweredge+2n-1], collapses to
+% the single point loweredge+1 -- the reference itself -- so handing it refGI PINS its first layer to
+% the GI raw's midpoint, per d, and leaves its second layer to do the GI raw's second layer over the
+% same 2*ngridinterp+3 fine points. Same points, same EVinterp, same ReturnFn: an identity.
+% The decoded fine point is kept as the primary comparison because a point on a coarse node has two
+% legal spellings. They should nonetheless agree channel for channel here, since the localsearch raw
+% re-spells with the standard GI raw's own lines, and the extra check below holds that outright.
 refGI=max(min(refW,N_a-1),2);
 vfoptionsG=vfoptionsS;
 vfoptionsG.gridinterplayer=1;
@@ -195,14 +198,26 @@ fprintf('localsearch d + GI: (8) nlocalsearch=1 centred where the GI raw centres
 fprintf('localsearch d + GI: (8) same, the d channel, this should be zero: %.3e \n',max(abs(gather(PLG(1,:,:))-gather(PG(1,:,:))),[],'all'))
 fprintf('localsearch d + GI: (8) same, the decoded aprime fine grid point, this should be zero: %.3e \n',max(abs(fineLG-fineG),[],'all'))
 fprintf('localsearch d + GI: (8) same, the L2flag channel, this should be zero: %.3e \n',max(abs(gather(PLG(4,:,:))-gather(PG(4,:,:))),[],'all'))
+fprintf('localsearch d + GI: (8) same, the raw coarse channel itself and not just the decoded point, this should be zero: %.3e \n',max(abs(gather(PLG(2,:,:))-gather(PG(2,:,:))),[],'all'))
 
-%% (9) The whole-grid window with GI is the exact fine-grid optimum, so it cannot fall below the GI raw
+%% (9) At the WHOLE-GRID window the localsearch GI raw IS the standard GI raw, per d
+% nwide=(N_a-1)/2 puts loweredge at 1, so layer 1 maxes over the whole coarse grid for each d --
+% which is what the standard GI raw's first layer does -- and the interior clamp becomes [2, N_a-1],
+% exactly that raw's own midpoint clamp. So the two must agree bit for bit on every channel, and this
+% is the check that pins down the clamp against an independent implementation at the one window where
+% it can be.
+% Until the one-pass encoding was dropped this section instead compared an EXACT search of the whole
+% fine grid against the GI raw, and so measured how often the GI two-layer search mislocates the fine
+% optimum. With no exact fine-grid search left in the toolkit that figure is not recoverable.
 vfoptionsLGw=vfoptionsG;
 vfoptionsLGw.localsearch=1;
 vfoptionsLGw.nlocalsearch=nwide;
-[VLGw,~]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsLGw);
-fprintf('localsearch d + GI: (9) the whole-grid window is the exact max over the entire fine grid, so it cannot fall below the GI raw, should be one: %i \n',min(gather(VLGw)-gather(VG),[],'all')>=0)
-fprintf('localsearch d + GI: (9) for information, it is strictly above the GI raw at %i of %i states \n',sum(gather(VLGw)>gather(VG),'all'),N_a*N_z)
+[VLGw,PLGw]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsLGw);
+fineLGw=(1+ngi)*(gather(PLGw(2,:,:))-1)+gather(PLGw(3,:,:));
+fprintf('localsearch d + GI: (9) the whole-grid window reproduces the standard GI raw, V, this should be zero: %.3e \n',max(abs(gather(VLGw)-gather(VG)),[],'all'))
+fprintf('localsearch d + GI: (9) same, the d channel, this should be zero: %.3e \n',max(abs(gather(PLGw(1,:,:))-gather(PG(1,:,:))),[],'all'))
+fprintf('localsearch d + GI: (9) same, the decoded aprime fine grid point, this should be zero: %.3e \n',max(abs(fineLGw-fineG),[],'all'))
+fprintf('localsearch d + GI: (9) same, the L2flag channel, this should be zero: %.3e \n',max(abs(gather(PLGw(4,:,:))-gather(PG(4,:,:))),[],'all'))
 
 %% (10) The documented refusals, each checked by its own message
 err=zeros(1,6);
@@ -330,31 +345,21 @@ ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI,
 wait(gpudev)
 time0BGI=toc;
 fprintf('localsearch d + GI: big grid (n_a=%i, N_d=%i, ngridinterp=%i), the unrestricted GI sweep took %6.2f seconds \n',prod(n_a_big),N_d,ngi,time0BGI)
-% THE ONE-PASS VERSUS TWO-LAYER COMPARISON. This is the corner where it should matter most: the
-% decay in n recorded above (16.0, 11.3, 5.0, 2.6) is entirely the (1+ngridinterp) factor in the
-% one-pass search set, and the two-layer set grows at 2 points per unit of n instead of 2*(1+ngi).
-% Both layers are conditional on d, as the window is, so the per-d counts are the no-d counts and the
-% whole comparison just scales by N_d.
-% Read the ratio of TIMES against the ratio of POINTS: if time tracks points the kernel is bandwidth
-% bound and two layers win; if the time ratio sits near 1 the step is latency bound and they do not.
+% The restricted step costs (2n+1) coarse points plus a FIXED 2*ngridinterp+3 fine ones PER d, so it
+% grows at 2 points per unit of nlocalsearch rather than at 2*(1+ngridinterp). That is why the
+% encoding with a coarse layer was kept: the one-pass version measured here decayed 16.1x, 11.0x,
+% 5.0x, 2.6x over nlocalsearch=1,2,5,10 -- by n=10 a tie with divide-and-conquer -- against 15.0x,
+% 16.4x, 12.7x, 8.9x for this one. See the header of the LS1_GI1 raw.
 for nls=[1,2,5,10]
     vfoptionsBGI=vfoptionsGI;
     vfoptionsBGI.localsearch=1;
     vfoptionsBGI.nlocalsearch=nls;
-    vfoptionsBGI.localsearchtwolayer=0;
     tic;
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsBGI);
     wait(gpudev)
     timeBGI=toc;
-    vfoptionsBGI2=vfoptionsBGI;
-    vfoptionsBGI2.localsearchtwolayer=1;
-    tic;
-    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsBGI2);
-    wait(gpudev)
-    timeBGI2=toc;
-    nfine1=2*nls*(1+ngi)+1;
-    nfine2=(2*nls+1)+(2*ngi+3);
-    fprintf('localsearch d + GI: big grid, nlocalsearch=%4i: ONE PASS %6.2fs over %5i points per d (%6.1fx vs unrestricted), TWO LAYERS %6.2fs over %5i points per d (%6.1fx); two-layer takes %5.2f of the one-pass time for %5.2f of the points \n',nls,timeBGI,nfine1,time0BGI/timeBGI,timeBGI2,nfine2,time0BGI/timeBGI2,timeBGI2/timeBGI,nfine2/nfine1)
+    npts=(2*nls+1)+(2*ngi+3);
+    fprintf('localsearch d + GI: big grid, nlocalsearch=%4i: %6.2f seconds, measured speed-up %7.1fx, over %5i points per d (%4i coarse + %4i fine) instead of %6i \n',nls,timeBGI,time0BGI/timeBGI,npts,2*nls+1,2*ngi+3,prod(n_a_big)+2*ngi+3)
 end
 for l_c=[7,10,15]
     vfoptionsDCBGI=vfoptionsGI;
@@ -367,53 +372,7 @@ for l_c=[7,10,15]
     fprintf('localsearch d + GI: big grid, divide-and-conquer at level1n=%3i took %6.2f seconds, a %5.2fx speed-up on the unrestricted GI sweep \n',l_c,timeDCBGI,time0BGI/timeDCBGI)
 end
 
-%% (14) The two GI encodings with d: same window per d, one exact inside it, the other two-pass
-% vfoptions.localsearchtwolayer=1 maxes over the window's COARSE points FOR EACH d, clamps that
-% argmax to the window interior, and runs the interpolation layer one coarse cell either side -- per
-% d again. The clamp makes layer 2 span exactly coarse loweredge to coarse loweredge+2n, so both
-% encodings restrict aprime to identically the same fine set for every d, and differ only in how
-% they search it. One pass is the exact max over that set and so can never fall below two layers;
-% two layers can mislocate, and how often is the price of the cheaper search.
-%
-% AT nlocalsearch=1 CENTRED WHERE THE GI RAW CENTRES, two layers must reproduce the GI raw EXACTLY,
-% on all four channels -- the same identity section (8) holds the one-pass raw to. The clamp forces
-% the midpoint to the reference, which refGI has already set to the GI raw's own midpoint, so layer 1
-% is pinned and layer 2 is the GI raw's second layer verbatim. Unlike (8) this includes the L2 flag
-% as an identity rather than by argument, because the two-layer raw uses the GI raw's flag lines
-% unchanged, while the one-pass raw has to locate the cell endpoints itself.
-vfoptionsLG2=vfoptionsG;
-vfoptionsLG2.localsearch=1;
-vfoptionsLG2.nlocalsearch=1;
-vfoptionsLG2.localsearchtwolayer=1;
-[VLG2,PLG2]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, refGI, vfoptionsLG2);
-fineLG2=(1+ngi)*(gather(PLG2(2,:,:))-1)+gather(PLG2(3,:,:));
-fprintf('localsearch d + GI: (14) two layers at nlocalsearch=1 centred where the GI raw centres, V, this should be zero: %.3e \n',max(abs(gather(VLG2)-gather(VG)),[],'all'))
-fprintf('localsearch d + GI: (14) same, the d channel, this should be zero: %.3e \n',max(abs(gather(PLG2(1,:,:))-gather(PG(1,:,:))),[],'all'))
-fprintf('localsearch d + GI: (14) same, the decoded aprime fine grid point, this should be zero: %.3e \n',max(abs(fineLG2-fineG),[],'all'))
-fprintf('localsearch d + GI: (14) same, the L2flag channel, this should be zero: %.3e \n',max(abs(gather(PLG2(4,:,:))-gather(PG(4,:,:))),[],'all'))
-
-% The dominance, over a ladder of windows, both encodings handed the SAME default reference so that
-% nothing but the search differs.
-nladder14=unique([1,2,5,10]);
-nladder14=nladder14(nladder14<=nwide);
-dom14=1; mislocated14=0; total14=0;
-for n_c=1:length(nladder14)
-    vfoptions14=vfoptionsG;
-    vfoptions14.localsearch=1;
-    vfoptions14.nlocalsearch=nladder14(n_c);
-    vfoptions14.localsearchtwolayer=0;
-    [V14one,~]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions14);
-    vfoptions14.localsearchtwolayer=1;
-    [V14two,~]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions14);
-    V14one=gather(V14one); V14two=gather(V14two);
-    dom14=dom14*(min(V14one-V14two,[],'all')>=0);
-    mislocated14=mislocated14+sum(V14one>V14two,'all');
-    total14=total14+numel(V14one);
-end
-fprintf('localsearch d + GI: (14) one pass is the exact max over the window, so it never falls below two layers, should be one: %i \n',dom14)
-fprintf('localsearch d + GI: (14) for information, two layers mislocated the fine optimum at %i of %i states, over nlocalsearch=%s \n',mislocated14,total14,mat2str(nladder14))
-
-%% (15) THE GI POLICY SPELLING INVARIANT, stressed at the top of the grid
+%% (14) THE GI POLICY SPELLING INVARIANT, stressed at the top of the grid
 % The agent distribution code always forms the upper grid point as P1+1, so the GI convention is
 % P1<=N_a-1 and the top grid point is spelled (N_a-1, L2=ngridinterp+2), never (N_a, L2=1). Nothing
 % in the value fn checks can see a violation: they all compare the DECODED fine point, which is the
@@ -424,34 +383,31 @@ fprintf('localsearch d + GI: (14) for information, two layers mislocated the fin
 % So it is checked directly here, and stressed: the reference is PINNED TO THE TOP OF THE GRID, so
 % loweredge sits at N_a-2n for every state and the window's top coarse point IS N_a. Any state whose
 % optimum is the top grid point then produces the illegal spelling unless the raw re-spells it.
-% Both encodings are checked. The two-layer one is immune by construction -- its coarse argmax is
-% clamped to the window interior, so its midpoint is at most N_a-1 -- but checking it is what makes
-% that claim a measurement rather than an argument.
+% The surviving raw is immune by construction -- its coarse argmax is clamped to the window interior,
+% so its midpoint is at most N_a-1 -- but checking it is what makes that claim a measurement rather
+% than an argument, and it is the dropped one-pass raw that shipped the violation.
 refTop=N_a*ones(N_d,N_a,N_z);
 P1max15=0; P1min15=Inf; inwindow15=1;
 nladder15=[1,2,5];
 nladder15=nladder15(nladder15<=nwide);
 for nls=nladder15
-    for tl=[0,1]
-        vfoptions15=vfoptionsG;
-        vfoptions15.localsearch=1;
-        vfoptions15.nlocalsearch=nls;
-        vfoptions15.localsearchtwolayer=tl;
-        [~,P15]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, refTop, vfoptions15);
-        % Channels are d, lower coarse point, L2, L2flag
-        P1=gather(P15(2,:,:)); L2=gather(P15(3,:,:));
-        P1max15=max(P1max15,max(P1,[],'all'));
-        P1min15=min(P1min15,min(P1,[],'all'));
-        fine15=(1+ngi)*(P1-1)+L2;
-        lo15=(1+ngi)*((N_a-2*nls)-1)+1;
-        hi15=(1+ngi)*((N_a-2*nls)+2*nls-1)+1;
-        inwindow15=inwindow15*all(fine15>=lo15 & fine15<=hi15,'all');
-    end
+    vfoptions15=vfoptionsG;
+    vfoptions15.localsearch=1;
+    vfoptions15.nlocalsearch=nls;
+    [~,P15]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, refTop, vfoptions15);
+    % Channels are d, lower coarse point, L2, L2flag
+    P1=gather(P15(2,:,:)); L2=gather(P15(3,:,:));
+    P1max15=max(P1max15,max(P1,[],'all'));
+    P1min15=min(P1min15,min(P1,[],'all'));
+    fine15=(1+ngi)*(P1-1)+L2;
+    lo15=(1+ngi)*((N_a-2*nls)-1)+1;
+    hi15=(1+ngi)*((N_a-2*nls)+2*nls-1)+1;
+    inwindow15=inwindow15*all(fine15>=lo15 & fine15<=hi15,'all');
 end
-fprintf('localsearch d + GI: (15) the coarse channel never reaches N_a, so the upper point P1+1 stays in range, should be one: %i \n',P1max15<=N_a-1)
-fprintf('localsearch d + GI: (15) the coarse channel never falls below 1, should be one: %i \n',P1min15>=1)
-fprintf('localsearch d + GI: (15) the decoded fine point still lies inside the window after any re-spelling, should be one: %i \n',inwindow15)
-fprintf('localsearch d + GI: (15) for information, the largest coarse channel seen was %i against N_a=%i \n',P1max15,N_a)
+fprintf('localsearch d + GI: (14) the coarse channel never reaches N_a, so the upper point P1+1 stays in range, should be one: %i \n',P1max15<=N_a-1)
+fprintf('localsearch d + GI: (14) the coarse channel never falls below 1, should be one: %i \n',P1min15>=1)
+fprintf('localsearch d + GI: (14) the decoded fine point still lies inside the window after any re-spelling, should be one: %i \n',inwindow15)
+fprintf('localsearch d + GI: (14) for information, the largest coarse channel seen was %i against N_a=%i \n',P1max15,N_a)
 
 output=struct();
 
