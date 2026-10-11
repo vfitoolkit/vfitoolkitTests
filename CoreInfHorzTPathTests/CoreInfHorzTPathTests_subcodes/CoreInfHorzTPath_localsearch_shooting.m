@@ -196,11 +196,19 @@ fprintf('localsearch shooting: (4) that distance is %.3e against toleranceGEcond
 
 %% (5) The refusals that keep the scheme honest
 err=zeros(1,3);
+% QUASI-NEWTON is the one still refused. It perturbs prices to build a Jacobian, and the reference
+% for a perturbed path has to be the BASELINE path's and not the previous perturbation's, or every
+% column of the Jacobian is computed against a different restriction. Anderson USED to be refused
+% here too and no longer is -- see section (12) -- so this check moved rather than being deleted.
+transpathoptionsQN=transpathoptionsbaseline;
+transpathoptionsQN.GEnewprice=1;
+transpathoptionsQN.maxiter=2;
+transpathoptionsQN.verbose=0;
 vfoptionsE=vfoptionsB;
 try
-    TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsAnd, simoptions, vfoptionsE, []);
+    TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsQN, simoptions, vfoptionsE, []);
 catch ME
-    err(1)=contains(ME.message,'requires transpathoptions.GEnewprice=3');
+    err(1)=contains(ME.message,'GEnewprice=3 (shooting) or 2 (Anderson)');
 end
 vfoptionsE=vfoptionsB; vfoptionsE.n_e=3; vfoptionsE.e_grid=linspace(0.9,1.1,3)'; vfoptionsE.pi_e=ones(3,1)/3;
 try
@@ -214,7 +222,7 @@ try
 catch ME
     err(3)=contains(ME.message,'not implemented with an experience asset');
 end
-fprintf('localsearch shooting: (5) local search with an algorithm other than shooting is refused by name, should be one: %i \n',err(1))
+fprintf('localsearch shooting: (5) local search with quasi-Newton is refused by name, should be one: %i \n',err(1))
 fprintf('localsearch shooting: (5) local search with an e variable is refused by name, should be one: %i \n',err(2))
 fprintf('localsearch shooting: (5) local search with an experience asset is refused by name, should be one: %i \n',err(3))
 
@@ -402,6 +410,79 @@ refseed=gather(refseed);
 dstarseed=gather(Pseed(1,:,:));
 linseed=dstarseed+N_dd*(0:1:N_ad-1)+N_dd*N_ad*shiftdim((0:1:N_zd-1),-1);
 fprintf('localsearch shooting d: (11) the reference read at the chosen d vs the Policy aprime, this should be zero: %.3e \n',max(abs(refseed(linseed)-gather(Pseed(2,:,:))),[],'all'))
+
+%% (12) ANDERSON WITH LOCAL SEARCH, against Anderson without it and against shooting
+% Anderson used to be refused with local search because AndersonAcceleration takes a PURE residual
+% function and is shared with the stationary general eqm code, so the reference could not be threaded
+% through it. AndersonAccelerationTPath is a fork that threads it, and certifies convergence with an
+% unrestricted VerifyFn before believing it. The fork changes no line of the algorithm -- gamma, the
+% step, the history update, the Tikhonov scaling and the safeguard are identical -- only the contract.
+%
+% WHY THE VERIFICATION CANNOT BE AN ORDINARY ITERATION, which is the one structural difference from
+% shooting. DeltaX and DeltaF hold successive DIFFERENCES, so re-evaluating at the same prices would
+% contribute a zero DeltaX against a non-zero DeltaF: a degenerate secant pair, exactly what the
+% restart guards exist to discard. So it is a side evaluation outside the history, and a failure
+% restarts the history with the reference reseeded from the exact sweep.
+%
+% THE COMPARISON THAT MATTERS IS AGAINST ANDERSON WITHOUT LOCAL SEARCH, not against shooting: it
+% isolates what the restriction does to the accelerator. Against shooting is also reported, because
+% what a user wants is the fastest configuration and Anderson is meant to be that.
+%
+% RUNTIME HERE MEANS LITTLE. At n_a_GE=201 every solve is launch bound, which is why the shooting
+% timings above show local search LOSING. Read the iteration counts instead. The relevant arithmetic
+% is that local search always pays two full sweeps -- iteration 1 and each verification -- so its
+% gain is k/(2+(k-2)/s) for k iterations and a per-sweep speed-up s. Anderson exists to cut k, which
+% is what that gain is proportional to, so its multiplier is SMALLER than shooting's while its
+% absolute cost is lower. The iteration counts below are what settles that.
+transpathoptionsAndV=transpathoptionsAnd;
+transpathoptionsAndV.verbose=1; % so the Anderson iteration count reaches the diary
+tic;
+[PricePathAndP,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsAndV, simoptions, vfoptions, []);
+wait(gpudev)
+tAndPlain=toc;
+vfoptionsAndLS=vfoptions;
+vfoptionsAndLS.localsearch=1;
+vfoptionsAndLS.nlocalsearch=3;
+tic;
+[PricePathAndLS,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsAndV, simoptions, vfoptionsAndLS, []);
+wait(gpudev)
+tAndLS=toc;
+fprintf('localsearch Anderson: shooting %6.2fs, shooting+localsearch %6.2fs, Anderson %6.2fs, Anderson+localsearch %6.2fs (all launch bound at n_a=%i, so read the iteration counts) \n',tA,tC,tAndPlain,tAndLS,prod(n_a_GE))
+fprintf('localsearch Anderson: (12) Anderson+localsearch vs Anderson without it, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathAndLS.r)-gather(PricePathAndP.r))))
+fprintf('localsearch Anderson: (12) Anderson+localsearch vs Anderson without it, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathAndLS.w)-gather(PricePathAndP.w))))
+fprintf('localsearch Anderson: (12) Anderson+localsearch vs the standard SHOOTING solve, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathAndLS.r)-gather(PricePathA.r))))
+fprintf('localsearch Anderson: (12) Anderson+localsearch vs the standard SHOOTING solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathAndLS.w)-gather(PricePathA.w))))
+
+%% (13) The same with the grid interpolation layer, so the fork is exercised on a coarse reference
+% Against the standard GI Anderson solve, not the no-GI one: GI moves the answer on its own.
+tic;
+[PricePathAndGI,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsAndV, simoptionsGI, vfoptionsGI, []);
+wait(gpudev)
+tAndGI=toc;
+vfoptionsAndGILS=vfoptionsGI;
+vfoptionsAndGILS.localsearch=1;
+vfoptionsAndGILS.nlocalsearch=3;
+tic;
+[PricePathAndGILS,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsAndV, simoptionsGI, vfoptionsAndGILS, []);
+wait(gpudev)
+tAndGILS=toc;
+fprintf('localsearch Anderson: GI, Anderson %6.2fs, Anderson+localsearch %6.2fs \n',tAndGI,tAndGILS)
+fprintf('localsearch Anderson: (13) GI, Anderson+localsearch vs Anderson without it, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathAndGILS.r)-gather(PricePathAndGI.r))))
+fprintf('localsearch Anderson: (13) GI, Anderson+localsearch vs Anderson without it, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathAndGILS.w)-gather(PricePathAndGI.w))))
+
+%% (14) anderson.type='I' with local search is refused by name
+% The Type-I implementation was not forked: its step is unbounded and backtracks toward the previous
+% iterate, so a backtracked trial is not cleanly separable from an accepted one and the rule that the
+% reference commits only on an accepted step has nowhere to live.
+err14=0;
+transpathoptionsAndI=transpathoptionsAnd;
+transpathoptionsAndI.anderson.type='I';
+try
+    TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsAndI, simoptions, vfoptionsAndLS, []);
+catch ME
+    err14=contains(ME.message,'not implemented with vfoptions.localsearch on a transition path');
+end
+fprintf('localsearch Anderson: (14) anderson.type=''I'' with local search is refused by name, should be one: %i \n',err14)
 
 output=struct();
 
