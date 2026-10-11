@@ -41,6 +41,20 @@ a1_2_grid=[0;1]; % binary second asset (capped high-return asset)
 n_a_2A1=[51,n_a1_2,n_a_justexpasset];
 a_grid_2A1=[5*linspace(0,1,n_a_2A1(1))'.^3;a1_2_grid;a2_grid];
 
+% with2A2: a SECOND EXPERIENCE asset a2_2, so vfoptions.experienceassetz is the integer COUNT of
+% experience-asset dims (1 or 2) rather than a flag. Grid layout: a = [a1, a2_1, a2_2], i.e. the
+% two experience assets are the LAST two dims. Interpretation: a2_1 is human capital (the asset the
+% existing 1A tier already has) and a2_2 is cumulated lifetime earnings, which feeds a pension.
+% The a1 grid is 51 points, matching n_a_2A1, because the arrays scale with n_a1*n_a2_1*n_a2_2.
+n_a2_1=7; % first experience asset  (human capital)
+n_a2_2=5; % second experience asset (cumulated lifetime earnings)
+a2_1_grid=linspace(0,10,n_a2_1)';
+a2_2_grid=linspace(0,10,n_a2_2)';
+n_a_2A2=[51,n_a2_1,n_a2_2];
+a_grid_2A2=[5*linspace(0,1,n_a_2A2(1))'.^3;a2_1_grid;a2_2_grid];
+n_a_2A2_justexpasset=[n_a2_1,n_a2_2];          % noa1 tier: the two experience assets are all there is
+a_grid_2A2_justexpasset=[a2_1_grid;a2_2_grid];
+
 
 
 % setup z
@@ -77,8 +91,21 @@ vfoptionsbaseline.aprimeFn=@(d2,a2,z,phi1,phi2) aprimeFn_CoreTestExpAssetz(d2,a2
 simoptionsbaseline.experienceassetz=vfoptionsbaseline.experienceassetz;
 simoptionsbaseline.aprimeFn=vfoptionsbaseline.aprimeFn;
 
+% with2A2 aprimeFn. GPU arrayfun gives scalar output only, so the builders call aprimeFn once per
+% a2 dimension with a 'whicha' integer selector; for experienceassetz it sits AFTER z and before
+% the parameters: aprimeFn(d2,a2_1,a2_2,z,whicha,params...).
+%   whicha==1: a2_1prime = phi1*(1-d2)*z + (1-phi2)*a2_1   (same law as the 1A tier)
+%   whicha==2: a2_2prime = phi3*d2*a2_1   + (1-phi4)*a2_2   (earnings accumulate out of a2_1)
+% Arity check: l_d2(1) + l_a2(2) + l_z(1) + whicha(1) + 4 params = 9 inputs.
+vfoptionsbaseline.aprimeFn_2A2=@(d2,a2_1,a2_2,z,whicha,phi1,phi2,phi3,phi4) ...
+    (whicha==1)*(phi1*(1-d2)*z+(1-phi2)*a2_1) + ...
+    (whicha==2)*(phi3*d2*a2_1+(1-phi4)*a2_2);
+simoptionsbaseline.aprimeFn_2A2=vfoptionsbaseline.aprimeFn_2A2;
+
 Params.phi1=0.3; % ratio at which (1-d2)*z is converted into a2
 Params.phi2=0.03; % depreciation rate
+Params.phi3=0.2; % rate at which d2*a2_1 accumulates into a2_2 (with2A2 only)
+Params.phi4=0.2; % depreciation rate of a2_2 (with2A2 only)
 
 %% Now some parameters that models use
 
@@ -111,3 +138,6 @@ Params.uempbenefit=0.2;
 Params.searcheffortcost=0.6;
 Params.probfindjob=0.7;
 Params.problosejob=0.3;
+
+% with2A2: a2_2 (cumulated lifetime earnings) pays a pension at this rate
+Params.pensionrate=0.1;
