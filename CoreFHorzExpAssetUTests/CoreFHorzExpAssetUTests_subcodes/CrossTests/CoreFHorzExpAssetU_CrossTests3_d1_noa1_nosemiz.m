@@ -4,7 +4,7 @@ function output=CoreFHorzExpAssetU_CrossTests3_d1_noa1_nosemiz(n_d,n_a,n_a_big,n
 % a2prime formula u*(...) reduces to (...) when u==1.
 % n_a is scalar (n_a_justexpasset); a_grid is the a2_grid. n_a_big/a_grid_big are unused.
 
-ReturnFn=@(d1,d2,a,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension) ReturnFn_d1_noz_noe_noa1_nosemiz(d1,d2,a,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension);
+ReturnFn=@(d1,d2,a,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer) ReturnFn_d1_noz_noe_noa1_nosemiz(d1,d2,a,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer);
 
 % aprimeFn for experienceasset side: no u in signature.
 % Matches the experienceassetu baseline u*(phi1*(1-d2)+(1-phi2)*a2) when u==1.

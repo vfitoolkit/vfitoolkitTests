@@ -128,6 +128,10 @@ Params.kappa_j=[0.5:0.1:1,ones(1,9),zeros(1,5)];
 
 % When using semiz
 Params.uempbenefit=0.2;
+Params.transfer=0.1; % experienceassetu noa1 tiers only: keeps working-age c>0 at a=0, where
+                     % earnings are exactly 0 because a is the unconsumable experience asset.
+                     % Small relative to pension (0.5) and peak earnings, so it does not swamp
+                     % the variation the checks rely on.
 Params.searcheffortcost=0.6;
 Params.probfindjob=0.7;
 Params.problosejob=0.3;

@@ -52,8 +52,8 @@ simoptionsA_e=simoptions_withe; simoptionsA_e.a_grid=a_grid;
 simoptionsB_e=simoptions_withe; simoptionsB_e.a_grid=a_grid_B;
 
 %% (1) noz, noe
-ReturnFn_A1=@(d1,d2,d3,a,semiz,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_noz_noe_noa1_semiz(d1,d2,d3,a,semiz,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost);
-ReturnFn_B1=@(d1,d2,d3,a1prime,a1,a2,semiz,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_noz_noe_noa1_semiz(d1,d2,d3,a2,semiz,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost);
+ReturnFn_A1=@(d1,d2,d3,a,semiz,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_d1_noz_noe_noa1_semiz(d1,d2,d3,a,semiz,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
+ReturnFn_B1=@(d1,d2,d3,a1prime,a1,a2,semiz,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_d1_noz_noe_noa1_semiz(d1,d2,d3,a2,semiz,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
 
 jequaloneDist_A1=zeros([n_a,n_semiz],'gpuArray');
 jequaloneDist_A1(1,ceil(n_semiz/2))=1;
@@ -80,8 +80,8 @@ fprintf('Cross test 4 (noa1 vs a1=1, d1 semiz noz noe): this should be zero: V %
 fprintf('Cross test 4 (noa1 vs a1=1, d1 semiz noz noe): sim panel means should roughly match: %2.8f vs %2.8f \n',mean(SimPanel_A.assets,'all'),mean(SimPanel_B.assets,'all'))
 
 %% (2) z, noe
-ReturnFn_A2=@(d1,d2,d3,a,semiz,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_z_noe_noa1_semiz(d1,d2,d3,a,semiz,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost);
-ReturnFn_B2=@(d1,d2,d3,a1prime,a1,a2,semiz,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_z_noe_noa1_semiz(d1,d2,d3,a2,semiz,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost);
+ReturnFn_A2=@(d1,d2,d3,a,semiz,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_d1_z_noe_noa1_semiz(d1,d2,d3,a,semiz,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
+ReturnFn_B2=@(d1,d2,d3,a1prime,a1,a2,semiz,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_d1_z_noe_noa1_semiz(d1,d2,d3,a2,semiz,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
 
 jequaloneDist_A2=zeros([n_a,n_semiz,n_z],'gpuArray');
 jequaloneDist_A2(1,ceil(n_semiz/2),ceil(n_z/2))=1;
@@ -108,8 +108,8 @@ fprintf('Cross test 4 (noa1 vs a1=1, d1 semiz z noe): this should be zero: V %.3
 fprintf('Cross test 4 (noa1 vs a1=1, d1 semiz z noe): sim panel means should roughly match: %2.8f vs %2.8f \n',mean(SimPanel_A.assets,'all'),mean(SimPanel_B.assets,'all'))
 
 %% (3) noz, e
-ReturnFn_A3=@(d1,d2,d3,a,semiz,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_noz_e_noa1_semiz(d1,d2,d3,a,semiz,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost);
-ReturnFn_B3=@(d1,d2,d3,a1prime,a1,a2,semiz,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_noz_e_noa1_semiz(d1,d2,d3,a2,semiz,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost);
+ReturnFn_A3=@(d1,d2,d3,a,semiz,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_d1_noz_e_noa1_semiz(d1,d2,d3,a,semiz,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
+ReturnFn_B3=@(d1,d2,d3,a1prime,a1,a2,semiz,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_d1_noz_e_noa1_semiz(d1,d2,d3,a2,semiz,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
 
 jequaloneDist_A3=zeros([n_a,n_semiz,vfoptions_withe.n_e],'gpuArray');
 jequaloneDist_A3(1,ceil(n_semiz/2),ceil(vfoptions_withe.n_e/2))=1;
@@ -136,8 +136,8 @@ fprintf('Cross test 4 (noa1 vs a1=1, d1 semiz noz e): this should be zero: V %.3
 fprintf('Cross test 4 (noa1 vs a1=1, d1 semiz noz e): sim panel means should roughly match: %2.8f vs %2.8f \n',mean(SimPanel_A.assets,'all'),mean(SimPanel_B.assets,'all'))
 
 %% (4) z, e
-ReturnFn_A4=@(d1,d2,d3,a,semiz,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_z_e_noa1_semiz(d1,d2,d3,a,semiz,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost);
-ReturnFn_B4=@(d1,d2,d3,a1prime,a1,a2,semiz,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_d1_z_e_noa1_semiz(d1,d2,d3,a2,semiz,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost);
+ReturnFn_A4=@(d1,d2,d3,a,semiz,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_d1_z_e_noa1_semiz(d1,d2,d3,a,semiz,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
+ReturnFn_B4=@(d1,d2,d3,a1prime,a1,a2,semiz,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_d1_z_e_noa1_semiz(d1,d2,d3,a2,semiz,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
 
 jequaloneDist_A4=zeros([n_a,n_semiz,n_z,vfoptions_withe.n_e],'gpuArray');
 jequaloneDist_A4(1,ceil(n_semiz/2),ceil(n_z/2),ceil(vfoptions_withe.n_e/2))=1;

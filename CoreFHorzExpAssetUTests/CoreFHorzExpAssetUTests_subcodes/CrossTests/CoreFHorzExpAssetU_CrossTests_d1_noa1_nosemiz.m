@@ -6,10 +6,10 @@ n_z=vfoptionsbaseline.n_e;
 pi_z=repmat(vfoptionsbaseline.pi_e',vfoptionsbaseline.n_e,1);
 z_grid=vfoptionsbaseline.e_grid;
 
-ReturnFn_none=@(d1,d2,a,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension) ReturnFn_d1_noz_noe_noa1_nosemiz(d1,d2,a,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension);
-ReturnFn_z   =@(d1,d2,a,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension) ReturnFn_d1_z_noe_noa1_nosemiz(d1,d2,a,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension);
-ReturnFn_e   =@(d1,d2,a,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension) ReturnFn_d1_noz_e_noa1_nosemiz(d1,d2,a,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension);
-ReturnFn_ze  =@(d1,d2,a,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension) ReturnFn_d1_z_e_noa1_nosemiz(d1,d2,a,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension);
+ReturnFn_none=@(d1,d2,a,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer) ReturnFn_d1_noz_noe_noa1_nosemiz(d1,d2,a,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer);
+ReturnFn_z   =@(d1,d2,a,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer) ReturnFn_d1_z_noe_noa1_nosemiz(d1,d2,a,z,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer);
+ReturnFn_e   =@(d1,d2,a,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer) ReturnFn_d1_noz_e_noa1_nosemiz(d1,d2,a,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer);
+ReturnFn_ze  =@(d1,d2,a,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer) ReturnFn_d1_z_e_noa1_nosemiz(d1,d2,a,z,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer);
 
 vfoptions=struct();
 simoptions=struct();

@@ -41,8 +41,8 @@ simoptions_withe.e_grid=simoptionsbaseline.e_grid;
 simoptions_withe.pi_e=simoptionsbaseline.pi_e;
 
 %% (1) noz, noe
-ReturnFn_A1=@(d2,a,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_noz_noe_noa1_nosemiz(d2,a,r,w,kappa_j,sigma,agej,Jr,pension);
-ReturnFn_B1=@(d2,a1prime,a1,a2,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_noz_noe_noa1_nosemiz(d2,a2,r,w,kappa_j,sigma,agej,Jr,pension);
+ReturnFn_A1=@(d2,a,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_noz_noe_noa1_nosemiz(d2,a,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
+ReturnFn_B1=@(d2,a1prime,a1,a2,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_noz_noe_noa1_nosemiz(d2,a2,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
 
 jequaloneDist_A1=zeros(n_a,1,'gpuArray');
 jequaloneDist_A1(1)=1;
@@ -72,8 +72,8 @@ fprintf('Cross test 4 (noa1 vs a1=1, nod1 noz noe): this should be zero: V %.3e,
 fprintf('Cross test 4 (noa1 vs a1=1, nod1 noz noe): sim panel means should roughly match: %2.8f vs %2.8f \n',mean(SimPanel_A.assets,'all'),mean(SimPanel_B.assets,'all'))
 
 %% (2) z, noe
-ReturnFn_A2=@(d2,a,z,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_z_noe_noa1_nosemiz(d2,a,z,r,w,kappa_j,sigma,agej,Jr,pension);
-ReturnFn_B2=@(d2,a1prime,a1,a2,z,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_z_noe_noa1_nosemiz(d2,a2,z,r,w,kappa_j,sigma,agej,Jr,pension);
+ReturnFn_A2=@(d2,a,z,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_z_noe_noa1_nosemiz(d2,a,z,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
+ReturnFn_B2=@(d2,a1prime,a1,a2,z,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_z_noe_noa1_nosemiz(d2,a2,z,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
 
 jequaloneDist_A2=zeros([n_a,n_z],'gpuArray');
 jequaloneDist_A2(1,ceil(n_z/2))=1;
@@ -100,8 +100,8 @@ fprintf('Cross test 4 (noa1 vs a1=1, nod1 z noe): this should be zero: V %.3e, P
 fprintf('Cross test 4 (noa1 vs a1=1, nod1 z noe): sim panel means should roughly match: %2.8f vs %2.8f \n',mean(SimPanel_A.assets,'all'),mean(SimPanel_B.assets,'all'))
 
 %% (3) noz, e
-ReturnFn_A3=@(d2,a,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_noz_e_noa1_nosemiz(d2,a,e,r,w,kappa_j,sigma,agej,Jr,pension);
-ReturnFn_B3=@(d2,a1prime,a1,a2,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_noz_e_noa1_nosemiz(d2,a2,e,r,w,kappa_j,sigma,agej,Jr,pension);
+ReturnFn_A3=@(d2,a,e,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_noz_e_noa1_nosemiz(d2,a,e,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
+ReturnFn_B3=@(d2,a1prime,a1,a2,e,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_noz_e_noa1_nosemiz(d2,a2,e,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
 
 jequaloneDist_A3=zeros([n_a,vfoptions_withe.n_e],'gpuArray');
 jequaloneDist_A3(1,ceil(vfoptions_withe.n_e/2))=1;
@@ -131,8 +131,8 @@ fprintf('Cross test 4 (noa1 vs a1=1, nod1 noz e): this should be zero: V %.3e, P
 fprintf('Cross test 4 (noa1 vs a1=1, nod1 noz e): sim panel means should roughly match: %2.8f vs %2.8f \n',mean(SimPanel_A.assets,'all'),mean(SimPanel_B.assets,'all'))
 
 %% (4) z, e
-ReturnFn_A4=@(d2,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_z_e_noa1_nosemiz(d2,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension);
-ReturnFn_B4=@(d2,a1prime,a1,a2,z,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_z_e_noa1_nosemiz(d2,a2,z,e,r,w,kappa_j,sigma,agej,Jr,pension);
+ReturnFn_A4=@(d2,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_z_e_noa1_nosemiz(d2,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
+ReturnFn_B4=@(d2,a1prime,a1,a2,z,e,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_z_e_noa1_nosemiz(d2,a2,z,e,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
 
 jequaloneDist_A4=zeros([n_a,n_z,vfoptions_withe.n_e],'gpuArray');
 jequaloneDist_A4(1,ceil(n_z/2),ceil(vfoptions_withe.n_e/2))=1;

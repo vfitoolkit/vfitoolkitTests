@@ -37,7 +37,7 @@ simoptions.pi_u=vfoptions.pi_u;
 jequaloneDist=zeros([n_a,vfoptions.n_e],'gpuArray');
 jequaloneDist(1,ceil(vfoptions.n_e/2))=1;
 
-ReturnFn=@(d1,d2,a,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension) ReturnFn_d1_noz_e_noa1_nosemiz(d1,d2,a,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension);
+ReturnFn=@(d1,d2,a,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer) ReturnFn_d1_noz_e_noa1_nosemiz(d1,d2,a,e,r,w,kappa_j,sigma,varphi,eta,agej,Jr,pension,transfer);
 
 FnsToEvaluate.assets=@(d1,d2,a,e) a;
 FnsToEvaluate.earnings=@(d1,d2,a,e,w,kappa_j) w*kappa_j*d1*d2*a*e;

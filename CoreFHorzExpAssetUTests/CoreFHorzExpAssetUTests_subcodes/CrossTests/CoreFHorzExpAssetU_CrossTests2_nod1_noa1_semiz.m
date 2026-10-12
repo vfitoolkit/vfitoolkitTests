@@ -40,8 +40,8 @@ simoptions.semiz_grid=z_grid;
 simoptions.SemiExoStateFn=SemiExoStateFn_JustAMarkov;
 n_semiz=vfoptions.n_semiz;
 
-ReturnFn_semiz=@(d2,d3,a,semiz,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost) ReturnFn_nod1_noz_noe_noa1_semiz(d2,d3,a,semiz,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost);
-ReturnFn_z=@(d2,a,z,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_z_noe_noa1_nosemiz(d2,a,z,r,w,kappa_j,sigma,agej,Jr,pension);
+ReturnFn_semiz=@(d2,d3,a,semiz,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost,transfer) ReturnFn_nod1_noz_noe_noa1_semiz(d2,d3,a,semiz,r,w,kappa_j,sigma,agej,Jr,pension,uempbenefit,searcheffortcost,transfer);
+ReturnFn_z=@(d2,a,z,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_z_noe_noa1_nosemiz(d2,a,z,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
 
 %% Side A: plain markov z (no semiz)
 jequaloneDist=zeros([n_a,n_semiz],'gpuArray');

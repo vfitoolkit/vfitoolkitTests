@@ -4,7 +4,7 @@ function output=CoreFHorzExpAssetU_CrossTests3_nod1_noa1_nosemiz(n_d,n_a,n_a_big
 % a2prime formula u*(...) reduces to (...) when u==1.
 % n_a is scalar (n_a_justexpasset); a_grid is the a2_grid. n_a_big/a_grid_big are unused.
 
-ReturnFn=@(d2,a,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod1_noz_noe_noa1_nosemiz(d2,a,r,w,kappa_j,sigma,agej,Jr,pension);
+ReturnFn=@(d2,a,r,w,kappa_j,sigma,agej,Jr,pension,transfer) ReturnFn_nod1_noz_noe_noa1_nosemiz(d2,a,r,w,kappa_j,sigma,agej,Jr,pension,transfer);
 
 aprimeFn_expasset=@(d2,a2,phi1,phi2) phi1*(1-d2)+(1-phi2)*a2;
 
