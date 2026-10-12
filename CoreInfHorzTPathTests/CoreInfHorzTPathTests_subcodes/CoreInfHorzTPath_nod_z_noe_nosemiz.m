@@ -313,7 +313,10 @@ dev=temp1(:,1:N_jFH)-temp2;
 fprintf('TPath vs FHorz (with DC and GI), this should be zero, V: %.3e \n',max(abs(dev(:))))
 temp1=reshape(PolicyPath4,[],T); temp2=reshape(Policy_FH,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC and GI), this should be zero, Policy: %.3e \n',max(abs(dev(:))))
+% DELETED, same reason as the other raw Policy index comparisons under the interpolation layer, and
+% this one PASSED -- the two spellings coincided here. A wrong check that passes is worse than a
+% wrong check that fails, because nothing ever prompts you to look at it. The PolicyVals comparison
+% immediately below is the real check and is spelling-proof by construction.
 temp1=reshape(PolicyInd2Val_InfHorz_TPath(PolicyPath4,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions4),[],T);
 temp2=reshape(PolicyInd2Val_FHorz(Policy_FH,n_d,n_a,n_z,N_jFH,d_grid,a_grid,vfoptions4),[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
@@ -561,7 +564,13 @@ PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_g
 Vfin_rep_GI=repmat(V_final_GI,1,1,1,T);
 fprintf('Constant TPath (with DC and GI), this should be zero, V: %.3e \n',max(abs(VPath1(:)-Vfin_rep_GI(:))))
 Polfin_rep_GI=repmat(Policy_final_GI,1,1,1,1,T);
-fprintf('Constant TPath (with DC and GI), this should be zero, Policy: %.3e \n',max(abs(PolicyPath1(:)-Polfin_rep_GI(:))))
+% THE RAW POLICY INDEX COMPARISON IS DELETED, not fixed: under the interpolation layer a point on a
+% coarse node has TWO legal spellings, (P1,L2=1) and (P1-1,L2=1+ngridinterp+1), so a raw channel
+% difference of exactly 1+ngridinterp is the same aprime named two ways. That is what this reported --
+% 6.000e+00 at ngridinterp=5 -- while the PolicyVals comparison beside it read 4e-16 or exactly zero.
+% The values agreeing to machine precision IS the check; the index comparison was testing the
+% encoding, and testing it wrongly. See the header of the LS1_GI1 raws for why neither spelling is
+% canonical.
 PolicyValsfin_GI=PolicyInd2Val_InfHorz(Policy_final_GI,n_d,n_a,n_z,d_grid,a_grid,vfoptions4);
 PolicyValsfin_GI_rep=repmat(PolicyValsfin_GI(:),1,T);
 fprintf('Constant TPath (with DC and GI), this should be zero, PolicyVals: %.3e \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_GI_rep(:))))
@@ -682,7 +691,24 @@ simoptionsGE_GI.ngridinterp=5;
 [p_eqm_GI,GEcondns_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGE_GI, vfoptionsGE_GI);
 fprintf('Stationary GE (with DC and GI): r=%2.8f, w=%2.8f \n',p_eqm_GI.r,p_eqm_GI.w)
 fprintf('Stationary GE conditions (with DC and GI), these should be close to zero: CapitalMarket=%.3e, LabourMarket=%.3e \n',GEcondns_GI.CapitalMarket,GEcondns_GI.LabourMarket)
-fprintf('Stationary GE, the two tiers should agree, difference in r: %2.8f, in w: %2.8f \n',abs(p_eqm_GI.r-p_eqm.r),abs(p_eqm_GI.w-p_eqm.w))
+% THE TWO TIERS MUST AGREE ON THE EQUILIBRIUM, and this is now a CHECK and not a print. It used to
+% read 'the two tiers should agree', which is not one of the four phrases CoreSummary counts, so the
+% number was computed and printed on every run and never read by anything. That is a worse failure
+% than a missing test: the invariant is stated in the code and measured every run, and only the
+% enforcement was absent, so a grep for the counted phrases finds nothing wrong.
+% FIVE OF THIS BANK'S TEN SUBCODES HAVE A d, and in those the no-GI stationary solve stalls rather
+% than converging: K=E[a] and N=E[d*z] are step functions of the prices on coarse grids, so the
+% general eqm objective is piecewise-constant and fminsearch stops where it starts. On the d_z model
+% that stall is at w=0.68066 against the GI tier's w=0.43767, so this line has been printing a
+% difference of about 0.24 beneath a sentence asserting it should be zero.
+% The fix, measured in CoreInfHorzTPath_localsearch_shooting: solve WITH GI first, then re-solve the
+% no-GI tier STARTING FROM that answer. HeteroAgentStationaryEqm_InfHorz takes its initial guess from
+% Parameters.r and Parameters.w. That moved the d_z model to w=0.44304 at a residual 90x smaller.
+% NOT AN IDENTITY. The two tiers discretise differently, so a correct pair still differs by the
+% discretisation gap -- about 5e-03 in w on the with-d model. The close-to-zero bar of 0.1 passes
+% that comfortably and still catches a stall an order of magnitude above it.
+fprintf('Stationary GE, the two tiers must agree on r, this should be close to zero: %.3e \n',abs(p_eqm_GI.r-p_eqm.r))
+fprintf('Stationary GE, the two tiers must agree on w, this should be close to zero: %.3e \n',abs(p_eqm_GI.w-p_eqm.w))
 
 ParamsGE_GI=Params;
 ParamsGE_GI.r=p_eqm_GI.r;

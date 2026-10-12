@@ -717,7 +717,24 @@ simoptionsGE_GI.ngridinterp=5;
 [p_eqm_GI,GEcondns_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGE_GI, vfoptionsGE_GI);
 fprintf('Stationary GE (with DC and GI): r=%2.8f, w=%2.8f \n',p_eqm_GI.r,p_eqm_GI.w)
 fprintf('Stationary GE conditions (with DC and GI), these should be close to zero: CapitalMarket=%.3e, LabourMarket=%.3e \n',GEcondns_GI.CapitalMarket,GEcondns_GI.LabourMarket)
-fprintf('Stationary GE, the two tiers should agree, difference in r: %2.8f, in w: %2.8f \n',abs(p_eqm_GI.r-p_eqm.r),abs(p_eqm_GI.w-p_eqm.w))
+% THE TWO TIERS MUST AGREE ON THE EQUILIBRIUM, and this is now a CHECK and not a print. It used to
+% read 'the two tiers should agree', which is not one of the four phrases CoreSummary counts, so the
+% number was computed and printed on every run and never read by anything. That is a worse failure
+% than a missing test: the invariant is stated in the code and measured every run, and only the
+% enforcement was absent, so a grep for the counted phrases finds nothing wrong.
+% FIVE OF THIS BANK'S TEN SUBCODES HAVE A d, and in those the no-GI stationary solve stalls rather
+% than converging: K=E[a] and N=E[d*z] are step functions of the prices on coarse grids, so the
+% general eqm objective is piecewise-constant and fminsearch stops where it starts. On the d_z model
+% that stall is at w=0.68066 against the GI tier's w=0.43767, so this line has been printing a
+% difference of about 0.24 beneath a sentence asserting it should be zero.
+% The fix, measured in CoreInfHorzTPath_localsearch_shooting: solve WITH GI first, then re-solve the
+% no-GI tier STARTING FROM that answer. HeteroAgentStationaryEqm_InfHorz takes its initial guess from
+% Parameters.r and Parameters.w. That moved the d_z model to w=0.44304 at a residual 90x smaller.
+% NOT AN IDENTITY. The two tiers discretise differently, so a correct pair still differs by the
+% discretisation gap -- about 5e-03 in w on the with-d model. The close-to-zero bar of 0.1 passes
+% that comfortably and still catches a stall an order of magnitude above it.
+fprintf('Stationary GE, the two tiers must agree on r, this should be close to zero: %.3e \n',abs(p_eqm_GI.r-p_eqm.r))
+fprintf('Stationary GE, the two tiers must agree on w, this should be close to zero: %.3e \n',abs(p_eqm_GI.w-p_eqm.w))
 
 ParamsGE_GI=Params;
 ParamsGE_GI.r=p_eqm_GI.r;
