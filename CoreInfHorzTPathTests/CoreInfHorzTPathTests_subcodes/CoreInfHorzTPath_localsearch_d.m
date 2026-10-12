@@ -62,7 +62,7 @@ monotone=1;
 Vprev=[]; Vn1=[]; Vnwide=[]; Polnwided=[]; Polnwidea=[];
 for n_c=1:length(nladder)
     vfoptionsLS=vfoptions;
-    vfoptionsLS.localsearch=1;
+    vfoptionsLS.localsearch=2;
     vfoptionsLS.nlocalsearch=nladder(n_c);
     [VPathn,PolicyPathn]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsLS);
     VPathn=gather(VPathn);
@@ -85,6 +85,14 @@ for n_c=1:length(nladder)
     end
 end
 
+% NOTE ON vfoptions.localsearch=2 BELOW. ValueFnOnTransPath_InfHorz IGNORES localsearch=1 and warns:
+% it produces the value and policy path the welfare numbers and the agent distribution are built
+% from, and it has no verification sweep to certify a restricted answer against, so a restricted
+% answer there would simply be trusted. localsearch=2 is how a caller forces it anyway, and it is
+% what this part has to use -- otherwise every check below would compare an unrestricted sweep
+% against an unrestricted sweep and pass while testing nothing.
+% Calls that go to the single-step dispatcher, or to TransitionPath_InfHorz, keep localsearch=1;
+% those commands REFUSE the value 2 by name, so the two cannot be confused.
 %% (1) The whole-grid window must reproduce the unrestricted path
 % The channels are compared separately so that a d-only or an aprime-only defect is located rather
 % than merely reported. The two maxima this raw takes break exact ties differently from the single
@@ -221,19 +229,19 @@ fprintf('localsearch d + GI: (9) same, the L2flag channel, this should be zero: 
 
 %% (10) The documented refusals, each checked by its own message
 err=zeros(1,6);
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; % no nlocalsearch
+vfoptionsE=vfoptions; vfoptionsE.localsearch=2; % no nlocalsearch
 try
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
 catch ME
     err(1)=contains(ME.message,'must set vfoptions.nlocalsearch');
 end
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=N_a;
+vfoptionsE=vfoptions; vfoptionsE.localsearch=2; vfoptionsE.nlocalsearch=N_a;
 try
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
 catch ME
     err(2)=contains(ME.message,'too large for the grid');
 end
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=0;
+vfoptionsE=vfoptions; vfoptionsE.localsearch=2; vfoptionsE.nlocalsearch=0;
 try
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
 catch ME
@@ -319,7 +327,7 @@ time0B=toc;
 fprintf('localsearch d: big grid (n_a=%i, N_d=%i), the unrestricted sweep took %6.2f seconds \n',prod(n_a_big),N_d,time0B)
 for nls=[1,2,5,10]
     vfoptionsB=vfoptions;
-    vfoptionsB.localsearch=1;
+    vfoptionsB.localsearch=2;
     vfoptionsB.nlocalsearch=nls;
     tic;
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsB);
@@ -372,7 +380,7 @@ fprintf('localsearch d + GI: big grid (n_a=%i, N_d=%i, ngridinterp=%i), the unre
 % 16.4x, 12.7x, 8.9x for this one. See the header of the LS1_GI1 raw.
 for nls=[1,2,5,10]
     vfoptionsBGI=vfoptionsGI;
-    vfoptionsBGI.localsearch=1;
+    vfoptionsBGI.localsearch=2;
     vfoptionsBGI.nlocalsearch=nls;
     tic;
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsBGI);

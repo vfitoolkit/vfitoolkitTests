@@ -126,7 +126,7 @@ Vprev=[];
 Vn1=[]; Vnwide=[]; Polnwide=[];
 for n_c=1:length(nladder)
     vfoptionsLS=vfoptions;
-    vfoptionsLS.localsearch=1;
+    vfoptionsLS.localsearch=2;
     vfoptionsLS.nlocalsearch=nladder(n_c);
     tic;
     [VPathn,PolicyPathn]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsLS);
@@ -161,6 +161,14 @@ for n_c=1:length(nladder)
     end
 end
 
+% NOTE ON vfoptions.localsearch=2 BELOW. ValueFnOnTransPath_InfHorz IGNORES localsearch=1 and warns:
+% it produces the value and policy path the welfare numbers and the agent distribution are built
+% from, and it has no verification sweep to certify a restricted answer against, so a restricted
+% answer there would simply be trusted. localsearch=2 is how a caller forces it anyway, and it is
+% what this part has to use -- otherwise every check below would compare an unrestricted sweep
+% against an unrestricted sweep and pass while testing nothing.
+% Calls that go to the single-step dispatcher, or to TransitionPath_InfHorz, keep localsearch=1;
+% those commands REFUSE the value 2 by name, so the two cannot be confused.
 %% (1) The whole-grid window must reproduce the unrestricted path exactly
 fprintf('localsearch: (1) nlocalsearch=%i covers the grid, V vs the unrestricted path, this should be zero: %.3e \n',nwide,max(abs(Vnwide-V0),[],'all'))
 fprintf('localsearch: (1) nlocalsearch=%i covers the grid, Policy vs the unrestricted path, this should be zero: %.3e \n',nwide,max(abs(Polnwide-Pol0),[],'all'))
@@ -232,21 +240,21 @@ fprintf('localsearch: (7) for scale, the same step with the default reference in
 % refuses starts working, or it fails for the best possible reason.
 err=zeros(1,4);
 
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; % no nlocalsearch
+vfoptionsE=vfoptions; vfoptionsE.localsearch=2; % no nlocalsearch
 try
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
 catch ME
     err(1)=contains(ME.message,'must set vfoptions.nlocalsearch');
 end
 
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=N_a; % too large for the grid
+vfoptionsE=vfoptions; vfoptionsE.localsearch=2; vfoptionsE.nlocalsearch=N_a; % too large for the grid
 try
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
 catch ME
     err(2)=contains(ME.message,'too large for the grid');
 end
 
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=0; % a single grid point, so no search at all
+vfoptionsE=vfoptions; vfoptionsE.localsearch=2; vfoptionsE.nlocalsearch=0; % a single grid point, so no search at all
 try
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
 catch ME
@@ -299,7 +307,7 @@ fprintf('localsearch: big grid (n_a=%i), the unrestricted policy moves at most %
 nladderB=[1,2,5,10,nwide_big];
 for n_c=1:length(nladderB)
     vfoptionsLS=vfoptions;
-    vfoptionsLS.localsearch=1;
+    vfoptionsLS.localsearch=2;
     vfoptionsLS.nlocalsearch=nladderB(n_c);
     tic;
     [VPathBn,PolicyPathBn]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsLS);
@@ -395,7 +403,7 @@ vfoptionsGI.ngridinterp=ngi;
 [V_finalGI,Policy_finalGI]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsGI);
 
 vfoptionsGIw=vfoptionsGI;
-vfoptionsGIw.localsearch=1;
+vfoptionsGIw.localsearch=2;
 vfoptionsGIw.nlocalsearch=nwide;
 [VPathGIw,~]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGIw);
 VPathGIw=gather(VPathGIw);
@@ -407,7 +415,7 @@ monotoneGIviol=0; monotoneGItot=0; windowallGI=1; windowintGI=1;
 VprevGI=[];
 for n_c=1:length(nladderGI)
     vfoptionsGIn=vfoptionsGI;
-    vfoptionsGIn.localsearch=1;
+    vfoptionsGIn.localsearch=2;
     vfoptionsGIn.nlocalsearch=nladderGI(n_c);
     [VPathGIn,PolicyPathGIn]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsGIn);
     VPathGIn=gather(VPathGIn);
@@ -461,7 +469,7 @@ fprintf('localsearch+GI: (12) and within nlocalsearch at every interior state, s
 % reaches N_a and the restricted matrix is as large as the unrestricted one. A model that needed
 % lowmemory will run out of memory there. That is accepted rather than guarded -- the cap warning
 % already says local search is strictly worse than not using it at the cap.
-vfoptions13=vfoptions; vfoptions13.localsearch=1; vfoptions13.nlocalsearch=2;
+vfoptions13=vfoptions; vfoptions13.localsearch=2; vfoptions13.nlocalsearch=2;
 vfoptions13.lowmemory=0;
 [VP13a,PP13a]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions13);
 vfoptions13.lowmemory=1;
@@ -469,7 +477,7 @@ vfoptions13.lowmemory=1;
 fprintf('localsearch: (13) lowmemory=1 with local search, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(VP13a)-gather(VP13b)),[],'all'))
 fprintf('localsearch: (13) same, Policy, this should be zero: %.3e \n',max(abs(gather(PP13a)-gather(PP13b)),[],'all'))
 
-vfoptions13GI=vfoptionsGI; vfoptions13GI.localsearch=1; vfoptions13GI.nlocalsearch=2;
+vfoptions13GI=vfoptionsGI; vfoptions13GI.localsearch=2; vfoptions13GI.nlocalsearch=2;
 vfoptions13GI.lowmemory=0;
 [VP13c,PP13c]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions13GI);
 vfoptions13GI.lowmemory=1;
@@ -503,7 +511,7 @@ fprintf('localsearch+GI: big grid (n_a=%i, ngridinterp=%i), the unrestricted GI 
 % where the one-pass version fell from 16.1x to 2.6x over n=1 to 10.
 for nls=[1,2,5,10]
     vfoptionsBGI=vfoptionsGI;
-    vfoptionsBGI.localsearch=1;
+    vfoptionsBGI.localsearch=2;
     vfoptionsBGI.nlocalsearch=nls;
     tic;
     ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsBGI);
@@ -541,7 +549,7 @@ level1nlist=[15,21,31,51];
 
 %% No grid interpolation layer
 vfoptionsLSb=vfoptions;
-vfoptionsLSb.localsearch=1;
+vfoptionsLSb.localsearch=2;
 vfoptionsLSb.nlocalsearch=1;
 tic;
 ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalB, Policy_finalB, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsLSb);
@@ -570,7 +578,7 @@ fprintf('DC comparison: (15) divide-and-conquer V vs the unrestricted path, wors
 
 %% With the grid interpolation layer
 vfoptionsLSbGI=vfoptionsGI;
-vfoptionsLSbGI.localsearch=1;
+vfoptionsLSbGI.localsearch=2;
 vfoptionsLSbGI.nlocalsearch=1;
 tic;
 ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalBGI, Policy_finalBGI, Params, n_d,n_a_big,n_z, d_grid,a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsLSbGI);

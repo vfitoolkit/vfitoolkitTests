@@ -313,9 +313,10 @@ fprintf('localsearch shooting: (8) the diagnostic is pure observation, its solve
 % unfolds (d,aprime) and maxes over aprime first; with it, the standard GI raw already computes
 % exactly that argmax as its midpoint and now returns it.
 %
-% Seed sweeps IGNORE divideandconquer, because a per-d reference has to come from the raw and the DC
-% family would be eight more raws. They are unrestricted either way, so what a verification sweep
-% certifies is unchanged.
+% Seed sweeps HONOUR divideandconquer. DC is a memory option as much as a speed one here: the seed
+% sweep is the unrestricted one, about 2 GB with a d at n_a=1001 against about 63 MB under DC, so a
+% model that needs DC to solve at all can still use local search. The restricted sweeps still refuse
+% DC, and still ignore lowmemory.
 ReturnFnd=@(d,aprime,a,z,r,w,sigma,eta,varphi) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,sigma,eta,varphi);
 FnsToEvaluateGEd.K=@(d,aprime,a,z) a;
 FnsToEvaluateGEd.N=@(d,aprime,a,z) d*z;
