@@ -41,6 +41,18 @@ a1_2_grid=[0;1]; % binary second asset (capped high-return asset)
 n_a_2A1=[51,n_a1_2,n_a_justexpasset];
 a_grid_2A1=[5*linspace(0,1,n_a_2A1(1))'.^3;a1_2_grid;a2_grid];
 
+% with2A2: a SECOND EXPERIENCE asset a2_2, so vfoptions.experienceassete is the integer COUNT of
+% a2 dimensions (2 here) rather than a flag. Grid layout: a = [a1, a2_1, a2_2], and the noa1 tier
+% is just a = [a2_1, a2_2].
+n_a2_1=7; % first experience asset  (human capital, the one the existing tier has)
+n_a2_2=5; % second experience asset (cumulated lifetime earnings)
+a2_1_grid=linspace(0,10,n_a2_1)';
+a2_2_grid=linspace(0,10,n_a2_2)';
+n_a_2A2=[51,n_a2_1,n_a2_2]; % base a1 grid, same 51 as n_a_2A1; the driver's 'notsobig' grid is FINER in a1
+a_grid_2A2=[5*linspace(0,1,n_a_2A2(1))'.^3;a2_1_grid;a2_2_grid];
+n_a_2A2_justexpasset=[n_a2_1,n_a2_2];          % noa1 tier: the two experience assets are all there is
+a_grid_2A2_justexpasset=[a2_1_grid;a2_2_grid];
+
 
 
 % setup z
@@ -77,8 +89,27 @@ vfoptionsbaseline.aprimeFn=@(d2,a2,e,phi1,phi2) aprimeFn_CoreTestExpAssete(d2,a2
 simoptionsbaseline.experienceassete=vfoptionsbaseline.experienceassete;
 simoptionsbaseline.aprimeFn=vfoptionsbaseline.aprimeFn;
 
+% with2A2 aprimeFn. GPU arrayfun gives scalar output only, so the builders call aprimeFn once per
+% a2 dimension with a 'whicha' integer selector. NOTE the argument order: for experienceassetE the
+% selector sits AFTER e and before the parameters, i.e. aprimeFn(d2,a2_1,a2_2,e,whicha,params...).
+% Verified against the 32 arrayfun call sites in the l_a2==2 branch of
+% CreateExperienceAsseteFnMatrix and its arity check nargin==l_d+l_a2+l_e+(l_a2>=2)+nparams.
+vfoptionsbaseline.aprimeFn_2A2=@(d2,a2_1,a2_2,e,whicha,phi1,phi2,phi3,phi4) ...
+    (whicha==1)*(phi1*(1-d2)*e+(1-phi2)*a2_1) + ...
+    (whicha==2)*(phi3*d2*a2_1+(1-phi4)*a2_2);
+% a2_1' = phi1*(1-d2)*e+(1-phi2)*a2_1  -- EXACTLY the law of motion of the one-experience-asset
+%         tier (aprimeFn_CoreTestExpAssete), so the inert-second-asset cross-test reduces to that
+%         tier bit-for-bit.
+% a2_2' = phi3*d2*a2_1+(1-phi4)*a2_2   -- deliberately COUPLED to a2_1. With an uncoupled second
+%         asset a stride bug can cancel out and the checks go vacuous.
+simoptionsbaseline.aprimeFn_2A2=vfoptionsbaseline.aprimeFn_2A2;
+
 Params.phi1=0.3; % ratio at which (1-d2)*e is converted into a2
 Params.phi2=0.03; % depreciation rate
+Params.phi3=0.2; % rate at which d2*a2_1 accumulates into a2_2 (with2A2 only)
+Params.phi4=0.2; % depreciation of a2_2 (with2A2 only)
+Params.pensionrate=0.1; % a2_2 raises the retirement pension -- this is what makes V genuinely
+                        % depend on a2_2, rather than it being a payoff-irrelevant passenger.
 
 %% Now some parameters that models use
 

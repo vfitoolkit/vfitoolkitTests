@@ -31,6 +31,11 @@
 % doPart(9):  With TWO standard endogenous figs 17-20
 % doPart(10): With TWO standard endogenous cross-tests
 % doPart(11): with2A1 + semiz tier figs 21-24
+% doPart(12): with2A2 noa1 figs 25-28       (two EXPERIENCE assets, nosemiz)
+% doPart(13): with2A2 noa1 figs 29-32       (two EXPERIENCE assets, semiz)
+% doPart(14): with2A2 WITH a1 figs 33-36    (a1 + two experience assets, nosemiz)
+% doPart(15): with2A2 WITH a1 figs 37-40    (a1 + two experience assets, semiz)
+% doPart(16): with2A2 cross-tests           (the machine-precision checks of the tier)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -39,7 +44,16 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1];
+%
+% NOTE: fig 24 stays commented out INSIDE part 11 - it out-of-memories on this machine. doPart is for
+% whole tiers; an individual call that cannot run stays commented.
+% This run: parts 12-16 only, the with2A2 tier. Parts 1-11 were all green on the 2026-10-12 run
+% (856 checks, nothing above the 1e-7 identity bar, largest 3.725e-09 in the V~1e7 ULP band) --
+% that run is the l_a2==1 regression guard for the rewritten n_a peel / aprimeFn arity / corner
+% count / a1primeKron construction, so there is no reason to pay for it again. Parts are
+% independent (no part reads another's output and nothing is passed through a .mat), so running
+% this subset is safe.
+doPart=[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -373,11 +387,143 @@ if doPart(11)==1
 
     %% with2A1+semiz, with d1, with z, with e
     figure_c=24;
-    output=CoreFHorzExpAssete_d1_z_e_with2A1_semiz(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    % output=CoreFHorzExpAssete_d1_z_e_with2A1_semiz(n_d_withd1semiz,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    % exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
 end % doPart(11): with2A1 + semiz tier figs 21-24
 
 % No semiz-2A1 cross-tests (matches the ExpAsset template's semiz-2A1 tier).
+
+%% ================= with2A2: TWO EXPERIENCE ASSETS =================
+% vfoptions.experienceassete is the integer COUNT of a2 dimensions (2 here), not a flag.
+% Grid layout a = [a1, a2_1, a2_2], and the noa1 tier is a = [a2_1, a2_2]. n_a_2A2 /
+% a_grid_2A2 / n_a_2A2_justexpasset / a_grid_2A2_justexpasset all come from the setup.
+% The aprimeFn is vfoptionsbaseline.aprimeFn_2A2, which takes the 'whicha' selector AFTER e:
+% aprimeFn(d2,a2_1,a2_2,e,whicha,params...). Each subcode sets experienceassete=2 itself.
+addpath('./CoreFHorzExpAsseteTests_subcodes/With2A2_subcodes/Noa1_subcodes/')
+addpath('./CoreFHorzExpAsseteTests_subcodes/With2A2_subcodes/Noa1_subcodes/Semiz_subcodes/')
+addpath('./CoreFHorzExpAsseteTests_subcodes/With2A2_subcodes/WithA1_subcodes/')
+addpath('./CoreFHorzExpAsseteTests_subcodes/With2A2_subcodes/WithA1_subcodes/Semiz_subcodes/')
+addpath('./CoreFHorzExpAssete_ReturnFns/With2A2_ReturnFns/')
+addpath('./CoreFHorzExpAssete_ReturnFns/With2A2_ReturnFns/Noa1_ReturnFns/')
+addpath('./CoreFHorzExpAssete_ReturnFns/With2A2_ReturnFns/Noa1_ReturnFns/Semiz_ReturnFns/')
+addpath('./CoreFHorzExpAssete_ReturnFns/With2A2_ReturnFns/Semiz_ReturnFns/')
+
+% The grid-interpolation comparison needs the 'notsobig' a1 grid to be strictly FINER in a1 than
+% n_a_2A2 (=[51,n_a2_1,n_a2_2]), otherwise the GI-vs-dense check is vacuous. 151 mirrors
+% n_a_2A1_notsobig; the semiz tier uses 101 to stay inside memory.
+n_a_2A2_notsobig=[151,n_a2_1,n_a2_2];
+a_grid_2A2_notsobig=[5*linspace(0,1,n_a_2A2_notsobig(1))'.^3;a2_1_grid;a2_2_grid];
+n_a_2A2_notsobig_semiz=[101,n_a2_1,n_a2_2];
+a_grid_2A2_notsobig_semiz=[5*linspace(0,1,n_a_2A2_notsobig_semiz(1))'.^3;a2_1_grid;a2_2_grid];
+
+%% ===== doPart(12): with2A2 noa1 figs 25-28 =====
+if doPart(12)==1
+fprintf('\n===== doPart(12): with2A2 noa1 figs 25-28 =====\n')
+figure_c=25;
+output=CoreFHorzExpAssete_nod1_noz_e_noa1_with2A2_nosemiz(n_d_withoutd1,n_a_2A2_justexpasset,n_a_2A2_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_2A2_justexpasset,a_grid_2A2_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=26;
+output=CoreFHorzExpAssete_d1_noz_e_noa1_with2A2_nosemiz(n_d_withd1,n_a_2A2_justexpasset,n_a_2A2_justexpasset,n_z,N_j,d_grid_withd1,a_grid_2A2_justexpasset,a_grid_2A2_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=27;
+output=CoreFHorzExpAssete_nod1_z_e_noa1_with2A2_nosemiz(n_d_withoutd1,n_a_2A2_justexpasset,n_a_2A2_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_2A2_justexpasset,a_grid_2A2_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=28;
+output=CoreFHorzExpAssete_d1_z_e_noa1_with2A2_nosemiz(n_d_withd1,n_a_2A2_justexpasset,n_a_2A2_justexpasset,n_z,N_j,d_grid_withd1,a_grid_2A2_justexpasset,a_grid_2A2_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+end % doPart(12): with2A2 noa1 figs 25-28
+
+%% ===== doPart(13): with2A2 noa1 figs 29-32 =====
+if doPart(13)==1
+fprintf('\n===== doPart(13): with2A2 noa1 figs 29-32 =====\n')
+figure_c=29;
+output=CoreFHorzExpAssete_nod1_noz_e_noa1_with2A2_semiz(n_d_withoutd1semiz,n_a_2A2_justexpasset,n_a_2A2_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A2_justexpasset,a_grid_2A2_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=30;
+output=CoreFHorzExpAssete_d1_noz_e_noa1_with2A2_semiz(n_d_withd1semiz,n_a_2A2_justexpasset,n_a_2A2_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_2A2_justexpasset,a_grid_2A2_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=31;
+output=CoreFHorzExpAssete_nod1_z_e_noa1_with2A2_semiz(n_d_withoutd1semiz,n_a_2A2_justexpasset,n_a_2A2_justexpasset,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A2_justexpasset,a_grid_2A2_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=32;
+output=CoreFHorzExpAssete_d1_z_e_noa1_with2A2_semiz(n_d_withd1semiz,n_a_2A2_justexpasset,n_a_2A2_justexpasset,n_z,N_j,d_grid_withd1semiz,a_grid_2A2_justexpasset,a_grid_2A2_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+end % doPart(13): with2A2 noa1 figs 29-32
+
+%% ===== doPart(14): with2A2 WITH a1 figs 33-36 =====
+if doPart(14)==1
+fprintf('\n===== doPart(14): with2A2 WITH a1 figs 33-36 =====\n')
+figure_c=33;
+output=CoreFHorzExpAssete_nod1_noz_e_with2A2_nosemiz(n_d_withoutd1,n_a_2A2,n_a_2A2_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A2,a_grid_2A2_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=34;
+output=CoreFHorzExpAssete_d1_noz_e_with2A2_nosemiz(n_d_withd1,n_a_2A2,n_a_2A2_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A2,a_grid_2A2_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=35;
+output=CoreFHorzExpAssete_nod1_z_e_with2A2_nosemiz(n_d_withoutd1,n_a_2A2,n_a_2A2_notsobig,n_z,N_j,d_grid_withoutd1,a_grid_2A2,a_grid_2A2_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=36;
+output=CoreFHorzExpAssete_d1_z_e_with2A2_nosemiz(n_d_withd1,n_a_2A2,n_a_2A2_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A2,a_grid_2A2_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+end % doPart(14): with2A2 WITH a1 figs 33-36
+
+%% ===== doPart(15): with2A2 WITH a1 figs 37-40 =====
+if doPart(15)==1
+fprintf('\n===== doPart(15): with2A2 WITH a1 figs 37-40 =====\n')
+figure_c=37;
+output=CoreFHorzExpAssete_nod1_noz_e_with2A2_semiz(n_d_withoutd1semiz,n_a_2A2,n_a_2A2_notsobig_semiz,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A2,a_grid_2A2_notsobig_semiz,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=38;
+output=CoreFHorzExpAssete_d1_noz_e_with2A2_semiz(n_d_withd1semiz,n_a_2A2,n_a_2A2_notsobig_semiz,n_z,N_j,d_grid_withd1semiz,a_grid_2A2,a_grid_2A2_notsobig_semiz,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=39;
+output=CoreFHorzExpAssete_nod1_z_e_with2A2_semiz(n_d_withoutd1semiz,n_a_2A2,n_a_2A2_notsobig_semiz,n_z,N_j,d_grid_withoutd1semiz,a_grid_2A2,a_grid_2A2_notsobig_semiz,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+figure_c=40;
+output=CoreFHorzExpAssete_d1_z_e_with2A2_semiz(n_d_withd1semiz,n_a_2A2,n_a_2A2_notsobig_semiz,n_z,N_j,d_grid_withd1semiz,a_grid_2A2,a_grid_2A2_notsobig_semiz,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAsseteTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+end % doPart(15): with2A2 WITH a1 figs 37-40
+
+%% ===== doPart(16): with2A2 cross-tests =====
+if doPart(16)==1
+fprintf('\n===== doPart(16): with2A2 cross-tests =====\n')
+% These are the machine-precision checks of the with2A2 tier; the figures above are consistency
+% checks only. CrossTests5 makes the SECOND experience asset inert, CrossTests6 the FIRST; the two
+% together pin down the ordering of the a2 dimensions, which either alone would not. CrossTests7
+% keeps BOTH assets alive and checks swap symmetry, which is the only one of the three that
+% exercises the nested interpolation where all four corners carry weight.
+% Run on the one-experience-asset grids: each test builds its own second a2 dimension.
+output=CoreFHorzExpAssete_CrossTests5_nod1_with2A2(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests5_d1_with2A2(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests6_nod1_with2A2(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests6_d1_with2A2(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests7_nod1_with2A2(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests7_d1_with2A2(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+% noa1 twins of CrossTests5: the noa1 raws are a distinct code path (the aprime index IS the a2
+% Kron index, with no a1prime offset), and on the plain-ExpAsset side this is the test that caught
+% the first real defect.
+output=CoreFHorzExpAssete_CrossTests5_nod1_noa1_with2A2(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+output=CoreFHorzExpAssete_CrossTests5_d1_noa1_with2A2(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
+end %% doPart(16): with2A2 cross-tests
+
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
