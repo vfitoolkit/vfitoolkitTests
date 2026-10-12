@@ -484,6 +484,70 @@ catch ME
 end
 fprintf('localsearch Anderson: (14) anderson.type=''I'' with local search is refused by name, should be one: %i \n',err14)
 
+%% (15) WITH A d, ANDERSON WITH LOCAL SEARCH -- the fourth and last corner
+% Nothing in the fork or the seed route is algorithm-specific: the seed sweep is produced by the
+% dispatcher and the reference is carried by whichever solver holds it, so with-d Anderson should
+% work with no further plumbing. "Should" is exactly what a test is for, and two things could have
+% gone wrong without one. The reference is [N_d,N_a,N_z] here rather than [1,N_a,N_z], so the shim
+% has to carry an object of a different shape than it was written against; and the seed sweep with a
+% d routes to LSseed_raw rather than to the standard raw, which is a path Anderson had never taken.
+%
+% THE TOLERANCE HAS TO BE TIGHT ENOUGH THAT ANDERSON ACTUALLY ITERATES, which is the trap this
+% section fell into on its first run. The with-d stationary solve leaves a residual of about 5.6e-02,
+% two orders worse than the no-d model's 5.9e-04, and tying the path tolerance to it (5 times, so
+% 2.8e-01) made that tolerance looser than the residual of the BUMPED STARTING PATH. Anderson stops
+% as soon as the residual is inside tolerance, so all four solves "converged in 1 iterations",
+% returned their input unchanged, and the comparisons below came back as exactly 0.000e+00 four times
+% over -- four checks passing while testing nothing at all. Shooting does not short-circuit the same
+% way, which is why (9) and (10) were unaffected and agreed to 3.8e-06 and 8.4e-08.
+% So the tolerance is a twentieth of that. The iteration budget then has to be large enough for both
+% halves to CONVERGE: at maxiter=30 the no-GI pair converged in 15 and 16 iterations but the GI pair
+% both ran out, and comparing two NON-CONVERGED paths is only a statement that two unfinished
+% trajectories had not yet diverged much -- it passed the 0.1 bar on a 2.2e-02 disagreement, which is
+% larger than the tolerance they were aiming for, so the bar was carrying the check rather than the
+% code. Two converged answers is the only version that tests anything.
+%
+% THE ROOT CAUSE IS UPSTREAM AND IS NOT FIXED HERE. The with-d stationary solve leaves 5.6e-02, so
+% every tolerance in this block is loose, and two converged solves may stop anywhere inside that
+% ball: the with-d agreements below are 1e-03-ish where the no-d ones in (12) are 1e-06-ish, purely
+% because the tolerance is two orders wider. Tightening the with-d stationary general eqm solve would
+% sharpen the whole with-d block, including (9) and (10), and is the change worth making.
+transpathoptionsAndd=transpathoptionsAnd;
+transpathoptionsAndd.toleranceGEcondns=transpathoptionsSd.toleranceGEcondns/20;
+transpathoptionsAndd.maxiter=120;
+transpathoptionsAndd.verbose=1; % so the iteration counts reach the diary
+
+[PricePathAnddP,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd, AgentDist_initialGEd, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsAndd, simoptions, vfoptions, []);
+vfoptionsAnddLS=vfoptions;
+vfoptionsAnddLS.localsearch=1;
+vfoptionsAnddLS.nlocalsearch=3;
+[PricePathAnddLS,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd, AgentDist_initialGEd, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsAndd, simoptions, vfoptionsAnddLS, []);
+fprintf('localsearch Anderson d: (15) with d, Anderson+localsearch vs Anderson without it, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathAnddLS.r)-gather(PricePathAnddP.r))))
+fprintf('localsearch Anderson d: (15) with d, Anderson+localsearch vs Anderson without it, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathAnddLS.w)-gather(PricePathAnddP.w))))
+% THE ANTI-VACUITY GUARD, which is what the first run of this section lacked. An agreement check
+% between two solves that both stopped at iteration 1 is satisfied by them both returning the price
+% path handed in, and reads as a perfect 0.000e+00. So require that the solve MOVED: if the restricted
+% Anderson solve is still sitting on its starting path then whatever the agreement check says, it
+% says nothing about local search.
+fprintf('localsearch Anderson d: (15) the restricted solve moved off its starting path, w, should NOT be zero: %.3e \n',max(abs(gather(PricePathAnddLS.w)-gather(PricePathBumpedd.w))))
+% NO COMPARISON AGAINST THE SHOOTING ANSWER. On this calibration toleranceGEcondns permits price
+% paths that differ by tens of per cent -- w is about 0.68 and the first run of this section reported
+% a 3.5e-01 gap -- so comparing two different ALGORITHMS across that ball tests the width of the ball
+% and not the code. (9) already certifies the with-d shooting answer against its own standard solve,
+% and the Anderson-against-Anderson check above is what isolates local search.
+
+% And with the interpolation layer, which is the corner where the reference is a COARSE index per d
+% and the seed comes from the standard GI raw's midpoint rather than from LSseed_raw.
+[PricePathAnddGI,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd_GI, AgentDist_initialGEd_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsAndd, simoptionsGId, vfoptionsGId, []);
+vfoptionsAnddGILS=vfoptionsGId;
+vfoptionsAnddGILS.localsearch=1;
+vfoptionsAnddGILS.nlocalsearch=3;
+[PricePathAnddGILS,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd_GI, AgentDist_initialGEd_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsAndd, simoptionsGId, vfoptionsAnddGILS, []);
+fprintf('localsearch Anderson d: (15) with d and GI, Anderson+localsearch vs Anderson without it, r, this should be close to zero: %.3e \n',max(abs(gather(PricePathAnddGILS.r)-gather(PricePathAnddGI.r))))
+fprintf('localsearch Anderson d: (15) with d and GI, Anderson+localsearch vs Anderson without it, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathAnddGILS.w)-gather(PricePathAnddGI.w))))
+fprintf('localsearch Anderson d: (15) with GI, the restricted solve moved off its starting path, w, should NOT be zero: %.3e \n',max(abs(gather(PricePathAnddGILS.w)-gather(PricePathBumpedd.w))))
+fprintf('localsearch Anderson d: (15) for scale, toleranceGEcondns here is %.3e, against %.3e for the with-d shooting solves \n',transpathoptionsAndd.toleranceGEcondns,transpathoptionsSd.toleranceGEcondns)
+
 output=struct();
 
 end
