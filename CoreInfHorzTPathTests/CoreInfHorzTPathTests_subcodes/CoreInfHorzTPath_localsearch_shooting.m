@@ -320,24 +320,24 @@ ReturnFnd=@(d,aprime,a,z,r,w,sigma,eta,varphi) ReturnFn_d_z_noe_nosemiz(d,aprime
 FnsToEvaluateGEd.K=@(d,aprime,a,z) a;
 FnsToEvaluateGEd.N=@(d,aprime,a,z) d*z;
 
-[p_eqmd,GEcondnsd]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptions, vfoptions);
-fprintf('localsearch shooting d: stationary GE r=%2.8f, w=%2.8f, conditions CapitalMarket=%.3e LabourMarket=%.3e \n',p_eqmd.r,p_eqmd.w,GEcondnsd.CapitalMarket,GEcondnsd.LabourMarket)
-
-% WHY THE WITH-d STATIONARY RESIDUAL IS LARGE, measured rather than assumed. It comes in around
-% 5.6e-02 against the no-d model's 5.9e-04, and every tolerance in this block descends from it, so
-% how sharp the with-d checks can be depends on what is causing it. Two candidates:
-%   - A DISCRETISATION FLOOR. K=E[a] and N=E[d*z] are step functions of the prices when a and d are
-%     coarse, which makes the general eqm objective piecewise-constant and stalls the search. The
-%     setup file already records this and is why n_d_GE is 51: at n_d=9 the residual was about 170x
-%     the no-d model's. But 51 points only brought it to 94x, so a 5.7x finer d grid bought 1.8x --
-%     sub-linear, which says the d grid is not the binding part.
-%   - THE a GRID, through K. That is the part the interpolation layer smooths: with GI the chosen
-%     aprime moves continuously in the prices rather than jumping between coarse nodes, so K becomes
-%     a much smoother function of r and the search has a gradient to follow.
-% So the same stationary problem is solved again WITH GI and both residuals are printed. If the GI
-% one is far smaller the floor is the a grid and the with-d block should be built on it; if the two
-% are alike the floor is elsewhere and the loose tolerances here are simply correct for this model.
-% Diagnostic only -- nothing below uses p_eqmd_GI yet.
+% THE WITH-d STATIONARY PROBLEM HAS TO BE SOLVED WITH GI FIRST, AND THE ANSWER HANDED TO THE NO-GI
+% SOLVE AS ITS STARTING GUESS. Solved the obvious way -- no interpolation layer, default fminalgo,
+% default start -- it does not reach an equilibrium at all: it STALLS at r=0.05309198, w=0.68065688
+% with a CapitalMarket residual of 5.553e-02. K=E[a] and N=E[d*z] are step functions of the prices on
+% coarse grids, so the general eqm objective is piecewise-constant and fminsearch stops where it
+% stops. The setup file records the same mechanism and is why n_d_GE is 51 rather than 9, but 51
+% points only cut the residual (from about 170x the no-d model's to 94x) without stopping the stall.
+% WITH THE INTERPOLATION LAYER the chosen aprime moves continuously in the prices, so K is smooth and
+% the search finds r=0.05219468, w=0.43766914 at a residual of -9.983e-04. That is a factor of 0.02,
+% and the w is essentially the no-d model's 0.43777959 -- which the same firm technology should give.
+% So 0.68 was never an approximate equilibrium, it was a stall, and everything in this block used to
+% be built on it. That is why its tolerance had to be 2.8e-01 and why its agreements came out at
+% 1e-03 where the no-d ones are 1e-06: transition paths around a point that is not a steady state
+% are not wrong exactly, but they test much less.
+% WHAT TO READ: whether the no-GI residual is now small. If it is, the stall was a starting-point
+% problem and the no-GI half of this block is on its own discretisation's equilibrium. If it is still
+% about 5e-02, the no-GI discretisation genuinely cannot do better and the tolerance derived from it
+% below is correct for it rather than merely loose.
 vfoptionsGEd_GI=vfoptions;
 vfoptionsGEd_GI.gridinterplayer=1;
 vfoptionsGEd_GI.ngridinterp=ngi;
@@ -345,8 +345,16 @@ simoptionsGEd_GI=simoptions;
 simoptionsGEd_GI.gridinterplayer=1;
 simoptionsGEd_GI.ngridinterp=ngi;
 [p_eqmd_GI,GEcondnsd_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGEd_GI, vfoptionsGEd_GI);
-fprintf('localsearch shooting d: the same stationary problem WITH GI gives r=%2.8f, w=%2.8f, CapitalMarket=%.3e LabourMarket=%.3e \n',p_eqmd_GI.r,p_eqmd_GI.w,GEcondnsd_GI.CapitalMarket,GEcondnsd_GI.LabourMarket)
-fprintf('localsearch shooting d: so the interpolation layer changes the worst stationary residual by a factor of %.2f (below one means GI is smoother and the floor is the a grid) \n',max(abs(GEcondnsd_GI.CapitalMarket),abs(GEcondnsd_GI.LabourMarket))/max(abs(GEcondnsd.CapitalMarket),abs(GEcondnsd.LabourMarket)))
+fprintf('localsearch shooting d: stationary GE WITH GI, r=%2.8f, w=%2.8f, CapitalMarket=%.3e LabourMarket=%.3e \n',p_eqmd_GI.r,p_eqmd_GI.w,GEcondnsd_GI.CapitalMarket,GEcondnsd_GI.LabourMarket)
+
+% The no-GI solve, started from the GI answer instead of the default. HeteroAgentStationaryEqm_InfHorz
+% takes its initial guess from Parameters.r and Parameters.w.
+ParamsStartd=Params;
+ParamsStartd.r=p_eqmd_GI.r;
+ParamsStartd.w=p_eqmd_GI.w;
+[p_eqmd,GEcondnsd]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsStartd, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptions, vfoptions);
+fprintf('localsearch shooting d: stationary GE no GI, started from the GI answer, r=%2.8f, w=%2.8f, CapitalMarket=%.3e LabourMarket=%.3e \n',p_eqmd.r,p_eqmd.w,GEcondnsd.CapitalMarket,GEcondnsd.LabourMarket)
+fprintf('localsearch shooting d: the same no-GI solve from the DEFAULT start stalled at w=0.68065688 with CapitalMarket 5.553e-02, which is the measurement this restructure rests on \n')
 
 ParamsGEd=Params;
 ParamsGEd.r=p_eqmd.r;
