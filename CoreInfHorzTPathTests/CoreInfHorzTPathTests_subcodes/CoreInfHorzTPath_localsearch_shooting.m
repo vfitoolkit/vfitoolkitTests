@@ -323,6 +323,31 @@ FnsToEvaluateGEd.N=@(d,aprime,a,z) d*z;
 [p_eqmd,GEcondnsd]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptions, vfoptions);
 fprintf('localsearch shooting d: stationary GE r=%2.8f, w=%2.8f, conditions CapitalMarket=%.3e LabourMarket=%.3e \n',p_eqmd.r,p_eqmd.w,GEcondnsd.CapitalMarket,GEcondnsd.LabourMarket)
 
+% WHY THE WITH-d STATIONARY RESIDUAL IS LARGE, measured rather than assumed. It comes in around
+% 5.6e-02 against the no-d model's 5.9e-04, and every tolerance in this block descends from it, so
+% how sharp the with-d checks can be depends on what is causing it. Two candidates:
+%   - A DISCRETISATION FLOOR. K=E[a] and N=E[d*z] are step functions of the prices when a and d are
+%     coarse, which makes the general eqm objective piecewise-constant and stalls the search. The
+%     setup file already records this and is why n_d_GE is 51: at n_d=9 the residual was about 170x
+%     the no-d model's. But 51 points only brought it to 94x, so a 5.7x finer d grid bought 1.8x --
+%     sub-linear, which says the d grid is not the binding part.
+%   - THE a GRID, through K. That is the part the interpolation layer smooths: with GI the chosen
+%     aprime moves continuously in the prices rather than jumping between coarse nodes, so K becomes
+%     a much smoother function of r and the search has a gradient to follow.
+% So the same stationary problem is solved again WITH GI and both residuals are printed. If the GI
+% one is far smaller the floor is the a grid and the with-d block should be built on it; if the two
+% are alike the floor is elsewhere and the loose tolerances here are simply correct for this model.
+% Diagnostic only -- nothing below uses p_eqmd_GI yet.
+vfoptionsGEd_GI=vfoptions;
+vfoptionsGEd_GI.gridinterplayer=1;
+vfoptionsGEd_GI.ngridinterp=ngi;
+simoptionsGEd_GI=simoptions;
+simoptionsGEd_GI.gridinterplayer=1;
+simoptionsGEd_GI.ngridinterp=ngi;
+[p_eqmd_GI,GEcondnsd_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGEd_GI, vfoptionsGEd_GI);
+fprintf('localsearch shooting d: the same stationary problem WITH GI gives r=%2.8f, w=%2.8f, CapitalMarket=%.3e LabourMarket=%.3e \n',p_eqmd_GI.r,p_eqmd_GI.w,GEcondnsd_GI.CapitalMarket,GEcondnsd_GI.LabourMarket)
+fprintf('localsearch shooting d: so the interpolation layer changes the worst stationary residual by a factor of %.2f (below one means GI is smoother and the floor is the a grid) \n',max(abs(GEcondnsd_GI.CapitalMarket),abs(GEcondnsd_GI.LabourMarket))/max(abs(GEcondnsd.CapitalMarket),abs(GEcondnsd.LabourMarket)))
+
 ParamsGEd=Params;
 ParamsGEd.r=p_eqmd.r;
 ParamsGEd.w=p_eqmd.w;
@@ -507,11 +532,17 @@ fprintf('localsearch Anderson: (14) anderson.type=''I'' with local search is ref
 % larger than the tolerance they were aiming for, so the bar was carrying the check rather than the
 % code. Two converged answers is the only version that tests anything.
 %
-% THE ROOT CAUSE IS UPSTREAM AND IS NOT FIXED HERE. The with-d stationary solve leaves 5.6e-02, so
-% every tolerance in this block is loose, and two converged solves may stop anywhere inside that
-% ball: the with-d agreements below are 1e-03-ish where the no-d ones in (12) are 1e-06-ish, purely
-% because the tolerance is two orders wider. Tightening the with-d stationary general eqm solve would
-% sharpen the whole with-d block, including (9) and (10), and is the change worth making.
+% WHY THE TOLERANCE HERE IS LOOSE, AND WHY THAT IS PROBABLY NOT FIXABLE BY TIGHTENING ANYTHING. The
+% with-d stationary solve leaves 5.6e-02, so every tolerance in this block is wide and two converged
+% solves may stop anywhere inside it: the with-d agreements below are 1e-03-ish where the no-d ones
+% in (12) are 1e-06-ish, purely because the ball is two orders wider.
+% It is tempting to call that an under-converged stationary solve and tighten it. It is not. K=E[a]
+% and N=E[d*z] are step functions of the prices on coarse grids, so the general eqm objective is
+% piecewise-constant and the search stalls -- no tolerance or iteration count reaches past that. The
+% setup file records the same thing and is why n_d_GE is 51 rather than 9.
+% The diagnostic beside the stationary solve above measures whether the remaining floor is the a grid
+% (in which case the interpolation layer smooths it and the with-d block should be built on the GI
+% equilibrium) or something else (in which case these tolerances are simply right for this model).
 transpathoptionsAndd=transpathoptionsAnd;
 transpathoptionsAndd.toleranceGEcondns=transpathoptionsSd.toleranceGEcondns/20;
 transpathoptionsAndd.maxiter=120;

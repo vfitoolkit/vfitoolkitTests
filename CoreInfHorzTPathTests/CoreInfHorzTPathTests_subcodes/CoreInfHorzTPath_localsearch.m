@@ -442,22 +442,40 @@ fprintf('localsearch+GI: (12) for information, V fell as nlocalsearch rose at %i
 fprintf('localsearch+GI: (12) the lower coarse point of aprime is within 2*nlocalsearch of the reference at every state, should be one: %i \n',windowallGI)
 fprintf('localsearch+GI: (12) and within nlocalsearch at every interior state, should be one: %i \n',windowintGI)
 
-%% (13) lowmemory is refused with local search, with and without the interpolation layer
-errLS=zeros(1,2);
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.lowmemory=1;
-try
-    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
-catch ME
-    errLS(1)=contains(ME.message,'lowmemory is not used with vfoptions.localsearch');
-end
-vfoptionsE=vfoptionsGI; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.lowmemory=1;
-try
-    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptionsE);
-catch ME
-    errLS(2)=contains(ME.message,'lowmemory is not used with vfoptions.localsearch');
-end
-fprintf('localsearch: (13) lowmemory with local search is refused by name, should be one: %i \n',errLS(1))
-fprintf('localsearch+GI: (13) lowmemory with local search and the interpolation layer is refused by name, should be one: %i \n',errLS(2))
+%% (13) lowmemory with local search RUNS, and changes nothing
+% This section used to assert that the combination was REFUSED, twice. It no longer is, and the
+% refusal checks had to go the moment it started working -- the fourth time that has happened in this
+% bank, after the with-d refusal, the GI refusal and the Anderson one.
+%
+% WHAT lowmemory NOW MEANS WITH LOCAL SEARCH. It is honoured on the FULL sweeps and IGNORED, silently
+% and by design, on the restricted ones. The option exists because the unrestricted return matrix
+% does not fit; a window fits whatever the full sweep needs, so looping over z there would buy
+% nothing and cost launches. That asymmetry is the point: before this, a model that needed lowmemory
+% to solve at all could not use local search, which is exactly the size of model where local search
+% is worth having.
+% So the answer must be IDENTICAL with lowmemory on and off. The restricted sweeps ignore it either
+% way, and the full sweeps' z-loop is the same maximisation with less of it resident at once. Held as
+% an identity, not a tolerance: anything else means the two branches are not computing the same thing.
+%
+% NOT CHECKED, AND LEFT TO FAIL: the ratchet's cap is floor((N_a-1)/2), where 2*nlocalsearch+1
+% reaches N_a and the restricted matrix is as large as the unrestricted one. A model that needed
+% lowmemory will run out of memory there. That is accepted rather than guarded -- the cap warning
+% already says local search is strictly worse than not using it at the cap.
+vfoptions13=vfoptions; vfoptions13.localsearch=1; vfoptions13.nlocalsearch=2;
+vfoptions13.lowmemory=0;
+[VP13a,PP13a]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions13);
+vfoptions13.lowmemory=1;
+[VP13b,PP13b]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions13);
+fprintf('localsearch: (13) lowmemory=1 with local search, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(VP13a)-gather(VP13b)),[],'all'))
+fprintf('localsearch: (13) same, Policy, this should be zero: %.3e \n',max(abs(gather(PP13a)-gather(PP13b)),[],'all'))
+
+vfoptions13GI=vfoptionsGI; vfoptions13GI.localsearch=1; vfoptions13GI.nlocalsearch=2;
+vfoptions13GI.lowmemory=0;
+[VP13c,PP13c]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions13GI);
+vfoptions13GI.lowmemory=1;
+[VP13d,PP13d]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_finalGI, Policy_finalGI, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions13GI);
+fprintf('localsearch+GI: (13) lowmemory=1 with local search and the interpolation layer, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(VP13c)-gather(VP13d)),[],'all'))
+fprintf('localsearch+GI: (13) same, Policy, this should be zero: %.3e \n',max(abs(gather(PP13c)-gather(PP13d)),[],'all'))
 
 %% (14) Speed on the big grid, with the interpolation layer on
 % The unrestricted GI step costs its full coarse layer plus its second layer, about N_a+2*ngi+3

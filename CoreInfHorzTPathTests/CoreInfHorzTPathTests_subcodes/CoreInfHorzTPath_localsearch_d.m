@@ -245,12 +245,6 @@ try
 catch ME
     err(4)=contains(ME.message,'combined with vfoptions.divideandconquer');
 end
-vfoptionsE=vfoptionsS; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.lowmemory=1;
-try
-    ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsE);
-catch ME
-    err(5)=contains(ME.message,'lowmemory is not used with vfoptions.localsearch');
-end
 % A reference of the no-d shape, [1,N_a,N_z], handed to a model that has a d
 vfoptionsE=vfoptionsS; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1;
 try
@@ -262,7 +256,33 @@ fprintf('localsearch d: (10) nlocalsearch unset is refused by name, should be on
 fprintf('localsearch d: (10) nlocalsearch too large for the grid is refused by name, should be one: %i \n',err(2))
 fprintf('localsearch d: (10) nlocalsearch=0 is refused by name, should be one: %i \n',err(3))
 fprintf('localsearch d: (10) combination with divide-and-conquer is refused by name, should be one: %i \n',err(4))
-fprintf('localsearch d: (10) lowmemory with local search is refused by name, should be one: %i \n',err(5))
+% (10) USED TO CHECK THAT lowmemory WAS REFUSED HERE. It is not any more: the dispatcher zeroes it on
+% a restricted sweep, silently and by design, because a window fits in memory whatever the full sweep
+% needs, while the full sweeps honour it. The refusal check is replaced by the identity below rather
+% than deleted, which is the stronger statement anyway.
+% This is the FIFTH refusal check in this bank to outlive the thing it refused, after the with-d one,
+% the GI one, the Anderson one and the lowmemory one in doPart(4) section (13). The lesson is not
+% "remember to delete it" -- it is that the refusal strings in a bank have to be audited against the
+% toolkit's actual error messages as a SET, because fixing the instance that happens to fail leaves
+% the others. doPart(4) section (13) was updated in the same commit that left this one behind.
+vfoptions10=vfoptionsS; vfoptions10.localsearch=1; vfoptions10.nlocalsearch=2;
+vfoptions10.lowmemory=0;
+[V10a,P10a]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions10);
+vfoptions10.lowmemory=1;
+[V10b,P10b]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions10);
+fprintf('localsearch d: (10) lowmemory=1 on a restricted sweep with a d, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(V10a)-gather(V10b)),[],'all'))
+fprintf('localsearch d: (10) same, Policy, this should be zero: %.3e \n',max(abs(gather(P10a)-gather(P10b)),[],'all'))
+% And the SEED sweep with a d, which is the one raw that had to grow a lowmemory branch of its own:
+% LSseed_raw holds the level 1 matrix [N_d,N_a,N_a,N_z], the largest array in the feature, so the
+% z-loop is what makes lowmemory mean anything in this corner. Same arithmetic, less resident.
+vfoptions10seed=vfoptionsS; vfoptions10seed.localsearch=0; vfoptions10seed.localsearchseed=1;
+vfoptions10seed.lowmemory=0;
+[V10c,P10c,ref10c]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions10seed);
+vfoptions10seed.lowmemory=1;
+[V10d,P10d,ref10d]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions10seed);
+fprintf('localsearch d: (10) the seed sweep under lowmemory=1, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(V10c)-gather(V10d)),[],'all'))
+fprintf('localsearch d: (10) same, Policy, this should be zero: %.3e \n',max(abs(gather(P10c)-gather(P10d)),[],'all'))
+fprintf('localsearch d: (10) same, the per-d reference the seed returns, this should be zero: %.3e \n',max(abs(gather(ref10c)-gather(ref10d)),[],'all'))
 fprintf('localsearch d: (10) a reference of the no-d shape on a model with d is refused by name, should be one: %i \n',err(6))
 
 %% (11) Divide-and-conquer gives the same V, on the coarse grid where there is no memory risk
