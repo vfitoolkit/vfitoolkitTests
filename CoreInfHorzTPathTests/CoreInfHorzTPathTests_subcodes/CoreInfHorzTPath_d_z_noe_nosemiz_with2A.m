@@ -583,7 +583,7 @@ PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_g
 
 Vfin_rep_GI=repmat(V_final_GI,1,1,1,1,T);
 fprintf('with2A: Constant TPath (with DC and GI), this should be zero, V: %.3e \n',max(abs(VPath1(:)-Vfin_rep_GI(:))))
-Polfin_rep_GI=repmat(Policy_final_GI,1,1,1,1,1,T);
+% Polfin_rep_GI is gone with the raw Policy index comparison it was the only input to.
 % DELETED, same reason as the other raw Policy index comparisons under the interpolation layer: a
 % point on a coarse node has two legal spellings and a raw channel difference of 1+ngridinterp is one
 % aprime named two ways. This one happened to PASS -- the two spellings coincided here -- which is

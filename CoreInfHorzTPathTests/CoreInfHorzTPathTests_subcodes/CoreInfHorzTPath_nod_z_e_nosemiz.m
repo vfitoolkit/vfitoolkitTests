@@ -332,10 +332,10 @@ clear VfromPolicyPath
 %% Cross-check against an FHorz solve (with DC and GI)
 % Same construction as the no-GI version above, against the grid-interpolation tier. Not
 % redundant with it: GI genuinely changes the solution, so it needs its own comparison.
-% Note on the raw Policy line: under GI the indexes can legitimately differ, because (L1,L2) and
-% (L1+1,L2-(ngridinterp+1)) encode the same aprime when the optimum sits on a coarse grid point,
-% and the two implementations need not break that tie the same way. The PolicyVals line is
-% immune to it, and is the one that has to be zero.
+% THE RAW POLICY INDEXES ARE NOT COMPARED at this tier, only PolicyVals: under GI the indexes can
+% legitimately differ, because (L1,L2) and (L1+1,L2-(ngridinterp+1)) encode the same aprime when the
+% optimum sits on a coarse grid point, and the two implementations need not break that tie the same
+% way. PolicyVals is immune to it and is the one that has to be zero. See the note at the check.
 N_jFH=T-1;
 ParamsFH=Params;
 ParamsFH.r=PricePath.r(1:N_jFH);
@@ -348,9 +348,16 @@ vfoptionsFH_GI.V_Jplus1=V_final_GI;
 temp1=reshape(VPath4,[],T); temp2=reshape(V_FH,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
 fprintf('TPath vs FHorz (with DC and GI), this should be zero, V: %.3e \n',max(abs(dev(:))))
-temp1=reshape(PolicyPath4,[],T); temp2=reshape(Policy_FH,[],N_jFH);
-dev=temp1(:,1:N_jFH)-temp2;
-fprintf('TPath vs FHorz (with DC and GI), this should be zero, Policy: %.3e \n',max(abs(dev(:))))
+% THE RAW POLICY INDEX COMPARISON IS DELETED HERE, not loosened: under the interpolation layer a
+% point on a coarse node has TWO legal spellings, (P1,L2=1) and (P1-1,L2=ngridinterp+2), so a raw
+% channel difference of exactly 1+ngridinterp is the same aprime named two ways and neither spelling
+% is canonical. The PolicyVals comparison immediately below is the real check, and is spelling-proof
+% by construction. In the subcodes that DO run, this same check read 6.000e+00 at ngridinterp=5 while
+% the PolicyVals line beside it read 4e-16 or exactly zero: a test defect, not a solver defect.
+% This subcode is commented out of the driver, so this one was never observed either way -- which is
+% the reason to delete it rather than wait for it. A wrong check that happens to pass is worse than
+% one that fails, because nothing ever prompts you to look at it.
+% The two lines that computed the comparison go with it; dev is rebuilt below for PolicyVals.
 temp1=reshape(PolicyInd2Val_InfHorz_TPath(PolicyPath4,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions4),[],T);
 temp2=reshape(PolicyInd2Val_FHorz(Policy_FH,n_d,n_a,n_z,N_jFH,d_grid,a_grid,vfoptions4),[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
@@ -552,10 +559,10 @@ clear VPath2b VPath4b AggVarsPath4 PolicyPath4b AgentDistPath2 AgentDistPath4
 
 %% Constant path -- VPath should equal repmat of stationary V, similarly Policy and AgentDist
 % Done three ways: (1) no DC, no GI; (2) with DC, no GI; (3) with DC and GI.
-% Both the raw Policy (indexes) and the PolicyVals (the actual d/aprime values) are compared.
-% Note: with the grid interpolation layer the Policy INDEXES can legitimately differ by
-% ngridinterp+1, because (L1,L2) and (L1+1,L2-(ngridinterp+1)) encode the same aprime when the
-% optimum sits exactly on a coarse grid point. The PolicyVals comparison is immune to this.
+% Both the raw Policy (indexes) and the PolicyVals (the actual d/aprime values) are compared on the
+% two no-GI tiers. ON THE GI TIER ONLY PolicyVals IS COMPARED: the Policy INDEXES can legitimately
+% differ by ngridinterp+1, because (L1,L2) and (L1+1,L2-(ngridinterp+1)) encode the same aprime when
+% the optimum sits exactly on a coarse grid point. PolicyVals is immune to this.
 PricePathConstant.r=Params.r*ones(1,T);
 ParamPathConstant.sigma=Params.sigma*ones(1,T);
 
@@ -597,8 +604,10 @@ PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_g
 
 Vfin_rep_GI=repmat(V_final_GI,1,1,1,1,T);
 fprintf('Constant TPath (with DC and GI), this should be zero, V: %.3e \n',max(abs(VPath1(:)-Vfin_rep_GI(:))))
-Polfin_rep_GI=repmat(Policy_final_GI,1,1,1,1,1,T);
-fprintf('Constant TPath (with DC and GI), this should be zero, Policy: %.3e \n',max(abs(PolicyPath1(:)-Polfin_rep_GI(:))))
+% THE RAW POLICY INDEX COMPARISON IS DELETED HERE TOO, for the reason given at the GI cross-check
+% against FHorz above: a coarse node has two legal spellings, so a raw channel difference of exactly
+% 1+ngridinterp is the same aprime. PolicyVals below is the check. Polfin_rep_GI went with it, since
+% nothing else read it.
 PolicyValsfin_GI=PolicyInd2Val_InfHorz(Policy_final_GI,n_d,n_a,n_z,d_grid,a_grid,vfoptions4);
 PolicyValsfin_GI_rep=repmat(PolicyValsfin_GI(:),1,T);
 fprintf('Constant TPath (with DC and GI), this should be zero, PolicyVals: %.3e \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_GI_rep(:))))
