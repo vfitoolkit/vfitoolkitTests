@@ -516,7 +516,7 @@ fprintf('WhichCombos AggVars, a wrong-length whichcombos must error, this should
 
 %% ===================== EvalFnOnAgentDist_AutoCorrTransProbs_FHorz =====================
 simoptions_ac=struct();
-simoptions_ac.timehorizons=2;
+simoptions_ac.timehorizons=[1,2]; % horizons 1 and 2 (since 2026-10-14 exactly the horizons listed are computed)
 simoptions_ac.conditionalrestrictions=simoptions.conditionalrestrictions;
 simoptions_ac.transprobs={'assets'};
 FullAC=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions_ac);

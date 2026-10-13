@@ -49,8 +49,8 @@ nF=length(FnNames);
 jequaloneDist=zeros(n_a,n_z,n_e,'gpuArray');
 jequaloneDist(1,ceil(n_z/2),ceil(n_e/2))=1;
 
-timehorizons=[2,4];
-hstr={'','_k2','_k4'};
+timehorizons=[1,2,4]; % exactly the horizons computed (since 2026-10-14 the command no longer adds horizon 1)
+hstr={'','_horizon2','_horizon4'};
 horizons=[1,2,4];
 simoptions_acp=simoptions;
 simoptions_acp.timehorizons=timehorizons;

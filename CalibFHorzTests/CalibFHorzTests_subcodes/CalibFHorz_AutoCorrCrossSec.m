@@ -2,7 +2,7 @@ function output=CalibFHorz_AutoCorrCrossSec(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid
 % CalibFHorzTests part 8: the three target kinds added 2026-10-07, TargetMoments.AutoCorrTransProbs (EvalFnOnAgentDist_AutoCorrTransProbs_FHorz),
 % .CrossSectionCovarCorr (EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz) and .AgeConditionalCrossSectionCovarCorr (the age-conditional
 % version), standing alongside AllStats and AgeConditionalStats in the target vector (in that order, then CustomModelStats).
-%   (a) parsing, no model solved: the target vector against a hand-built one; the flags, the horizons read off the _kK suffixes
+%   (a) parsing, no model solved: the target vector against a hand-built one; the flags, the horizons read off the _horizonK suffixes (1 for none)
 %       (autocorrtimehorizons), the cumulative sizes; the selectors against hand-built ones (AutoCorr [nFns,N_j,1+nRestr] by start age,
 %       CrossSec [nFns,nFns,1+nRestr] pair-shaped and symmetric, AgeCrossSec [nFns,nFns,ngroups,1+nRestr]; a matrix target makes the reduced
 %       set the full one; the cross-section targets take conditional restrictions as pages, restriction.fn.CovarianceWith.fn2 etc.); the same
@@ -41,9 +41,9 @@ TM.AllStats.assets.Mean=1.1;
 TM.AgeConditionalStats.assets.Mean=[NaN,2,3,4];
 t=ones(1,N_j); t(Jr:end)=NaN; TM.AutoCorrTransProbs.earnings.Mean=t;                    % ages 1..Jr-1
 t=ones(1,N_j-1); t(Jr-1:end)=NaN; TM.AutoCorrTransProbs.earnings.AutoCorrelation=t;    % start ages 1..Jr-2, horizon 1
-t=nan(1,N_j-3); t(2:4)=1; TM.AutoCorrTransProbs.earnings.AutoCovariance_k3=t;          % start ages 2..4, horizon 3
+t=nan(1,N_j-3); t(2:4)=1; TM.AutoCorrTransProbs.earnings.AutoCovariance_horizon3=t;          % start ages 2..4, horizon 3
 t=ones(1,N_j-1); t(1:5)=NaN; TM.AutoCorrTransProbs.rich.assets.AutoCorrelation=t;      % rich, start ages 6..N_j-1
-TM.AutoCorrTransProbs.rich.assets.PairMass_k2=ones(1,N_j-2);                           % rich, start ages 1..N_j-2, horizon 2
+TM.AutoCorrTransProbs.rich.assets.PairMass_horizon2=ones(1,N_j-2);                           % rich, start ages 1..N_j-2, horizon 2
 TM.AutoCorrTransProbs.poor.consumption.StdDeviation=ones(1,N_j);                       % poor, every age
 TM.CrossSectionCovarCorr.assets.CorrelationWith.earnings=0.3;
 TM.CrossSectionCovarCorr.consumption.Mean=1;
@@ -56,8 +56,8 @@ t=nan(4,4,ngroups); t(2,3,1:2)=1; TM.AgeConditionalCrossSectionCovarCorr.rich.Co
 [targetmomentvec,usingallstats,usinglcp,usingcustomstats,allstatmomentnames,allstatcummomentsizes,AllStats_whichstats,FnsToEvaluate_AllStats,acsmomentnames,acscummomentsizes,ACStats_whichstats,FnsToEvaluate_ACStats,cmsmomentnames,cmscummomentsizes,selectors,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec]=SetupTargetMoments_FHorz(TM,FnsToEvaluate,0,N_j,simoptions);
 
 % the hand-built target vector: AllStats, AgeConditionalStats, AutoCorrTransProbs, CrossSectionCovarCorr, AgeConditionalCrossSectionCovarCorr, each in its field order, vectorised column-major
-hand=[1.1; [NaN;2;3;4]; TM.AutoCorrTransProbs.earnings.Mean(:); TM.AutoCorrTransProbs.earnings.AutoCorrelation(:); TM.AutoCorrTransProbs.earnings.AutoCovariance_k3(:); ...
-    TM.AutoCorrTransProbs.rich.assets.AutoCorrelation(:); TM.AutoCorrTransProbs.rich.assets.PairMass_k2(:); TM.AutoCorrTransProbs.poor.consumption.StdDeviation(:); ...
+hand=[1.1; [NaN;2;3;4]; TM.AutoCorrTransProbs.earnings.Mean(:); TM.AutoCorrTransProbs.earnings.AutoCorrelation(:); TM.AutoCorrTransProbs.earnings.AutoCovariance_horizon3(:); ...
+    TM.AutoCorrTransProbs.rich.assets.AutoCorrelation(:); TM.AutoCorrTransProbs.rich.assets.PairMass_horizon2(:); TM.AutoCorrTransProbs.poor.consumption.StdDeviation(:); ...
     0.3; 1; 0.1; [NaN;1;1;1]; TM.AgeConditionalCrossSectionCovarCorr.CorrelationMatrix(:); [1;1;NaN;1]; TM.AgeConditionalCrossSectionCovarCorr.rich.CovarianceMatrix(:)];
 if length(targetmomentvec)==length(hand)
     d=abs(targetmomentvec-hand); d=d(:); d=d(~isnan(d));
@@ -68,13 +68,13 @@ end
 fprintf('AutoCorrCrossSec (a) targetmomentvec vs hand-built (%i entries), this should be zero: %.3e; length + NaN-pattern mismatches, this should be zero: %.3e \n',length(hand),max([d;0]),patternbad)
 handAC=N_j+(N_j-1)+(N_j-3)+(N_j-1)+(N_j-2)+N_j; handX=3; handAX=2*ngroups+32*ngroups;
 fprintf('AutoCorrCrossSec (a) flags usingautocorr, usingcrosssec, usingagecrosssec = %i %i %i (hand 1 1 1), usingallstats, usinglcp, usingcustomstats = %i %i %i (hand 1 1 0); cumulative sizes end AutoCorr %i (hand %i), CrossSec %i (hand %i), AgeCrossSec %i (hand %i), this should be zero: %.3e \n',usingautocorr,usingcrosssec,usingagecrosssec,usingallstats,usinglcp,usingcustomstats,autocorrcummomentsizes(end),handAC,crossseccummomentsizes(end),handX,agecrossseccummomentsizes(end),handAX,abs(usingautocorr-1)+abs(usingcrosssec-1)+abs(usingagecrosssec-1)+abs(usingallstats-1)+abs(usinglcp-1)+abs(usingcustomstats)+abs(autocorrcummomentsizes(end)-handAC)+abs(crossseccummomentsizes(end)-handX)+abs(agecrossseccummomentsizes(end)-handAX)+abs(allstatcummomentsizes(end)-1)+abs(acscummomentsizes(end)-4)+abs(cmscummomentsizes))
-fprintf('AutoCorrCrossSec (a) autocorrtimehorizons [%s] (hand [2 3]), names tables of %i, %i, %i rows (hand 6, 3, 4; the cross-section tables have four columns): horizons, this should be zero: %.3e; rows and columns, this should be zero: %.3e \n',num2str(autocorrtimehorizons),size(autocorrmomentnames,1),size(crosssecmomentnames,1),size(agecrosssecmomentnames,1),~isequal(autocorrtimehorizons(:)',[2,3]),abs(size(autocorrmomentnames,1)-6)+abs(size(crosssecmomentnames,1)-3)+abs(size(agecrosssecmomentnames,1)-4)+abs(size(crosssecmomentnames,2)-4)+abs(size(agecrosssecmomentnames,2)-4))
+fprintf('AutoCorrCrossSec (a) autocorrtimehorizons [%s] (hand [1 2 3]: the unsuffixed targets are horizon 1), names tables of %i, %i, %i rows (hand 6, 3, 4; the cross-section tables have four columns): horizons, this should be zero: %.3e; rows and columns, this should be zero: %.3e \n',num2str(autocorrtimehorizons),size(autocorrmomentnames,1),size(crosssecmomentnames,1),size(agecrosssecmomentnames,1),~isequal(autocorrtimehorizons(:)',[1,2,3]),abs(size(autocorrmomentnames,1)-6)+abs(size(crosssecmomentnames,1)-3)+abs(size(agecrosssecmomentnames,1)-4)+abs(size(crosssecmomentnames,2)-4)+abs(size(agecrosssecmomentnames,2)-4))
 
 % the selectors: AutoCorr over assets, earnings, consumption (FnsToEvaluate order; richind has no AutoCorr target)
 FnAC=fieldnames(FnsToEvaluate_AutoCorr);
 wcAC=zeros(3,N_j,npages);
-wcAC(2,1:Jr-1,1)=1;        % earnings unrestricted: Mean ages 1..Jr-1, AutoCorrelation start ages 1..Jr-2, AutoCovariance_k3 start ages 2..4
-wcAC(1,1:N_j-1,2)=1;       % assets under rich: AutoCorrelation start ages 6..N_j-1 and PairMass_k2 start ages 1..N_j-2
+wcAC(2,1:Jr-1,1)=1;        % earnings unrestricted: Mean ages 1..Jr-1, AutoCorrelation start ages 1..Jr-2, AutoCovariance_horizon3 start ages 2..4
+wcAC(1,1:N_j-1,2)=1;       % assets under rich: AutoCorrelation start ages 6..N_j-1 and PairMass_horizon2 start ages 1..N_j-2
 wcAC(3,:,3)=1;             % consumption under poor: StdDeviation every age
 fnok=isequal(FnAC,{'assets';'earnings';'consumption'});
 fprintf('AutoCorrCrossSec (a) AutoCorr reduced FnsToEvaluate are assets, earnings, consumption in that order, this should be zero: %.3e \n',1-fnok)
@@ -218,7 +218,7 @@ StationaryDist=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Poli
 simoptions_full=simoptions; simoptions_full.whichstats=ones(1,7);
 AllFull=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_full);
 LCPFull=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_full);
-simoptions_fullAC=rmfield(simoptions,'agegroupings'); simoptions_fullAC.timehorizons=[2,3]; % (the command has no age bins)
+simoptions_fullAC=rmfield(simoptions,'agegroupings'); simoptions_fullAC.timehorizons=[1,2,3]; % (the command has no age bins; exactly the horizons listed are computed)
 ACFull=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,simoptions_fullAC);
 CSFull=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions);
 AXFull=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions);
@@ -229,9 +229,9 @@ TMb.AllStats.assets.Mean=gather(AllFull.assets.Mean);
 t=gather(LCPFull.assets.Mean); t(1)=NaN; TMb.AgeConditionalStats.assets.Mean=t;
 t=gather(ACFull.earnings.Mean); t(Jr:end)=NaN; TMb.AutoCorrTransProbs.earnings.Mean=t;
 t=gather(ACFull.earnings.AutoCorrelation); t(Jr-1:end)=NaN; TMb.AutoCorrTransProbs.earnings.AutoCorrelation=t;
-t=gather(ACFull.earnings.AutoCovariance_k3); t([1,5:end])=NaN; TMb.AutoCorrTransProbs.earnings.AutoCovariance_k3=t;
+t=gather(ACFull.earnings.AutoCovariance_horizon3); t([1,5:end])=NaN; TMb.AutoCorrTransProbs.earnings.AutoCovariance_horizon3=t;
 t=gather(ACFull.rich.assets.AutoCorrelation); t(1:5)=NaN; TMb.AutoCorrTransProbs.rich.assets.AutoCorrelation=t;
-TMb.AutoCorrTransProbs.rich.assets.PairMass_k2=gather(ACFull.rich.assets.PairMass_k2);
+TMb.AutoCorrTransProbs.rich.assets.PairMass_horizon2=gather(ACFull.rich.assets.PairMass_horizon2);
 TMb.AutoCorrTransProbs.poor.consumption.StdDeviation=gather(ACFull.poor.consumption.StdDeviation);
 TMb.CrossSectionCovarCorr.assets.CorrelationWith.earnings=gather(CSFull.assets.CorrelationWith.earnings);
 TMb.CrossSectionCovarCorr.consumption.Mean=gather(CSFull.consumption.Mean);
@@ -331,18 +331,18 @@ simsel=simoptions_fullAC; simsel.whichcombos=selectors.AutoCorr.whichcombos;
 ACsel=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist,Policy,FnsToEvaluate_AutoCorr,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,simsel);
 bad=0; d=[];
 bad=bad+sum(~isnan(gather(ACsel.earnings.AutoCorrelation(Jr:end))));            % unselected start ages, horizon 1 (start ages 1..Jr-1 are selected by the Mean target; at Jr-1 the pair is computed, whatever its value)
-bad=bad+sum(~isnan(gather(ACsel.earnings.AutoCovariance_k3(Jr:end))));           % unselected start ages, horizon 3 (every horizon follows the start ages)
+bad=bad+sum(~isnan(gather(ACsel.earnings.AutoCovariance_horizon3(Jr:end))));           % unselected start ages, horizon 3 (every horizon follows the start ages)
 bad=bad+isfield(ACsel,'assets')+isfield(ACsel,'consumption')+isfield(ACsel,'richind'); % assets only under rich, consumption only under poor, richind nowhere
 bad=bad+isfield(ACsel.rich,'earnings')+isfield(ACsel.rich,'consumption')+isfield(ACsel.poor,'assets')+isfield(ACsel.poor,'earnings');
 bad=bad+sum(~isnan(gather(ACsel.rich.assets.AutoCorrelation(1:5))));             % unselected start ages under rich
 d=[d; abs(gather(ACsel.earnings.Mean(1:Jr-1))-gather(ACFull.earnings.Mean(1:Jr-1)))'];
 d=[d; abs(gather(ACsel.earnings.AutoCorrelation(1:Jr-2))-gather(ACFull.earnings.AutoCorrelation(1:Jr-2)))'];
-d=[d; abs(gather(ACsel.earnings.AutoCovariance_k3(2:4))-gather(ACFull.earnings.AutoCovariance_k3(2:4)))'];
+d=[d; abs(gather(ACsel.earnings.AutoCovariance_horizon3(2:4))-gather(ACFull.earnings.AutoCovariance_horizon3(2:4)))'];
 d=[d; abs(gather(ACsel.rich.assets.AutoCorrelation(6:end))-gather(ACFull.rich.assets.AutoCorrelation(6:end)))'];
-d=[d; abs(gather(ACsel.rich.assets.PairMass_k2)-gather(ACFull.rich.assets.PairMass_k2))'];
+d=[d; abs(gather(ACsel.rich.assets.PairMass_horizon2)-gather(ACFull.rich.assets.PairMass_horizon2))'];
 d=[d; abs(gather(ACsel.poor.consumption.StdDeviation)-gather(ACFull.poor.consumption.StdDeviation))'];
 d=d(~isnan(d));
-fprintf('AutoCorrCrossSec (c) AutoCorrTransProbs with the selectors: targeted entries vs full run, this should be zero: %.3e; untargeted entries not NaN or present, this should be zero: %.3e; horizon fields k2 and k3 both present, this should be zero: %.3e \n',max([d;0]),bad,~isfield(ACsel.earnings,'AutoCovariance_k2')+~isfield(ACsel.earnings,'AutoCovariance_k3'))
+fprintf('AutoCorrCrossSec (c) AutoCorrTransProbs with the selectors: targeted entries vs full run, this should be zero: %.3e; untargeted entries not NaN or present, this should be zero: %.3e; horizon fields k2 and k3 both present, this should be zero: %.3e \n',max([d;0]),bad,~isfield(ACsel.earnings,'AutoCovariance_horizon2')+~isfield(ACsel.earnings,'AutoCovariance_horizon3'))
 simselX=simoptions; simselX.whichcombos=selectors.CrossSec.whichcombos;
 CSsel=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate_CrossSec,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simselX);
 bad=0;

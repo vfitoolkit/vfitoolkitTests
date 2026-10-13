@@ -61,9 +61,9 @@ RestNames=fieldnames(Restrictions);
 jequaloneDist=zeros(n_a,n_z,n_e,'gpuArray');
 jequaloneDist(1,ceil(n_z/2),ceil(n_e/2))=1;
 
-timehorizons=[2,3,5];
-horizons=[1,timehorizons];
-hstr={'','_k2','_k3','_k5'};
+timehorizons=[1,2,3,5]; % exactly the horizons computed (since 2026-10-14 the command no longer adds horizon 1)
+horizons=timehorizons;
+hstr={'','_horizon2','_horizon3','_horizon5'};
 Kmax=max(horizons);
 
 pi_z_cpu=gather(pi_z);

@@ -781,7 +781,7 @@ fprintf('WhichCombos AggVars PType, a wrong-length whichcombos must error, this 
 
 %% ===================== AutoCorrTransProbs PType =====================
 simoptions_ac=struct();
-simoptions_ac.timehorizons=2;
+simoptions_ac.timehorizons=[1,2]; % horizons 1 and 2 (since 2026-10-14 exactly the horizons listed are computed)
 simoptions_ac.conditionalrestrictions=simoptions.conditionalrestrictions;
 FullAC=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_ac);
 [pF3,vF3]=CoreStructLeaves(FullAC);

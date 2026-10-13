@@ -68,9 +68,9 @@ FnsToEvaluate_PT.assets=@(aprime,a,z,e) a;
 FnsToEvaluate_PT.earnings=@(aprime,a,z,e,w,kappa_j_pt) w*kappa_j_pt*z*e;
 FnsToEvaluate_PT.consumption=@(aprime,a,z,e,r,w,kappa_j_pt) (1+r)*a+w*kappa_j_pt*z*e-aprime;
 FnsToEvaluate_PT.evar=@(aprime,a,z,e) e;
-timehorizons_PT=[2,3];
+timehorizons_PT=[1,2,3]; % exactly the horizons computed (since 2026-10-14 the command no longer adds horizon 1)
 horizons_PT=[1,2,3];
-hstr_PT={'','_k2','_k3'};
+hstr_PT={'','_horizon2','_horizon3'};
 
 simoptions_PT=simoptions;
 simoptions_PT.timehorizons=timehorizons_PT;

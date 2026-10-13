@@ -482,7 +482,7 @@ for cc=1:3
     fprintf('CondlRest PType AgeConditional CrossSection %s: RestrictedSampleMass per type, ByAge, ByPType, Total vs brute force, this should be zero: %.3e \n',configname,dA)
 
     %% ===================== AutoCorr PType: Mean and StdDeviation at each age, per type and grouped, vs brute force =====================
-    simoptions_acp=simoptions_RX; simoptions_acp.timehorizons=2;
+    simoptions_acp=simoptions_RX; simoptions_acp.timehorizons=[1,2]; % horizons 1 and 2 (since 2026-10-14 exactly the horizons listed are computed)
     ACP=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist_PT,Policy_PT,FnsToEvaluate,Params_PT,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_acp);
     for tt=1:N_i+1
         if tt<=N_i
@@ -592,7 +592,7 @@ for cc=1:3
     % Grouped restricted pair outputs (horizons 1 and 2) vs the pooling of the per-type pair outputs, weights ptweights times the pair mass (ACP_solo is now
     % the last of the loop above: without GI on configs 2-3, with GI on config 1, so pool against the matching ACP_c)
     dmx=0; dcov=0; dcor=0; dpm=0; nanmis=0;
-    hstrs={'','_k2'}; horizons=[1,2]; % (timehorizons=2 above)
+    hstrs={'','_horizon2'}; horizons=[1,2]; % (timehorizons=[1,2] above)
     for pp=2:npagesX
         rname=RestrNamesX{pp-1};
         for ff=1:nFns

@@ -18,8 +18,8 @@ n_d=0;
 d_grid=[];
 
 vfoptions=struct();
-timehorizons=[2,3];
-hstr={'','_k2','_k3'};
+timehorizons=[1,2,3]; % exactly the horizons computed (since 2026-10-14 the command no longer adds horizon 1)
+hstr={'','_horizon2','_horizon3'};
 horizons=[1,2,3];
 
 %% (A) PType, no z

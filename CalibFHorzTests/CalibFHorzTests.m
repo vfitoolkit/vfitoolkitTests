@@ -18,7 +18,7 @@
 % branch; and the by-target-name vector form of logmoments had an off-by-one.
 %
 % Added 2026-10-07 (part 8): three more kinds of target standing alongside AllStats and AgeConditionalStats, TargetMoments.AutoCorrTransProbs
-% (the autocorrelation command, horizons read off the _kK suffixes of the target names), .CrossSectionCovarCorr and
+% (the autocorrelation command, horizons read off the _horizonK suffixes of the target names, 1 for none), .CrossSectionCovarCorr and
 % .AgeConditionalCrossSectionCovarCorr (the two cross-sectional covariance/correlation commands, matrix targets with NaN accepted). The
 % target vector is AllStats, AgeConditionalStats, AutoCorrTransProbs, CrossSectionCovarCorr, AgeConditionalCrossSectionCovarCorr,
 % CustomModelStats. caliboptions.whichcombos is now always 1 or 0 (the objective takes no other value).
@@ -38,10 +38,11 @@
 % doPart(6): runtime of one objective evaluation, whichcombos=1 vs =0 (informational)
 % doPart(7): an iid shock through EiidShockFn with its dispersion calibrated, alone and together with ExogShockFn
 % doPart(8): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets: parsing and selectors, the moment vector vs full runs, the selectors handed to the three commands, round trips (rho_z, beta), logmoments by name, runtime
+% doPart(9): the AutoCorrTransProbs targets of the window and log rows (fnname_log, fnname_MperiodAverage, fnname_MperiodAverage_log, ...): parsing and selectors (ntimeperiods, logwhichcombos), the moment vector vs full runs at the level and the log
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -156,6 +157,12 @@ if doPart(8)==1
     fprintf('\n===== doPart(8): AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets: parsing, moment vector, selectors, round trips, logmoments, runtime =====\n')
     output=CalibFHorz_AutoCorrCrossSec(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
 end % doPart(8): the three new target kinds
+
+%% ===== doPart(9): AutoCorrTransProbs targets of the window and log rows =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): AutoCorrTransProbs targets of the window and log rows: parsing and selectors, the moment vector vs full runs at the level and the log =====\n')
+    output=CalibFHorz_AutoCorrWindows(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
+end % doPart(9): the window and log rows
 
 % All looks good!
 

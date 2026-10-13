@@ -36,10 +36,11 @@
 % doPart(6): runtime of one objective evaluation, whichcombos=1 vs =0 (informational)
 % doPart(7): extensions: the type weights calibrated (via ParametrizeParamsFn, and the vector itself), per-type N_j with and without agejshifter, an iid shock through EiidShockFn (alone and with ExogShockFn), a semi-exogenous state with SemiExoStateFn common and per type
 % doPart(8): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets with permanent types (grouped and per-type names, type-slot selectors): parsing, the moment vector vs full PType runs, the selectors handed to the three PType commands, round trips (common rho_z, beta + a per-type pension), logmoments by a four-level name, runtime
+% doPart(9): the AutoCorrTransProbs targets of the window and log rows (fnname_log, fnname_MperiodAverage, fnname_MperiodAverage_log, ...) with permanent types, grouped and per type: parsing and selectors (ntimeperiods, logwhichcombos), the moment vector vs full runs at the level and the log
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -134,6 +135,12 @@ if doPart(8)==1
     fprintf('\n===== doPart(8): AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets with permanent types: parsing, moment vector, selectors, round trips, logmoments, runtime =====\n')
     output=CalibFHorzPType_AutoCorrCrossSec(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
 end % doPart(8)
+
+%% ===== doPart(9): AutoCorrTransProbs targets of the window and log rows =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): AutoCorrTransProbs targets of the window and log rows with permanent types: parsing and selectors, the moment vector vs full runs at the level and the log =====\n')
+    output=CalibFHorzPType_AutoCorrWindows(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(9): the window and log rows
 
 % All looks good!
 
