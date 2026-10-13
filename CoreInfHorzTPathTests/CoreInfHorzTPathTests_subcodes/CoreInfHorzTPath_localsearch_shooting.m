@@ -315,8 +315,9 @@ fprintf('localsearch shooting: (8) the diagnostic is pure observation, its solve
 %
 % Seed sweeps HONOUR divideandconquer. DC is a memory option as much as a speed one here: the seed
 % sweep is the unrestricted one, about 2 GB with a d at n_a=1001 against about 63 MB under DC, so a
-% model that needs DC to solve at all can still use local search. The restricted sweeps still refuse
-% DC, and still ignore lowmemory.
+% model that needs DC to solve at all can still use local search. The restricted sweeps IGNORE DC,
+% silently, as they ignore lowmemory -- they used to refuse it, which made the whole combination
+% unusable and the seed route unreachable; section (16) is where that is now run and checked.
 ReturnFnd=@(d,aprime,a,z,r,w,sigma,eta,varphi) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,sigma,eta,varphi);
 FnsToEvaluateGEd.K=@(d,aprime,a,z) a;
 FnsToEvaluateGEd.N=@(d,aprime,a,z) d*z;
@@ -587,6 +588,94 @@ fprintf('localsearch Anderson d: (15) with d and GI, Anderson+localsearch vs And
 fprintf('localsearch Anderson d: (15) with d and GI, Anderson+localsearch vs Anderson without it, w, this should be close to zero: %.3e \n',max(abs(gather(PricePathAnddGILS.w)-gather(PricePathAnddGI.w))))
 fprintf('localsearch Anderson d: (15) with GI, the restricted solve moved off its starting path, w, should NOT be zero: %.3e \n',max(abs(gather(PricePathAnddGILS.w)-gather(PricePathBumpedd.w))))
 fprintf('localsearch Anderson d: (15) for scale, toleranceGEcondns here is %.3e, against %.3e for the with-d shooting solves \n',transpathoptionsAndd.toleranceGEcondns,transpathoptionsSd.toleranceGEcondns)
+
+%% (16) DIVIDE-AND-CONQUER WITH LOCAL SEARCH, END TO END, in all four corners
+% The combination the DC seed route was built for, and which until this section was written could not
+% be run at all: the restricted sweep REFUSED divideandconquer, so setting it -- the only thing a user
+% with a model too big for an unrestricted sweep can do -- errored on iteration 1's first restricted
+% step and the seed route was unreachable. It is now ignored on the restricted sweeps and honoured on
+% the seed ones, which is the whole point: the full sweeps are the ones that have to fit in memory.
+% WHAT THIS EXERCISES that doPart(4) section (19) and doPart(5) section (15) cannot. Those hold the
+% single step to an identity. Here the two kinds of sweep ALTERNATE inside a general eqm solve, under
+% the ratchet, with the reference built by a DC seed raw on iteration 1 and on every verification
+% sweep and then consumed by a restricted raw that is not a DC raw. The DC raws' references are the
+% only references in the feature produced by code other than the raws that read them.
+% THE BAR. Not an identity. Two converged shooting solves stop at different points inside the same
+% tolerance ball, and DC can break a coarse tie differently from the full sweep, which moves the
+% reference and so the windows of every later iteration. So these are held to the same bar as (2),
+% (3), (9) and (10) -- close to zero against the printed toleranceGEprices -- and compared against
+% the LOCAL SEARCH solve at the same nlocalsearch rather than the standard one, so that only DC
+% differs between the two paths being compared.
+% ANTI-VACUITY. Each solve has to have MOVED off the bumped starting path, or an agreement check
+% between two solves that both stopped at iteration 1 is satisfied by them both returning what they
+% were handed, and reads as a perfect zero.
+level1n16=15; % n_a_GE=201, so this is about the default floor(sqrt(N_a)) and is set explicitly for determinism
+
+vfoptions16=vfoptions;
+vfoptions16.localsearch=1;
+vfoptions16.nlocalsearch=3;
+vfoptions16.divideandconquer=1;
+vfoptions16.level1n=level1n16;
+[PricePath16,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptions16, []);
+fprintf('localsearch DC: (16) no d, no GI, DC+localsearch vs localsearch alone at the same nlocalsearch, r, this should be close to zero: %.3e \n',max(abs(gather(PricePath16.r)-gather(PricePathC.r))))
+fprintf('localsearch DC: (16) no d, no GI, DC+localsearch vs localsearch alone at the same nlocalsearch, w, this should be close to zero: %.3e \n',max(abs(gather(PricePath16.w)-gather(PricePathC.w))))
+fprintf('localsearch DC: (16) no d, no GI, DC+localsearch vs the STANDARD solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePath16.w)-gather(PricePathA.w))))
+fprintf('localsearch DC: (16) no d, no GI, the DC+localsearch solve moved off its starting path, w, should NOT be zero: %.3e \n',max(abs(gather(PricePath16.w)-gather(PricePathBumped.w))))
+
+vfoptions16GI=vfoptionsGI;
+vfoptions16GI.localsearch=1;
+vfoptions16GI.nlocalsearch=3;
+vfoptions16GI.divideandconquer=1;
+vfoptions16GI.level1n=level1n16;
+[PricePath16GI,~]=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptionsGI, vfoptions16GI, []);
+fprintf('localsearch DC: (16) no d, with GI, DC+localsearch vs localsearch alone at the same nlocalsearch, r, this should be close to zero: %.3e \n',max(abs(gather(PricePath16GI.r)-gather(PricePathGIls.r))))
+fprintf('localsearch DC: (16) no d, with GI, DC+localsearch vs localsearch alone at the same nlocalsearch, w, this should be close to zero: %.3e \n',max(abs(gather(PricePath16GI.w)-gather(PricePathGIls.w))))
+fprintf('localsearch DC: (16) no d, with GI, DC+localsearch vs the STANDARD GI solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePath16GI.w)-gather(PricePathGIstd.w))))
+fprintf('localsearch DC: (16) no d, with GI, the DC+localsearch solve moved off its starting path, w, should NOT be zero: %.3e \n',max(abs(gather(PricePath16GI.w)-gather(PricePathBumped.w))))
+
+% WITH d, which is where the seed route stops being a returned variable and becomes arithmetic:
+% DC1_raw's level-2 max is SPLIT, one max over aprime giving the per-d reference and then one over d
+% giving Policy. doPart(5) section (15) holds that split to LSseed_raw on a single step; this runs it
+% inside the solve, where a wrong reference shows up as a window centred on the wrong aprime for the
+% d the next sweep goes on to choose.
+vfoptions16d=vfoptions;
+vfoptions16d.localsearch=1;
+vfoptions16d.nlocalsearch=3;
+vfoptions16d.divideandconquer=1;
+vfoptions16d.level1n=level1n16;
+[PricePath16d,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd, AgentDist_initialGEd, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsSd, simoptions, vfoptions16d, []);
+fprintf('localsearch DC d: (16) with d, no GI, DC+localsearch vs localsearch alone at the same nlocalsearch, r, this should be close to zero: %.3e \n',max(abs(gather(PricePath16d.r)-gather(PricePathBd.r))))
+fprintf('localsearch DC d: (16) with d, no GI, DC+localsearch vs localsearch alone at the same nlocalsearch, w, this should be close to zero: %.3e \n',max(abs(gather(PricePath16d.w)-gather(PricePathBd.w))))
+fprintf('localsearch DC d: (16) with d, no GI, DC+localsearch vs the STANDARD with-d solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePath16d.w)-gather(PricePathAd.w))))
+fprintf('localsearch DC d: (16) with d, no GI, the DC+localsearch solve moved off its starting path, w, should NOT be zero: %.3e \n',max(abs(gather(PricePath16d.w)-gather(PricePathBumpedd.w))))
+
+vfoptions16dGI=vfoptionsGId;
+vfoptions16dGI.localsearch=1;
+vfoptions16dGI.nlocalsearch=3;
+vfoptions16dGI.divideandconquer=1;
+vfoptions16dGI.level1n=level1n16;
+[PricePath16dGI,~]=TransitionPath_InfHorz(PricePathBumpedd, ParamPathGE, T, V_finalGEd_GI, AgentDist_initialGEd_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsSd, simoptionsGId, vfoptions16dGI, []);
+fprintf('localsearch DC d + GI: (16) with d and GI, DC+localsearch vs localsearch alone at the same nlocalsearch, r, this should be close to zero: %.3e \n',max(abs(gather(PricePath16dGI.r)-gather(PricePathGIdls.r))))
+fprintf('localsearch DC d + GI: (16) with d and GI, DC+localsearch vs localsearch alone at the same nlocalsearch, w, this should be close to zero: %.3e \n',max(abs(gather(PricePath16dGI.w)-gather(PricePathGIdls.w))))
+fprintf('localsearch DC d + GI: (16) with d and GI, DC+localsearch vs the STANDARD with-d GI solve, w, this should be close to zero: %.3e \n',max(abs(gather(PricePath16dGI.w)-gather(PricePathGIdstd.w))))
+fprintf('localsearch DC d + GI: (16) with d and GI, the DC+localsearch solve moved off its starting path, w, should NOT be zero: %.3e \n',max(abs(gather(PricePath16dGI.w)-gather(PricePathBumpedd.w))))
+fprintf('localsearch DC: (16) for scale, toleranceGEprices is %.3e, and toleranceGEcondns is %.3e without d and %.3e with it \n',transpathoptionsS.toleranceGEprices,transpathoptionsS.toleranceGEcondns,transpathoptionsSd.toleranceGEcondns)
+
+% CERTIFIED FROM OUTSIDE, as (4) does for the no-DC answer: re-evaluate the with-d DC+localsearch path
+% with an EXACT unrestricted sweep and no DC, and check its general eqm conditions. factor=0 and
+% maxiter=1 make the call a pure evaluation of the path handed in. This is the check that does not
+% take any part of the scheme's word for it -- not the restriction, not DC, not the seed.
+transpathoptionsV16=transpathoptionsbaseline;
+transpathoptionsV16.GEnewprice=3;
+transpathoptionsV16.GEnewprice3.howtoupdate={'CapitalMarket','r',0,0; ...
+                                             'LabourMarket','w',0,0};
+transpathoptionsV16.maxiter=1;
+transpathoptionsV16.verbose=0;
+[~,GEcondnPath16]=TransitionPath_InfHorz(PricePath16d, ParamPathGE, T, V_finalGEd, AgentDist_initialGEd, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFnd, FnsToEvaluateGEd, GeneralEqmEqnsGE, ParamsGEd, DiscountFactorParamNames, transpathoptionsV16, simoptions, vfoptions, []);
+GEdist16=max(max(abs(gather(GEcondnPath16.CapitalMarket))),max(abs(gather(GEcondnPath16.LabourMarket))));
+fprintf('localsearch DC d: (16) the with-d DC+localsearch answer re-evaluated with an exact unrestricted sweep, its general eqm conditions are within tolerance, should be one: %i \n',GEdist16<=transpathoptionsSd.toleranceGEcondns)
+fprintf('localsearch DC d: (16) that distance is %.3e against toleranceGEcondns %.3e \n',GEdist16,transpathoptionsSd.toleranceGEcondns)
+
 
 output=struct();
 

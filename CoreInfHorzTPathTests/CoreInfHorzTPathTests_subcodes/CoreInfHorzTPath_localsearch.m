@@ -231,9 +231,9 @@ vfoptionsS.nlocalsearch=1;
 [VLSd,~]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsS);
 fprintf('localsearch: (7) for scale, the same step with the default reference instead, V, should NOT be zero: %.3e \n',max(abs(gather(VLSd)-gather(V1)),[],'all'))
 
-%% (8) The five documented refusals, each checked by its own message
+%% (8) The three surviving refusals, each checked by its own message, and one option that is IGNORED
 % Each is tested at the level that raises it: the three nlocalsearch refusals are the command's own
-% validation, the divide-and-conquer one is the dispatcher's.
+% validation. The fourth check used to be a refusal too and is now the opposite of one.
 % There is no with-d refusal to check any more. It was here until d was implemented, and it is now
 % doPart(5) that covers that case -- the same thing that happened to the gridinterplayer refusal when
 % the interpolation layer was implemented. A refusal check has to be deleted the moment the thing it
@@ -261,17 +261,30 @@ catch ME
     err(3)=contains(ME.message,'must be at least 1');
 end
 
+% DIVIDE-AND-CONQUER USED TO BE REFUSED HERE, and this used to be the check on that refusal. It is
+% now ACCEPTED AND IGNORED on a restricted sweep, silently, exactly as lowmemory is -- so the check
+% is inverted: the call must SUCCEED. It is kept as a try/catch rather than deleted so that a
+% reinstated refusal is REPORTED as a failed check instead of aborting the part, and note that it
+% passes no level1n, which only an ignored option permits.
+% WHY THE REFUSAL HAD TO GO. The seed sweeps -- iteration 1 and every verification sweep -- HONOUR
+% divideandconquer, because DC is a memory option here and is what keeps the unrestricted sweep
+% resident at all on a large model. So a user who set it for that reason, which is the only reason to
+% set it on a big model, hit the refusal on the very first RESTRICTED sweep and could not solve at
+% all: the whole DC seed route was unreachable from the general eqm path it was built for. That is
+% how it was found -- by trying to write a test for the combination, not by the combination failing.
+% Section (19) states what ignoring it means, as an identity.
 vfoptionsE=vfoptionsS; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.divideandconquer=1;
 try
     ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsE);
-catch ME
-    err(4)=contains(ME.message,'combined with vfoptions.divideandconquer');
+    err(4)=1;
+catch
+    err(4)=0;
 end
 
 fprintf('localsearch: (8) nlocalsearch unset is refused by name, should be one: %i \n',err(1))
 fprintf('localsearch: (8) nlocalsearch too large for the grid is refused by name, should be one: %i \n',err(2))
 fprintf('localsearch: (8) nlocalsearch=0 is refused by name, should be one: %i \n',err(3))
-fprintf('localsearch: (8) combination with divide-and-conquer is refused by name, should be one: %i \n',err(4))
+fprintf('localsearch: (8) divide-and-conquer on a restricted sweep is accepted and ignored, not refused, should be one: %i \n',err(4))
 
 %% (9) The same thing on the big grid, where speed can actually be measured
 % n_a_big=1001, so the predicted saving at nlocalsearch=1 is 1001/3=334. Everything here is the same
@@ -687,6 +700,186 @@ fprintf('localsearch+GI: (18) the coarse channel never reaches N_a, so the upper
 fprintf('localsearch+GI: (18) the coarse channel never falls below 1, should be one: %i \n',P1min18>=1)
 fprintf('localsearch+GI: (18) the decoded fine point still lies inside the window after any re-spelling, should be one: %i \n',inwindow18)
 fprintf('localsearch+GI: (18) for information, the largest coarse channel seen was %i against N_a=%i \n',P1max18,N_a)
+
+%% (19) DIVIDE-AND-CONQUER WITH LOCAL SEARCH
+% The combination has two halves that do OPPOSITE things, and both are checked here.
+%   - A RESTRICTED sweep IGNORES divideandconquer. The dispatcher zeroes it before any raw is picked,
+%     so it is the same raw on the same inputs and the answer must be identical bit for bit: V,
+%     Policy and the new reference. Anything but an exact zero means the option is reaching the
+%     restricted branch after all. The two do not compose -- the window IS the restriction, and DC
+%     restricts the same search a different way -- but that is a reason to ignore DC, not to refuse
+%     the solve, which is what it used to do (see section (8)).
+%   - A SEED sweep HONOURS it, because the seed sweep is the unrestricted one and DC is what keeps it
+%     in memory on the model sizes local search exists for. There the identity is in V only: DC and
+%     the full search can break an exact tie differently, which moves Policy and hence the reference
+%     without moving V. So V is held to zero and the disagreement count is reported.
+% level1n is swept, so a pass cannot rest on one value being harmless, and the last run leaves it
+% UNSET, which is the state a user who never set it is in.
+% The with-d corners are in doPart(5) section (15) -- DC1_raw's split level-2 max is the one piece of
+% real arithmetic this needed -- and the whole thing end to end is doPart(6) section (16).
+vfoptions19=vfoptionsS;
+vfoptions19.localsearch=1;
+vfoptions19.nlocalsearch=2;
+[V19,P19,ref19]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19);
+dcVgap19=0; dcPgap19=0; dcRgap19=0;
+for l_c=[7,10,15]
+    vfoptions19DC=vfoptions19;
+    vfoptions19DC.divideandconquer=1;
+    vfoptions19DC.level1n=l_c;
+    [V19DC,P19DC,ref19DC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19DC);
+    dcVgap19=max(dcVgap19,max(abs(gather(V19DC)-gather(V19)),[],'all'));
+    dcPgap19=max(dcPgap19,max(abs(gather(P19DC)-gather(P19)),[],'all'));
+    dcRgap19=max(dcRgap19,max(abs(gather(ref19DC)-gather(ref19)),[],'all'));
+end
+vfoptions19DC=vfoptions19;
+vfoptions19DC.divideandconquer=1; % and with level1n never set at all
+[V19DC,P19DC,ref19DC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19DC);
+dcVgap19=max(dcVgap19,max(abs(gather(V19DC)-gather(V19)),[],'all'));
+dcPgap19=max(dcPgap19,max(abs(gather(P19DC)-gather(P19)),[],'all'));
+dcRgap19=max(dcRgap19,max(abs(gather(ref19DC)-gather(ref19)),[],'all'));
+fprintf('localsearch: (19) a restricted sweep under divideandconquer=1, V vs divideandconquer=0, worst over level1n 7, 10, 15 and unset, this should be zero: %.3e \n',dcVgap19)
+fprintf('localsearch: (19) same, Policy, this should be zero: %.3e \n',dcPgap19)
+fprintf('localsearch: (19) same, the new reference, this should be zero: %.3e \n',dcRgap19)
+
+% The same with the interpolation layer on, where the restricted raw is the two-layer one. Policy is
+% compared channel for channel and not through the decoded fine point: both sides are the SAME raw,
+% so the two legal spellings of a coarse node cannot be what differs, and a looser comparison here
+% would hide exactly the kind of difference the check is for.
+vfoptions19G=vfoptionsG;
+vfoptions19G.localsearch=1;
+vfoptions19G.nlocalsearch=2;
+[V19G,P19G,ref19G]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19G);
+dcVgap19G=0; dcPgap19G=0; dcRgap19G=0;
+for l_c=[7,10,15]
+    vfoptions19GDC=vfoptions19G;
+    vfoptions19GDC.divideandconquer=1;
+    vfoptions19GDC.level1n=l_c;
+    [V19GDC,P19GDC,ref19GDC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19GDC);
+    dcVgap19G=max(dcVgap19G,max(abs(gather(V19GDC)-gather(V19G)),[],'all'));
+    dcPgap19G=max(dcPgap19G,max(abs(gather(P19GDC)-gather(P19G)),[],'all'));
+    dcRgap19G=max(dcRgap19G,max(abs(gather(ref19GDC)-gather(ref19G)),[],'all'));
+end
+fprintf('localsearch+GI: (19) a restricted GI sweep under divideandconquer=1, V vs divideandconquer=0, worst over level1n 7, 10 and 15, this should be zero: %.3e \n',dcVgap19G)
+fprintf('localsearch+GI: (19) same, Policy in every channel, this should be zero: %.3e \n',dcPgap19G)
+fprintf('localsearch+GI: (19) same, the new reference, this should be zero: %.3e \n',dcRgap19G)
+
+% AND THROUGH THE PATH COMMAND, not just the single step. ValueFnOnTransPath_InfHorz is where a user
+% meets the option, it has its own validation, and the refusal that was removed would have fired from
+% here as well -- so the removal is checked at both levels. localsearch=2 because this command ignores
+% 1 by design, and the whole V path is compared rather than one step, so a difference on any period of
+% the path is caught and not just on the first.
+vfoptions19P=vfoptions;
+vfoptions19P.localsearch=2;
+vfoptions19P.nlocalsearch=2;
+VPath19a=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions19P);
+vfoptions19P.divideandconquer=1;
+vfoptions19P.level1n=15;
+VPath19b=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions19P);
+fprintf('localsearch: (19) the whole restricted V path under divideandconquer=1, vs without it, this should be zero: %.3e \n',max(abs(gather(VPath19b)-gather(VPath19a)),[],'all'))
+
+% THE SEED SWEEP, which is the half that honours DC. Without d and without GI nothing is folded, so
+% Policy's aprime channel IS the coarse argmax and neither the full raw nor the DC raw needed any
+% change -- the reference is read off Policy by the dispatcher. With GI the reference is the raw's
+% own midpoint, and DC1_GI1_nod_raw had to start returning it; that one line is what is checked by
+% the clamp relation below, which is the only thing about a midpoint that is checkable without
+% re-deriving it: it is the raw's own coarse argmax clamped into [2,N_a-1].
+vfoptions19S=vfoptionsS;
+vfoptions19S.localsearch=0;
+vfoptions19S.localsearchseed=1;
+[V19S,P19S,ref19S]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19S);
+seedVgap19=0; seedties19=0;
+for l_c=[7,10,15]
+    vfoptions19SDC=vfoptions19S;
+    vfoptions19SDC.divideandconquer=1;
+    vfoptions19SDC.level1n=l_c;
+    [V19SDC,P19SDC,ref19SDC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19SDC);
+    seedVgap19=max(seedVgap19,max(abs(gather(V19SDC)-gather(V19S)),[],'all'));
+    seedties19=max(seedties19,sum(gather(P19SDC(1,:,:))~=gather(P19S(1,:,:)),'all'));
+    % The reference the seed hands on IS Policy's aprime in this corner, which is what the dispatcher
+    % claims when it reads one off the other. Held on the DC output, since that is the untested path.
+    fprintf('localsearch: (19) the DC seed sweep at level1n=%i, its reference vs its own Policy aprime, this should be zero: %.3e \n',l_c,max(abs(gather(ref19SDC)-gather(reshape(P19SDC(1,:,:),[1,N_a,N_z]))),[],'all'))
+end
+fprintf('localsearch: (19) the seed sweep under divideandconquer=1, V vs divideandconquer=0, worst over level1n 7, 10 and 15, this should be zero: %.3e \n',seedVgap19)
+fprintf('localsearch: (19) for information, their Policy disagrees at %i of %i states, which is exact ties broken differently and is also the only evidence that DC actually ran \n',seedties19,N_a*N_z)
+
+vfoptions19SG=vfoptionsG;
+vfoptions19SG.localsearch=0;
+vfoptions19SG.localsearchseed=1;
+[V19SG,P19SG,ref19SG]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19SG);
+seedVgap19G=0; clamp19G=1; range19G=1;
+for l_c=[7,10,15]
+    vfoptions19SGDC=vfoptions19SG;
+    vfoptions19SGDC.divideandconquer=1;
+    vfoptions19SGDC.level1n=l_c;
+    [V19SGDC,P19SGDC,ref19SGDC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19SGDC);
+    seedVgap19G=max(seedVgap19G,max(abs(gather(V19SGDC)-gather(V19SG)),[],'all'));
+    % The clamp relation: the interpolation layer searches one coarse cell either side of the
+    % midpoint, so the lower coarse point of the answer is the midpoint or one below it, and nothing
+    % else. Off-by-one in the returned midpoint is exactly what this catches.
+    r19=gather(reshape(ref19SGDC,[1,N_a,N_z]));
+    c19=gather(P19SGDC(1,:,:));
+    clamp19G=clamp19G*all(c19==r19 | c19==r19-1,'all');
+    range19G=range19G*all(r19>=2 & r19<=N_a-1,'all');
+end
+fprintf('localsearch+GI: (19) the GI seed sweep under divideandconquer=1, V vs divideandconquer=0, worst over level1n 7, 10 and 15, this should be zero: %.3e \n',seedVgap19G)
+fprintf('localsearch+GI: (19) the DC+GI seed reference is the midpoint of the cell Policy sits in, should be one: %i \n',clamp19G)
+fprintf('localsearch+GI: (19) the DC+GI seed reference lies in [2,N_a-1], as a midpoint must, should be one: %i \n',range19G)
+
+% THE DC SEED RAWS UNDER lowmemory=1, which is the one combination in this feature that no check had
+% reached. The seed sweeps honour lowmemory as well as DC -- they are the full sweeps, and a model
+% that needs either to be solvable has to be able to use local search -- so the reference line added
+% to each DC raw had to be added to its z-loop branch too, and that branch only runs here. The no-GI
+% no-d raw needed no new line at all (nothing is folded, so its Policy already is the argmax and the
+% dispatcher reads the reference off it), and it is checked anyway so that the four corners read the
+% same way and a future change to it is covered.
+vfoptions19L=vfoptions19S;
+vfoptions19L.divideandconquer=1;
+vfoptions19L.level1n=10;
+vfoptions19L.lowmemory=0;
+[V19L0,P19L0,ref19L0]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19L);
+vfoptions19L.lowmemory=1;
+[V19L1,P19L1,ref19L1]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19L);
+fprintf('localsearch: (19) the DC seed sweep under lowmemory=1, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(V19L1)-gather(V19L0)),[],'all'))
+fprintf('localsearch: (19) same, Policy, this should be zero: %.3e \n',max(abs(gather(P19L1)-gather(P19L0)),[],'all'))
+fprintf('localsearch: (19) same, the reference, this should be zero: %.3e \n',max(abs(gather(ref19L1)-gather(ref19L0)),[],'all'))
+
+vfoptions19LG=vfoptions19SG;
+vfoptions19LG.divideandconquer=1;
+vfoptions19LG.level1n=10;
+vfoptions19LG.lowmemory=0;
+[V19LG0,P19LG0,ref19LG0]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19LG);
+vfoptions19LG.lowmemory=1;
+[V19LG1,P19LG1,ref19LG1]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions19LG);
+fprintf('localsearch+GI: (19) the DC+GI seed sweep under lowmemory=1, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(V19LG1)-gather(V19LG0)),[],'all'))
+fprintf('localsearch+GI: (19) same, Policy in every channel, this should be zero: %.3e \n',max(abs(gather(P19LG1)-gather(P19LG0)),[],'all'))
+fprintf('localsearch+GI: (19) same, the reference, which is the line added to the z-loop branch, this should be zero: %.3e \n',max(abs(gather(ref19LG1)-gather(ref19LG0)),[],'all'))
+
+% THE DISCRIMINATOR, which the first run of this section showed was missing. Every identity above is
+% satisfied whether the DC raw ran or the plain one did -- DC is EXACT, so on a model with no exact
+% ties it leaves no trace in V, Policy or the reference, and the tie count came back 0 of 505. So the
+% claim "the seed sweep honours DC" rested on reading the dispatcher's fork, not on a measurement.
+% There is exactly one observable that separates them: all four DC raws read vfoptions.level1n on
+% their first line, and nothing defaults it at this level. So with level1n UNSET a seed sweep under
+% divideandconquer=1 must FAIL, and the restricted sweep in the refusal block above must SUCCEED on
+% the same options -- which is the pair that pins down which raw each sweep used.
+errDC=zeros(1,2);
+vfoptionsNL=vfoptions19S;
+vfoptionsNL.divideandconquer=1; % and no level1n, deliberately
+try
+    ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsNL);
+catch ME
+    errDC(1)=contains(ME.message,'level1n');
+end
+vfoptionsNLG=vfoptions19SG;
+vfoptionsNLG.divideandconquer=1;
+try
+    ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,[], a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsNLG);
+catch ME
+    errDC(2)=contains(ME.message,'level1n');
+end
+fprintf('localsearch: (19) the seed sweep with divideandconquer=1 and no level1n reaches the DC raw and fails on it, which is what proves the seed route honours DC, should be one: %i \n',errDC(1))
+fprintf('localsearch+GI: (19) the same with the interpolation layer, should be one: %i \n',errDC(2))
+
 
 output=struct();
 

@@ -247,11 +247,24 @@ try
 catch ME
     err(3)=contains(ME.message,'must be at least 1');
 end
+% DIVIDE-AND-CONQUER USED TO BE REFUSED HERE, and this used to be the check on that refusal. It is
+% now ACCEPTED AND IGNORED on a restricted sweep, silently, exactly as lowmemory is just below -- so
+% the check is inverted: the call must SUCCEED. It is kept as a try/catch rather than deleted so that
+% a reinstated refusal is REPORTED as a failed check instead of aborting the part, and note that it
+% passes no level1n, which only an ignored option permits.
+% This is the SIXTH refusal check in this bank to outlive the thing it refused, and the first one
+% caught before the run rather than by it: it surfaced while writing a test for the combination,
+% which is a different and better instrument than waiting for a refusal to stop firing.
+% WHY IT HAD TO GO. The seed sweeps HONOUR divideandconquer -- DC is a memory option here, and with d
+% it is the difference between a 2 GB return matrix and 63 MB -- so a user who set it for that reason
+% hit the refusal on the first RESTRICTED sweep and could not solve at all, which left the entire DC
+% seed route unreachable from the general eqm path it was built for. Section (15) is the identity.
 vfoptionsE=vfoptionsS; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1; vfoptionsE.divideandconquer=1;
 try
     ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsE);
-catch ME
-    err(4)=contains(ME.message,'combined with vfoptions.divideandconquer');
+    err(4)=1;
+catch
+    err(4)=0;
 end
 % A reference of the no-d shape, [1,N_a,N_z], handed to a model that has a d
 vfoptionsE=vfoptionsS; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1;
@@ -263,7 +276,7 @@ end
 fprintf('localsearch d: (10) nlocalsearch unset is refused by name, should be one: %i \n',err(1))
 fprintf('localsearch d: (10) nlocalsearch too large for the grid is refused by name, should be one: %i \n',err(2))
 fprintf('localsearch d: (10) nlocalsearch=0 is refused by name, should be one: %i \n',err(3))
-fprintf('localsearch d: (10) combination with divide-and-conquer is refused by name, should be one: %i \n',err(4))
+fprintf('localsearch d: (10) divide-and-conquer on a restricted sweep is accepted and ignored, not refused, should be one: %i \n',err(4))
 % (10) USED TO CHECK THAT lowmemory WAS REFUSED HERE. It is not any more: the dispatcher zeroes it on
 % a restricted sweep, silently and by design, because a window fits in memory whatever the full sweep
 % needs, while the full sweeps honour it. The refusal check is replaced by the identity below rather
@@ -436,6 +449,173 @@ fprintf('localsearch d + GI: (14) the coarse channel never reaches N_a, so the u
 fprintf('localsearch d + GI: (14) the coarse channel never falls below 1, should be one: %i \n',P1min15>=1)
 fprintf('localsearch d + GI: (14) the decoded fine point still lies inside the window after any re-spelling, should be one: %i \n',inwindow15)
 fprintf('localsearch d + GI: (14) for information, the largest coarse channel seen was %i against N_a=%i \n',P1max15,N_a)
+
+%% (15) DIVIDE-AND-CONQUER WITH LOCAL SEARCH, WITH A d
+% The with-d corners of what doPart(4) section (19) does without one, and the corner that needed real
+% arithmetic rather than a returned variable. Two halves, doing opposite things:
+%   - A RESTRICTED sweep IGNORES divideandconquer, so the answer is identical bit for bit.
+%   - A SEED sweep HONOURS it, and with d and no interpolation layer that meant splitting DC1_raw's
+%     level-2 max -- one max over aprime, giving the per-d reference, then one over d, giving Policy
+%     -- because a single max over a folded (d,aprime) dimension cannot produce a reference for the
+%     N_d-1 values of d it did not choose. Under GI the DC raws already built a per-d midpoint over
+%     every a for their own interpolation layer, so there it was one returned variable.
+% The seed identity is in V only. DC and the full search break exact ties differently, which moves
+% Policy and hence the reference without moving V; the disagreement count is reported instead, and is
+% also the only evidence available that DC ran at all, since an exact method leaves no other trace.
+% WHAT PINS THE REFERENCE is therefore not an agreement check but an INTERNAL one: read the DC seed's
+% own reference at the d its own Policy chose, and it must be that Policy's aprime. That is the check
+% on the split, and the one thing that would catch the two maxes being combined in the wrong order.
+vfoptions15=vfoptionsS;
+vfoptions15.localsearch=1;
+vfoptions15.nlocalsearch=2;
+[V15,P15d,ref15]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15);
+dcVgap15=0; dcPgap15=0; dcRgap15=0;
+for l_c=[7,10,15]
+    vfoptions15DC=vfoptions15;
+    vfoptions15DC.divideandconquer=1;
+    vfoptions15DC.level1n=l_c;
+    [V15DC,P15DC,ref15DC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15DC);
+    dcVgap15=max(dcVgap15,max(abs(gather(V15DC)-gather(V15)),[],'all'));
+    dcPgap15=max(dcPgap15,max(abs(gather(P15DC)-gather(P15d)),[],'all'));
+    dcRgap15=max(dcRgap15,max(abs(gather(ref15DC)-gather(ref15)),[],'all'));
+end
+vfoptions15DC=vfoptions15;
+vfoptions15DC.divideandconquer=1; % and with level1n never set at all
+[V15DC,P15DC,ref15DC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15DC);
+dcVgap15=max(dcVgap15,max(abs(gather(V15DC)-gather(V15)),[],'all'));
+dcPgap15=max(dcPgap15,max(abs(gather(P15DC)-gather(P15d)),[],'all'));
+dcRgap15=max(dcRgap15,max(abs(gather(ref15DC)-gather(ref15)),[],'all'));
+fprintf('localsearch d: (15) a restricted sweep with d under divideandconquer=1, V vs divideandconquer=0, worst over level1n 7, 10, 15 and unset, this should be zero: %.3e \n',dcVgap15)
+fprintf('localsearch d: (15) same, Policy, this should be zero: %.3e \n',dcPgap15)
+fprintf('localsearch d: (15) same, the per-d reference, this should be zero: %.3e \n',dcRgap15)
+
+% The same with the interpolation layer. Policy is compared channel for channel, not through the
+% decoded fine point: both sides are the SAME raw, so the two legal spellings of a coarse node cannot
+% be what differs, and the looser comparison would hide what the check is for.
+vfoptions15G=vfoptionsG;
+vfoptions15G.localsearch=1;
+vfoptions15G.nlocalsearch=2;
+[V15G,P15G,ref15G]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15G);
+dcVgap15G=0; dcPgap15G=0; dcRgap15G=0;
+for l_c=[7,10,15]
+    vfoptions15GDC=vfoptions15G;
+    vfoptions15GDC.divideandconquer=1;
+    vfoptions15GDC.level1n=l_c;
+    [V15GDC,P15GDC,ref15GDC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15GDC);
+    dcVgap15G=max(dcVgap15G,max(abs(gather(V15GDC)-gather(V15G)),[],'all'));
+    dcPgap15G=max(dcPgap15G,max(abs(gather(P15GDC)-gather(P15G)),[],'all'));
+    dcRgap15G=max(dcRgap15G,max(abs(gather(ref15GDC)-gather(ref15G)),[],'all'));
+end
+fprintf('localsearch d + GI: (15) a restricted GI sweep with d under divideandconquer=1, V vs divideandconquer=0, worst over level1n 7, 10 and 15, this should be zero: %.3e \n',dcVgap15G)
+fprintf('localsearch d + GI: (15) same, Policy in every channel, this should be zero: %.3e \n',dcPgap15G)
+fprintf('localsearch d + GI: (15) same, the per-d reference, this should be zero: %.3e \n',dcRgap15G)
+
+% THE SEED SWEEP WITH d AND NO GI: DC1_raw's split level-2 max against LSseed_raw, which does the
+% same split without DC. This is the pair that section (11) of doPart(6) does for LSseed_raw against
+% the folded standard raw; here it is DC1_raw's turn, and the internal reference check is what makes
+% it a test of the split rather than of DC.
+vfoptions15S=vfoptionsS;
+vfoptions15S.localsearch=0;
+vfoptions15S.localsearchseed=1;
+[V15S,P15S,ref15S]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15S);
+seedVgap15=0; seedties15=0; seedref15=0;
+for l_c=[7,10,15]
+    vfoptions15SDC=vfoptions15S;
+    vfoptions15SDC.divideandconquer=1;
+    vfoptions15SDC.level1n=l_c;
+    [V15SDC,P15SDC,ref15SDC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15SDC);
+    seedVgap15=max(seedVgap15,max(abs(gather(V15SDC)-gather(V15S)),[],'all'));
+    seedties15=max(seedties15,sum(gather(P15SDC(1,:,:))~=gather(P15S(1,:,:)),'all'));
+    r15=gather(ref15SDC);
+    dstar15=gather(P15SDC(1,:,:));
+    lin15=dstar15+N_d*(0:1:N_a-1)+N_d*N_a*shiftdim((0:1:N_z-1),-1);
+    seedref15=max(seedref15,max(abs(r15(lin15)-gather(P15SDC(2,:,:))),[],'all'));
+end
+fprintf('localsearch d: (15) the seed sweep with d under divideandconquer=1, V vs divideandconquer=0, worst over level1n 7, 10 and 15, this should be zero: %.3e \n',seedVgap15)
+fprintf('localsearch d: (15) the DC seed reference read at the chosen d vs that Policy aprime, worst over level1n 7, 10 and 15, this should be zero: %.3e \n',seedref15)
+fprintf('localsearch d: (15) for information, their Policy d channel disagrees at %i of %i states, which is exact ties broken differently and is also the only evidence that DC actually ran \n',seedties15,N_a*N_z)
+
+% AND THE SEED SWEEP WITH d AND GI, where the reference is DC1_GI1_raw's own midpoint per d. The
+% clamp relation is what can be checked without re-deriving it: the interpolation layer searches one
+% coarse cell either side of the midpoint, so the lower coarse point of the answer is the midpoint or
+% one below it at the chosen d, and nothing else. Off by one in the returned midpoint is exactly this.
+vfoptions15SG=vfoptionsG;
+vfoptions15SG.localsearch=0;
+vfoptions15SG.localsearchseed=1;
+[V15SG,P15SG,ref15SG]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15SG);
+seedVgap15G=0; clamp15G=1; range15G=1;
+for l_c=[7,10,15]
+    vfoptions15SGDC=vfoptions15SG;
+    vfoptions15SGDC.divideandconquer=1;
+    vfoptions15SGDC.level1n=l_c;
+    [V15SGDC,P15SGDC,ref15SGDC]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15SGDC);
+    seedVgap15G=max(seedVgap15G,max(abs(gather(V15SGDC)-gather(V15SG)),[],'all'));
+    rG15=gather(ref15SGDC);
+    dstarG15=gather(P15SGDC(1,:,:));
+    linG15=dstarG15+N_d*(0:1:N_a-1)+N_d*N_a*shiftdim((0:1:N_z-1),-1);
+    midG15=rG15(linG15);
+    cG15=gather(P15SGDC(2,:,:));
+    clamp15G=clamp15G*all(cG15==midG15 | cG15==midG15-1,'all');
+    range15G=range15G*all(rG15>=2 & rG15<=N_a-1,'all');
+end
+fprintf('localsearch d + GI: (15) the GI seed sweep with d under divideandconquer=1, V vs divideandconquer=0, worst over level1n 7, 10 and 15, this should be zero: %.3e \n',seedVgap15G)
+fprintf('localsearch d + GI: (15) the DC+GI seed reference at the chosen d is the midpoint of the cell Policy sits in, should be one: %i \n',clamp15G)
+fprintf('localsearch d + GI: (15) the DC+GI seed reference lies in [2,N_a-1] for every d, as a midpoint must, should be one: %i \n',range15G)
+
+% THE DC SEED RAWS WITH d UNDER lowmemory=1. The seed sweeps honour lowmemory too -- they are the full
+% sweeps, and with d they are the largest arrays anywhere in this feature -- so the per-d reference
+% had to be built inside each DC raw's z-loop branch as well, and that branch only runs here. For
+% DC1_raw that means the split level-2 max exists twice, once per memory branch, which is exactly the
+% shape of the copy-paste drift this bank has found before: identical arithmetic in two places, only
+% one of which any check reached. Section (10) covers LSseed_raw's own z-loop branch the same way.
+vfoptions15L=vfoptions15S;
+vfoptions15L.divideandconquer=1;
+vfoptions15L.level1n=10;
+vfoptions15L.lowmemory=0;
+[V15L0,P15L0,ref15L0]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15L);
+vfoptions15L.lowmemory=1;
+[V15L1,P15L1,ref15L1]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15L);
+fprintf('localsearch d: (15) the DC seed sweep with d under lowmemory=1, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(V15L1)-gather(V15L0)),[],'all'))
+fprintf('localsearch d: (15) same, Policy, this should be zero: %.3e \n',max(abs(gather(P15L1)-gather(P15L0)),[],'all'))
+fprintf('localsearch d: (15) same, the per-d reference, which is the split max in the z-loop branch, this should be zero: %.3e \n',max(abs(gather(ref15L1)-gather(ref15L0)),[],'all'))
+
+vfoptions15LG=vfoptions15SG;
+vfoptions15LG.divideandconquer=1;
+vfoptions15LG.level1n=10;
+vfoptions15LG.lowmemory=0;
+[V15LG0,P15LG0,ref15LG0]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15LG);
+vfoptions15LG.lowmemory=1;
+[V15LG1,P15LG1,ref15LG1]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions15LG);
+fprintf('localsearch d + GI: (15) the DC+GI seed sweep with d under lowmemory=1, V vs lowmemory=0, this should be zero: %.3e \n',max(abs(gather(V15LG1)-gather(V15LG0)),[],'all'))
+fprintf('localsearch d + GI: (15) same, Policy in every channel, this should be zero: %.3e \n',max(abs(gather(P15LG1)-gather(P15LG0)),[],'all'))
+fprintf('localsearch d + GI: (15) same, the per-d reference, this should be zero: %.3e \n',max(abs(gather(ref15LG1)-gather(ref15LG0)),[],'all'))
+
+% THE DISCRIMINATOR, which the first run of this section showed was missing. Every identity above is
+% satisfied whether the DC raw ran or the plain one did -- DC is EXACT, so on a model with no exact
+% ties it leaves no trace in V, Policy or the reference, and the tie count came back 0 of 505. So the
+% claim "the seed sweep honours DC" rested on reading the dispatcher's fork, not on a measurement.
+% There is exactly one observable that separates them: all four DC raws read vfoptions.level1n on
+% their first line, and nothing defaults it at this level. So with level1n UNSET a seed sweep under
+% divideandconquer=1 must FAIL, and the restricted sweep in the refusal block above must SUCCEED on
+% the same options -- which is the pair that pins down which raw each sweep used.
+errDC=zeros(1,2);
+vfoptionsNL=vfoptions15S;
+vfoptionsNL.divideandconquer=1; % and no level1n, deliberately
+try
+    ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsNL);
+catch ME
+    errDC(1)=contains(ME.message,'level1n');
+end
+vfoptionsNLG=vfoptions15SG;
+vfoptionsNLG.divideandconquer=1;
+try
+    ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptionsNLG);
+catch ME
+    errDC(2)=contains(ME.message,'level1n');
+end
+fprintf('localsearch d: (15) the seed sweep with divideandconquer=1 and no level1n reaches the DC raw and fails on it, which is what proves the seed route honours DC, should be one: %i \n',errDC(1))
+fprintf('localsearch d + GI: (15) the same with the interpolation layer, should be one: %i \n',errDC(2))
+
 
 output=struct();
 
