@@ -29,7 +29,7 @@
 % doPart(3): ExogShockFn common and per type, EiidShockFn, with estimated shock parameters (J with the grids rebuilt), jequaloneDist as a function (both usergrids), CustomModelStats (both usergrids)
 % doPart(4): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets, grouped and per type, one restricted: truth, J, whichcombos 1 vs 0 identical, a recovery
 % doPart(5): sensitivity to calibrated parameters (Jorgensen) vs finite differences, Lambda*Jcalib identity; an unidentified pair (rank(J) short)
-% doPart(6): cohorts entering at different ages, by type: hand-built cohort moments (grouped and per type), the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs, the last-age cutoff of a cohort's distribution (simoptions.lastDistAge / estimoptions.cohortlastage)
+% doPart(6): cohorts entering at different ages, by type: hand-built cohort moments (grouped and per type), the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs, the last-age cutoff of a cohort's distribution (simoptions.lastDistAge / estimoptions.cohortlastage), a QuantileCutoffs (matrix) target
 % doPart(7): runtime of skipestimation with whichcombos=1 vs =0 (informational)
 % doPart(8): cohort AutoCorr targets of the window and log rows, grouped and per type (fnname_MperiodAverage, fnname_log, fnname_MperiodAverage_log): truth, the cutoff with M-1, a refusal
 % doPart(9): cohort AgeConditionalStats targets of the window and log rows, grouped and per type (the 90th percentile of fnname_2periodAverage, fnname_MperiodAverage_log, fnname_log): truth, the cutoff with M-1, a refusal

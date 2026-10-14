@@ -16,6 +16,8 @@ function output=EstimFHorz_Cohorts(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Par
 %       targets stop four ages before N_j): identical J and moments to forcing N_j with estimoptions.cohortlastage (exact); a cutoff before the entry age must error
 %   (g) simoptions.lastDistAge in StationaryDist_FHorz_Case1 itself (entry age 5, and the standard entry age 1): equal to the full
 %       distribution up to the cutoff, zero after it, mass = the age weights up to the cutoff (exact); larger than N_j must error
+%   (h) a matrix target, QuantileCutoffs (90th-percentile row), for the cohort entering at age 5: at the truth the objective is zero and the
+%       current moments equal the hand-built ones; the derived cutoff equals forcing N_j (exact); before entry or without N_j columns must error
 % Each driver run is wrapped so an error in the plumbing is reported as a failed check.
 
 FnsToEvaluate.assets=@(aprime,a,z) a;
@@ -47,7 +49,7 @@ for cc=1:2
     LCP_c=LifeCycleProfiles_FHorz_Case1(Dist_c,Policy,FnsToEvaluate,Params_c,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_cfull);
     t=gather(LCP_c.assets.Mean); t(1:entryages(cc))=NaN; t(t<1e-6)=NaN; % (no mass before entry, no assets at entry)
     if cc==1
-        TM.AgeConditionalStats.cohort1.assets.Mean=t;
+        TM.AgeConditionalStats.cohort1.assets.Mean=t; t1=t; % t1 kept for check (h)
         All_c=EvalFnOnAgentDist_AllStats_FHorz_Case1(Dist_c,Policy,FnsToEvaluate,Params_c,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_cfull);
         TM.AllStats.cohort1.assets.Gini=gather(All_c.assets.Gini);
         hand=[hand; TM.AllStats.cohort1.assets.Gini; t(:)]; % within a cohort: AllStats, then AgeConditionalStats, then AutoCorr
@@ -57,7 +59,7 @@ for cc=1:2
         AC_c=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(Dist_c,Policy,FnsToEvaluate,Params_c,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions_c);
         ta=gather(AC_c.earnings.AutoCorrelation); ta(1:entryages(cc)-1)=NaN; ta(Jr-1:end)=NaN; % (pairs starting before entry have no mass; earnings are zero in retirement)
         cutoff2=max(find(~isnan(t),1,'last'),find(~isnan(ta),1,'last')+1); % the last age cohort 2's targets need (a horizon-1 pair starting at jj needs age jj+1)
-        Dist_c2=Dist_c; % kept for check (g)
+        Dist_c2=Dist_c; LCP_c2=LCP_c; % kept for checks (g) and (h)
         TM.AutoCorr.cohort2.earnings.AutoCorrelation=ta;
         hand=[hand; t(:); ta(:)];
     end
@@ -121,6 +123,62 @@ catch
     errored=1;
 end
 fprintf('Cohorts (f) estimoptions.cohortlastage before a cohort''s entry age must error, this should be zero: %.3e \n',1-errored)
+
+%% (h) a matrix target, QuantileCutoffs ((nquantiles+1) x N_j), for the cohort entering at age 5
+% Only the 90th-percentile row at ages 6 to N_j-4. Until 2026-10-15 SetupTargetMoments_FHorz_withCohorts reshaped the stacked age-conditional
+% block as (N_j, moments), which misreads a matrix target: it refused this one (entries at later ages fell on ages before entry) and its last age
+% came out before N_j-4, which would have cut the cohort's distribution too early. The ages of a target now come from its own shape (age is the column).
+Qall=gather(LCP_c2.assets.QuantileCutoffs);
+r90=round(0.9*(size(Qall,1)-1))+1; % row 1 is the minimum, row k+1 the k/nquantiles quantile
+Q=nan(size(Qall)); Q(r90,entryages(2)+1:N_j-4)=Qall(r90,entryages(2)+1:N_j-4);
+temp=reshape(Q(:),N_j,[]); % the old reshape-based reading of this target
+oldrefused=any(~isnan(temp(1:entryages(2)-1,:)),'all');
+TMh=struct(); TMh.AgeConditionalStats.cohort1.assets.Mean=t1; TMh.AgeConditionalStats.cohort2.assets.QuantileCutoffs=Q;
+handh=[t1(:); Q(:)]; handh=handh(~isnan(handh));
+nTh=length(handh); Wh=eye(nTh); Omegah=diag(0.01*(1+(1:nTh)'/nTh));
+estimoptions_h=estimoptions; estimoptions_h.skipestimation=1; estimoptions_h.cohortagejshifter=entryages;
+simoptions_h=simoptions; simoptions_h.agemass_withCohort=mewjc;
+ran=0; objv=NaN; dmom=NaN; es_h=[];
+try
+    [~,~,es_h]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TMh,Wh,Omegah,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_h,vfoptions,simoptions_h);
+    ran=1; objv=es_h.objectivefnval;
+    if length(es_h.currentmomentvec)==nTh
+        dmom=CoreMaxAbs(es_h.currentmomentvec(:)-handh);
+    else
+        dmom=abs(length(es_h.currentmomentvec)-nTh);
+    end
+catch err
+    fprintf('Cohorts (h): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+end
+fprintf('Cohorts (h) a QuantileCutoffs target (row %i, the 90th percentile, ages %i to %i) for the cohort entering at age %i, %i target entries, at the truth: the old reshape-based check refused it, this should be zero: %.3e; did not run, this should be zero: %.3e; objective, this should be zero: %.3e; current moments vs the hand-built cohort moments, this should be zero: %.3e \n',r90,entryages(2)+1,N_j-4,entryages(2),nTh,double(~oldrefused),1-ran,objv,dmom)
+estimoptions_h.cohortlastage=[N_j,N_j]; % the derived cutoff of cohort 2 (age N_j-4) vs forcing N_j
+ran=0; dJ=NaN; dmom=NaN;
+try
+    [~,~,es_hfull]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TMh,Wh,Omegah,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_h,vfoptions,simoptions_h);
+    ran=1;
+    if ~isempty(es_h)
+        dJ=CoreMaxAbs(es_h.variousmatrices.J(:)-es_hfull.variousmatrices.J(:)); dmom=CoreMaxAbs(es_h.currentmomentvec(:)-es_hfull.currentmomentvec(:));
+    end
+catch err
+    fprintf('Cohorts (h) forced to N_j: the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+end
+fprintf('Cohorts (h) the QuantileCutoffs target with the derived cutoff vs both cohorts forced to N_j (estimoptions.cohortlastage): did not run, this should be zero: %.3e; J, this should be zero: %.3e; current moments, this should be zero: %.3e \n',1-ran,dJ,dmom)
+estimoptions_h=rmfield(estimoptions_h,'cohortlastage');
+errored=zeros(1,2);
+TMbad=TMh; TMbad.AgeConditionalStats.cohort2.assets.QuantileCutoffs(r90,entryages(2)-1)=1; % a matrix target at an age before entry must error
+Wb=eye(nTh+1); Omegab=diag(0.01*(1+(1:nTh+1)'/(nTh+1))); % (sized for the extra entry, so only the entry age can be the reason it errors)
+try
+    EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TMbad,Wb,Omegab,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_h,vfoptions,simoptions_h);
+catch
+    errored(1)=1;
+end
+TMbad=TMh; TMbad.AgeConditionalStats.cohort2.assets.QuantileCutoffs=Q(:,1:N_j-1); % a matrix target without N_j columns must error
+try
+    EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TMbad,Wh,Omegah,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_h,vfoptions,simoptions_h);
+catch
+    errored(2)=1;
+end
+fprintf('Cohorts (h) a QuantileCutoffs target before the entry age, and one without N_j columns, must each error, this should be zero: %.3e \n',2-sum(errored))
 
 %% (c) one cohort at age 1 with all the mass equals the standard estimator
 jequaloneDist_1=zeros(n_a,n_z,N_j,'gpuArray'); jequaloneDist_1(:,:,1)=jequaloneDist;
