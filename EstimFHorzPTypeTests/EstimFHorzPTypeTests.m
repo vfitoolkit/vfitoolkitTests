@@ -33,10 +33,11 @@
 % doPart(7): runtime of skipestimation with whichcombos=1 vs =0 (informational)
 % doPart(8): cohort AutoCorr targets of the window and log rows, grouped and per type (fnname_MperiodAverage, fnname_log, fnname_MperiodAverage_log): truth, the cutoff with M-1, a refusal
 % doPart(9): cohort AgeConditionalStats targets of the window and log rows, grouped and per type (the 90th percentile of fnname_2periodAverage, fnname_MperiodAverage_log, fnname_log): truth, the cutoff with M-1, a refusal
+% doPart(10): cohort CustomModelStats targets with permanent types (the same function as without cohorts, with the grouped DFJ full-cell autocorrelation): truth, the N_j cutoff, a refusal
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -138,6 +139,12 @@ if doPart(9)==1
     fprintf('\n===== doPart(9): cohort AgeConditionalStats targets of the window and log rows, grouped and per type =====\n')
     output=EstimFHorzPType_ACSCohortsWindows(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
 end % doPart(9)
+
+%% ===== doPart(10): cohort CustomModelStats targets =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): cohort CustomModelStats targets, with permanent types =====\n')
+    output=EstimFHorzPType_CohortsCustomStats(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(10)
 
 % All looks good!
 
