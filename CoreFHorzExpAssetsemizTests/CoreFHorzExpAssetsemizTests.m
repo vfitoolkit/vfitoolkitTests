@@ -33,7 +33,40 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1];
+%
+% NOTE: fig 24 stays commented out INSIDE part 5 - it out-of-memories on this machine. doPart is for
+% whole tiers; an individual call that cannot run stays commented.
+%
+% This run: ALL SIX PARTS, as the l_a2==1 REGRESSION GUARD for the first stage of the with2A2
+% (two-experience-asset) work on this family. 19 toolkit files changed on 2026-10-14 and every one
+% of them is on the ONE-experience-asset path this bank exercises:
+%   both aprimeFn builders (CreateExperienceAssetsemizFnMatrix 186->348,
+%     CreateaprimePolicyExperienceAssetsemiz 180->309)
+%   5 aprimeFnParamNames arity sites (the (l_a2>=2) whicha term)
+%   72 a2_grid -> a2_gridvals argument switches across the 8 noa1 raws
+%   all 4 downstream: StationaryDist_FHorz_ExpAssetsemiz, SimPanelIndexes_FHorz_ExpAssetsemiz,
+%     ValueFnFromPolicy_FHorz_ExpAssetsemiz{,_GI}
+% Every change is meant to be inert at l_a2==1, and most are provably so (the arity terms add
+% (l_a2>=2)=0; CreateGridvals(n,grid,1) returns the grid itself for a 1-D grid, verified; the new
+% code sits inside l_a2==2 arms). The exception worth running for: StationaryDist and
+% SimPanelIndexes had their l_a2==1 path RESTRUCTURED, not just wrapped - an l_a==1/2/3 index chain
+% replaced by an l_a1-based corner loop - so the projection gate cannot certify those two and only
+% a run can. The with2A2 tier itself does NOT exist yet (the 40 raws are still to port), so there
+% is nothing new to test here; this run is purely about not having broken what already worked.
+%
+% Baseline to compare against, from the 2026-10-02 run of parts 5-6: 327 checks, and the ONE
+% reported failure was 'Divide-and-conquer (DC2A), this should be zero: 1.000e+00' at part 5 - the
+% known benign exact-tie artefact (Policy off by one index while V sits at the ULP floor), closed
+% 2026-09-19. Expect that same single failure and nothing else. Parts 1-4 have not run since at
+% least 2026-10-02, so their counts are the figure to record for next time.
+% NOTE (2026-10-14): on this machine parts 1-4 and parts 5-6 must be run as TWO separate MATLAB
+% invocations. All six in one process killed MATLAB partway through part 5 (no error message,
+% after figs 17-23 and 258 of its 323 checks); parts 5-6 alone then completed with 327 checks and
+% statistics identical to the 2026-10-02 run, so it is a process memory ceiling, not a defect.
+% Part 5 is the heaviest tier here - two standard endogenous assets PLUS the experience asset,
+% three endogenous states - and its fig 24 is already commented out for the same reason.
+% So: run this as-is for parts 1-4, then set doPart=[0,0,0,0,1,1] and run it again.
+doPart=[1,1,1,1,0,0];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -265,8 +298,10 @@ if doPart(5)==1
 
     %% with2A1, with d1, with z, with e
     figure_c=24;
-    output=CoreFHorzExpAssetsemiz_d1_z_e_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetsemizTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
+    % output=CoreFHorzExpAssetsemiz_d1_z_e_with2A1(n_d_withd1,n_a_2A1,n_a_2A1_notsobig,n_z,N_j,d_grid_withd1,a_grid_2A1,a_grid_2A1_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    % exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetsemizTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    % I CANNOT RUN THIS AS IT JUST OUT-OF-MEMORY ERRORS
 end % doPart(5): With TWO standard endogenous figs 17-24
 
 %% ===== doPart(6): With TWO standard endogenous cross-tests =====
