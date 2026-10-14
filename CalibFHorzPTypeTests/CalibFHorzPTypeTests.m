@@ -38,10 +38,11 @@
 % doPart(8): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets with permanent types (grouped and per-type names, type-slot selectors): parsing, the moment vector vs full PType runs, the selectors handed to the three PType commands, round trips (common rho_z, beta + a per-type pension), logmoments by a four-level name, runtime
 % doPart(9): the AutoCorrTransProbs targets of the window and log rows (fnname_log, fnname_MperiodAverage, fnname_MperiodAverage_log, ...) with permanent types, grouped and per type: parsing and selectors (ntimeperiods, logwhichcombos), the moment vector vs full runs at the level and the log
 % doPart(10): the AgeConditionalStats targets of the window and log rows with permanent types, grouped and per type: parsing and selectors (blocks of ntimeperiods, logwhichcombos, the split into a second call when the single-period targets are by age groups), the moment vector vs full LifeCycleProfiles_PType runs
+% doPart(11): the CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets of the windows with permanent types (fnname_MperiodAverage, grouped and per type, CovarianceMatrix_MperiodAverage): parsing and selectors (block-diagonal whichcombos with the type slots, the age-conditional split into a second call when the single-period targets are by age groups), the moment vector vs full PType runs
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -148,6 +149,12 @@ if doPart(10)==1
     fprintf('\n===== doPart(10): AgeConditionalStats targets of the window and log rows with permanent types: parsing and selectors, the split, the moment vector vs full LifeCycleProfiles_PType runs =====\n')
     output=CalibFHorzPType_ACSWindows(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
 end % doPart(10): the AgeConditionalStats window and log rows
+
+%% ===== doPart(11): CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets of the windows =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets of the windows with permanent types: parsing and selectors, the split, the moment vector vs full PType runs =====\n')
+    output=CalibFHorzPType_CSWindows(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,ReturnFn,jequaloneDist);
+end % doPart(11): the CrossSec window targets
 
 % All looks good!
 
