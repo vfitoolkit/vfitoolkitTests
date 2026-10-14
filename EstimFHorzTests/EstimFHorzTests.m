@@ -38,7 +38,8 @@
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
 % doPart(10): cohort AutoCorr targets of the window and log rows (fnname_MperiodAverage, fnname_log, fnname_MperiodAverage_log): truth, the cutoff with M-1, refusals
-doPart=[1,1,1,1,1,1,1,1,1,1];
+% doPart(11): cohort AgeConditionalStats targets of the window and log rows (the 90th percentile of fnname_2periodAverage, fnname_MperiodAverage_log, fnname_log under a restriction): truth, the cutoff with M-1, refusals
+doPart=[1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -141,6 +142,12 @@ if doPart(10)==1
     fprintf('\n===== doPart(10): cohort AutoCorr targets of the window and log rows =====\n')
     output=EstimFHorz_CohortsWindows(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
 end % doPart(10)
+
+%% ===== doPart(11): cohort AgeConditionalStats targets of the window and log rows =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): cohort AgeConditionalStats targets of the window and log rows =====\n')
+    output=EstimFHorz_ACSCohortsWindows(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
+end % doPart(11)
 
 % All looks good!
 
