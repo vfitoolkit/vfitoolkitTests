@@ -1,0 +1,114 @@
+function output=CoreFHorzExpAssetU_nod1_noz_noe_noa1_with2A2_nosemiz(n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c)
+% ExpAsset noa1: no d1, no z, no e. Experience asset is the only endogenous state.
+% n_a is scalar (n_a_justexpasset); a_grid is the a2_grid. n_a_big/a_grid_big are unused.
+% n_d=n_d2; d_grid=d2_grid
+%
+% Differs from the a1 version:
+%   - no DC/GI/DC+GI blocks (irrelevant without a1)
+%   - jequaloneDist built on n_a directly (no big-grid distinction)
+
+% Setup vfoptions and simoptions
+vfoptions=struct();
+simoptions=struct();
+n_z=0;
+z_grid=[];
+pi_z=[];
+% Experience asset
+vfoptions.experienceassetu=2;
+simoptions.experienceassetu=2;
+vfoptions.aprimeFn=vfoptionsbaseline.aprimeFn_2A2;
+simoptions.aprimeFn=vfoptions.aprimeFn;
+simoptions.d_grid=d_grid;
+simoptions.a_grid=a_grid;
+vfoptions.n_u=vfoptionsbaseline.n_u;
+vfoptions.u_grid=vfoptionsbaseline.u_grid;
+vfoptions.pi_u=vfoptionsbaseline.pi_u;
+simoptions.n_u=vfoptions.n_u;
+simoptions.u_grid=vfoptions.u_grid;
+simoptions.pi_u=vfoptions.pi_u;
+
+jequaloneDist=zeros([n_a,1],'gpuArray');
+jequaloneDist(1,1)=1;
+
+ReturnFn=@(d2,a2_1,a2_2,r,w,kappa_j,sigma,agej,Jr,pension,transfer,pensionrate) ReturnFn_nod1_noz_noe_noa1_with2A2_nosemiz(d2,a2_1,a2_2,r,w,kappa_j,sigma,agej,Jr,pension,transfer,pensionrate);
+
+FnsToEvaluate.assets=@(d2,a2_1,a2_2) a2_1;
+FnsToEvaluate.earnings=@(d2,a2_1,a2_2,w,kappa_j) w*kappa_j*d2*a2_1;
+FnsToEvaluate.lifetimeearnings=@(d2,a2_1,a2_2) a2_2; % with2A2: makes the second experience asset show up in the stats
+
+%% Basic VFI
+vfoptions1=vfoptions;
+simoptions1=simoptions;
+[V1,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+
+PolicyVals1=PolicyInd2Val_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,vfoptions1);
+
+V1fromPolicy=ValueFnFromPolicy_FHorz(Policy1,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions1);
+fprintf('ValueFnFromPolicy, this should be zero: %.3e \n',max(abs(V1fromPolicy(:)-V1(:))))
+
+% lowmemory variants
+% 0 shocks (no z, no e, no semiz) -> only lowmemory=0 valid per docs; no lowmemory>0 check.
+
+%%
+clear V1 V1B Policy1B PolicyVals1 V1fromPolicy
+
+%% StationaryDist + EvalFn (use n_a directly -- no big-grid distinction in noa1)
+StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy1,n_d,n_a,n_z,N_j,pi_z,Params,simoptions1);
+AllStats1=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist1,Policy1,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+AgeConditionalStats1=LifeCycleProfiles_FHorz_Case1(StationaryDist1,Policy1,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+
+fprintf('noa1 moments (plain)\n')
+[AllStats1.assets.Mean, AllStats1.earnings.Mean]
+
+%% Sim panel cross-check
+SimPanelValues1=SimPanelValues_FHorz_Case1(jequaloneDist,Policy1,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions1);
+fprintf('SimPanel mean assets (should roughly match AgeConditionalStats1):\n')
+[AgeConditionalStats1.assets.Mean; mean(SimPanelValues1.assets,2)']
+
+%% Graph
+fig=figure(figure_c);
+subplot(2,1,1); plot(1:1:N_j, AgeConditionalStats1.assets.Mean)
+title('Age-conditional assets (plain, noa1)')
+subplot(2,1,2); plot(1:1:N_j, AgeConditionalStats1.earnings.Mean)
+title('Age-conditional earnings')
+
+%% Other commands
+AggVars=EvalFnOnAgentDist_AggVars_FHorz_Case1(StationaryDist1,Policy1,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+ValuesOnGrid=EvalFnOnAgentDist_ValuesOnGrid_FHorz_Case1(Policy1,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+
+
+%% V_Jplus1: use V of period jstar as the terminal value function of a shorter model
+% Solve the model, then solve a shorter model that runs only periods 1,...,jstar-1, giving it
+% vfoptions.V_Jplus1=V(:,jstar). V_Jplus1 is the value fn of period N_j+1 of the model being
+% solved, so the shorter model has Njs=jstar-1 periods, and the age-dependent parameters are
+% trimmed to length Njs (agej and kappa_j; the aprimeFn parameters phi1 and phi2 are scalars).
+% Note: u is iid and vfoptions.pi_u carries no age dimension, so it needs no trimming; u is
+% integrated out inside the a2prime transition and so adds no dimension to V or Policy.
+% V and Policy must then be identical to the original model for periods 1,...,jstar-1.
+% This tier has no a1 for divide-and-conquer or the grid interp layer to operate on, so it
+% defines only vfoptions1. Run at jstar=round(3*N_j/4) and again at jstar=N_j (so the
+% retirement periods, and the terminal V_Jplus1 branch, are also covered), each with the
+% same lowmemory rungs as above.
+% Note: mewj is age-dependent, but is only used for the agent distribution, which is not
+% computed here, so it is left alone.
+for jstar=[round(3*N_j/4),N_j]
+    Njs=jstar-1; % the shorter model runs periods 1,...,jstar-1
+    Paramsjs=Params;
+    Paramsjs.agej=Params.agej(1:Njs);
+    Paramsjs.kappa_j=Params.kappa_j(1:Njs);
+    [Vbase,Policybase]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+    vfoptionsjs=vfoptions1;
+    vfoptionsjs.V_Jplus1=Vbase(:,:,jstar);
+    Vbase=Vbase(:,:,1:Njs);
+    Policybase=Policybase(:,:,:,1:Njs);
+    [Vshort,Policyshort]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,Njs,d_grid,a_grid,z_grid,pi_z,ReturnFn,Paramsjs,DiscountFactorParamNames,[],vfoptionsjs);
+    fprintf('V_Jplus1 (jstar=%i), this should be zero: %.3e \n',jstar,max(abs(Vbase(:)-Vshort(:))))
+    fprintf('V_Jplus1 (jstar=%i), this should be zero: %.3e \n',jstar,max(abs(Policybase(:)-Policyshort(:))))
+end
+
+clear Vbase Policybase Vshort Policyshort
+
+%%
+output=struct();
+
+end

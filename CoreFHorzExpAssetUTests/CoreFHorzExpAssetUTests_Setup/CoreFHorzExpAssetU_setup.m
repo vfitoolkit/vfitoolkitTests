@@ -45,6 +45,22 @@ a1_grid_2A1_notsobig=5*linspace(0,1,n_a_2A1_notsobig(1))'.^3;
 a_grid_2A1=[a1_grid;a1_2_grid;a2_grid];
 a_grid_2A1_notsobig=[a1_grid_2A1_notsobig;a1_2_grid;a2_grid];
 
+% with2A2: a SECOND EXPERIENCE asset a2_2, so vfoptions.experienceassetu is the integer COUNT of
+% a2 dimensions (2 here) rather than a flag. Grid layout: a = [a1, a2_1, a2_2], and the noa1 tier
+% is just a = [a2_1, a2_2].
+n_a2_1=7; % first experience asset  (human capital, the one the existing tier has)
+n_a2_2=5; % second experience asset (cumulated lifetime earnings)
+a2_1_grid=linspace(0,10,n_a2_1)';
+a2_2_grid=linspace(0,10,n_a2_2)';
+n_a_2A2=[51,n_a2_1,n_a2_2]; % base a1 grid; the driver's 'notsobig' grid is FINER in a1
+a_grid_2A2=[5*linspace(0,1,n_a_2A2(1))'.^3;a2_1_grid;a2_2_grid];
+n_a_2A2_justexpasset=[n_a2_1,n_a2_2];          % noa1 tier: the two experience assets are all there is
+a_grid_2A2_justexpasset=[a2_1_grid;a2_2_grid];
+% NOTE on sizing: this family carries an extra u dimension through the VFI, so the with2A2 arrays
+% are N_u times those of the plain-ExpAsset with2A2 tier at the same a1 grid. 51/151/101 matches
+% the ExpAsset(e) with2A2 tier and fits here, but if a variant out-of-memories, trim its a1 grid
+% rather than the a2 grids -- the a2 dims are what the tier exists to exercise.
+
 
 % setup z
 [z_grid,pi_z]=discretizeAR1_FarmerToda(0,0.9,0.03,n_z);
@@ -94,11 +110,30 @@ simoptionsbaseline.pi_u=vfoptionsbaseline.pi_u;
 
 simoptionsbaseline.experienceassetu=vfoptionsbaseline.experienceassetu;
 simoptionsbaseline.aprimeFn=vfoptionsbaseline.aprimeFn;
+
+% with2A2 aprimeFn. GPU arrayfun gives scalar output only, so the builders call aprimeFn once per
+% a2 dimension with a 'whicha' integer selector. NOTE the argument order: for experienceassetU the
+% selector sits AFTER u and before the parameters, i.e. aprimeFn(d2,a2_1,a2_2,u,whicha,params...).
+% Verified against the 32 arrayfun call sites in the l_a2==2 branch of
+% CreateExperienceAssetuFnMatrix and its arity check nargin==l_d+l_a2+l_u+(l_a2>=2)+nparams.
+vfoptionsbaseline.aprimeFn_2A2=@(d2,a2_1,a2_2,u,whicha,phi1,phi2,phi3,phi4) ...
+    (whicha==1)*(u*(phi1*(1-d2)+(1-phi2)*a2_1)) + ...
+    (whicha==2)*(u*(phi3*d2*a2_1+(1-phi4)*a2_2));
+% a2_1' = u*(phi1*(1-d2)+(1-phi2)*a2_1)  -- EXACTLY the law of motion of the one-experience-asset
+%         tier (aprimeFn_CoreTestExpAssetU), so the inert-second-asset cross-test reduces to that
+%         tier bit-for-bit.
+% a2_2' = u*(phi3*d2*a2_1+(1-phi4)*a2_2) -- deliberately COUPLED to a2_1, and carrying the same u
+%         shock, so it is not a payoff-irrelevant passenger and a stride bug cannot cancel out.
+simoptionsbaseline.aprimeFn_2A2=vfoptionsbaseline.aprimeFn_2A2;
 % simoptionsbaseline.a_grid=
 % simoptionsbaseline.d_grid=
 
 Params.phi1=0.3; % ratio at which (1-d2) is converted into a2
 Params.phi2=0.03; % depreciation rate
+Params.phi3=0.2; % rate at which d2*a2_1 accumulates into a2_2 (with2A2 only)
+Params.phi4=0.2; % depreciation of a2_2 (with2A2 only)
+Params.pensionrate=0.1; % a2_2 raises the retirement pension -- this is what makes V genuinely
+                        % depend on a2_2, rather than it being a payoff-irrelevant passenger.
 
 %% Now some parameters that models use
 
