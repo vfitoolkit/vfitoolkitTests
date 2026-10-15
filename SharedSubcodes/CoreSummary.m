@@ -67,6 +67,20 @@ function CoreSummary(diaryfilename)
 % Note the bank marks its own known-loose checks '(loose: <reason>)', and those are taken at
 % closetol instead - it is saying so itself.
 %
+% A CHECK THAT PRINTED Inf OR NaN IS A FAILURE, NOT A NON-CHECK. The numeric pattern below does
+% not match 'Inf' or 'NaN', so until 2026-10-16 such a check yielded no value and was SKIPPED
+% entirely: it was not counted and it could not fail. That is backwards - a bank printing Inf or
+% NaN where a residual belongs is the loudest failure there is. It is also the exact form taken by
+% a VACUOUS comparison: where V is -Inf in both arrays the difference is NaN, max() omits it, and
+% a test that compared nothing at all printed a clean NaN and disappeared from the count. Two
+% genuinely broken checks hid this way in the ExpAssetsemiz with2A2 cross-tests of 2026-10-16
+% ('V is flat in the inert a2_1, this should be zero: Inf'), and 60 more in the ExpAssetU
+% baselines of 2026-09-09 to 09-28, which were only noticed because the part's check COUNT was
+% short by two. So a segment with no number but a standalone Inf or NaN now takes the value NaN as
+% a sentinel, which fails every form - including the flag and inverted forms, where handing it the
+% value Inf instead would have made it PASS. Across the 43 current diaries this re-lights exactly
+% those 2 lines, so it turns no green bank red.
+%
 % A LINE MAY CARRY SEVERAL CHECKS, OF SEVERAL FORMS. Each wording on the line is a check, holding the
 % numbers between its colon and the next wording, each to the bar of its own wording (since 2026-10-07;
 % before that a line was classified by its loosest wording and read from there, so an identity written
@@ -194,6 +208,11 @@ for l_c=1:length(lines)
         % of the RiskyAsset ExpAssetu cross-tests reads as a failure while printing four exact zeros.
         v=str2double(regexp(seg,'(?<![A-Za-z_0-9.])[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?','match'));
         v=v(~isnan(v));
+        % No number at all, but a standalone Inf or NaN sitting where the value belongs: keep the
+        % check with NaN as a sentinel (see the header) rather than dropping it on the floor.
+        if isempty(v) && ~isempty(regexp(seg,'(?<![A-Za-z_0-9.])[-+]?(Inf|NaN)\>','once'))
+            v=NaN;
+        end
         segv{m_c}=abs(v);
     end
     if all(cellfun(@isempty,segv))
@@ -240,7 +259,9 @@ for l_c=1:length(lines)
                 maxres=v(v_c); maxresline=strtrim(l); maxresno=l_c;
             end
         end
-        if isflag
+        if isnan(v(v_c))
+            isbad=true;                   % printed Inf or NaN instead of a value: fails every form
+        elseif isflag
             isbad=(v(v_c)==0);            % a flag fails at zero
         elseif isinv
             isbad=(v(v_c)<=restol);       % 'WELL ABOVE zero' fails by being near zero
