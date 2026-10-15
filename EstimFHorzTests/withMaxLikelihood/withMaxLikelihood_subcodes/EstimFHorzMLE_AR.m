@@ -5,6 +5,7 @@ function output=EstimFHorzMLE_AR(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Param
 %   (c) a panel with every observation missing has LogL=0
 %   (d) EstimateLifeCycleModel_MaximumLikelihood with rho_c and sigAR_c estimated, at the truth (skipestimation=1): LogL and the scores
 %       of rho_c and sigAR_c vs direct calls at the reported up/down parameter vectors
+%   (d2) the warning when the iid s.d. is smaller than the AR(1) grid spacing, and none when it is larger
 %   (e) refusals
 
 Params.sig_c=0.1; Params.sig_y=0.05; Params.sig_a=0.2;
@@ -87,10 +88,20 @@ end
 Shand=(LogLi_up-LogLi_down)./((dc.estimparamsvecup-dc.estimparamsvecdown)');
 fprintf('AR (d) estimator at the truth: LogL vs direct, this should be zero: %.3e; scores of rho_c and sigAR_c vs centered differences of direct calls, this should be zero: %.3e (relative to the largest score %.3e) \n',abs(es.LogL-gather(LogLhand)),CoreMaxAbs(es.variousmatrices.Scores-Shand),max(abs(Shand(:))))
 fprintf('AR (d) standard errors (OPG): rho_c %.4f, sigAR_c %.4f (informational) \n',es.EstimParamsStdDev.rho_c,es.EstimParamsStdDev.sigAR_c)
+fprintf('AR (d) reported AR grid spacing vs the spacing of the Rouwenhorst grid, this should be zero: %.3e; sigmaovergridspacing vs sig_c over it, this should be zero: %.3e (ratio %.3f, informational) \n',abs(es.measurementerror.cons.ARgridspacing-(ug(2)-ug(1))),abs(es.measurementerror.cons.sigmaovergridspacing-Params.sig_c/(ug(2)-ug(1))),es.measurementerror.cons.sigmaovergridspacing)
+
+%% (d2) the warning when the iid s.d. is smaller than the AR grid spacing
+lastwarn('');
+P=Params; P.sig_c=0.01;
+LogLikelihood_FHorz(Data,MeasurementError,jequaloneDist,Policy,FnsToEvaluate,P,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions,estimoptions);
+fprintf('AR (d2) iid s.d. below the AR grid spacing warns, this should be one: %i \n',double(contains(lastwarn,'smaller than the spacing of the AR(1) grid')))
+lastwarn('');
+LogLikelihood_FHorz(Data,MeasurementError,jequaloneDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions,estimoptions);
+fprintf('AR (d2) iid s.d. above the AR grid spacing does not warn, this should be zero: %i \n',double(contains(lastwarn,'smaller than the spacing of the AR(1) grid')))
 
 %% (e) refusals
-errcases={'AR component with exact','rho not a scalar','rho of one','missing sigmaAR','even nARpoints'};
-errmsgs={'only possible with the normal and t distributions','must be a scalar','strictly between','needs both .rho and .sigmaAR','must be an odd number'};
+errcases={'AR component with exact','rho not a scalar','rho of one','missing sigmaAR','even nARpoints','nARpoints not set'};
+errmsgs={'only possible with the normal and t distributions','must be a scalar','strictly between','needs both .rho and .sigmaAR','must be an odd number','you must set estimoptions.nARpoints'};
 clear Data
 Data.agej0=ones(3,1); Data.cons=ones(3,2);
 for ee=1:length(errcases)
@@ -106,6 +117,8 @@ for ee=1:length(errcases)
             ME.cons=rmfield(ME.cons,'sigmaAR');
         case 5
             esto.nARpoints=4;
+        case 6
+            esto=rmfield(esto,'nARpoints');
     end
     errok=0;
     try
