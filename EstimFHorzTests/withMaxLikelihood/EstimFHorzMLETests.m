@@ -19,6 +19,7 @@
 %   doPart(6): AR(1) measurement error components vs an enumeration of every latent path (the AR state folded into the Markov chain)
 %   doPart(7): AR(1) measurement error on the solved model: population unchanged, cross-section closed form, the estimator's scores
 %   doPart(8): AR(1) measurement error point estimates: rho, the AR innovation s.d. and the iid s.d. recovered (CMA-ES)
+%   doPart(9): misclassification 'matrix', 'ordered', 'frequency' (model and data shares) and 'uniform' vs the enumeration
 % No Monte Carlo. Parts 1-3 use deterministic observations placed near the model values; parts 4-5 use ONE panel simulated by hand
 % (EstimFHorzMLE_SimulatePanel, a plain loop with a fixed seed), which is allowed in a test bank but never in the toolkit.
 %
@@ -37,10 +38,11 @@
 % doPart(6): AR(1) measurement error: brute force, two tiny models (one AR variable with z; two AR variables, one log, conditional)
 % doPart(7): AR(1) measurement error on the solved model: PopDist, cross-section closed form, all missing, estimator scores at the truth, refusals
 % doPart(8): AR(1) measurement error point estimates (CMA-ES from away), and the fit without the AR(1) component (informational)
+% doPart(9): misclassification schemes: brute force (matrix by age, ordered, frequency with model and data shares, uniform as a matrix), refusals
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (in the parent bank's TestOutput folder)
 if ~exist('../TestOutput','dir')
@@ -113,6 +115,12 @@ if doPart(8)==1
     fprintf('\n===== doPart(8): AR(1) measurement error point estimates =====\n')
     output=EstimFHorzMLE_ARPointEstimates(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,ReturnFn,jequaloneDist,vfoptions,simoptions);
 end % doPart(8)
+
+%% ===== doPart(9): misclassification schemes =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): misclassification matrix, ordered, frequency and uniform vs the enumeration of every latent path, refusals =====\n')
+    output=EstimFHorzMLE_BruteForceMisclass();
+end % doPart(9)
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
