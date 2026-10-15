@@ -39,6 +39,24 @@ a1_2_grid=[0;1]; % binary second asset (capped high-return asset)
 n_a_2A1=[51,n_a1_2,n_a_justexpasset];
 a_grid_2A1=[5*linspace(0,1,n_a_2A1(1))'.^3;a1_2_grid;a2_grid];
 
+% with2A2: a SECOND EXPERIENCE asset a2_2, so vfoptions.experienceassetsemiz is the integer COUNT
+% of a2 dimensions (2 here) rather than a flag. Grid layout: a = [a1, a2_1, a2_2], and the noa1
+% tier is just a = [a2_1, a2_2]. Both experience assets are driven by semiz.
+n_a2_1=7; % first experience asset  (human capital, the one the existing tier has)
+n_a2_2=5; % second experience asset (cumulated lifetime earnings)
+a2_1_grid=linspace(0,10,n_a2_1)';
+a2_2_grid=linspace(0,10,n_a2_2)';
+n_a_2A2=[51,n_a2_1,n_a2_2]; % base a1 grid; the driver's 'notsobig' grid is FINER in a1
+a_grid_2A2=[5*linspace(0,1,n_a_2A2(1))'.^3;a2_1_grid;a2_2_grid];
+n_a_2A2_justexpasset=[n_a2_1,n_a2_2];          % noa1 tier: the two experience assets are all there is
+a_grid_2A2_justexpasset=[a2_1_grid;a2_2_grid];
+% NOTE on sizing: unlike the experienceassetU family this one carries no u dimension, so the
+% panel array zeros(N_a,N_semizze,N_corners,N_j) is N_u times cheaper at the same a1 grid. The
+% heaviest variant (z+e, N_semizze=N_semiz*N_z*N_e=30) at the 151 'notsobig' a1 grid comes to
+% ~203 MB per array, under the ~237 MB that ran on this machine for ExpAssetU, so 51/151 needs no
+% per-variant trimming. If a variant does out-of-memory, trim ITS a1 grid rather than the a2
+% grids -- the a2 dims are what this tier exists to exercise.
+
 
 % setup z
 [z_grid,pi_z]=discretizeAR1_FarmerToda(0,0.9,0.03,n_z);
@@ -73,8 +91,35 @@ vfoptionsbaseline.aprimeFn=@(d2,a2,semiz,phi1,phi2) aprimeFn_CoreTestExpAssetsem
 simoptionsbaseline.experienceassetsemiz=vfoptionsbaseline.experienceassetsemiz;
 simoptionsbaseline.aprimeFn=vfoptionsbaseline.aprimeFn;
 
+% with2A2 aprimeFn. GPU arrayfun gives scalar output only, so the builders call aprimeFn once per
+% a2 dimension with a 'whicha' integer selector. NOTE the argument order: for experienceassetsemiz
+% the selector sits AFTER semiz and before the parameters, i.e.
+% aprimeFn(d2,a2_1,a2_2,semiz,whicha,params...). Verified against the arity check in both builders,
+% nargin==l_d+l_a2+l_semiz+(l_a2>=2)+nparams.
+vfoptionsbaseline.aprimeFn_2A2=@(d2,a2_1,a2_2,semiz,whicha,phi1,phi2,phi3,phi4) ...
+    (whicha==1)*(phi1*(1-d2)*semiz+(1-phi2)*a2_1) + ...
+    (whicha==2)*(phi3*d2*a2_1*semiz+(1-phi4)*a2_2);
+% a2_1' = phi1*(1-d2)*semiz+(1-phi2)*a2_1 -- EXACTLY the law of motion of the one-experience-asset
+%         tier (aprimeFn_CoreTestExpAssetsemiz), so the inert-second-asset cross-test reduces to
+%         that tier bit-for-bit.
+% a2_2' = phi3*d2*a2_1*semiz+(1-phi4)*a2_2 -- deliberately COUPLED to a2_1 and also driven by
+%         semiz, so a2_2 is not a payoff-irrelevant passenger and a stride bug cannot cancel out.
+simoptionsbaseline.aprimeFn_2A2=vfoptionsbaseline.aprimeFn_2A2;
+
 Params.phi1=0.3; % ratio at which (1-d2)*semiz is converted into a2
 Params.phi2=0.03; % depreciation rate
+Params.phi3=0.2; % rate at which d2*a2_1*semiz accumulates into a2_2 (with2A2 only)
+Params.phi4=0.2; % depreciation of a2_2 (with2A2 only)
+Params.pensionrate=0.1; % a2_2 raises the retirement pension -- this is what makes V genuinely
+                        % depend on a2_2, rather than it being a payoff-irrelevant passenger.
+Params.transfer=0.1; % consumption floor, used by the with2A2 NOA1 ReturnFns only. Without it the
+% noa1 tier's working-age consumption is earnings alone, so c=0 at the a2_1=0 grid point and
+% F=-Inf there; the experience-asset interpolation then puts POSITIVE weight on that point from
+% almost everywhere (0.97*1.667=1.617 falls short of the second grid point, so ~3% of the weight
+% lands on -Inf), which poisons EV and propagates backward until V is -Inf everywhere in the early
+% periods. That made the V_Jplus1 age-dependent-shocks checks VACUOUS: V was -Inf at all 1260
+% entries in both solves, so the comparison had nothing finite in it. Same fix, and same reason, as
+% the experienceassetu bank's noa1 transfer.
 
 %% Now some parameters that models use
 
