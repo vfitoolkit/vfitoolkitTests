@@ -13,9 +13,14 @@
 %              StationaryDist_FHorz_Case1, a cross-section against the closed-form mixture over StationaryDist, and the data forms /
 %              batching / conditional initial condition against each other
 %   doPart(3): inputs that must be refused, each with its intended message
-% No Monte Carlo and no simulated data: the observations are deterministic numbers placed near the model values.
+%   doPart(4): EstimateLifeCycleModel_MaximumLikelihood at the truth (skipestimation=1): the scores, OPG, Hessian, sandwich, standard
+%              errors, confidence intervals, information criteria and diagnostics recomputed from direct LogLikelihood_FHorz calls
+%   doPart(5): EstimateLifeCycleModel_MaximumLikelihood point estimates (CMA-ES, constrained, fminsearch): "close to zero" recoveries
+% No Monte Carlo. Parts 1-3 use deterministic observations placed near the model values; parts 4-5 use ONE panel simulated by hand
+% (EstimFHorzMLE_SimulatePanel, a plain loop with a fixed seed), which is allowed in a test bank but never in the toolkit.
 %
-% Built 2026-10-15 as Phase 1 of the maximum likelihood project (test-first, with LogLikelihood_FHorz).
+% Built 2026-10-15 as Phase 1 of the maximum likelihood project (test-first, with LogLikelihood_FHorz); parts 4-5 are Phase 2
+% (EstimateLifeCycleModel_MaximumLikelihood).
 %
 % No figures are drawn anywhere in this bank, so only the diary is saved.
 
@@ -24,10 +29,12 @@
 % doPart(1): brute force: six tiny models (no shocks; z; e with grid interpolation; d,z,e with grid interpolation; two endogenous states; conditional + agej0 + batches), every emission distribution
 % doPart(2): the EstimFHorzTests model (z) and the same with an iid e: PopDist vs StationaryDist, cross-section vs closed form, all-missing, Data.age vs Data.agej0, batches, conditional, runtime
 % doPart(3): refusals
+% doPart(4): EstimateLifeCycleModel_MaximumLikelihood standard errors at the truth (skipestimation=1), stderrors options, omitestimparam, refinecheck, refusals
+% doPart(5): EstimateLifeCycleModel_MaximumLikelihood point estimates: CMA-ES from the truth, CMA-ES from away with constraints, fminsearch from away
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1];
+doPart=[1,1,1,1,1];
 
 %% Diary of the command window output (in the parent bank's TestOutput folder)
 if ~exist('../TestOutput','dir')
@@ -70,6 +77,18 @@ if doPart(3)==1
     fprintf('\n===== doPart(3): refusals =====\n')
     output=EstimFHorzMLE_Refusals();
 end % doPart(3)
+
+%% ===== doPart(4): standard errors at the truth =====
+if doPart(4)==1
+    fprintf('\n===== doPart(4): EstimateLifeCycleModel_MaximumLikelihood standard errors at the truth (skipestimation=1): scores, OPG, Hessian, sandwich, options, refusals =====\n')
+    output=EstimFHorzMLE_StdErrors(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,ReturnFn,jequaloneDist,vfoptions,simoptions);
+end % doPart(4)
+
+%% ===== doPart(5): point estimates =====
+if doPart(5)==1
+    fprintf('\n===== doPart(5): EstimateLifeCycleModel_MaximumLikelihood point estimates: CMA-ES, constrained, fminsearch =====\n')
+    output=EstimFHorzMLE_PointEstimates(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,ReturnFn,jequaloneDist,vfoptions,simoptions);
+end % doPart(5)
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
