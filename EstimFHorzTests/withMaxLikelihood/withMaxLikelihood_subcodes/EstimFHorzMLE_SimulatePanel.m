@@ -4,7 +4,9 @@ function Data=EstimFHorzMLE_SimulatePanel(Policy,n_a,n_z,N_j,a_grid,z_grid,pi_z,
 % (Test-bank only: the toolkit's estimation never simulates.)
 %
 % Every individual starts at age 1 (drawn from jequaloneDist) and is followed to age N_j. Observed, with additive normal measurement error:
-%   cons (s.d. Params.sig_c), at every age, except a few missing
+%   cons (s.d. Params.sig_c), at every age, except a few missing; if Params.rho_c exists, plus an AR(1) component u'=rho_c*u+sigAR_c*N(0,1)
+%        started from its stationary distribution (continuous, not discretized); without Params.rho_c the random draws are exactly
+%        as before this option existed, so the earlier panels are unchanged
 %   earnings (s.d. Params.sig_y), at every age
 %   assets (s.d. Params.sig_a), only at ages 5, 10 and 15
 % The model values mirror the FnsToEvaluate of the tests: cons=(1+r)*a+(agej<Jr)*w*kappa_j*z+(agej>=Jr)*pension-aprime, with aprime
@@ -40,6 +42,14 @@ for ii=1:N
         earn=(Params.agej(jj)<Params.Jr)*Params.w*Params.kappa_j(jj)*z_grid(iz);
         cons=(1+Params.r)*a_grid(ia)+earn+(Params.agej(jj)>=Params.Jr)*Params.pension-aprimeval;
         Data.cons(ii,jj)=cons+Params.sig_c*randn;
+        if isfield(Params,'rho_c')
+            if jj==1
+                u=Params.sigAR_c/sqrt(1-Params.rho_c^2)*randn;
+            else
+                u=Params.rho_c*u+Params.sigAR_c*randn;
+            end
+            Data.cons(ii,jj)=Data.cons(ii,jj)+u;
+        end
         Data.earnings(ii,jj)=earn+Params.sig_y*randn;
         if any(jj==[5,10,15])
             Data.assets(ii,jj)=a_grid(ia)+Params.sig_a*randn;
