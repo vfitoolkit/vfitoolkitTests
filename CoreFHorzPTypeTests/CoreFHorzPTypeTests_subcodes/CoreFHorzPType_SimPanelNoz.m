@@ -79,6 +79,36 @@ for ff=1:length(FnNames)
     end
 end
 
+%% jequaloneDist with ptype as a dimension, slice masses different from the ptype weights
+% The slice masses override PTypeDistParamNames (as in part 5), so the number of columns of each
+% type must follow the slice masses, not Params.(PTypeDistParamNames{1}). Slice masses [0.3;0.7]
+% against weights of [0.6;0.4] means the PTypeDistParamNames split would put type 1 in columns
+% 301-600 of what should be type 2, which the every-column-equals-the-solo-path check catches.
+slicemasses=[0.3; 0.7];
+jequaloneDist_ptdim=zeros(n_a,N_i,'gpuArray');
+for ii=1:N_i
+    jequaloneDist_ptdim(1,ii)=slicemasses(ii); % no assets, mass of the type
+end
+SimPanel_ptdim=SimPanelValues_FHorz_Case1_PType(jequaloneDist_ptdim,PTypeDistParamNames,Policy_PT,FnsToEvaluate_PT,Params,n_d,n_a,n_z,N_j,N_i,d_grid,a_grid,z_grid,pi_z,simoptions);
+
+nsims_ptdim=floor(slicemasses*numbersims);
+extrasims_ptdim=numbersims-sum(nsims_ptdim);
+nsims_ptdim(1:extrasims_ptdim)=nsims_ptdim(1:extrasims_ptdim)+1;
+lastcol_ptdim=cumsum(nsims_ptdim);
+firstcol_ptdim=lastcol_ptdim-nsims_ptdim+1;
+
+fprintf('SimPanel no z (ptype-as-dim jequaloneDist), columns per type differ from the PTypeDistParamNames split, this should NOT be zero: %i \n',max(abs(nsims_ptdim-nsims_ii)))
+for ff=1:length(FnNames)
+    fn=FnNames{ff};
+    fprintf('SimPanel no z (ptype-as-dim jequaloneDist), %s number of sims minus numbersims, this should be zero: %i \n',fn,size(SimPanel_ptdim.(fn),2)-numbersims)
+    fprintf('SimPanel no z (ptype-as-dim jequaloneDist), %s number of NaN entries, this should be zero: %i \n',fn,sum(isnan(SimPanel_ptdim.(fn)(:))))
+    for ii=1:N_i
+        solopath=gather(SimPanel_solo{ii}.(fn)(:,1));
+        PTcols=gather(SimPanel_ptdim.(fn)(:,firstcol_ptdim(ii):lastcol_ptdim(ii)));
+        fprintf('SimPanel no z (ptype-as-dim jequaloneDist), %s (PType, %s) every column equals the solo path, this should be zero: %.3e \n',fn,names_PT{ii},max(max(abs(PTcols-solopath))))
+    end
+end
+
 output=struct();
 
 end

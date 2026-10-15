@@ -34,7 +34,7 @@
 % doPart(6): per-type N_j, different lifespans
 % doPart(7): ShockTests, 8 shock combos
 % doPart(8): AggVars, ValuesOnGrid, LifeCycleProfiles, PolicyInd2Val, SimPanel vs stacked solves
-% doPart(9): SimPanel exactly, no z
+% doPart(9): SimPanel exactly, no z and identity z (incl. ptype-as-a-dimension jequaloneDist)
 % doPart(10): every grouped statistic, via z-identity
 % doPart(11): a ptype of zero mass
 % doPart(12): standard decision variable d
@@ -134,12 +134,14 @@ if doPart(8)==1
     output=CoreFHorzPType_DownstreamCmds(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(8): AggVars, ValuesOnGrid, LifeCycleProfiles, PolicyInd2Val, SimPanel vs stacked solves
 
-%% ===== doPart(9): SimPanel exactly, no z =====
+%% ===== doPart(9): SimPanel exactly, no z and identity z (incl. ptype-as-a-dimension jequaloneDist) =====
 if doPart(9)==1
-    fprintf('\n===== doPart(9): SimPanel exactly, no z =====\n')
+    fprintf('\n===== doPart(9): SimPanel exactly, no z and identity z (incl. ptype-as-a-dimension jequaloneDist) =====\n')
     %% 9. With no shocks and a point-mass jequaloneDist the panel is deterministic, so it can be checked exactly
     output=CoreFHorzPType_SimPanelNoz(n_a,N_j,a_grid,Params,DiscountFactorParamNames,PTypeDistParamNames,N_i);
-end % doPart(9): SimPanel exactly, no z
+    % With z that has identity transitions and a point-mass start per type, the panel is again deterministic
+    output=CoreFHorzPType_SimPanelIdentityz(n_a,N_j,a_grid,Params,DiscountFactorParamNames,PTypeDistParamNames,N_i);
+end % doPart(9): SimPanel exactly, no z and identity z (incl. ptype-as-a-dimension jequaloneDist)
 
 %% ===== doPart(10): every grouped statistic, via z-identity =====
 if doPart(10)==1
