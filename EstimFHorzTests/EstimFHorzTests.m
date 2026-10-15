@@ -58,32 +58,8 @@ addpath('./EstimFHorzTests_subcodes/')
 addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
 addpath('../CalibFHorzTests/CalibFHorzTests_subcodes/') % the shock, initial-distribution and custom-statistics functions are shared with CalibFHorzTests
 
-%% The model: the CoreFHorzTests nod_z_noe life-cycle model on small grids
-n_d=0;
-d_grid=[];
-n_a=101;
-a_grid=5*linspace(0,1,n_a)'.^3;
-n_z=5;
-[z_grid,pi_z]=discretizeAR1_FarmerToda(0,0.9,0.03,n_z);
-z_grid=exp(z_grid);
-N_j=20;
-
-Params.beta=0.95; % discount factor
-DiscountFactorParamNames={'beta'};
-Params.mewj=ones(1,N_j)/N_j;
-AgeWeightParamNames={'mewj'};
-Params.sigma=2; % CES utility param for consumption
-Params.w=1;
-Params.r=0.05;
-Params.Jr=16;
-Params.pension=0.5;
-Params.agej=1:1:N_j;
-Params.kappa_j=[0.5:0.1:1,ones(1,9),zeros(1,5)]; % deterministic earnings profile, zero in retirement
-
-ReturnFn=@(aprime,a,z,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,sigma,agej,Jr,pension);
-
-jequaloneDist=zeros(n_a,n_z,'gpuArray'); % everyone starts with no assets at the middle shock
-jequaloneDist(1,ceil(n_z/2))=1;
+%% The model: the CoreFHorzTests nod_z_noe life-cycle model on small grids (shared with withMaxLikelihood/)
+EstimFHorz_setup
 
 %% ===== doPart(1): the standard-error machinery at the truth =====
 if doPart(1)==1
