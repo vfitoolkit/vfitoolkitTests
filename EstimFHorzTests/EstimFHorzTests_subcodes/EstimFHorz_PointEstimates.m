@@ -90,6 +90,7 @@ fprintf('PointEstimates (e) diagonal W, lsqnonlin, started away (%.1f s): did no
 labels={'constrainpositive pension (softplus)','constrain0to1 beta','constrainAtoB beta in [0.9,0.99]'};
 for cc=1:3
     estimoptions_f=estimoptions; estimoptions_f.fminalgo=8;
+    estimoptions_f.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
     if cc==1
         estimoptions_f.constrainpositive={'pension'};
     elseif cc==2
@@ -131,6 +132,7 @@ nTg=Jr-1;
 Wg=eye(nTg); Omegag=diag(0.01*(1+(1:nTg)'/nTg));
 mask=Params.kappa_j; mask(1:6)=NaN; % NaN = estimated
 estimoptions_g=estimoptions; estimoptions_g.fminalgo=8; estimoptions_g.omitestimparam.kappa_j=mask;
+estimoptions_g.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 Params_g=Params; Params_g.kappa_j(1:6)=0.8*Params.kappa_j(1:6);
 ran=0; tt=NaN; perr=NaN; fixedmove=NaN; maxd=NaN; ncols=NaN;
 try

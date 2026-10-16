@@ -49,6 +49,7 @@ estimoptions=struct(); estimoptions.verbose=0;
 res=cell(2,1);
 for wc=[1,0]
     estimoptions_t=estimoptions; estimoptions_t.skipestimation=1; estimoptions_t.whichcombos=wc;
+    estimoptions_t.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
     ran=0; objv=NaN; dmom=NaN; maxd=NaN;
     try
         [~,~,estsummary]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_t,vfoptions,simoptions);

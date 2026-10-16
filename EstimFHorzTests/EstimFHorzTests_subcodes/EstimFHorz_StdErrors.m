@@ -46,6 +46,7 @@ truth=[Params.beta;Params.pension];
 estimoptions=struct();
 estimoptions.verbose=0;
 estimoptions.skipestimation=1;
+estimoptions.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 
 %% (a) the run
 ran=0; objv=NaN; pmove=NaN;
@@ -80,7 +81,7 @@ for ee=1:4
         bad=bad+1;
     end
     if ee==3
-        bad=bad+~isequal(estsummary.variousmatrices.J,dc.J); % the default step is epsilon10000 (eedefault=3)
+        bad=bad+~isequal(estsummary.variousmatrices.J,dc.J); % the step is epsilon10000 (eedefault=3, set above)
     end
 end
 fprintf('StdErrors (b) Jacobian at the four step sizes: J_centered, J_up, J_down and J vs the test''s finite differences at the reported up/down parameter vectors, this should be zero: %.3e; wrong sizes or the default J not the epsilon10000 one, this should be zero: %.3e \n',maxd,bad)

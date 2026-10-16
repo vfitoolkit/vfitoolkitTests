@@ -28,6 +28,7 @@ N=size(Data.cons,1);
 EstimParamNames={'beta','sig_c','pshare_high'};
 estimoptions.verbose=0;
 estimoptions.skipestimation=1;
+estimoptions.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 estimoptions.constrainpositive={'sig_c'};
 estimoptions.constrain0to1={'pshare_high'};
 ParametrizeParamsFn=@(Params) EstimFHorzPTypeMLE_Parametrize(Params);
@@ -36,7 +37,7 @@ K=4;
 x=[Params.beta; Params.sig_c.(Names_i{1}); Params.sig_c.(Names_i{2}); Params.pshare_high];
 LogLiAt=@(vec) EstimFHorzPTypeMLE_LogLiAt(vec,Params,Data,MeasurementError,FnsToEvaluate,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,DiscountFactorParamNames,jequaloneDist,PTypeDistParamNames,vfoptions,simoptions);
 
-dc=estsummary.doublechecks.epsilon10000; % the default step (eedefault=3)
+dc=estsummary.doublechecks.epsilon10000; % the step (eedefault=3, set above)
 xe=dc.estimparamsvec; % the point the estimation evaluated at: the truth after the round trip through the constraint transforms
 
 %% (a)

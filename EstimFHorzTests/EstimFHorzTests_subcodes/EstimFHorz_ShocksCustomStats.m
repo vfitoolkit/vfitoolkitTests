@@ -35,6 +35,7 @@ t=gather(LCPFull.earnings.StdDeviation); t(Jr:end)=NaN; TMa.AgeConditionalStats.
 TMa.AllStats.earnings.Gini=gather(AllFull.earnings.Gini);
 nT=(Jr-1)+1; W=eye(nT); Omega=diag(0.01*(1+(1:nT)'/nT));
 estimoptions_a=estimoptions; estimoptions_a.skipestimation=1;
+estimoptions_a.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 ran=0; objv=NaN; maxd=NaN;
 try
     [~,~,estsummary]=EstimateLifeCycleModel_MethodOfMoments({'rho_z'},TMa,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params_a,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_a,vfoptions_a,simoptions_a);
@@ -116,6 +117,7 @@ TMc.AllStats.assets.Gini=gather(AllFull.assets.Gini);
 nTc=sum(~isnan(t))+1; Wc=eye(nTc); Omegac=diag(0.01*(1+(1:nTc)'/nTc));
 EstimParamNames={'beta','pension'};
 estimoptions_s=estimoptions; estimoptions_s.skipestimation=1;
+estimoptions_s.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 [~,~,estsummary_mat]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TMc,Wc,Omegac,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_s,vfoptions,simoptions);
 jequaloneDistFn=@(a_grid,z_grid,n_a,n_z) CalibFHorz_jequaloneDistFn(a_grid,z_grid,n_a,n_z);
 for ug=[1,0]

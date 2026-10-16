@@ -27,6 +27,7 @@ vfoptions.gridinterplayer=1; vfoptions.ngridinterp=15;
 simoptions.gridinterplayer=1; simoptions.ngridinterp=15;
 simoptions_full=simoptions; simoptions_full.whichstats=ones(1,7);
 estimoptions=struct(); estimoptions.verbose=0;
+estimoptions.eedefault=3; % the runs compared below share one step (the default 'auto' chooses per run)
 entryages=[1,5];
 typemass=[0.4,0.3; 0.2,0.1]; % rows: types (low, high); columns: cohorts; each type's slices sum to its type weight (0.6? no: each type's distribution has mass one)
 typemass=typemass./sum(typemass,2); % (a type's jequaloneDist must have mass one in total across its slices)

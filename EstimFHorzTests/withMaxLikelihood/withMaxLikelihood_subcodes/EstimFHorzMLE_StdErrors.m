@@ -27,6 +27,7 @@ Data=EstimFHorzMLE_SimulatePanel(Policy,n_a,n_z,N_j,a_grid,z_grid,pi_z,jequalone
 EstimParamNames={'beta','sig_c'};
 estimoptions.verbose=0;
 estimoptions.skipestimation=1;
+estimoptions.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 estimoptions.constrainpositive={'sig_c'};
 [EstimParams,EstimParamsConfInts,estsummary]=EstimateLifeCycleModel_MaximumLikelihood(EstimParamNames,Data,MeasurementError,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,[],FnsToEvaluate,estimoptions,vfoptions,simoptions);
 
@@ -39,7 +40,7 @@ fprintf('StdErrors (a) LogL at the estimate vs direct, this should be zero: %.3e
 fprintf('StdErrors (a) EstimParams vs the truth (skipestimation), this should be zero: %.3e \n',CoreMaxAbs([EstimParams.beta-Params.beta; EstimParams.sig_c-Params.sig_c]))
 
 %% (b) the scores
-dc=estsummary.doublechecks.epsilon10000; % the default step (eedefault=3)
+dc=estsummary.doublechecks.epsilon10000; % the step (eedefault=3, set above)
 LogLi_up=zeros(N,K); LogLi_down=zeros(N,K);
 for pp=1:K
     for updown=1:2

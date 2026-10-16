@@ -72,6 +72,7 @@ EstimParamNames={'rho_c','sigAR_c'};
 estimoptions_d=estimoptions;
 estimoptions_d.verbose=0;
 estimoptions_d.skipestimation=1;
+estimoptions_d.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 [~,~,es]=EstimateLifeCycleModel_MaximumLikelihood(EstimParamNames,Data,MeasurementError,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,[],FnsToEvaluate,estimoptions_d,vfoptions,simoptions);
 dc=es.doublechecks.epsilon10000;
 [LogLhand,LogLihand]=LogLikelihood_FHorz(Data,MeasurementError,jequaloneDist,Policy,FnsToEvaluate,Params,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,simoptions,estimoptions);

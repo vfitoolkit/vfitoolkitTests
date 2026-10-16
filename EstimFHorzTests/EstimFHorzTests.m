@@ -41,7 +41,8 @@
 % doPart(11): cohort AgeConditionalStats targets of the window and log rows (the 90th percentile of fnname_2periodAverage, fnname_MperiodAverage_log, fnname_log under a restriction): truth, the cutoff with M-1, refusals
 % doPart(12): cohort CustomModelStats targets (TargetMoments.CustomModelStats.cohortC, the same function as without cohorts, with the DFJ full-cell autocorrelation): truth, the N_j cutoff, refusals
 % doPart(13): CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets of the windows (fnname_2periodAverage, one restricted, an age-conditional window by start age): truth, J, whichcombos 1 vs 0 identical, a recovery
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1];
+% doPart(14): eedefault='auto' (the per-parameter finite-difference step): onesideddisagreement, eechosen, J and Sigma at the chosen steps; s.e. at 3, 4 and auto on no-interp, ngridinterp=3, 15, 60 grids (informational)
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -138,6 +139,12 @@ if doPart(13)==1
     fprintf('\n===== doPart(13): CrossSec window targets: truth, J, whichcombos 1 vs 0, a recovery =====\n')
     output=EstimFHorz_CSWindows(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
 end % doPart(13)
+
+%% ===== doPart(14): eedefault='auto' =====
+if doPart(14)==1
+    fprintf('\n===== doPart(14): eedefault=''auto'', the finite-difference step chosen per parameter: plumbing, and s.e. at 3, 4 and auto on four grids =====\n')
+    output=EstimFHorz_StepChoice(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
+end % doPart(14)
 
 % All looks good!
 

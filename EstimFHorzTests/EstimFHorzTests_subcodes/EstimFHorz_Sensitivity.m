@@ -20,6 +20,7 @@ StationaryDist=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Poli
 AllFull=EvalFnOnAgentDist_AllStats_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_full);
 LCPFull=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions_full);
 estimoptions=struct(); estimoptions.verbose=0; estimoptions.skipestimation=1;
+estimoptions.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 
 %% (a) sensitivity to the calibrated r and w
 TM=struct();

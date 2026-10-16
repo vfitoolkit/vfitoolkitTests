@@ -55,6 +55,7 @@ nT=(Jr-1)+1; W=eye(nT); Omega=diag(0.01*(1+(1:nT)'/nT));
 vfoptions_b=vfoptions; vfoptions_b.ExogShockFn=@(rho_z,sigma_z) CalibFHorz_ExogShockFn(rho_z,sigma_z);
 simoptions_b=simoptions; simoptions_b.ExogShockFn=vfoptions_b.ExogShockFn;
 estimoptions_s=estimoptions; estimoptions_s.skipestimation=1;
+estimoptions_s.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 ran=0; objv=NaN; maxd=NaN; freezefail=NaN;
 try
     [~,~,estsummary]=EstimateLifeCycleModel_MethodOfMoments({'half_rho'},TMb,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params_b,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,ParametrizeParamsFn,FnsToEvaluate,estimoptions_s,vfoptions_b,simoptions_b);

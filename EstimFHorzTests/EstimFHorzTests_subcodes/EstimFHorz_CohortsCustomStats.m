@@ -21,6 +21,7 @@ vfoptions.gridinterplayer=1; vfoptions.ngridinterp=15;
 simoptions.gridinterplayer=1; simoptions.ngridinterp=15;
 simoptions.conditionalrestrictions.rich=@(aprime,a,z) (a>0.5);
 estimoptions=struct(); estimoptions.verbose=0;
+estimoptions.eedefault=3; % the runs compared below share one step (the default 'auto' chooses per run)
 estimoptions.CustomModelStats=@EstimFHorz_CohortsCustomStats_Fn;
 entryages=[1,5]; masses=[0.6,0.4];
 

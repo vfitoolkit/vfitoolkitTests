@@ -19,6 +19,7 @@ vfoptions=struct(); simoptions=struct();
 vfoptions.gridinterplayer=1; vfoptions.ngridinterp=15;
 simoptions.gridinterplayer=1; simoptions.ngridinterp=15;
 estimoptions=struct(); estimoptions.verbose=0;
+estimoptions.eedefault=3; % the runs compared below share one step (the default 'auto' chooses per run)
 entryages=[1,5]; masses=[0.6,0.4];
 
 %% The cohort initial distribution and the hand-built targets at the truth

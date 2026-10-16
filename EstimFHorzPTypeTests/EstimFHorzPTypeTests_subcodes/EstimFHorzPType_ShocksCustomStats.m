@@ -23,6 +23,7 @@ simoptions.gridinterplayer=1; simoptions.ngridinterp=15;
 simoptions_full=simoptions; simoptions_full.whichstats=ones(1,7);
 estimoptions=struct(); estimoptions.verbose=0;
 estimoptions_s=estimoptions; estimoptions_s.skipestimation=1;
+estimoptions_s.eedefault=3; % the checks below are at the epsilon10000 step (the default is 'auto')
 
 %% (a) ExogShockFn common to the types, rho_z estimated; (a2) per type as a structure
 Params_a=Params; Params_a.rho_z=0.9; Params_a.sigma_z=0.03;

@@ -21,6 +21,7 @@ vfoptions=struct(); simoptions=struct();
 vfoptions.gridinterplayer=1; vfoptions.ngridinterp=15;
 simoptions.gridinterplayer=1; simoptions.ngridinterp=15;
 estimoptions=struct(); estimoptions.verbose=0;
+estimoptions.eedefault=3; % the runs compared below share one step (the default 'auto' chooses per run)
 entryages=[1,5];
 typemass=[0.4,0.3; 0.2,0.1];
 typemass=typemass./sum(typemass,2); % (a type's jequaloneDist has mass one across its slices)
