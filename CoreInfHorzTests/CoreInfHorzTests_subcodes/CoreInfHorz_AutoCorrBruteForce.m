@@ -12,8 +12,7 @@ function output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_
 %
 % Three models, each solved with and without the grid interpolation layer, so the command is exercised on z-only,
 % e-only and z-and-e states (the e shock is an iid passed through simoptions.n_e/e_grid/pi_e, and the command keeps it
-% apart from the markov z throughout). The e-only and z-and-e models run without the grid interpolation layer only,
-% until that supports e.
+% apart from the markov z throughout).
 %   z-only:  no d, markov z          (state (a,z),   ReturnFn_nod_z_noe_nosemiz)
 %   e-only:  no d, iid e             (state (a,e),   ReturnFn_nod_noz_e_nosemiz)
 %   z-and-e: no d, markov z, iid e   (state (a,z,e), ReturnFn_nod_z_e_nosemiz; z varies first, then e)
@@ -40,8 +39,6 @@ nq=5; % quintiles
 pi_z_cpu=gather(pi_z);
 pi_e_cpu=gather(pi_e(:));
 
-% The e-only and z-and-e models (restored 2026-10-20, once ValueFnIter_InfHorz and StationaryDist_InfHorz got e) are run
-% without the grid interpolation layer only, as that does not yet support e (see ncfg below).
 for mm=1:3
     if mm==1
         mstr='z-only';
@@ -81,12 +78,7 @@ for mm=1:3
         simoptions.n_e=n_em; simoptions.e_grid=e_grid; simoptions.pi_e=pi_e;
     end
 
-    ncfg=2;
-    if n_em>0
-        ncfg=1; % the grid interpolation layer does not yet support e, so the e models run only the no GI config (set ncfg=2 once it does)
-        fprintf('AutoCorr brute force (%s), GI config not run, the grid interpolation layer does not yet support e \n',mstr)
-    end
-    for cfg=1:ncfg
+    for cfg=1:2
         if cfg==1
             cfgstr=[mstr,', no GI'];
             vfoptions_c=vfoptions; simoptions_c=simoptions; ngridinterp=0;

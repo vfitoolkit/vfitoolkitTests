@@ -8,9 +8,6 @@
 %   - divide-and-conquer: not usable for InfHorz (too slow); it is tested in
 %     the InfHorz-TPath test bank instead
 %   - semiz
-%   - e (iid) in the stats and simulations with the grid interpolation layer: figs 5-8 in doPart(1) run
-%     everything with e (with/without d, with/without z) except the AllStats/AggVars and SimPanel parts on
-%     the GI solve, which are commented out; doPart(6) runs its e models without the GI config
 
 
 %% Which parts to run
@@ -170,7 +167,7 @@ if doPart(6)==1
     % transition matrix) against dense per-model kernels built here from Policy and pi_z/pi_e: Mean, StdDeviation,
     % AutoCovariance/AutoCorrelation at horizons 1,2,3,5 (the tperiodsK fields) and TransitionProbs (unique values and
     % quintiles) at the same horizons, on z-only, e-only and z-and-e models, with and without the grid interpolation
-    % layer (the e models without it only, as it does not yet support e)
+    % layer
     output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames);
 end % doPart(6): AutoCorrTransProbs brute force
 

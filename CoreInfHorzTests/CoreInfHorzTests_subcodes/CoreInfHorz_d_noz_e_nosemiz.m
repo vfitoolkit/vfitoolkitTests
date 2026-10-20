@@ -79,17 +79,15 @@ CrossSectionCorr1=EvalFnOnAgentDist_CrossSectionCovarCorr_InfHorz(StationaryDist
 
 [~,Policy3b]=ValueFnIter_InfHorz(n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions3);
 StationaryDist3=StationaryDist_InfHorz(Policy3b,n_d,n_a_big,n_z,pi_z,simoptions3,Params,[]);
-% The InfHorz stats and simulation commands do not yet support e with the grid interpolation layer, uncomment once they do
-% AllStats3=EvalFnOnAgentDist_AllStats_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,simoptions3);
-% AggVars3=EvalFnOnAgentDist_AggVars_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,simoptions3);
+AllStats3=EvalFnOnAgentDist_AllStats_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,simoptions3);
+AggVars3=EvalFnOnAgentDist_AggVars_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,simoptions3);
 
 fprintf('With/without grid interp, should get much the same moments (for big a_grid) \n')
 fprintf('StationaryDist with/without grid interp, this should be close to zero: %.3e \n',max(abs(StationaryDist1(:)-StationaryDist3(:))))
-% The InfHorz stats and simulation commands do not yet support e with the grid interpolation layer, uncomment once they do
-% [AllStats1.assets.Mean,AllStats3.assets.Mean]
-% [AllStats1.earnings.Gini,AllStats3.earnings.Gini]
-% [AllStats1.assets.StdDeviation,AllStats3.assets.StdDeviation]
-% [AggVars1.assets.Mean,AggVars3.assets.Mean]
+[AllStats1.assets.Mean,AllStats3.assets.Mean]
+[AllStats1.earnings.Gini,AllStats3.earnings.Gini]
+[AllStats1.assets.StdDeviation,AllStats3.assets.StdDeviation]
+[AggVars1.assets.Mean,AggVars3.assets.Mean]
 
 %% Because e is iid, the stationary marginal over e must be exactly pi_e
 % (earnings=w*d*e is endogenous here, as d is chosen, so there is no analytic mean to check against)
@@ -157,37 +155,36 @@ tempPC=corrcoef(spE,spA);
 [CrossSectionCorr1.earnings.CorrelationWith.assets, tempPC(1,2)]
 
 
-% The InfHorz stats and simulation commands do not yet support e with the grid interpolation layer, uncomment once they do
-% %% SimPanelValues WITH the grid interpolation layer
-% % The panel above uses the non-GI solve, so simoptions.gridinterplayer is 0 and SimPanelIndexes_InfHorz
-% % only ever takes its gridinterplayer==0 branches. Running the panel on the GI solve as well is what
-% % reaches the GI branches, where Policy carries the extra L2index and L2flag rows. Those branches are
-% % much less travelled: a two-endogenous-state model with the grid interpolation layer is exactly the
-% % case that had a reshape using 1:end-1 where the policy has l_a+2 rows, and that then read the L2flag
-% % as if it were the L2 index.
-% AutoCorr3=EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,simoptions3);
-% simoptionsPanel3=simoptions3;
-% simoptionsPanel3.numbersims=10^4;
-% simoptionsPanel3.simperiods=100;
-% simoptionsPanel3.burnin=0;
-% SimPanel3=SimPanelValues_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,[],Params,n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,simoptionsPanel3);
-% sp3A=SimPanel3.assets(:); sp3E=SimPanel3.earnings(:);
+%% SimPanelValues WITH the grid interpolation layer
+% The panel above uses the non-GI solve, so simoptions.gridinterplayer is 0 and SimPanelIndexes_InfHorz
+% only ever takes its gridinterplayer==0 branches. Running the panel on the GI solve as well is what
+% reaches the GI branches, where Policy carries the extra L2index and L2flag rows. Those branches are
+% much less travelled: a two-endogenous-state model with the grid interpolation layer is exactly the
+% case that had a reshape using 1:end-1 where the policy has l_a+2 rows, and that then read the L2flag
+% as if it were the L2 index.
+AutoCorr3=EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,Params,[],n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,simoptions3);
+simoptionsPanel3=simoptions3;
+simoptionsPanel3.numbersims=10^4;
+simoptionsPanel3.simperiods=100;
+simoptionsPanel3.burnin=0;
+SimPanel3=SimPanelValues_InfHorz(StationaryDist3,Policy3b,FnsToEvaluate,[],Params,n_d,n_a_big,n_z,d_grid,a_grid_big,z_grid,pi_z,simoptionsPanel3);
+sp3A=SimPanel3.assets(:); sp3E=SimPanel3.earnings(:);
 
-% fprintf('SimPanelValues with GI, mean should roughly match AllStats/AggVars mean (Monte Carlo) \n')
-% [AllStats3.assets.Mean, AggVars3.assets.Mean, mean(sp3A)]
-% [AllStats3.earnings.Mean, AggVars3.earnings.Mean, mean(sp3E)]
-% fprintf('SimPanelValues with GI, std should roughly match AllStats std \n')
-% [AllStats3.assets.StdDeviation, std(sp3A,1)]
-% [AllStats3.earnings.StdDeviation, std(sp3E,1)]
-% fprintf('SimPanelValues with GI, period-1 cross-section mean should match the stationary dist \n')
-% [AllStats3.assets.Mean, mean(SimPanel3.assets(1,:))]
-% [AllStats3.earnings.Mean, mean(SimPanel3.earnings(1,:))]
-% fprintf('SimPanelValues with GI, lag-1 autocorrelation should roughly match AutoCorrTransProbs (of these, the one most sensitive to the interpolation weights) \n')
-% sp3Ax=SimPanel3.assets(1:end-1,:); sp3Ay=SimPanel3.assets(2:end,:);
-% sp3Ex=SimPanel3.earnings(1:end-1,:); sp3Ey=SimPanel3.earnings(2:end,:);
-% tempP3A=corrcoef(sp3Ax(:),sp3Ay(:)); tempP3E=corrcoef(sp3Ex(:),sp3Ey(:));
-% [AutoCorr3.assets.AutoCorrelation, tempP3A(1,2)]
-% [AutoCorr3.earnings.AutoCorrelation, tempP3E(1,2)]
+fprintf('SimPanelValues with GI, mean should roughly match AllStats/AggVars mean (Monte Carlo) \n')
+[AllStats3.assets.Mean, AggVars3.assets.Mean, mean(sp3A)]
+[AllStats3.earnings.Mean, AggVars3.earnings.Mean, mean(sp3E)]
+fprintf('SimPanelValues with GI, std should roughly match AllStats std \n')
+[AllStats3.assets.StdDeviation, std(sp3A,1)]
+[AllStats3.earnings.StdDeviation, std(sp3E,1)]
+fprintf('SimPanelValues with GI, period-1 cross-section mean should match the stationary dist \n')
+[AllStats3.assets.Mean, mean(SimPanel3.assets(1,:))]
+[AllStats3.earnings.Mean, mean(SimPanel3.earnings(1,:))]
+fprintf('SimPanelValues with GI, lag-1 autocorrelation should roughly match AutoCorrTransProbs (of these, the one most sensitive to the interpolation weights) \n')
+sp3Ax=SimPanel3.assets(1:end-1,:); sp3Ay=SimPanel3.assets(2:end,:);
+sp3Ex=SimPanel3.earnings(1:end-1,:); sp3Ey=SimPanel3.earnings(2:end,:);
+tempP3A=corrcoef(sp3Ax(:),sp3Ay(:)); tempP3E=corrcoef(sp3Ex(:),sp3Ey(:));
+[AutoCorr3.assets.AutoCorrelation, tempP3A(1,2)]
+[AutoCorr3.earnings.AutoCorrelation, tempP3E(1,2)]
 
 
 %% Plot the stationary dist over assets (with/without grid interp)
