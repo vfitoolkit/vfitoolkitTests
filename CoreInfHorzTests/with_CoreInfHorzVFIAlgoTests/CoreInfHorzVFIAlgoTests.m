@@ -10,7 +10,7 @@
 %             howardsgreedy=0,1 and howardssparse=0,1, plus howards=0 (pure VFI,
 %             no Howards acceleration) and lowmemory=1
 %   Part 2: WITH GI, all (implemented) give the same V and Policy:
-%             howardsgreedy=0,1,2,3 (2,3 are HowardMix), and sparse=1/lowmemory=1
+%             howardsgreedy=0,1,2,3 (2,3 are HowardMix), sparse=1/lowmemory=1, and postGIrepeat=1
 %   Part 3: WITH GI, preGI and postGI give the same V and Policy
 %   Part 4: with a big n_a (=1500), with and without GI give very similar V
 % With a d, Part 1 also checks solnmethod='purediscretization' (the with-d raws) against the default refinement.

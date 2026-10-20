@@ -140,7 +140,15 @@ fprintf('GI:   sparse1/lowmemory0 vs ref,       Pol should be  0: %.3e \n',max(a
 fprintf('GI:   sparse1 lowmem0 vs lowmem1,      V   should be   0: %.3e \n',max(abs(VG6(:)-VG2(:))));
 fprintf('GI:   sparse1 lowmem0 vs lowmem1,      Pol should be   0: %.3e \n',max(abs(PolicyG6(:)-PolicyG2(:))));
 
-clear VG2 VG3 VG4 VG5 VG6 PolicyG2 PolicyG3 PolicyG4 PolicyG5 PolicyG6
+% postGIrepeat=1: a second post-GI layer, with the +-maxaprimediff window re-centred on the first layer's solution. At
+% the default maxaprimediff the first layer already reaches the fine-grid optimum (see the postGIrepeat scans in
+% doPart(4)), so the extra layer must not change the answer. This is what runs the repeat-layer code at all.
+vfo=vfoGI; vfo.postGIrepeat=1;
+[VG7,PolicyG7]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('GI:   postGIrepeat=1 vs ref,           V   should be ~0: %.3e \n',max(abs(VG(:)-VG7(:))));
+fprintf('GI:   postGIrepeat=1 vs ref,           Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG7(:))));
+
+clear VG2 VG3 VG4 VG5 VG6 VG7 PolicyG2 PolicyG3 PolicyG4 PolicyG5 PolicyG6 PolicyG7
 
 %% With e, the grid interpolation layer is so far only implemented for postGI with one endogenous state, so the e
 % models stop here: Parts 3-5 are preGI, two endogenous states and the big grid (remove this block once they are)
