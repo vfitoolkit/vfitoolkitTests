@@ -76,7 +76,22 @@ else
     fprintf('noGI: lowmemory1 not run, this model has no d so infinite horizon has no lowmemory option \n');
 end
 
-clear V2 V3 V4 V5 V6 V7 Policy2 Policy3 Policy4 Policy5 Policy6 Policy7
+% solnmethod='purediscretization'. With a d the default is refinement, which takes the max over d first and
+% then hands a nod-shaped return matrix to the nod raws, so the with-d raws are only reached this way.
+if prod(n_d)>0
+    vfo=vfoptions; vfo.solnmethod='purediscretization';
+    [V8,Policy8]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('noGI: purediscretization vs ref,       V   should be ~0: %.3e \n',max(abs(V(:)-V8(:))));
+    fprintf('noGI: purediscretization vs ref,       Pol should be  0: %.3e \n',max(abs(Policy(:)-Policy8(:))));
+
+    % and with howards=0, so the with-d raws' own Howards loop is checked against pure VFI
+    vfo=vfoptions; vfo.solnmethod='purediscretization'; vfo.howards=0;
+    [V9,Policy9]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('noGI: purediscretization howards=0,    V   should be ~0: %.3e \n',max(abs(V(:)-V9(:))));
+    fprintf('noGI: purediscretization howards=0,    Pol should be  0: %.3e \n',max(abs(Policy(:)-Policy9(:))));
+end
+
+clear V2 V3 V4 V5 V6 V7 V8 V9 Policy2 Policy3 Policy4 Policy5 Policy6 Policy7 Policy8 Policy9
 
 %% Part 2: WITH grid interpolation, all (implemented) algorithm variants should give the same V and Policy
 % Reference GI: howardsgreedy=0, howardssparse=0, preGI=0 (postGI, the default)
@@ -90,6 +105,8 @@ vfo=vfoGI; vfo.howardsgreedy=1; vfo.howardssparse=0;
 fprintf('GI:   greedy1/sparse0 vs ref,          V   should be ~0: %.3e \n',max(abs(VG(:)-VG3(:))));
 fprintf('GI:   greedy1/sparse0 vs ref,          Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG3(:))));
 
+% With e, howardsgreedy=2 and 3 (HowardMix) are not yet implemented for the grid interpolation layer, so the e models skip these two
+if ~isfield(vfoptions,'n_e')
 % howardsgreedy=2 (HowardMix: greedy on a_grid, iterated on aprime_grid)
 vfo=vfoGI; vfo.howardsgreedy=2; vfo.howardssparse=0;
 [VG4,PolicyG4]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
@@ -101,6 +118,7 @@ vfo=vfoGI; vfo.howardsgreedy=3; vfo.howardssparse=0;
 [VG5,PolicyG5]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
 fprintf('GI:   greedy3 (HowardMix2) vs ref,     V   should be ~0: %.3e \n',max(abs(VG(:)-VG5(:))));
 fprintf('GI:   greedy3 (HowardMix2) vs ref,     Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG5(:))));
+end % with e, howardsgreedy=2 and 3 are not yet implemented for the grid interpolation layer
 
 % howardssparse=1 with GI (postGI only; preGI sparse is still not implemented)
 vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.lowmemory=1;
@@ -123,6 +141,14 @@ fprintf('GI:   sparse1 lowmem0 vs lowmem1,      V   should be   0: %.3e \n',max(
 fprintf('GI:   sparse1 lowmem0 vs lowmem1,      Pol should be   0: %.3e \n',max(abs(PolicyG6(:)-PolicyG2(:))));
 
 clear VG2 VG3 VG4 VG5 VG6 PolicyG2 PolicyG3 PolicyG4 PolicyG5 PolicyG6
+
+%% With e, the grid interpolation layer is so far only implemented for postGI with one endogenous state, so the e
+% models stop here: Parts 3-5 are preGI, two endogenous states and the big grid (remove this block once they are)
+if isfield(vfoptions,'n_e')
+    fprintf('GI parts 3-5 not run, with e the grid interpolation layer is so far only postGI with one endogenous state \n');
+    output=struct();
+    return
+end
 
 %% Part 3: WITH grid interpolation, preGI and postGI should give the same V and Policy
 % postGI (preGI=0) reference is VG (greedy0) from Part 2.

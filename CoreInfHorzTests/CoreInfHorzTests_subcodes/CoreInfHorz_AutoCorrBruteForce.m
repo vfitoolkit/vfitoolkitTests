@@ -12,8 +12,8 @@ function output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_
 %
 % Three models, each solved with and without the grid interpolation layer, so the command is exercised on z-only,
 % e-only and z-and-e states (the e shock is an iid passed through simoptions.n_e/e_grid/pi_e, and the command keeps it
-% apart from the markov z throughout). CURRENTLY ONLY z-only RUNS: the e-only and z-and-e models are commented out
-% (see the TO RESTORE note at the model loop) until ValueFnIter_InfHorz supports e.
+% apart from the markov z throughout). The e-only and z-and-e models run without the grid interpolation layer only,
+% until that supports e.
 %   z-only:  no d, markov z          (state (a,z),   ReturnFn_nod_z_noe_nosemiz)
 %   e-only:  no d, iid e             (state (a,e),   ReturnFn_nod_noz_e_nosemiz)
 %   z-and-e: no d, markov z, iid e   (state (a,z,e), ReturnFn_nod_z_e_nosemiz; z varies first, then e)
@@ -40,12 +40,9 @@ nq=5; % quintiles
 pi_z_cpu=gather(pi_z);
 pi_e_cpu=gather(pi_e(:));
 
-% TO RESTORE: for mm=1:3 (and uncomment the mm==2 and mm==3 blocks below). Commented out 2026-10-05: ValueFnIter_InfHorz
-% has no e support yet (the dispatcher never reads vfoptions.n_e/e_grid/pi_e, the N_z==0 && N_e>0 branch of
-% ValueFnIter_InfHorz_PureDiscretization is a WIP stub, and the N_z>0 && N_e>0 branch is empty), so the e-only and z-and-e
-% models die in the first solve (first GPU run, diary 2026-10-05). StationaryDist_InfHorz and the AutoCorrTransProbs command
-% do support e, so once InfHorz VFI gets e these two models come straight back (together with figs 5 and 6 in the driver).
-for mm=1:1
+% The e-only and z-and-e models (restored 2026-10-20, once ValueFnIter_InfHorz and StationaryDist_InfHorz got e) are run
+% without the grid interpolation layer only, as that does not yet support e (see ncfg below).
+for mm=1:3
     if mm==1
         mstr='z-only';
         n_zm=n_z; z_gridm=z_grid; pi_zm=pi_z; n_em=0;
@@ -55,24 +52,24 @@ for mm=1:1
         FnsToEvaluate.earnings=@(aprime,a,z,w) w*z;
         FnsToEvaluate.consumption=@(aprime,a,z,r,w) (1+r)*a+w*z-aprime;
         FnsToEvaluate.shock=@(aprime,a,z) z;
-    % elseif mm==2
-    %     mstr='e-only';
-    %     n_zm=0; z_gridm=[]; pi_zm=[]; n_em=n_e;
-    %     ReturnFn=@(aprime,a,e,r,w,sigma) ReturnFn_nod_noz_e_nosemiz(aprime,a,e,r,w,sigma);
-    %     FnsToEvaluate=struct();
-    %     FnsToEvaluate.assets=@(aprime,a,e) a;
-    %     FnsToEvaluate.earnings=@(aprime,a,e,w) w*e;
-    %     FnsToEvaluate.consumption=@(aprime,a,e,r,w) (1+r)*a+w*e-aprime;
-    %     FnsToEvaluate.shock=@(aprime,a,e) e;
-    % else
-    %     mstr='z-and-e';
-    %     n_zm=n_z; z_gridm=z_grid; pi_zm=pi_z; n_em=n_e;
-    %     ReturnFn=@(aprime,a,z,e,r,w,sigma) ReturnFn_nod_z_e_nosemiz(aprime,a,z,e,r,w,sigma);
-    %     FnsToEvaluate=struct();
-    %     FnsToEvaluate.assets=@(aprime,a,z,e) a;
-    %     FnsToEvaluate.earnings=@(aprime,a,z,e,w) w*z*e;
-    %     FnsToEvaluate.consumption=@(aprime,a,z,e,r,w) (1+r)*a+w*z*e-aprime;
-    %     FnsToEvaluate.shock=@(aprime,a,z,e) z*e; % the product takes n_z*n_e distinct values (the grids are exp of AR(1) grids, so no two products coincide)
+    elseif mm==2
+        mstr='e-only';
+        n_zm=0; z_gridm=[]; pi_zm=[]; n_em=n_e;
+        ReturnFn=@(aprime,a,e,r,w,sigma) ReturnFn_nod_noz_e_nosemiz(aprime,a,e,r,w,sigma);
+        FnsToEvaluate=struct();
+        FnsToEvaluate.assets=@(aprime,a,e) a;
+        FnsToEvaluate.earnings=@(aprime,a,e,w) w*e;
+        FnsToEvaluate.consumption=@(aprime,a,e,r,w) (1+r)*a+w*e-aprime;
+        FnsToEvaluate.shock=@(aprime,a,e) e;
+    else
+        mstr='z-and-e';
+        n_zm=n_z; z_gridm=z_grid; pi_zm=pi_z; n_em=n_e;
+        ReturnFn=@(aprime,a,z,e,r,w,sigma) ReturnFn_nod_z_e_nosemiz(aprime,a,z,e,r,w,sigma);
+        FnsToEvaluate=struct();
+        FnsToEvaluate.assets=@(aprime,a,z,e) a;
+        FnsToEvaluate.earnings=@(aprime,a,z,e,w) w*z*e;
+        FnsToEvaluate.consumption=@(aprime,a,z,e,r,w) (1+r)*a+w*z*e-aprime;
+        FnsToEvaluate.shock=@(aprime,a,z,e) z*e; % the product takes n_z*n_e distinct values (the grids are exp of AR(1) grids, so no two products coincide)
     end
     FnNames=fieldnames(FnsToEvaluate);
     n_zr=max(n_zm,1); n_er=max(n_em,1);
@@ -84,7 +81,12 @@ for mm=1:1
         simoptions.n_e=n_em; simoptions.e_grid=e_grid; simoptions.pi_e=pi_e;
     end
 
-    for cfg=1:2
+    ncfg=2;
+    if n_em>0
+        ncfg=1; % the grid interpolation layer does not yet support e, so the e models run only the no GI config (set ncfg=2 once it does)
+        fprintf('AutoCorr brute force (%s), GI config not run, the grid interpolation layer does not yet support e \n',mstr)
+    end
+    for cfg=1:ncfg
         if cfg==1
             cfgstr=[mstr,', no GI'];
             vfoptions_c=vfoptions; simoptions_c=simoptions; ngridinterp=0;

@@ -1,8 +1,10 @@
 function output=CoreInfHorz_CrossTests_d_nosemiz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline)
-% Cross-tests for InfHorz with an iid e (and no z), with d.
+% Cross-tests for InfHorz with an iid e, with d: D, E and F without z, G with both z and e.
 % The idea (as in the FHorz cross-tests) is to run things that should give the
 % same answer, disguised in different ways, and check that they do.
 
+% Cross tests D, E and F have no z; cross test G (at the end) has both z and e, so keep the z inputs for it
+n_z_withz=n_z; z_grid_withz=z_grid; pi_z_withz=pi_z;
 n_z=0; z_grid=[]; pi_z=[];
 
 n_e=vfoptionsbaseline.n_e;
@@ -76,6 +78,32 @@ fprintf('Cross test F (e permutation invariance), assets Mean diff should be zer
 fprintf('Cross test F (e permutation invariance), assets StdDev diff should be zero: %.3e \n',abs(AllStatse.assets.StdDeviation-AllStatsp.assets.StdDeviation))
 fprintf('Cross test F (e permutation invariance), earnings Mean diff should be zero: %.3e \n',abs(AllStatse.earnings.Mean-AllStatsp.earnings.Mean))
 fprintf('Cross test F (e permutation invariance), earnings Gini diff should be zero: %.3e \n',abs(AllStatse.earnings.Gini-AllStatsp.earnings.Gini))
+
+%% Cross test G: with both z and e, (z,e) disguised as a two-dimensional markov z gives the same answer
+% The markov z and the iid e together are the same thing as a two-dimensional markov shock (z,e) whose transition
+% matrix is kron(ones(n_e,1)*pi_e',pi_z): row/column (z,e) with z varying first, and probability pi_z(z,zprime)*pi_e(eprime).
+ReturnFn_ze=@(d,aprime,a,z,e,r,w,sigma,eta,varphi) ReturnFn_d_z_e_nosemiz(d,aprime,a,z,e,r,w,sigma,eta,varphi);
+FnsToEvaluate_ze.assets=@(d,aprime,a,z,e) a;
+FnsToEvaluate_ze.earnings=@(d,aprime,a,z,e,w) w*d*z*e;
+
+[Vze,Policyze]=ValueFnIter_InfHorz(n_d,n_a,n_z_withz,d_grid,a_grid,z_grid_withz,pi_z_withz,ReturnFn_ze,Params,DiscountFactorParamNames,[],vfo_e);
+StationaryDistze=StationaryDist_InfHorz(Policyze,n_d,n_a,n_z_withz,pi_z_withz,simo_e,Params,[]);
+AggVarsze=EvalFnOnAgentDist_AggVars_InfHorz(StationaryDistze,Policyze,FnsToEvaluate_ze,Params,[],n_d,n_a,n_z_withz,d_grid,a_grid,z_grid_withz,simo_e);
+
+% The same shocks, but declared as a two-dimensional markov z (the ReturnFn and FnsToEvaluate are unchanged, the e input is just the second z)
+n_z_asz2=[n_z_withz,n_e];
+z_grid_asz2=[z_grid_withz;e_grid];
+pi_z_asz2=kron(ones(n_e,1)*pi_e',pi_z_withz);
+
+[Vz2,Policyz2]=ValueFnIter_InfHorz(n_d,n_a,n_z_asz2,d_grid,a_grid,z_grid_asz2,pi_z_asz2,ReturnFn_ze,Params,DiscountFactorParamNames,[],struct());
+StationaryDistz2=StationaryDist_InfHorz(Policyz2,n_d,n_a,n_z_asz2,pi_z_asz2,struct(),Params,[]);
+AggVarsz2=EvalFnOnAgentDist_AggVars_InfHorz(StationaryDistz2,Policyz2,FnsToEvaluate_ze,Params,[],n_d,n_a,n_z_asz2,d_grid,a_grid,z_grid_asz2,struct());
+
+fprintf('Cross test G ((z,e) == two-dim markov z), V should be zero:              %.3e \n',max(abs(Vze(:)-Vz2(:))))
+fprintf('Cross test G ((z,e) == two-dim markov z), Policy should be zero:         %.3e \n',max(abs(Policyze(:)-Policyz2(:))))
+fprintf('Cross test G ((z,e) == two-dim markov z), StationaryDist should be zero: %.3e \n',max(abs(StationaryDistze(:)-StationaryDistz2(:))))
+fprintf('Cross test G ((z,e) == two-dim markov z), assets Mean should be zero:    %.3e \n',abs(AggVarsze.assets.Mean-AggVarsz2.assets.Mean))
+fprintf('Cross test G ((z,e) == two-dim markov z), earnings Mean should be zero:  %.3e \n',abs(AggVarsze.earnings.Mean-AggVarsz2.earnings.Mean))
 
 %%
 output=struct();

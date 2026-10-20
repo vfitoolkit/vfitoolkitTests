@@ -7,9 +7,10 @@
 % NOT tested here:
 %   - divide-and-conquer: not usable for InfHorz (too slow); it is tested in
 %     the InfHorz-TPath test bank instead
-%   - e/semiz: InfHorz core is just with/without d and with/without z here (the iid e would appear only in
-%     doPart(6), the AutoCorrTransProbs brute force, whose e-only and z-and-e models are commented out until
-%     ValueFnIter_InfHorz supports e; see the TO RESTORE note in CoreInfHorz_AutoCorrBruteForce)
+%   - semiz
+%   - e (iid) in the stats and simulations with the grid interpolation layer: figs 5-8 in doPart(1) run
+%     everything with e (with/without d, with/without z) except the AllStats/AggVars and SimPanel parts on
+%     the GI solve, which are commented out; doPart(6) runs its e models without the GI config
 
 
 %% Which parts to run
@@ -17,12 +18,12 @@
 % That is for building and for rerunning: while one tier is being worked on there is no reason to
 % rerun the ones that already pass, and a bank that dies partway (out-of-memory, most often) can
 % be finished off by running just the parts that never got to run.
-% doPart(1): one endogenous state (figs 1-6)
+% doPart(1): one endogenous state (figs 1-8)
 % doPart(2): cross-tests
 % doPart(3): two endogenous states (figs 17-18)
 % doPart(4): two-endo cross-tests: second state ignored
 % doPart(5): two-endo cross-tests: first state ignored
-% doPart(6): AutoCorrTransProbs brute force (z-only; e-only and z-and-e commented out pending InfHorz e; horizons and TransitionProbs vs dense kernels; no figures)
+% doPart(6): AutoCorrTransProbs brute force (z-only, e-only and z-and-e; horizons and TransitionProbs vs dense kernels; no figures)
 % doPart(7): conditional restrictions in CrossSectionCovarCorr, AllStats and AutoCorrTransProbs, every statistic vs brute force (one and two endogenous states; no figures)
 % doPart(8): simoptions.whichcombos (and per-combination whichstats) in AllStats, AggVars, AutoCorrTransProbs and CrossSectionCovarCorr (no figures)
 %
@@ -54,9 +55,9 @@ addpath('./CoreInfHorzTests_subcodes/CrossTests/')
 % Setup so that use the same d,a,z in all the models that use them
 CoreInfHorz_setup
 
-%% ===== doPart(1): one endogenous state (figs 1-6) =====
+%% ===== doPart(1): one endogenous state (figs 1-8) =====
 if doPart(1)==1
-    fprintf('\n===== doPart(1): one endogenous state (figs 1-6) =====\n')
+    fprintf('\n===== doPart(1): one endogenous state (figs 1-8) =====\n')
     %% without d, without z
     figure_c=1;
     output=CoreInfHorz_nod_noz_noe_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
@@ -81,14 +82,24 @@ if doPart(1)==1
 
     %% without d, with e (iid), without z
     figure_c=5;
-    % output=CoreInfHorz_nod_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-    % exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    output=CoreInfHorz_nod_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 
     %% with d, with e (iid), without z
     figure_c=6;
-    % output=CoreInfHorz_d_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
-    % exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
-end % doPart(1): one endogenous state (figs 1-6)
+    output=CoreInfHorz_d_noz_e_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% without d, with z, with e (iid)
+    figure_c=7;
+    output=CoreInfHorz_nod_z_e_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d, with z, with e (iid)
+    figure_c=8;
+    output=CoreInfHorz_d_z_e_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(1): one endogenous state (figs 1-8)
 
 %% ===== doPart(2): cross-tests =====
 if doPart(2)==1
@@ -100,15 +111,16 @@ if doPart(2)==1
     output=CoreInfHorz_CrossTests_nod_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
 
     output=CoreInfHorz_CrossTests_d_nosemiz(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
-end % doPart(2): cross-tests
 
-% % % %% Cross-tests for the iid e (no z) models
-% % % % D: an iid e, disguised as a markov z with identical rows, gives the same answer
-% % % % E: a single trivial e point (value 1, prob 1) reproduces the noe code path
-% % % % F: relabelling (permuting) the e states leaves all aggregate statistics unchanged
-% % % output=CoreInfHorz_CrossTests_nod_nosemiz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
-% % % 
-% % % output=CoreInfHorz_CrossTests_d_nosemiz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    %% Cross-tests for the iid e models
+    % D: an iid e, disguised as a markov z with identical rows, gives the same answer (no z)
+    % E: a single trivial e point (value 1, prob 1) reproduces the noe code path (no z)
+    % F: relabelling (permuting) the e states leaves all aggregate statistics unchanged (no z)
+    % G: with both z and e, (z,e) disguised as a two-dimensional markov z gives the same answer
+    output=CoreInfHorz_CrossTests_nod_nosemiz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+    output=CoreInfHorz_CrossTests_d_nosemiz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(2): cross-tests
 
 %% Two endogenous states (mirror figs 3 & 4, but with a second endogenous state)
 % Model: fig 17 simplified Kitao (2008), no taxes -- assets + occupation (worker/entrepreneur).
@@ -157,8 +169,8 @@ if doPart(6)==1
     %% EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz (which pushes the measures with the Tan two-step and never forms the
     % transition matrix) against dense per-model kernels built here from Policy and pi_z/pi_e: Mean, StdDeviation,
     % AutoCovariance/AutoCorrelation at horizons 1,2,3,5 (the tperiodsK fields) and TransitionProbs (unique values and
-    % quintiles) at the same horizons, on a z-only model (e-only and z-and-e are commented out in the subcode until
-    % ValueFnIter_InfHorz supports e), with and without the grid interpolation layer
+    % quintiles) at the same horizons, on z-only, e-only and z-and-e models, with and without the grid interpolation
+    % layer (the e models without it only, as it does not yet support e)
     output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames);
 end % doPart(6): AutoCorrTransProbs brute force
 

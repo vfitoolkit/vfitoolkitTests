@@ -13,6 +13,9 @@
 %             howardsgreedy=0,1,2,3 (2,3 are HowardMix), and sparse=1/lowmemory=1
 %   Part 3: WITH GI, preGI and postGI give the same V and Policy
 %   Part 4: with a big n_a (=1500), with and without GI give very similar V
+% With a d, Part 1 also checks solnmethod='purediscretization' (the with-d raws) against the default refinement.
+% The e models run Part 1, and of Part 2 all but the HowardMix (howardsgreedy=2,3) checks (with e the grid interpolation
+% layer is so far only postGI, howardsgreedy=0 or 1, one endogenous state); they skip Parts 3-5.
 % The Howards accelerators (same answer as no Howards, and are they actually faster) are checked
 % separately, in the diagnostic scan CoreInfHorzVFIAlgo_ScanHowardsSettings at the end.
 %
@@ -68,9 +71,9 @@ if doPart(1)==1
     fprintf('\n===== doPart(1): without d =====\n')
     %% without d
     % output=CoreInfHorzVFIAlgo_nod_noz_noe(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
-    % output=CoreInfHorzVFIAlgo_nod_noz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_nod_noz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
     output=CoreInfHorzVFIAlgo_nod_z_noe(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
-    % output=CoreInfHorzVFIAlgo_nod_z_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_nod_z_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(1): without d
 
 %% ===== doPart(2): with d =====
@@ -78,9 +81,9 @@ if doPart(2)==1
     fprintf('\n===== doPart(2): with d =====\n')
     %% with d
     % output=CoreInfHorzVFIAlgo_d_noz_noe(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
-    % output=CoreInfHorzVFIAlgo_d_noz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_d_noz_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
     output=CoreInfHorzVFIAlgo_d_z_noe(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
-    % output=CoreInfHorzVFIAlgo_d_z_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_d_z_e(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(2): with d
 
 %% ===== doPart(3): cross-test: a dummy d vs no d =====
