@@ -16,7 +16,7 @@
 % be finished off by running just the parts that never got to run.
 % doPart(1): figs 1-8 (each also checks AllStats and LifeCycleProfiles along the path)
 % doPart(2): cross-tests
-% doPart(3): figs 9-16
+% doPart(3): figs 9-16 (each also checks AllStats and LifeCycleProfiles along the path)
 % doPart(4): cross-tests 2
 % doPart(5): cross-tests 3
 % doPart(6): _tminus1 and _tplus1 (no figures)

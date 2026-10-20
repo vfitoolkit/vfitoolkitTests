@@ -235,6 +235,130 @@ fprintf('Do nothing TPath, this should be zero, AgentDistB: %.3e \n',max(max(max
 
 clear V1 Policy1 VPath1 PolicyPath1
 
+%% Statistics along the path: EvalFnOnTransPath_AllStats_Case1_FHorz and LifeCycleProfiles_TransPath_FHorz_Case1
+% Both are, period by period, the stationary command applied to that period's slice of the agent dist
+% and policy paths, with the Parameters at that period's prices and parameters. So the oracle is exactly
+% that: EvalFnOnAgentDist_AllStats_FHorz_Case1 and LifeCycleProfiles_FHorz_Case1 called on each period
+% by hand. Every number must match, and must sit where it belongs: for the life-cycle profiles that is
+% the cohort bookkeeping,
+%   initialages(jj,age):        the cohort aged jj in period 1, now aged age, so period age-jj+1
+%   bornduringtranstion(ii,age): the cohort aged 1 in period ii, now aged age, so period ii+age-1
+% and an entry that does not exist (cohort not alive) must be NaN while every one that does must not
+% be, which is checked as a count of positions that are NaN in one and not the other.
+%   (A1) AllStats, every stat, every period, vs the per-period stationary AllStats
+%   (L1) life-cycle profiles, all seven outputs, vs the per-period stationary profiles
+%   (L2) the alive pattern: NaN exactly where no cohort is
+statsname='d1_z_noe_semiz';
+OutputTypes={'Mean','Median','Variance','LorenzCurve','Gini','QuantileCutoffs','QuantileMeans'};
+scalarstat=[1,1,1,0,1,0,0]; % Mean, Median, Variance, Gini are one number per age
+[V_s,Policy_s]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+AgentDist_s=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy_s,n_d,n_a,n_z,N_j,pi_z,Params,simoptions1);
+[~,PolicyPathS]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_s, Policy_s, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+AgentDistPathS=AgentDistOnTransPath_Case1_FHorz(AgentDist_s, jequaloneDist, PricePath, ParamPath, PolicyPathS, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions1);
+
+AllStatsPath=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluate, AgentDistPathS, PolicyPathS, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions1);
+LCPPath=LifeCycleProfiles_TransPath_FHorz_Case1(FnsToEvaluate, AgentDistPathS, PolicyPathS, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid, z_grid, transpathoptionsbaseline, simoptions1);
+
+% The oracle: the stationary commands on each period's slice, at that period's prices and parameters
+% (each period's slice keeps the layout of the stationary objects, whatever the shocks are)
+sliceAgentDist=repmat({':'},1,ndims(AgentDistPathS)-1);
+slicePolicy=repmat({':'},1,ndims(PolicyPathS)-1);
+PricePathNamesS=fieldnames(PricePath);
+ParamPathNamesS=fieldnames(ParamPath);
+AScell=cell(1,T);
+LCPcell=cell(1,T);
+for tt=1:T
+    Params_tt=Params;
+    for kk=1:length(PricePathNamesS)
+        Params_tt.(PricePathNamesS{kk})=PricePath.(PricePathNamesS{kk})(tt);
+    end
+    for kk=1:length(ParamPathNamesS)
+        Params_tt.(ParamPathNamesS{kk})=ParamPath.(ParamPathNamesS{kk})(tt);
+    end
+    AScell{tt}=EvalFnOnAgentDist_AllStats_FHorz_Case1(AgentDistPathS(sliceAgentDist{:},tt),PolicyPathS(slicePolicy{:},tt),FnsToEvaluate,Params_tt,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+    LCPcell{tt}=LifeCycleProfiles_FHorz_Case1(AgentDistPathS(sliceAgentDist{:},tt),PolicyPathS(slicePolicy{:},tt),FnsToEvaluate,Params_tt,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+end
+
+% (A1) AllStats: every stat of every FnsToEvaluate, every period
+maxdiff=0; nanmismatch=0;
+for tt=1:T
+    AS=AScell{tt};
+    % every field of AllStats, to any depth (MoreInequality is a struct; the comments are text)
+    queue={{}};
+    while ~isempty(queue)
+        fieldpath=queue{1};
+        queue(1)=[];
+        if isempty(fieldpath)
+            O=AS;
+        else
+            O=getfield(AS,fieldpath{:});
+        end
+        if isstruct(O)
+            Onames=fieldnames(O);
+            for kk=1:length(Onames)
+                queue{end+1}=[fieldpath,Onames(kk)];
+            end
+        elseif ischar(O) || isstring(O) || iscell(O) % text (the comments): must be the same text
+            P=getfield(AllStatsPath,fieldpath{:});
+            nanmismatch=nanmismatch+(~isequal(P{tt},O));
+        else
+            O=gather(O);
+            P=getfield(AllStatsPath,fieldpath{:});
+            P=P(:,tt);
+            maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+            nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+        end
+    end
+end
+fprintf('Stats, %s: (A1) EvalFnOnTransPath_AllStats vs the stationary AllStats period by period, every stat, this should be zero: %.3e \n',statsname,maxdiff)
+fprintf('Stats, %s: (A1) EvalFnOnTransPath_AllStats vs the stationary AllStats period by period, every stat, positions NaN (or text) in one but not the other, this should be zero: %i \n',statsname,nanmismatch)
+
+% (L1)/(L2) Life-cycle profiles: the cohort bookkeeping
+maxdiffI=0; maxdiffB=0; nanmisI=0; nanmisB=0;
+fnnames=fieldnames(FnsToEvaluate);
+for ff=1:length(fnnames)
+    for oo=1:length(OutputTypes)
+        PI=gather(LCPPath.(fnnames{ff}).initialages.(OutputTypes{oo}));
+        PB=gather(LCPPath.(fnnames{ff}).bornduringtranstion.(OutputTypes{oo}));
+        OI=nan(size(PI));
+        OB=nan(size(PB));
+        % Initial cohorts: aged jj in period 1, so aged jj+tt-1 in period tt, alive while that is at most N_j
+        for tt=1:min(T,N_j)
+            temp=gather(LCPcell{tt}.(fnnames{ff}).(OutputTypes{oo}));
+            for jj=1:N_j-tt+1
+                if scalarstat(oo)==1
+                    OI(jj,jj+tt-1)=temp(jj+tt-1);
+                else
+                    OI(:,jj,jj+tt-1)=temp(:,jj+tt-1);
+                end
+            end
+        end
+        % Cohorts born during the transition: aged 1 in period ii, so aged age in period ii+age-1
+        for ii=1:T
+            for age=1:N_j
+                tt=ii+age-1;
+                if tt<=T
+                    temp=gather(LCPcell{tt}.(fnnames{ff}).(OutputTypes{oo}));
+                    if scalarstat(oo)==1
+                        OB(ii,age)=temp(age);
+                    else
+                        OB(:,ii,age)=temp(:,age);
+                    end
+                end
+            end
+        end
+        maxdiffI=max([maxdiffI; abs(PI(:)-OI(:))],[],'omitnan');
+        maxdiffB=max([maxdiffB; abs(PB(:)-OB(:))],[],'omitnan');
+        nanmisI=nanmisI+sum(isnan(PI(:))~=isnan(OI(:)));
+        nanmisB=nanmisB+sum(isnan(PB(:))~=isnan(OB(:)));
+    end
+end
+fprintf('Stats, %s: (L1) LifeCycleProfiles_TransPath initialages vs the per-period stationary profiles, all seven outputs, this should be zero: %.3e \n',statsname,maxdiffI)
+fprintf('Stats, %s: (L1) LifeCycleProfiles_TransPath bornduringtranstion vs the per-period stationary profiles, all seven outputs, this should be zero: %.3e \n',statsname,maxdiffB)
+fprintf('Stats, %s: (L2) LifeCycleProfiles_TransPath entries NaN in one but not the other (the alive pattern), initialages %i and bornduringtranstion %i, this should be zero: %i \n',statsname,nanmisI,nanmisB,nanmisI+nanmisB)
+
+clear V_s Policy_s AgentDist_s PolicyPathS AgentDistPathS AllStatsPath LCPPath AScell LCPcell
+
 %% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
 
 % First, create initial dist (current one is on n_a_big)
