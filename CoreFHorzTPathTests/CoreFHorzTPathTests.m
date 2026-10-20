@@ -14,14 +14,13 @@
 % That is for building and for rerunning: while one tier is being worked on there is no reason to
 % rerun the ones that already pass, and a bank that dies partway (out-of-memory, most often) can
 % be finished off by running just the parts that never got to run.
-% doPart(1): figs 1-8
+% doPart(1): figs 1-8 (each also checks AllStats and LifeCycleProfiles along the path)
 % doPart(2): cross-tests
 % doPart(3): figs 9-16
 % doPart(4): cross-tests 2
 % doPart(5): cross-tests 3
 % doPart(6): _tminus1 and _tplus1 (no figures)
 % doPart(7): population demographics (no figures)
-% doPart(8): statistics along the path, LifeCycleProfiles and AllStats (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -30,7 +29,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -240,14 +239,6 @@ if doPart(7)==1
     % (10) the age-weight and newborn checks again, on the models whose reshaping branches differ: no z, z and e, semiz
     output=CoreFHorzTPath_demographics_shapes(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,n_d2_semiz,d2_grid_semiz,Params,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(7): population demographics
-
-%% ===== doPart(8): statistics along the path =====
-if doPart(8)==1
-    fprintf('\n===== doPart(8): statistics along the path =====\n')
-    addpath('./CoreFHorzTPath_ReturnFns/Semiz_ReturnFns/') % the semiz model; also added inside doPart(3), but parts are independent
-    % LifeCycleProfiles_TransPath_FHorz_Case1 and EvalFnOnTransPath_AllStats_Case1_FHorz against the stationary commands period by period. See the header of the subcode.
-    output=CoreFHorzTPath_stats(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,n_d2_semiz,d2_grid_semiz,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
-end % doPart(8): statistics along the path
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 

@@ -227,6 +227,323 @@ fprintf('Do nothing TPath, this should be zero, AgentDistB: %.3e \n',max(max(max
 
 clear V1 Policy1 VPath1 PolicyPath1
 
+%% Statistics along the path: EvalFnOnTransPath_AllStats_Case1_FHorz and LifeCycleProfiles_TransPath_FHorz_Case1
+% Both are, period by period, the stationary command applied to that period's slice of the agent dist
+% and policy paths, with the Parameters at that period's prices and parameters. So the oracle is exactly
+% that: EvalFnOnAgentDist_AllStats_FHorz_Case1 and LifeCycleProfiles_FHorz_Case1 called on each period
+% by hand. Every number must match, and must sit where it belongs: for the life-cycle profiles that is
+% the cohort bookkeeping,
+%   initialages(jj,age):        the cohort aged jj in period 1, now aged age, so period age-jj+1
+%   bornduringtranstion(ii,age): the cohort aged 1 in period ii, now aged age, so period ii+age-1
+% and an entry that does not exist (cohort not alive) must be NaN while every one that does must not
+% be, which is checked as a count of positions that are NaN in one and not the other.
+%   (A1) AllStats, every stat, every period, vs the per-period stationary AllStats
+%   (L1) life-cycle profiles, all seven outputs, vs the per-period stationary profiles
+%   (L2) the alive pattern: NaN exactly where no cohort is
+statsname='nod_z_noe';
+OutputTypes={'Mean','Median','Variance','LorenzCurve','Gini','QuantileCutoffs','QuantileMeans'};
+scalarstat=[1,1,1,0,1,0,0]; % Mean, Median, Variance, Gini are one number per age
+[V_s,Policy_s]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions1);
+AgentDist_s=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy_s,n_d,n_a,n_z,N_j,pi_z,Params,simoptions1);
+[~,PolicyPathS]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_s, Policy_s, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+AgentDistPathS=AgentDistOnTransPath_Case1_FHorz(AgentDist_s, jequaloneDist, PricePath, ParamPath, PolicyPathS, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions1);
+
+AllStatsPath=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluate, AgentDistPathS, PolicyPathS, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions1);
+LCPPath=LifeCycleProfiles_TransPath_FHorz_Case1(FnsToEvaluate, AgentDistPathS, PolicyPathS, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid, z_grid, transpathoptionsbaseline, simoptions1);
+
+% The oracle: the stationary commands on each period's slice, at that period's prices and parameters
+% (each period's slice keeps the layout of the stationary objects, whatever the shocks are)
+sliceAgentDist=repmat({':'},1,ndims(AgentDistPathS)-1);
+slicePolicy=repmat({':'},1,ndims(PolicyPathS)-1);
+PricePathNamesS=fieldnames(PricePath);
+ParamPathNamesS=fieldnames(ParamPath);
+AScell=cell(1,T);
+LCPcell=cell(1,T);
+for tt=1:T
+    Params_tt=Params;
+    for kk=1:length(PricePathNamesS)
+        Params_tt.(PricePathNamesS{kk})=PricePath.(PricePathNamesS{kk})(tt);
+    end
+    for kk=1:length(ParamPathNamesS)
+        Params_tt.(ParamPathNamesS{kk})=ParamPath.(ParamPathNamesS{kk})(tt);
+    end
+    AScell{tt}=EvalFnOnAgentDist_AllStats_FHorz_Case1(AgentDistPathS(sliceAgentDist{:},tt),PolicyPathS(slicePolicy{:},tt),FnsToEvaluate,Params_tt,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+    LCPcell{tt}=LifeCycleProfiles_FHorz_Case1(AgentDistPathS(sliceAgentDist{:},tt),PolicyPathS(slicePolicy{:},tt),FnsToEvaluate,Params_tt,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+end
+
+% (A1) AllStats: every stat of every FnsToEvaluate, every period
+maxdiff=0; nanmismatch=0;
+for tt=1:T
+    AS=AScell{tt};
+    % every field of AllStats, to any depth (MoreInequality is a struct; the comments are text)
+    queue={{}};
+    while ~isempty(queue)
+        fieldpath=queue{1};
+        queue(1)=[];
+        if isempty(fieldpath)
+            O=AS;
+        else
+            O=getfield(AS,fieldpath{:});
+        end
+        if isstruct(O)
+            Onames=fieldnames(O);
+            for kk=1:length(Onames)
+                queue{end+1}=[fieldpath,Onames(kk)];
+            end
+        elseif ischar(O) || isstring(O) || iscell(O) % text (the comments): must be the same text
+            P=getfield(AllStatsPath,fieldpath{:});
+            nanmismatch=nanmismatch+(~isequal(P{tt},O));
+        else
+            O=gather(O);
+            P=getfield(AllStatsPath,fieldpath{:});
+            P=P(:,tt);
+            maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+            nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+        end
+    end
+end
+fprintf('Stats, %s: (A1) EvalFnOnTransPath_AllStats vs the stationary AllStats period by period, every stat, this should be zero: %.3e \n',statsname,maxdiff)
+fprintf('Stats, %s: (A1) EvalFnOnTransPath_AllStats vs the stationary AllStats period by period, every stat, positions NaN (or text) in one but not the other, this should be zero: %i \n',statsname,nanmismatch)
+
+% (L1)/(L2) Life-cycle profiles: the cohort bookkeeping
+maxdiffI=0; maxdiffB=0; nanmisI=0; nanmisB=0;
+fnnames=fieldnames(FnsToEvaluate);
+for ff=1:length(fnnames)
+    for oo=1:length(OutputTypes)
+        PI=gather(LCPPath.(fnnames{ff}).initialages.(OutputTypes{oo}));
+        PB=gather(LCPPath.(fnnames{ff}).bornduringtranstion.(OutputTypes{oo}));
+        OI=nan(size(PI));
+        OB=nan(size(PB));
+        % Initial cohorts: aged jj in period 1, so aged jj+tt-1 in period tt, alive while that is at most N_j
+        for tt=1:min(T,N_j)
+            temp=gather(LCPcell{tt}.(fnnames{ff}).(OutputTypes{oo}));
+            for jj=1:N_j-tt+1
+                if scalarstat(oo)==1
+                    OI(jj,jj+tt-1)=temp(jj+tt-1);
+                else
+                    OI(:,jj,jj+tt-1)=temp(:,jj+tt-1);
+                end
+            end
+        end
+        % Cohorts born during the transition: aged 1 in period ii, so aged age in period ii+age-1
+        for ii=1:T
+            for age=1:N_j
+                tt=ii+age-1;
+                if tt<=T
+                    temp=gather(LCPcell{tt}.(fnnames{ff}).(OutputTypes{oo}));
+                    if scalarstat(oo)==1
+                        OB(ii,age)=temp(age);
+                    else
+                        OB(:,ii,age)=temp(:,age);
+                    end
+                end
+            end
+        end
+        maxdiffI=max([maxdiffI; abs(PI(:)-OI(:))],[],'omitnan');
+        maxdiffB=max([maxdiffB; abs(PB(:)-OB(:))],[],'omitnan');
+        nanmisI=nanmisI+sum(isnan(PI(:))~=isnan(OI(:)));
+        nanmisB=nanmisB+sum(isnan(PB(:))~=isnan(OB(:)));
+    end
+end
+fprintf('Stats, %s: (L1) LifeCycleProfiles_TransPath initialages vs the per-period stationary profiles, all seven outputs, this should be zero: %.3e \n',statsname,maxdiffI)
+fprintf('Stats, %s: (L1) LifeCycleProfiles_TransPath bornduringtranstion vs the per-period stationary profiles, all seven outputs, this should be zero: %.3e \n',statsname,maxdiffB)
+fprintf('Stats, %s: (L2) LifeCycleProfiles_TransPath entries NaN in one but not the other (the alive pattern), initialages %i and bornduringtranstion %i, this should be zero: %i \n',statsname,nanmisI,nanmisB,nanmisI+nanmisB)
+
+% This model only: (A2), (A4), (A5) on the path, and (A3), (L3) on a do-nothing path
+%   (A2) the AllStats Mean vs EvalFnOnTransPath_AggVars_Case1_FHorz
+%   (A4) A1 with simoptions.conditionalrestrictions (restricted sample mass and restricted stats)
+%   (A5) _tminus1 and _tplus1 in the FnsToEvaluate vs the same functions on hand-shifted paths
+%   (A3) on a constant (do-nothing) path from the stationary dist, every period's AllStats is the stationary one
+%   (L3) on the same do-nothing path, every period's profile is the stationary one
+
+% (A2) the AllStats Mean against the AggVars command
+AggVarsPathS=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPathS, PolicyPathS, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions1);
+fprintf('Stats, %s: (A2) EvalFnOnTransPath_AllStats Mean vs EvalFnOnTransPath_AggVars, this should be zero: %.3e \n',statsname,max([max(abs(AllStatsPath.assets.Mean-gather(AggVarsPathS.assets.Mean))),max(abs(AllStatsPath.earnings.Mean-gather(AggVarsPathS.earnings.Mean)))]))
+
+% (A4) with conditional restrictions
+simoptionsR=simoptions1;
+simoptionsR.conditionalrestrictions.working=@(aprime,a,z,kappa_j) (kappa_j>0);
+simoptionsR.conditionalrestrictions.wealthy=@(aprime,a,z) (a>1);
+AllStatsPathR=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluate, AgentDistPathS, PolicyPathS, PricePath, ParamPath, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptionsR);
+maxdiff=0; nanmismatch=0; nfields=0;
+for tt=1:T
+    Params_tt=Params;
+    for kk=1:length(PricePathNamesS)
+        Params_tt.(PricePathNamesS{kk})=PricePath.(PricePathNamesS{kk})(tt);
+    end
+    for kk=1:length(ParamPathNamesS)
+        Params_tt.(ParamPathNamesS{kk})=ParamPath.(ParamPathNamesS{kk})(tt);
+    end
+    AS=EvalFnOnAgentDist_AllStats_FHorz_Case1(AgentDistPathS(sliceAgentDist{:},tt),PolicyPathS(slicePolicy{:},tt),FnsToEvaluate,Params_tt,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptionsR);
+    % every field, to any depth, including the restricted ones
+    queue={{}};
+    while ~isempty(queue)
+        fieldpath=queue{1};
+        queue(1)=[];
+        if isempty(fieldpath)
+            O=AS;
+        else
+            O=getfield(AS,fieldpath{:});
+        end
+        if isstruct(O)
+            Onames=fieldnames(O);
+            for kk=1:length(Onames)
+                queue{end+1}=[fieldpath,Onames(kk)];
+            end
+        elseif ischar(O) || isstring(O) || iscell(O) % text (the comments): must be the same text
+            P=getfield(AllStatsPathR,fieldpath{:});
+            nanmismatch=nanmismatch+(~isequal(P{tt},O)); nfields=nfields+1;
+        else
+            O=gather(O);
+            P=getfield(AllStatsPathR,fieldpath{:});
+            P=P(:,tt);
+            maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+            nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:))); nfields=nfields+1;
+        end
+    end
+end
+fprintf('Stats, %s: (A4) with conditionalrestrictions, %i stat-periods compared (the restricted ones included), this should be zero: %.3e \n',statsname,nfields,maxdiff)
+fprintf('Stats, %s: (A4) with conditionalrestrictions, %i stat-periods compared (the restricted ones included), positions NaN (or text) in one but not the other, this should be zero: %i \n',statsname,nfields,nanmismatch)
+fprintf('Stats, %s: for scale, the restricted sample masses move between %.3f and %.3f (working) and %.3f and %.3f (wealthy) over the path \n',statsname,min(AllStatsPathR.working.RestrictedSampleMass),max(AllStatsPathR.working.RestrictedSampleMass),min(AllStatsPathR.wealthy.RestrictedSampleMass),max(AllStatsPathR.wealthy.RestrictedSampleMass))
+
+% (A5) _tminus1 and _tplus1 inside the FnsToEvaluate, against the same functions on hand-shifted paths
+initialvalues.r=0.04; % PricePath.r(1) is 0.03
+initialvalues.w=1.2;  % ParamPath.w(1) is 1.1
+initialvalues.assets=0.5;
+transpathoptionsL=transpathoptionsbaseline;
+transpathoptionsL.initialvalues=initialvalues;
+ParamPathO=ParamPath;
+ParamPathO.rlag=[initialvalues.r, PricePath.r(1:T-1)];
+ParamPathO.rlead=[PricePath.r(2:T), PricePath.r(T)]; % _tplus1 in period T is period T
+ParamPathO.wlag=[initialvalues.w, ParamPath.w(1:T-1)];
+ParamPathO.Alag=[initialvalues.assets, AllStatsPath.assets.Mean(1:T-1)];
+ParamsO=Params;
+ParamsO.rlag=ParamPathO.rlag(1); ParamsO.rlead=ParamPathO.rlead(1); ParamsO.wlag=ParamPathO.wlag(1); ParamsO.Alag=ParamPathO.Alag(1);
+FnsToEvaluateL=FnsToEvaluate;
+FnsToEvaluateL.x=@(aprime,a,z,r_tminus1,r_tplus1,w_tminus1) a*r_tminus1+aprime*r_tplus1+w_tminus1*z;
+FnsToEvaluateL.y=@(aprime,a,z,assets_tminus1) a*assets_tminus1;
+FnsToEvaluateO=FnsToEvaluate;
+FnsToEvaluateO.x=@(aprime,a,z,rlag,rlead,wlag) a*rlag+aprime*rlead+wlag*z;
+FnsToEvaluateO.y=@(aprime,a,z,Alag) a*Alag;
+AllStatsPathL=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluateL, AgentDistPathS, PolicyPathS, PricePath, ParamPathO, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptionsL, simoptions1);
+AllStatsPathO=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluateO, AgentDistPathS, PolicyPathS, PricePath, ParamPathO, ParamsO, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions1);
+maxdiff=0; nanmismatch=0;
+lagnames={'x','y'};
+% every field of x and y, to any depth, all periods at once (numeric fields are numel-by-T, text ones 1-by-T cells)
+queue={};
+for ll=1:2
+    queue{end+1}={lagnames{ll}};
+end
+while ~isempty(queue)
+    fieldpath=queue{1};
+    queue(1)=[];
+    O=getfield(AllStatsPathO,fieldpath{:});
+    P=getfield(AllStatsPathL,fieldpath{:});
+    if isstruct(O)
+        Onames=fieldnames(O);
+        for kk=1:length(Onames)
+            queue{end+1}=[fieldpath,Onames(kk)];
+        end
+    elseif iscell(O)
+        nanmismatch=nanmismatch+(~isequal(P,O));
+    else
+        maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+        nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+    end
+end
+fprintf('Stats, %s: (A5) _tminus1/_tplus1 (prices, a parameter, an aggregate) in the FnsToEvaluate vs the shifted paths, every stat, this should be zero: %.3e \n',statsname,maxdiff)
+fprintf('Stats, %s: (A5) _tminus1/_tplus1 (prices, a parameter, an aggregate) in the FnsToEvaluate vs the shifted paths, every stat, positions NaN (or text) in one but not the other, this should be zero: %i \n',statsname,nanmismatch)
+fprintf('Stats, %s: for scale, r_tminus1 differs from r by up to %.3e and w_tminus1 from w by up to %.3e over the path (must not be zero, or (A5) is empty) \n',statsname,max(abs(ParamPathO.rlag-PricePath.r)),max(abs(ParamPathO.wlag-ParamPath.w)))
+
+% (A3)/(L3) the do-nothing path: every price and parameter held at its Params value, starting from the stationary dist
+PricePathC=struct();
+for kk=1:length(PricePathNamesS)
+    PricePathC.(PricePathNamesS{kk})=Params.(PricePathNamesS{kk})*ones(1,T);
+end
+ParamPathC=struct();
+for kk=1:length(ParamPathNamesS)
+    ParamPathC.(ParamPathNamesS{kk})=Params.(ParamPathNamesS{kk})*ones(1,T);
+end
+[~,PolicyPathC]=ValueFnOnTransPath_Case1_FHorz(PricePathC, ParamPathC, T, V_s, Policy_s, Params, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+AgentDistPathC=AgentDistOnTransPath_Case1_FHorz(AgentDist_s, jequaloneDist, PricePathC, ParamPathC, PolicyPathC, AgeWeightParamNames,n_d,n_a,n_z,N_j,pi_z, T,Params, transpathoptionsbaseline, simoptions1);
+AllStatsPathC=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluate, AgentDistPathC, PolicyPathC, PricePathC, ParamPathC, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptionsbaseline, simoptions1);
+LCPPathC=LifeCycleProfiles_TransPath_FHorz_Case1(FnsToEvaluate, AgentDistPathC, PolicyPathC, PricePathC, ParamPathC, Params, T, n_d, n_a, n_z, N_j, d_grid, a_grid, z_grid, transpathoptionsbaseline, simoptions1);
+AS_stat=EvalFnOnAgentDist_AllStats_FHorz_Case1(AgentDist_s,Policy_s,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+LCP_stat=LifeCycleProfiles_FHorz_Case1(AgentDist_s,Policy_s,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,simoptions1);
+% (A3) every field of AllStats, to any depth, every period, vs the stationary AllStats
+maxdiff=0; nanmismatch=0;
+for tt=1:T
+    queue={{}};
+    while ~isempty(queue)
+        fieldpath=queue{1};
+        queue(1)=[];
+        if isempty(fieldpath)
+            O=AS_stat;
+        else
+            O=getfield(AS_stat,fieldpath{:});
+        end
+        if isstruct(O)
+            Onames=fieldnames(O);
+            for kk=1:length(Onames)
+                queue{end+1}=[fieldpath,Onames(kk)];
+            end
+        elseif ischar(O) || isstring(O) || iscell(O) % text (the comments): must be the same text
+            P=getfield(AllStatsPathC,fieldpath{:});
+            nanmismatch=nanmismatch+(~isequal(P{tt},O));
+        else
+            O=gather(O);
+            P=getfield(AllStatsPathC,fieldpath{:});
+            P=P(:,tt);
+            maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+            nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+        end
+    end
+end
+fprintf('Stats, %s: (A3) on the do-nothing path, EvalFnOnTransPath_AllStats vs the stationary AllStats, every period, this should be zero: %.3e \n',statsname,maxdiff)
+fprintf('Stats, %s: (A3) on the do-nothing path, EvalFnOnTransPath_AllStats vs the stationary AllStats, every period, positions NaN (or text) in one but not the other, this should be zero: %i \n',statsname,nanmismatch)
+% (L3) every cohort's profile is the stationary profile, where the cohort is alive
+maxdiffI=0; maxdiffB=0; nanmisI=0; nanmisB=0;
+for ff=1:length(fnnames)
+    for oo=1:length(OutputTypes)
+        PI=gather(LCPPathC.(fnnames{ff}).initialages.(OutputTypes{oo}));
+        PB=gather(LCPPathC.(fnnames{ff}).bornduringtranstion.(OutputTypes{oo}));
+        OI=nan(size(PI));
+        OB=nan(size(PB));
+        temp=gather(LCP_stat.(fnnames{ff}).(OutputTypes{oo}));
+        for tt=1:min(T,N_j)
+            for jj=1:N_j-tt+1
+                if scalarstat(oo)==1
+                    OI(jj,jj+tt-1)=temp(jj+tt-1);
+                else
+                    OI(:,jj,jj+tt-1)=temp(:,jj+tt-1);
+                end
+            end
+        end
+        for ii=1:T
+            for age=1:N_j
+                if ii+age-1<=T
+                    if scalarstat(oo)==1
+                        OB(ii,age)=temp(age);
+                    else
+                        OB(:,ii,age)=temp(:,age);
+                    end
+                end
+            end
+        end
+        maxdiffI=max([maxdiffI; abs(PI(:)-OI(:))],[],'omitnan');
+        maxdiffB=max([maxdiffB; abs(PB(:)-OB(:))],[],'omitnan');
+        nanmisI=nanmisI+sum(isnan(PI(:))~=isnan(OI(:)));
+        nanmisB=nanmisB+sum(isnan(PB(:))~=isnan(OB(:)));
+    end
+end
+fprintf('Stats, %s: (L3) LifeCycleProfiles_TransPath initialages vs the stationary profiles on the do-nothing path, all seven outputs, this should be zero: %.3e \n',statsname,maxdiffI)
+fprintf('Stats, %s: (L3) LifeCycleProfiles_TransPath bornduringtranstion vs the stationary profiles on the do-nothing path, all seven outputs, this should be zero: %.3e \n',statsname,maxdiffB)
+fprintf('Stats, %s: (L3) LifeCycleProfiles_TransPath entries NaN in one but not the other on the do-nothing path, initialages %i and bornduringtranstion %i, this should be zero: %i \n',statsname,nanmisI,nanmisB,nanmisI+nanmisB)
+
+clear AggVarsPathS AllStatsPathR AllStatsPathL AllStatsPathO PolicyPathC AgentDistPathC AllStatsPathC LCPPathC
+
+clear V_s Policy_s AgentDist_s PolicyPathS AgentDistPathS AllStatsPath LCPPath AScell LCPcell
+
 %% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
 
 % First, create initial dist (current one is on n_a_big)
