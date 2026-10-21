@@ -5,7 +5,8 @@
 % Differences from the FHorz setup:
 %   - No N_j, no AgeWeightParamNames, no agej/Jr/pension, no kappa_j age profile
 %   - Discount: just beta (no age-dependent factor)
-%   - No semiz (this bank sweeps with/without d, with/without z, and an iid e without z)
+%   - semiz (the semi-exogenous state, whose transitions depend on the last decision variable d2) is as in the FHorz
+%     setup: n_semiz=2 employed/not-employed, a binary d2 (search effort), and an optional d1 (labor supply)
 %
 % Note on the noz cases: with no exogenous shock the InfHorz stationary
 % distribution collapses to a single mass point, so the moment/autocorrelation/
@@ -18,8 +19,13 @@ n_a=101;
 n_a_big=1001; % to test Grid Interpolation
 n_z=5;
 n_e=3;
+n_semiz=2; % hardcoded into CoreInfHorzSetup_SemiExoStateFn
+n_d_semiz=[9,2]; % n_d for semiz models with d1
+n_d2_semiz=2; % n_d for semiz models without d1
 
 d_grid=linspace(0,1,n_d)';
+d_grid_semiz=[linspace(0,1,n_d)'; 0;1]; % d grid for semiz models, binary d2, with d1
+d2_grid_semiz=[0;1]; % d grid for semiz models, binary d2, without d1
 a_grid=5*linspace(0,1,n_a)'.^3;
 a_grid_big=5*linspace(0,1,n_a_big)'.^3; % to test Grid Interpolation (same grid, just more points)
 
@@ -46,9 +52,14 @@ Params.varphi=0.8; % relative weight of leisure in utility
 Params.w=1;
 Params.r=0.05;
 
-% vfoptions/simoptions baselines (nothing semiz specific here, but keep the
-% same calling convention as the other test banks). The e is carried on the baselines, and the
-% subcodes that use e copy it across; the subcodes that do not use e simply ignore it.
+% semiz (as in the FHorz setup)
+Params.uempbenefit=0.2;
+Params.searcheffortcost=0.6;
+Params.probfindjob=0.7;
+Params.problosejob=0.3;
+
+% vfoptions/simoptions baselines. The e and the semiz are carried on the baselines, and the
+% subcodes that use them copy them across; the subcodes that do not use them simply ignore them.
 vfoptionsbaseline=struct();
 vfoptionsbaseline.n_e=n_e;
 vfoptionsbaseline.e_grid=e_grid;
@@ -57,3 +68,10 @@ simoptionsbaseline=struct();
 simoptionsbaseline.n_e=n_e;
 simoptionsbaseline.e_grid=e_grid;
 simoptionsbaseline.pi_e=pi_e;
+% semiz
+vfoptionsbaseline.n_semiz=n_semiz;
+vfoptionsbaseline.semiz_grid=[0; 1]; % interpretation: 1 is employed, 0 is not-employed
+vfoptionsbaseline.SemiExoStateFn=@(n,nprime,dsemiz,probfindjob,problosejob) CoreInfHorzSetup_SemiExoStateFn(n,nprime,dsemiz,probfindjob,problosejob);
+simoptionsbaseline.n_semiz=vfoptionsbaseline.n_semiz;
+simoptionsbaseline.semiz_grid=vfoptionsbaseline.semiz_grid;
+simoptionsbaseline.SemiExoStateFn=vfoptionsbaseline.SemiExoStateFn;

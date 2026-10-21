@@ -1,4 +1,4 @@
-function output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames)
+function output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,n_d2_semiz,d2_grid_semiz,vfoptionsbaseline,simoptionsbaseline)
 % EvalFnOnAgentDist_AutoCorrTransProbs_InfHorz against a brute-force calculation written here independently of the
 % command: Mean, StdDeviation, AutoCovariance and AutoCorrelation at horizons 1 and simoptions.timehorizons=[2,3,5]
 % (the tperiodsK fields), and the TransitionProbs between unique values and between quintiles (simoptions.transprobquantiles=5)
@@ -10,12 +10,19 @@ function output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_
 % distribution, and the transition probabilities between value bins are the joint distribution summed over the bins
 % and divided by the origin bin's mass (NaN where the origin bin has no mass, which is what the command returns).
 %
-% Three models, each solved with and without the grid interpolation layer, so the command is exercised on z-only,
-% e-only and z-and-e states (the e shock is an iid passed through simoptions.n_e/e_grid/pi_e, and the command keeps it
-% apart from the markov z throughout).
+% Five models, each solved with and without the grid interpolation layer, so the command is exercised on
+% z-only, e-only, z-and-e, semiz-and-z and semiz-z-and-e states (the e shock is an iid passed through simoptions.n_e/e_grid/pi_e, and the
+% command keeps it apart from the markov z throughout).
 %   z-only:  no d, markov z          (state (a,z),   ReturnFn_nod_z_noe_nosemiz)
 %   e-only:  no d, iid e             (state (a,e),   ReturnFn_nod_noz_e_nosemiz)
 %   z-and-e: no d, markov z, iid e   (state (a,z,e), ReturnFn_nod_z_e_nosemiz; z varies first, then e)
+%   semiz-and-z: d2 only, semiz, markov z (state (a,semiz,z), ReturnFn_nod1_z_noe_semiz; semiz varies first, then z),
+%            with and without the grid interpolation layer. The kernel uses pi_semiz(semiz,semiz'|d2) at the
+%            policy d2, with pi_semiz built here from the SemiExoStateFn, and the shock is z (its transitions are pi_z^k
+%            whatever the policy).
+%   semiz-z-and-e: as semiz-and-z, with an iid e as well (state (a,semiz,z,e), ReturnFn_nod1_z_e_semiz; semiz varies
+%            first, then z, then e), with and without the grid interpolation layer. The kernel also has pi_e(e'), and the shock is z*e (its transitions are
+%            kron(pi_e,pi_z^k) whatever the policy, as in z-and-e).
 % Checks, all exact identities (CoreSummary reads the diary back and applies its bar):
 %   B1. the dense kernel's rows sum to one, and the stationary dist is a fixed point of it (close to zero: the dist is
 %       only converged to the iteration tolerance)
@@ -29,8 +36,6 @@ function output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_
 
 fprintf('\n========== CoreInfHorz_AutoCorrBruteForce ==========\n')
 
-n_d=0;
-d_grid=[];
 timehorizons=[2,3,5];
 horizons=[1,timehorizons];
 Kmax=max(horizons);
@@ -39,7 +44,8 @@ nq=5; % quintiles
 pi_z_cpu=gather(pi_z);
 pi_e_cpu=gather(pi_e(:));
 
-for mm=1:3
+for mm=1:5
+    n_d=0; d_grid=[]; n_semizm=0;
     if mm==1
         mstr='z-only';
         n_zm=n_z; z_gridm=z_grid; pi_zm=pi_z; n_em=0;
@@ -58,7 +64,7 @@ for mm=1:3
         FnsToEvaluate.earnings=@(aprime,a,e,w) w*e;
         FnsToEvaluate.consumption=@(aprime,a,e,r,w) (1+r)*a+w*e-aprime;
         FnsToEvaluate.shock=@(aprime,a,e) e;
-    else
+    elseif mm==3
         mstr='z-and-e';
         n_zm=n_z; z_gridm=z_grid; pi_zm=pi_z; n_em=n_e;
         ReturnFn=@(aprime,a,z,e,r,w,sigma) ReturnFn_nod_z_e_nosemiz(aprime,a,z,e,r,w,sigma);
@@ -67,15 +73,52 @@ for mm=1:3
         FnsToEvaluate.earnings=@(aprime,a,z,e,w) w*z*e;
         FnsToEvaluate.consumption=@(aprime,a,z,e,r,w) (1+r)*a+w*z*e-aprime;
         FnsToEvaluate.shock=@(aprime,a,z,e) z*e; % the product takes n_z*n_e distinct values (the grids are exp of AR(1) grids, so no two products coincide)
+    elseif mm==4
+        mstr='semiz-and-z';
+        n_zm=n_z; z_gridm=z_grid; pi_zm=pi_z; n_em=0;
+        n_d=n_d2_semiz; d_grid=d2_grid_semiz; n_semizm=vfoptionsbaseline.n_semiz;
+        ReturnFn=@(d2,aprime,a,semiz,z,r,w,sigma,uempbenefit,searcheffortcost) ReturnFn_nod1_z_noe_semiz(d2,aprime,a,semiz,z,r,w,sigma,uempbenefit,searcheffortcost);
+        FnsToEvaluate=struct();
+        FnsToEvaluate.assets=@(d2,aprime,a,semiz,z) a;
+        FnsToEvaluate.earnings=@(d2,aprime,a,semiz,z,w) w*z*semiz;
+        FnsToEvaluate.consumption=@(d2,aprime,a,semiz,z,r,w,uempbenefit) (1+r)*a+w*z*semiz+uempbenefit*(1-semiz)-aprime;
+        FnsToEvaluate.shock=@(d2,aprime,a,semiz,z) z;
+    else
+        mstr='semiz-z-and-e';
+        n_zm=n_z; z_gridm=z_grid; pi_zm=pi_z; n_em=n_e;
+        n_d=n_d2_semiz; d_grid=d2_grid_semiz; n_semizm=vfoptionsbaseline.n_semiz;
+        ReturnFn=@(d2,aprime,a,semiz,z,e,r,w,sigma,uempbenefit,searcheffortcost) ReturnFn_nod1_z_e_semiz(d2,aprime,a,semiz,z,e,r,w,sigma,uempbenefit,searcheffortcost);
+        FnsToEvaluate=struct();
+        FnsToEvaluate.assets=@(d2,aprime,a,semiz,z,e) a;
+        FnsToEvaluate.earnings=@(d2,aprime,a,semiz,z,e,w) w*z*semiz*e;
+        FnsToEvaluate.consumption=@(d2,aprime,a,semiz,z,e,r,w,uempbenefit) (1+r)*a+w*z*semiz*e+uempbenefit*(1-semiz)-aprime;
+        FnsToEvaluate.shock=@(d2,aprime,a,semiz,z,e) z*e; % n_z*n_e distinct values, as in z-and-e
+    end
+    if n_semizm>0
+        % pi_semiz(semiz,semiz',d2), straight from the SemiExoStateFn (on the grid values)
+        semiz_gridm=vfoptionsbaseline.semiz_grid;
+        pi_semiz_bf=zeros(n_semizm,n_semizm,n_d);
+        for s1=1:n_semizm
+            for s2=1:n_semizm
+                for d2=1:n_d
+                    pi_semiz_bf(s1,s2,d2)=CoreInfHorzSetup_SemiExoStateFn(semiz_gridm(s1),semiz_gridm(s2),d2_grid_semiz(d2),Params.probfindjob,Params.problosejob);
+                end
+            end
+        end
     end
     FnNames=fieldnames(FnsToEvaluate);
-    n_zr=max(n_zm,1); n_er=max(n_em,1);
-    N_s=n_a*n_zr*n_er;
+    n_zr=max(n_zm,1); n_er=max(n_em,1); n_semizr=max(n_semizm,1);
+    N_s=n_a*n_semizr*n_zr*n_er;
     vfoptions=struct();
     simoptions=struct();
     if n_em>0
         vfoptions.n_e=n_em; vfoptions.e_grid=e_grid; vfoptions.pi_e=pi_e;
         simoptions.n_e=n_em; simoptions.e_grid=e_grid; simoptions.pi_e=pi_e;
+    end
+    if n_semizm>0
+        vfoptions.n_semiz=vfoptionsbaseline.n_semiz; vfoptions.semiz_grid=vfoptionsbaseline.semiz_grid; vfoptions.SemiExoStateFn=vfoptionsbaseline.SemiExoStateFn;
+        simoptions.n_semiz=simoptionsbaseline.n_semiz; simoptions.semiz_grid=simoptionsbaseline.semiz_grid; simoptions.SemiExoStateFn=simoptionsbaseline.SemiExoStateFn;
+        simoptions.d_grid=d_grid;
     end
 
     for cfg=1:2
@@ -110,34 +153,75 @@ for mm=1:3
         dist=gpuArray(reshape(gather(StationaryDist),[N_s,1]));
 
         % One-period kernel T: T(s,s')=1{a'=aprime(s)} pi_z(z,z') pi_e(e') (two a' points with the GI weights)
-        Policy_cpu=reshape(gather(Policy),[size(Policy,1),n_a,n_zr,n_er]);
         T=zeros(N_s,N_s);
-        for zz=1:n_zr
-            for ee=1:n_er
-                rows=(1:n_a)'+n_a*(zz-1)+n_a*n_zr*(ee-1);
-                aplow=reshape(Policy_cpu(1,:,zz,ee),[n_a,1]);
-                if ngridinterp==0
-                    pup=zeros(n_a,1);
-                else
-                    L2index=reshape(Policy_cpu(2,:,zz,ee),[n_a,1]);
-                    L2flag=reshape(Policy_cpu(3,:,zz,ee),[n_a,1]);
-                    pup=(L2index-1)/(ngridinterp+1);
-                    pup(L2flag==1)=0; % all weight on the lower grid point
-                    pup(L2flag==3)=1; % all weight on the upper grid point
+        if n_semizm>0
+            % T((a,semiz,z,e),(a',semiz',z',e'))=1{a'=aprime(a,semiz,z,e)} pi_semiz(semiz,semiz'|d2(a,semiz,z,e)) pi_z(z,z') pi_e(e')
+            Policy_cpu=reshape(gather(Policy),[size(Policy,1),n_a,n_semizm,n_zr,n_er]); % rows (d2,aprime)
+            for s1=1:n_semizm
+                for zz=1:n_zr
+                    for ee=1:n_er
+                        for a1=1:n_a
+                            row=a1+n_a*(s1-1)+n_a*n_semizm*(zz-1)+n_a*n_semizm*n_zr*(ee-1);
+                            d2=Policy_cpu(1,a1,s1,zz,ee);
+                            ap=Policy_cpu(2,a1,s1,zz,ee); % (the lower grid point, with the grid interpolation layer)
+                            if ngridinterp==0
+                                pup=0;
+                            else
+                                pup=(Policy_cpu(3,a1,s1,zz,ee)-1)/(ngridinterp+1); % rows (d2,aprime,L2,L2flag)
+                                if Policy_cpu(4,a1,s1,zz,ee)==1
+                                    pup=0; % all weight on the lower grid point
+                                elseif Policy_cpu(4,a1,s1,zz,ee)==3
+                                    pup=1; % all weight on the upper grid point
+                                end
+                            end
+                            for s2=1:n_semizm
+                                for zz2=1:n_zr
+                                    for ee2=1:n_er
+                                        prob=pi_semiz_bf(s1,s2,d2)*pi_z_cpu(zz,zz2);
+                                        if n_em>0
+                                            prob=prob*pi_e_cpu(ee2);
+                                        end
+                                        col=ap+n_a*(s2-1)+n_a*n_semizm*(zz2-1)+n_a*n_semizm*n_zr*(ee2-1);
+                                        T(row,col)=T(row,col)+prob*(1-pup);
+                                        if ngridinterp>0
+                                            T(row,col+1)=T(row,col+1)+prob*pup; % upper point is ap+1, the next row of the same (semiz',z',e')
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
                 end
-                for zz2=1:n_zr
-                    for ee2=1:n_er
-                        prob=1;
-                        if n_zm>0
-                            prob=prob*pi_z_cpu(zz,zz2);
-                        end
-                        if n_em>0
-                            prob=prob*pi_e_cpu(ee2);
-                        end
-                        cols=aplow+n_a*(zz2-1)+n_a*n_zr*(ee2-1);
-                        T(rows+(cols-1)*N_s)=T(rows+(cols-1)*N_s)+prob*(1-pup);
-                        if ngridinterp>0
-                            T(rows+cols*N_s)=T(rows+cols*N_s)+prob*pup; % upper point is aplow+1, so one column further
+            end
+        else
+            Policy_cpu=reshape(gather(Policy),[size(Policy,1),n_a,n_zr,n_er]);
+            for zz=1:n_zr
+                for ee=1:n_er
+                    rows=(1:n_a)'+n_a*(zz-1)+n_a*n_zr*(ee-1);
+                    aplow=reshape(Policy_cpu(1,:,zz,ee),[n_a,1]);
+                    if ngridinterp==0
+                        pup=zeros(n_a,1);
+                    else
+                        L2index=reshape(Policy_cpu(2,:,zz,ee),[n_a,1]);
+                        L2flag=reshape(Policy_cpu(3,:,zz,ee),[n_a,1]);
+                        pup=(L2index-1)/(ngridinterp+1);
+                        pup(L2flag==1)=0; % all weight on the lower grid point
+                        pup(L2flag==3)=1; % all weight on the upper grid point
+                    end
+                    for zz2=1:n_zr
+                        for ee2=1:n_er
+                            prob=1;
+                            if n_zm>0
+                                prob=prob*pi_z_cpu(zz,zz2);
+                            end
+                            if n_em>0
+                                prob=prob*pi_e_cpu(ee2);
+                            end
+                            cols=aplow+n_a*(zz2-1)+n_a*n_zr*(ee2-1);
+                            T(rows+(cols-1)*N_s)=T(rows+(cols-1)*N_s)+prob*(1-pup);
+                            if ngridinterp>0
+                                T(rows+cols*N_s)=T(rows+cols*N_s)+prob*pup; % upper point is aplow+1, so one column further
+                            end
                         end
                     end
                 end
@@ -200,7 +284,7 @@ for mm=1:3
                 end
                 % The shock's own transitions are known in closed form
                 if strcmp(fn{1},'shock') && isequal(size(P),size(P_bf))
-                    if mm==1 % z: the rows are those of pi_z^k (the unique values of z are the grid points, in the grid order)
+                    if mm==1 || mm==4 % z: the rows are those of pi_z^k (the unique values of z are the grid points, in the grid order)
                         P_an=pi_z_cpu^kk;
                         fprintf('AutoCorr brute force B3 (%s), shock%s TransitionProbs vs pi_z^k, this should be zero: %.3e \n',cfgstr,hstr,max(abs(P(:)-P_an(:))))
                     elseif mm==2 % e: every row is pi_e
@@ -209,7 +293,7 @@ for mm=1:3
                     elseif nb==n_z*n_e % z*e: (z,e) to (z',e') is pi_z^k(z,z')*pi_e(e'), with the bins in the order of the sorted products
                         P_an=kron(pi_e_cpu',pi_z_cpu^kk); % rows (z,e) with z varying first, columns likewise
                         P_an=repmat(P_an,n_e,1); % the row only depends on z, so the kron's n_z rows repeat for every e
-                        [~,ord]=sort(gather(Vals{ff}(1:n_a:N_s))); % the states (a=1,z,e) in column-major order (z first), sorted by the product: bin b is the pair ord(b)
+                        [~,ord]=sort(gather(Vals{ff}(1:n_a*n_semizr:N_s))); % the states (a=1,(semiz=1,)z,e) in column-major order (z first), sorted by the product: bin b is the pair ord(b)
                         P_an=P_an(ord,ord);
                         fprintf('AutoCorr brute force B3 (%s), shock%s TransitionProbs vs kron(pi_e,pi_z^k), this should be zero: %.3e \n',cfgstr,hstr,max(abs(P(:)-P_an(:))))
                     else

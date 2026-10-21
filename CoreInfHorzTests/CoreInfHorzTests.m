@@ -7,7 +7,8 @@
 % NOT tested here:
 %   - divide-and-conquer: not usable for InfHorz (too slow); it is tested in
 %     the InfHorz-TPath test bank instead
-%   - semiz
+%   - semiz beyond the value function and agent dist (doPart(9) is so far ValueFnIter, ValueFnFromPolicy and
+%     StationaryDist with semiz), and semiz with e
 
 
 %% Which parts to run
@@ -20,9 +21,12 @@
 % doPart(3): two endogenous states (figs 17-18)
 % doPart(4): two-endo cross-tests: second state ignored
 % doPart(5): two-endo cross-tests: first state ignored
-% doPart(6): AutoCorrTransProbs brute force (z-only, e-only and z-and-e; horizons and TransitionProbs vs dense kernels; no figures)
+% doPart(6): AutoCorrTransProbs brute force (z-only, e-only, z-and-e, semiz-and-z and semiz-z-and-e; horizons and TransitionProbs vs dense kernels; no figures)
 % doPart(7): conditional restrictions in CrossSectionCovarCorr, AllStats and AutoCorrTransProbs, every statistic vs brute force (one and two endogenous states; no figures)
 % doPart(8): simoptions.whichcombos (and per-combination whichstats) in AllStats, AggVars, AutoCorrTransProbs and CrossSectionCovarCorr (no figures)
+% doPart(9): semiz, one endogenous state (figs 9-12)
+% doPart(10): semiz cross-tests (trivial z with semiz; semiz that is really a markov == z; and the same with e)
+% doPart(11): semiz with e, one endogenous state (figs 13-16)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -31,7 +35,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -167,8 +171,8 @@ if doPart(6)==1
     % transition matrix) against dense per-model kernels built here from Policy and pi_z/pi_e: Mean, StdDeviation,
     % AutoCovariance/AutoCorrelation at horizons 1,2,3,5 (the tperiodsK fields) and TransitionProbs (unique values and
     % quintiles) at the same horizons, on z-only, e-only and z-and-e models, with and without the grid interpolation
-    % layer
-    output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames);
+    % layer, and on semiz-and-z and semiz-z-and-e models with and without it
+    output=CoreInfHorz_AutoCorrBruteForce(n_a,n_z,n_e,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,n_d2_semiz,d2_grid_semiz,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(6): AutoCorrTransProbs brute force
 
 %% ===== doPart(7): conditional restrictions =====
@@ -190,6 +194,76 @@ if doPart(8)==1
     % broadcast inputs vs their expansions, invalid inputs error. The InfHorz counterpart of CoreFHorzTests part 13.
     output=CoreInfHorz_WhichCombos(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
 end % doPart(8): whichcombos
+
+%% ===== doPart(9): semiz (figs 9-12) =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): semiz (figs 9-12) =====\n')
+    %% The semiz tiers mirror the z tiers, with a semi-exogenous state semiz whose transitions depend on the decision
+    % variable d2 (binary search effort), and with or without a d1 (labor supply). Everything, including the grid
+    % interpolation layer. (Figs 13-16 are the semiz with e tiers, doPart(11).)
+
+    %% without d1, without z, with semiz
+    figure_c=9;
+    output=CoreInfHorz_nod1_noz_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d1, without z, with semiz
+    figure_c=10;
+    output=CoreInfHorz_d1_noz_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% without d1, with z, with semiz
+    figure_c=11;
+    output=CoreInfHorz_nod1_z_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d1, with z, with semiz
+    figure_c=12;
+    output=CoreInfHorz_d1_z_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(9): semiz (figs 9-12)
+
+%% ===== doPart(10): semiz cross-tests =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): semiz cross-tests =====\n')
+    %% Cross-tests: run things that should give the same answer, disguised different ways, and check they do
+    % trivial z with semiz: a single trivial z point (value 1, prob 1) with semiz reproduces the noz with semiz code path
+    % semiz as z: a semiz whose transitions do not depend on d2 (so really just a markov) gives the same answer as when it
+    %   is declared as a markov z, both alone and together with a z (as a two-dimensional markov z)
+    % with e: a markov z that is an iid in disguise == the e (with semiz); the z-and-e code with a trivial z or a trivial e;
+    %   and the semiz-as-z tests again with the grid interpolation layer, with an iid e, and with both
+    output=CoreInfHorz_CrossTests_nod1_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorz_CrossTests_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+
+    output=CoreInfHorz_CrossTests2_nod1_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorz_CrossTests2_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(10): semiz cross-tests
+
+%% ===== doPart(11): semiz with e (figs 13-16) =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): semiz with e (figs 13-16) =====\n')
+    %% The semiz tiers of figs 9-12, with an iid e as well. Everything, including the grid interpolation layer.
+
+    %% without d1, without z, with e, with semiz
+    figure_c=13;
+    output=CoreInfHorz_nod1_noz_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d1, without z, with e, with semiz
+    figure_c=14;
+    output=CoreInfHorz_d1_noz_e_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% without d1, with z, with e, with semiz
+    figure_c=15;
+    output=CoreInfHorz_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d1, with z, with e, with semiz
+    figure_c=16;
+    output=CoreInfHorz_d1_z_e_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(11): semiz with e (figs 13-16)
 
 %% Done!
 

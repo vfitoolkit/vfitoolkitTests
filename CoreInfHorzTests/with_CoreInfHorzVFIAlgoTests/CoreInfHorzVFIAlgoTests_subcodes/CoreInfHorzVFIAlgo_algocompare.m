@@ -93,6 +93,46 @@ end
 
 clear V2 V3 V4 V5 V6 V7 V8 V9 Policy2 Policy3 Policy4 Policy5 Policy6 Policy7 Policy8 Policy9
 
+%% With semiz, the grid interpolation layer is so far only postGI, so the semiz models run their own short GI part here
+% and stop: HowardMix (2/3), postGIrepeat and preGI are refused. Sparse and greedy Howards are only implemented without
+% a d1 (with a d1 howardssparse is ignored, it would be the same indexed solve so comparing it against the reference
+% would test nothing, and howardsgreedy=1 is refused), so the models with a d1 skip those two.
+if isfield(vfoptions,'n_semiz')
+    vfoGI=vfoptions; vfoGI.gridinterplayer=1; vfoGI.ngridinterp=5;
+    vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0;
+    [VG,PolicyG]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+
+    % Howards OFF (howards=0 => pure value function iteration on both the coarse and the fine stage)
+    vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.howards=0;
+    [VG8,PolicyG8]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('GI:   howards=0 (pure VFI) vs ref,     V   should be ~0: %.3e \n',max(abs(VG(:)-VG8(:))));
+    fprintf('GI:   howards=0 (pure VFI) vs ref,     Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG8(:))));
+
+    if length(n_d)>1
+        % lowmemory=1 (with a d1 the fine return matrix is built one exogenous state, or with e one e, at a time)
+        vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.lowmemory=1;
+        [VG9,PolicyG9]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+        fprintf('GI:   lowmemory1 vs ref,               V   should be ~0: %.3e \n',max(abs(VG(:)-VG9(:))));
+        fprintf('GI:   lowmemory1 vs ref,               Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG9(:))));
+    else
+        % howardssparse=1 (without a d1; also the default with the grid interpolation layer)
+        vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=1;
+        [VG6,PolicyG6]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+        fprintf('GI:   sparse1 vs ref,                  V   should be ~0: %.3e \n',max(abs(VG(:)-VG6(:))));
+        fprintf('GI:   sparse1 vs ref,                  Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG6(:))));
+
+        % howardsgreedy=1 (without a d1)
+        vfo=vfoGI; vfo.howardsgreedy=1; vfo.howardssparse=0;
+        [VG3,PolicyG3]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+        fprintf('GI:   greedy1 vs ref,                  V   should be ~0: %.3e \n',max(abs(VG(:)-VG3(:))));
+        fprintf('GI:   greedy1 vs ref,                  Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG3(:))));
+    end
+    clear VG VG3 VG6 VG8 VG9 PolicyG PolicyG3 PolicyG6 PolicyG8 PolicyG9
+    fprintf('GI parts (2-5) otherwise not run, with semiz the grid interpolation layer is so far only postGI \n');
+    output=struct();
+    return
+end
+
 %% Part 2: WITH grid interpolation, all (implemented) algorithm variants should give the same V and Policy
 % Reference GI: howardsgreedy=0, howardssparse=0, preGI=0 (postGI, the default)
 vfoGI=vfoptions; vfoGI.gridinterplayer=1; vfoGI.ngridinterp=5;

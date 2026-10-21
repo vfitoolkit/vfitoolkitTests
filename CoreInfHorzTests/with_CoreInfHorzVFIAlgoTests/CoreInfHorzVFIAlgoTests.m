@@ -21,7 +21,8 @@
 %
 % NOT tested here:
 %   - divide-and-conquer: not usable for InfHorz (too slow); tested in the InfHorz-TPath bank
-%   - semiz: not implemented for InfHorz value function iteration
+%   - semiz with the grid interpolation layer beyond postGI (doPart(8) and doPart(9) run a short GI part for the semiz
+%     models: reference, howards=0, and lowmemory=1 with a d1 or sparse and greedy without)
 % Some (option x GI) combinations are not yet implemented in the toolkit; those
 % lines are included but commented out (see CoreInfHorzVFIAlgo_algocompare.m).
 %
@@ -39,6 +40,8 @@
 % doPart(5): Howards settings scan
 % doPart(6): Howards defaults on big grids
 % doPart(7): Howards settings with two endogenous states
+% doPart(8): semiz (with/without d1, with/without z; Part 1 and a short postGI part)
+% doPart(9): semiz with e (with/without d1, with/without z; Part 1 and a short postGI part)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -47,7 +50,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (written to the parent bank's TestOutput folder)
 if ~exist('../TestOutput','dir')
@@ -154,6 +157,26 @@ if doPart(7)==1
     % Part C: check the defaults dispatch, ie solve with nothing set and confirm it runs and matches.
     output=CoreInfHorzVFIAlgo_ScanHowardsSettingsWith2A(Params,DiscountFactorParamNames);
 end % doPart(7): Howards settings with two endogenous states
+
+%% ===== doPart(8): semiz =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): semiz =====\n')
+    %% With a semi-exogenous state semiz (its transitions depend on the decision variable d2), with/without d1, with/without
+    % z. Part 1, and a short GI part (postGI: reference, howards=0, and lowmemory=1 with a d1 or sparse and greedy without).
+    output=CoreInfHorzVFIAlgo_nod1_noz_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_nod1_z_noe_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_d1_noz_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_d1_z_noe_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(8): semiz
+
+if doPart(9)==1
+    fprintf('\n===== doPart(9): semiz with e =====\n')
+    %% As doPart(8), with an iid e as well.
+    output=CoreInfHorzVFIAlgo_nod1_noz_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_nod1_z_e_semiz(n_d2_semiz,n_a,n_a_big,n_z,d2_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_d1_noz_e_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+    output=CoreInfHorzVFIAlgo_d1_z_e_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(9): semiz with e
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
