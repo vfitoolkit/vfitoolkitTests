@@ -91,7 +91,32 @@ if prod(n_d)>0
     fprintf('noGI: purediscretization howards=0,    Pol should be  0: %.3e \n',max(abs(Policy(:)-Policy9(:))));
 end
 
-clear V2 V3 V4 V5 V6 V7 V8 V9 Policy2 Policy3 Policy4 Policy5 Policy6 Policy7 Policy8 Policy9
+% outputkron=1. With one d and one a the un-Kron'd Policy is the Kron one with its dimensions spelt out, so the two
+% must hold the same numbers. With a d this is the 2-row Policy, which the outputkron=1 reshape has to keep both rows of.
+% (Only the models without e and without semiz, those are the outputkron branches checked here.)
+if ~isfield(vfoptions,'n_e') && ~isfield(vfoptions,'n_semiz')
+    vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.outputkron=1;
+    [V10,Policy10]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('noGI: outputkron=1 vs ref,             V   should be  0: %.3e \n',max(abs(V(:)-V10(:))));
+    fprintf('noGI: outputkron=1 vs ref,             Pol should be  0: %.3e \n',max(abs(Policy(:)-Policy10(:))));
+    if prod(n_d)>0
+        vfo=vfoptions; vfo.solnmethod='purediscretization'; vfo.outputkron=1;
+        [V11,Policy11]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+        fprintf('noGI: purediscretization outputkron=1, V   should be ~0: %.3e \n',max(abs(V(:)-V11(:))));
+        fprintf('noGI: purediscretization outputkron=1, Pol should be  0: %.3e \n',max(abs(Policy(:)-Policy11(:))));
+    end
+end
+
+clear V2 V3 V4 V5 V6 V7 V8 V9 V10 V11 Policy2 Policy3 Policy4 Policy5 Policy6 Policy7 Policy8 Policy9 Policy10 Policy11
+
+%% Without z and without e, the grid interpolation layer is a single postGI solve that reads neither howardsgreedy nor
+% howardssparse, so the Part 2 comparisons would compare a solve with itself, and preGI (Part 3) is not implemented.
+% So these models stop after Part 1.
+if prod(n_z)==0 && ~isfield(vfoptions,'n_e')
+    fprintf('GI parts (2-5) not run, without z and e the grid interpolation layer is a single postGI solve (no Howards options, no preGI) \n');
+    output=struct();
+    return
+end
 
 %% With semiz, the grid interpolation layer is so far only postGI, so the semiz models run their own short GI part here
 % and stop: HowardMix (2/3), postGIrepeat and preGI are refused. Sparse and greedy Howards are only implemented without
