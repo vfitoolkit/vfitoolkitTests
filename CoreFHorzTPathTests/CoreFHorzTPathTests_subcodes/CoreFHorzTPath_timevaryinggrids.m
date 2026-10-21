@@ -1,0 +1,390 @@
+function output=CoreFHorzTPath_timevaryinggrids(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline)
+% z and e grids that vary over the transition path: z_grid as [n_z,T] and simoptions.e_grid as [n_e,T]
+% (the 'time-varying, age-independent, stacked' input shapes of ExogShockSetup_FHorz_TPath).
+%
+% THE METHOD. EvalFnOnTransPath_AllStats_Case1_FHorz and LifeCycleProfiles_TransPath_FHorz_Case1 are,
+% period by period, the stationary command applied to that period's slice of the agent dist and policy
+% paths, at that period's prices, parameters AND grids. So the oracle is the stationary command called on
+% each period by hand, given that period's column of the grid (z_gridT(:,tt), e_gridT(:,tt)) directly,
+% not via the transition-path shock setup the commands use.
+%
+% Models: (1) z, (2) e, (3) z and e (no d). Each grid drifts up over the path, by a factor 1+0.1*t/T.
+% Three runs per model, each the full chain ValueFnOnTransPath -> AgentDistOnTransPath -> stats:
+%   drift:    the drifting grids
+%   constant: grids that are time-varying in form but constant over t (the plain grid repeated T times)
+%   plain:    the ordinary time-invariant grids
+% The value fn and agent dist paths in V1-V4 use transpathoptions.fastOLG=0; V5 checks fastOLG=1 against them.
+%   (V1) drift: AllStats along the path vs the stationary AllStats period by period, with that period's grids
+%   (V2) drift: LifeCycleProfiles along the path vs the stationary profiles period by period (the cohort
+%        bookkeeping, as in figs 1-16), and NaN exactly where no cohort is
+%   (V3) drift: EvalFnOnTransPath_AggVars Mean vs the AllStats Mean
+%   (V4) constant vs plain: PolicyPath, AgentDistPath, AllStats and LifeCycleProfiles all identical (the
+%        time-varying route through value fn, agent dist and stats agrees with the ordinary one)
+%   and, for scale, how far the drift moves earnings from the plain run (must not be zero, or V1-V3 are empty)
+%   (V5) drift and constant: the value fn and agent dist paths with fastOLG=1 equal those with fastOLG=0
+%   (V6) one iteration of TransitionPath_Case1_FHorz with the drifting grids, fastOLG=1 vs fastOLG=0, with a
+%        general eqm condition that depends on earnings; for z and e also with only one of them drifting
+%   (V7) pi_e that depends on age (not on the path): value fn and agent dist paths, fastOLG=1 vs fastOLG=0
+
+OutputTypes={'Mean','Median','Variance','LorenzCurve','Gini','QuantileCutoffs','QuantileMeans'};
+scalarstat=[1,1,1,0,1,0,0]; % Mean, Median, Variance, Gini are one number per age
+
+n_d=0;
+d_grid=[];
+n_e=vfoptionsbaseline.n_e;
+e_grid=vfoptionsbaseline.e_grid;
+pi_e=vfoptionsbaseline.pi_e;
+driftfactor=1+0.1*(1:1:T)/T; % [1,T]
+z_gridT=z_grid.*driftfactor; % [n_z,T]
+e_gridT=e_grid.*driftfactor; % [n_e,T]
+
+PricePathNamesV=fieldnames(PricePath);
+ParamPathNamesV=fieldnames(ParamPath);
+
+for mm=1:3
+    %% The model
+    if mm==1
+        modelname='z';
+        n_zm=n_z; pi_zm=pi_z;
+        usee=0;
+        jequaloneDist=zeros([n_a,n_z],'gpuArray');
+        jequaloneDist(1,ceil(n_z/2))=1;
+        ReturnFn=@(aprime,a,z,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,sigma,agej,Jr,pension);
+        FnsToEvaluate=struct();
+        FnsToEvaluate.assets=@(aprime,a,z) a;
+        FnsToEvaluate.earnings=@(aprime,a,z,w,kappa_j) w*kappa_j*z;
+    elseif mm==2
+        modelname='e';
+        n_zm=0; pi_zm=[];
+        usee=1;
+        jequaloneDist=zeros([n_a,n_e],'gpuArray');
+        jequaloneDist(1,ceil(n_e/2))=1;
+        ReturnFn=@(aprime,a,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod_noz_e_nosemiz(aprime,a,e,r,w,kappa_j,sigma,agej,Jr,pension);
+        FnsToEvaluate=struct();
+        FnsToEvaluate.assets=@(aprime,a,e) a;
+        FnsToEvaluate.earnings=@(aprime,a,e,w,kappa_j) w*kappa_j*e;
+    else
+        modelname='z and e';
+        n_zm=n_z; pi_zm=pi_z;
+        usee=1;
+        jequaloneDist=zeros([n_a,n_z,n_e],'gpuArray');
+        jequaloneDist(1,ceil(n_z/2),ceil(n_e/2))=1;
+        ReturnFn=@(aprime,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod_z_e_nosemiz(aprime,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension);
+        FnsToEvaluate=struct();
+        FnsToEvaluate.assets=@(aprime,a,z,e) a;
+        FnsToEvaluate.earnings=@(aprime,a,z,e,w,kappa_j) w*kappa_j*z*e;
+    end
+    fnnames=fieldnames(FnsToEvaluate);
+
+    % The initial dist: the stationary dist with the plain grids (the same for all three runs)
+    vfoptions0=struct();
+    simoptions0=struct();
+    if usee==1
+        vfoptions0.n_e=n_e; vfoptions0.e_grid=e_grid; vfoptions0.pi_e=pi_e;
+        simoptions0.n_e=n_e; simoptions0.e_grid=e_grid; simoptions0.pi_e=pi_e;
+    end
+    if n_zm>0
+        z_grid0=z_grid;
+    else
+        z_grid0=[];
+    end
+    [~,Policy_init]=ValueFnIter_Case1_FHorz(n_d,n_a,n_zm,N_j,d_grid,a_grid,z_grid0,pi_zm,ReturnFn,Params,DiscountFactorParamNames,[],vfoptions0);
+    AgentDist_initial=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy_init,n_d,n_a,n_zm,N_j,pi_zm,Params,simoptions0);
+
+    %% The three runs: drift, constant, plain
+    VPathR=cell(1,3);
+    PolicyPathR=cell(1,3);
+    AgentDistPathR=cell(1,3);
+    AllStatsPathR=cell(1,3);
+    LCPPathR=cell(1,3);
+    for cc=1:3
+        % The grids handed to the path commands, and the final-period grids (for V_final)
+        if cc==1
+            z_gridX=z_gridT; e_gridX=e_gridT;
+            z_gridF=z_gridT(:,T); e_gridF=e_gridT(:,T);
+        elseif cc==2
+            z_gridX=repmat(z_grid,1,T); e_gridX=repmat(e_grid,1,T);
+            z_gridF=z_grid; e_gridF=e_grid;
+        else
+            z_gridX=z_grid; e_gridX=e_grid;
+            z_gridF=z_grid; e_gridF=e_grid;
+        end
+        if n_zm==0
+            z_gridX=[]; z_gridF=[];
+        end
+        vfoptionsF=struct();
+        vfoptionsX=struct();
+        simoptionsX=struct();
+        simoptionsX.fastOLG=0;
+        if usee==1
+            vfoptionsF.n_e=n_e; vfoptionsF.e_grid=e_gridF; vfoptionsF.pi_e=pi_e;
+            vfoptionsX.n_e=n_e; vfoptionsX.e_grid=e_gridX; vfoptionsX.pi_e=pi_e;
+            simoptionsX.n_e=n_e; simoptionsX.e_grid=e_gridX; simoptionsX.pi_e=pi_e;
+        end
+        transpathoptions=transpathoptionsbaseline;
+        transpathoptions.fastOLG=0;
+
+        [V_final,Policy_final]=ValueFnIter_Case1_FHorz(n_d,n_a,n_zm,N_j,d_grid,a_grid,z_gridF,pi_zm,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsF);
+        [VPathR{cc},PolicyPathR{cc}]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_zm, N_j, d_grid, a_grid,z_gridX, pi_zm, DiscountFactorParamNames, ReturnFn, transpathoptions, vfoptionsX);
+        AgentDistPathR{cc}=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial, jequaloneDist, PricePath, ParamPath, PolicyPathR{cc}, AgeWeightParamNames,n_d,n_a,n_zm,N_j,pi_zm, T,Params, transpathoptions, simoptionsX);
+        % (V5) the same value fn and agent dist paths with fastOLG=1, for the two runs whose grids are time-varying in form
+        if cc<=2
+            transpathoptionsF1=transpathoptions;
+            transpathoptionsF1.fastOLG=1;
+            simoptionsF1=simoptionsX;
+            simoptionsF1.fastOLG=1;
+            [VPathF1,PolicyPathF1]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_zm, N_j, d_grid, a_grid,z_gridX, pi_zm, DiscountFactorParamNames, ReturnFn, transpathoptionsF1, vfoptionsX);
+            AgentDistPathF1=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial, jequaloneDist, PricePath, ParamPath, PolicyPathF1, AgeWeightParamNames,n_d,n_a,n_zm,N_j,pi_zm, T,Params, transpathoptionsF1, simoptionsF1);
+            if cc==1
+                runname='drifting grids';
+            else
+                runname='grids time-varying in form but constant';
+            end
+            fprintf('Shocks over the path, %s: (V5) %s, fastOLG=1 vs fastOLG=0, VPath, this should be zero: %.3e \n',modelname,runname,gather(max(abs(VPathF1(:)-VPathR{cc}(:)))))
+            fprintf('Shocks over the path, %s: (V5) %s, fastOLG=1 vs fastOLG=0, PolicyPath, this should be zero: %.3e \n',modelname,runname,gather(max(abs(PolicyPathF1(:)-PolicyPathR{cc}(:)))))
+            fprintf('Shocks over the path, %s: (V5) %s, fastOLG=1 vs fastOLG=0, AgentDistPath, this should be zero: %.3e \n',modelname,runname,gather(max(abs(AgentDistPathF1(:)-AgentDistPathR{cc}(:)))))
+            clear VPathF1 PolicyPathF1 AgentDistPathF1
+        end
+        AllStatsPathR{cc}=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluate, AgentDistPathR{cc}, PolicyPathR{cc}, PricePath, ParamPath, Params, T, n_d, n_a, n_zm, N_j, d_grid, a_grid,z_gridX, transpathoptions, simoptionsX);
+        LCPPathR{cc}=LifeCycleProfiles_TransPath_FHorz_Case1(FnsToEvaluate, AgentDistPathR{cc}, PolicyPathR{cc}, PricePath, ParamPath, Params, T, n_d, n_a, n_zm, N_j, d_grid, a_grid, z_gridX, transpathoptions, simoptionsX);
+        if cc==1
+            AggVarsPathD=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPathR{cc}, PolicyPathR{cc}, PricePath, ParamPath, Params, T, n_d, n_a, n_zm, N_j, d_grid, a_grid,z_gridX, transpathoptions, simoptionsX);
+        end
+    end
+
+    %% The oracle for the drift run: the stationary commands on each period's slice, at that period's prices, parameters and grids
+    AgentDistPath=AgentDistPathR{1};
+    PolicyPath=PolicyPathR{1};
+    AllStatsPath=AllStatsPathR{1};
+    LCPPath=LCPPathR{1};
+    sliceAgentDist=repmat({':'},1,ndims(AgentDistPath)-1);
+    slicePolicy=repmat({':'},1,ndims(PolicyPath)-1);
+    AScell=cell(1,T);
+    LCPcell=cell(1,T);
+    for tt=1:T
+        Params_tt=Params;
+        for kk=1:length(PricePathNamesV)
+            Params_tt.(PricePathNamesV{kk})=PricePath.(PricePathNamesV{kk})(tt);
+        end
+        for kk=1:length(ParamPathNamesV)
+            Params_tt.(ParamPathNamesV{kk})=ParamPath.(ParamPathNamesV{kk})(tt);
+        end
+        simoptions_tt=struct();
+        if usee==1
+            simoptions_tt.n_e=n_e; simoptions_tt.e_grid=e_gridT(:,tt); simoptions_tt.pi_e=pi_e;
+        end
+        if n_zm>0
+            z_grid_tt=z_gridT(:,tt);
+        else
+            z_grid_tt=[];
+        end
+        AScell{tt}=EvalFnOnAgentDist_AllStats_FHorz_Case1(AgentDistPath(sliceAgentDist{:},tt),PolicyPath(slicePolicy{:},tt),FnsToEvaluate,Params_tt,[],n_d,n_a,n_zm,N_j,d_grid,a_grid,z_grid_tt,simoptions_tt);
+        LCPcell{tt}=LifeCycleProfiles_FHorz_Case1(AgentDistPath(sliceAgentDist{:},tt),PolicyPath(slicePolicy{:},tt),FnsToEvaluate,Params_tt,[],n_d,n_a,n_zm,N_j,d_grid,a_grid,z_grid_tt,simoptions_tt);
+    end
+
+    % (V1) AllStats: every stat of every FnsToEvaluate, every period
+    maxdiff=0; nanmismatch=0;
+    for tt=1:T
+        AS=AScell{tt};
+        % every field of AllStats, to any depth (MoreInequality is a struct; the comments are text)
+        queue={{}};
+        while ~isempty(queue)
+            fieldpath=queue{1};
+            queue(1)=[];
+            if isempty(fieldpath)
+                O=AS;
+            else
+                O=getfield(AS,fieldpath{:});
+            end
+            if isstruct(O)
+                Onames=fieldnames(O);
+                for kk=1:length(Onames)
+                    queue{end+1}=[fieldpath,Onames(kk)];
+                end
+            elseif ischar(O) || isstring(O) || iscell(O) % text (the comments): must be the same text
+                P=getfield(AllStatsPath,fieldpath{:});
+                nanmismatch=nanmismatch+(~isequal(P{tt},O));
+            else
+                O=gather(O);
+                P=getfield(AllStatsPath,fieldpath{:});
+                P=P(:,tt);
+                maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+                nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+            end
+        end
+    end
+    fprintf('Shocks over the path, %s: (V1) EvalFnOnTransPath_AllStats vs the stationary AllStats period by period with that period''s grids, every stat, this should be zero: %.3e \n',modelname,maxdiff)
+    fprintf('Shocks over the path, %s: (V1) EvalFnOnTransPath_AllStats vs the stationary AllStats period by period with that period''s grids, positions NaN (or text) in one but not the other, this should be zero: %i \n',modelname,nanmismatch)
+
+    % (V2) Life-cycle profiles: the cohort bookkeeping
+    maxdiffI=0; maxdiffB=0; nanmisI=0; nanmisB=0;
+    for ff=1:length(fnnames)
+        for oo=1:length(OutputTypes)
+            PI=gather(LCPPath.(fnnames{ff}).initialages.(OutputTypes{oo}));
+            PB=gather(LCPPath.(fnnames{ff}).bornduringtranstion.(OutputTypes{oo}));
+            OI=nan(size(PI));
+            OB=nan(size(PB));
+            % Initial cohorts: aged jj in period 1, so aged jj+tt-1 in period tt, alive while that is at most N_j
+            for tt=1:min(T,N_j)
+                temp=gather(LCPcell{tt}.(fnnames{ff}).(OutputTypes{oo}));
+                for jj=1:N_j-tt+1
+                    if scalarstat(oo)==1
+                        OI(jj,jj+tt-1)=temp(jj+tt-1);
+                    else
+                        OI(:,jj,jj+tt-1)=temp(:,jj+tt-1);
+                    end
+                end
+            end
+            % Cohorts born during the transition: aged 1 in period ii, so aged age in period ii+age-1
+            for ii=1:T
+                for age=1:N_j
+                    tt=ii+age-1;
+                    if tt<=T
+                        temp=gather(LCPcell{tt}.(fnnames{ff}).(OutputTypes{oo}));
+                        if scalarstat(oo)==1
+                            OB(ii,age)=temp(age);
+                        else
+                            OB(:,ii,age)=temp(:,age);
+                        end
+                    end
+                end
+            end
+            maxdiffI=max([maxdiffI; abs(PI(:)-OI(:))],[],'omitnan');
+            maxdiffB=max([maxdiffB; abs(PB(:)-OB(:))],[],'omitnan');
+            nanmisI=nanmisI+sum(isnan(PI(:))~=isnan(OI(:)));
+            nanmisB=nanmisB+sum(isnan(PB(:))~=isnan(OB(:)));
+        end
+    end
+    fprintf('Shocks over the path, %s: (V2) LifeCycleProfiles_TransPath initialages vs the per-period stationary profiles with that period''s grids, all seven outputs, this should be zero: %.3e \n',modelname,maxdiffI)
+    fprintf('Shocks over the path, %s: (V2) LifeCycleProfiles_TransPath bornduringtranstion vs the per-period stationary profiles with that period''s grids, all seven outputs, this should be zero: %.3e \n',modelname,maxdiffB)
+    fprintf('Shocks over the path, %s: (V2) LifeCycleProfiles_TransPath entries NaN in one but not the other (the alive pattern), initialages %i and bornduringtranstion %i, this should be zero: %i \n',modelname,nanmisI,nanmisB,nanmisI+nanmisB)
+
+    % (V3) the AggVars command against the AllStats Mean
+    maxdiff=0;
+    for ff=1:length(fnnames)
+        maxdiff=max(maxdiff,max(abs(AllStatsPath.(fnnames{ff}).Mean-gather(AggVarsPathD.(fnnames{ff}).Mean))));
+    end
+    fprintf('Shocks over the path, %s: (V3) EvalFnOnTransPath_AggVars Mean vs EvalFnOnTransPath_AllStats Mean, with the drifting grids, this should be zero: %.3e \n',modelname,maxdiff)
+
+    % (V4) constant-over-t time-varying grids vs the plain grids: the whole chain must agree
+    fprintf('Shocks over the path, %s: (V4) grids time-varying in form but constant vs plain grids, PolicyPath, this should be zero: %.3e \n',modelname,gather(max(abs(PolicyPathR{2}(:)-PolicyPathR{3}(:)))))
+    fprintf('Shocks over the path, %s: (V4) grids time-varying in form but constant vs plain grids, AgentDistPath, this should be zero: %.3e \n',modelname,gather(max(abs(AgentDistPathR{2}(:)-AgentDistPathR{3}(:)))))
+    for ss=1:2
+        if ss==1
+            SC=AllStatsPathR{2}; SP=AllStatsPathR{3}; statname='EvalFnOnTransPath_AllStats';
+        else
+            SC=LCPPathR{2}; SP=LCPPathR{3}; statname='LifeCycleProfiles_TransPath';
+        end
+        maxdiff=0; nanmismatch=0;
+        % every field, to any depth, all periods at once
+        queue={{}};
+        while ~isempty(queue)
+            fieldpath=queue{1};
+            queue(1)=[];
+            if isempty(fieldpath)
+                O=SP; P=SC;
+            else
+                O=getfield(SP,fieldpath{:}); P=getfield(SC,fieldpath{:});
+            end
+            if isstruct(O)
+                Onames=fieldnames(O);
+                for kk=1:length(Onames)
+                    queue{end+1}=[fieldpath,Onames(kk)];
+                end
+            elseif iscell(O)
+                nanmismatch=nanmismatch+(~isequal(P,O));
+            else
+                O=gather(O); P=gather(P);
+                maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+                nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+            end
+        end
+        fprintf('Shocks over the path, %s: (V4) grids time-varying in form but constant vs plain grids, %s, every stat, this should be zero: %.3e \n',modelname,statname,maxdiff)
+        fprintf('Shocks over the path, %s: (V4) grids time-varying in form but constant vs plain grids, %s, positions NaN (or text) in one but not the other, this should be zero: %i \n',modelname,statname,nanmismatch)
+    end
+
+    % For scale: the drift must actually move things
+    fprintf('Shocks over the path, %s: for scale, the drifting grids move mean earnings from the plain run by up to %.3e (must not be zero, or V1-V3 are empty) \n',modelname,max(abs(AllStatsPathR{1}.earnings.Mean-AllStatsPathR{3}.earnings.Mean)))
+
+    % (V6) One iteration of the GE transition path with the drifting grids, fastOLG=1 vs fastOLG=0 (as in the figs,
+    % a shape check). The general eqm condition depends on earnings, so the price update after one iteration
+    % depends on the grids. With z and e: both drifting, only z drifting, only e drifting (when only one of them
+    % varies the other has no _T version, which is its own branch of the shock setup).
+    if mm==3
+        nGEcases=3;
+    else
+        nGEcases=1;
+    end
+    GeneralEqmEqns=struct();
+    GeneralEqmEqns.earningsgap=@(earnings) earnings-0.5;
+    for gg=1:nGEcases
+        if gg==1
+            z_gridG=z_gridT; e_gridG=e_gridT; GEcasename='drifting grids';
+        elseif gg==2
+            z_gridG=z_gridT; e_gridG=e_grid; GEcasename='only the z grid drifting';
+        else
+            z_gridG=z_grid; e_gridG=e_gridT; GEcasename='only the e grid drifting';
+        end
+        if n_zm==0
+            z_gridG=[]; z_gridGF=[];
+        else
+            z_gridGF=z_gridG(:,end);
+        end
+        vfoptionsG=struct();
+        vfoptionsGF=struct();
+        simoptionsG=struct();
+        if usee==1
+            vfoptionsG.n_e=n_e; vfoptionsG.e_grid=e_gridG; vfoptionsG.pi_e=pi_e;
+            vfoptionsGF.n_e=n_e; vfoptionsGF.e_grid=e_gridG(:,end); vfoptionsGF.pi_e=pi_e;
+            simoptionsG.n_e=n_e; simoptionsG.e_grid=e_gridG; simoptionsG.pi_e=pi_e;
+        end
+        V_finalG=ValueFnIter_Case1_FHorz(n_d,n_a,n_zm,N_j,d_grid,a_grid,z_gridGF,pi_zm,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsGF);
+        transpathoptionsG=transpathoptionsbaseline;
+        transpathoptionsG.maxiter=1;
+        transpathoptionsG.GEnewprice=2; % Anderson acceleration
+        transpathoptionsG.GEnewprice2.howtoupdate={'earningsgap','r',0,0.1};
+        transpathoptionsG.fastOLG=1;
+        simoptionsG.fastOLG=1;
+        PricePathG1=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_finalG, AgentDist_initial, jequaloneDist, n_d, n_a, n_zm, N_j, d_grid,a_grid,z_gridG, pi_zm, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsG, simoptionsG, vfoptionsG);
+        transpathoptionsG.fastOLG=0;
+        simoptionsG.fastOLG=0;
+        PricePathG0=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_finalG, AgentDist_initial, jequaloneDist, n_d, n_a, n_zm, N_j, d_grid,a_grid,z_gridG, pi_zm, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsG, simoptionsG, vfoptionsG);
+        fprintf('Shocks over the path, %s: (V6) one iteration of the GE path, %s, fastOLG=1 vs fastOLG=0, this should be zero: %.3e \n',modelname,GEcasename,max(abs(PricePathG1.r-PricePathG0.r)))
+        fprintf('Shocks over the path, %s: for scale, that one iteration moves r by up to %.3e (must not be zero, or (V6) is empty) \n',modelname,max(abs(PricePathG1.r-PricePath.r)))
+    end
+
+    % (V7) pi_e that depends on age (but not on the path), value fn and agent dist paths, fastOLG=1 vs fastOLG=0.
+    % The fastOLG value fn wants pi_e as (a-j,e) with a fastest; the setup built it with j fastest, which only
+    % matters when pi_e depends on age.
+    if usee==1
+        pi_eJ=zeros(n_e,N_j);
+        for jj=1:N_j
+            pi_eJ(:,jj)=(1-0.5*(jj-1)/(N_j-1))*pi_e+0.5*(jj-1)/(N_j-1)*ones(n_e,1)/n_e; % moves from pi_e at age 1 to halfway to uniform at age N_j
+        end
+        vfoptionsA=struct();
+        vfoptionsA.n_e=n_e; vfoptionsA.e_grid=e_grid; vfoptionsA.pi_e=pi_eJ;
+        simoptionsA=struct();
+        simoptionsA.n_e=n_e; simoptionsA.e_grid=e_grid; simoptionsA.pi_e=pi_eJ;
+        [V_finalA,Policy_finalA]=ValueFnIter_Case1_FHorz(n_d,n_a,n_zm,N_j,d_grid,a_grid,z_grid0,pi_zm,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsA);
+        transpathoptionsA=transpathoptionsbaseline;
+        transpathoptionsA.fastOLG=0;
+        simoptionsA.fastOLG=0;
+        [VPathA0,PolicyPathA0]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_finalA, Policy_finalA, Params, n_d, n_a, n_zm, N_j, d_grid, a_grid,z_grid0, pi_zm, DiscountFactorParamNames, ReturnFn, transpathoptionsA, vfoptionsA);
+        AgentDistPathA0=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial, jequaloneDist, PricePath, ParamPath, PolicyPathA0, AgeWeightParamNames,n_d,n_a,n_zm,N_j,pi_zm, T,Params, transpathoptionsA, simoptionsA);
+        transpathoptionsA.fastOLG=1;
+        simoptionsA.fastOLG=1;
+        [VPathA1,PolicyPathA1]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_finalA, Policy_finalA, Params, n_d, n_a, n_zm, N_j, d_grid, a_grid,z_grid0, pi_zm, DiscountFactorParamNames, ReturnFn, transpathoptionsA, vfoptionsA);
+        AgentDistPathA1=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial, jequaloneDist, PricePath, ParamPath, PolicyPathA1, AgeWeightParamNames,n_d,n_a,n_zm,N_j,pi_zm, T,Params, transpathoptionsA, simoptionsA);
+        fprintf('Shocks over the path, %s: (V7) pi_e depending on age, fastOLG=1 vs fastOLG=0, VPath, this should be zero: %.3e \n',modelname,gather(max(abs(VPathA1(:)-VPathA0(:)))))
+        fprintf('Shocks over the path, %s: (V7) pi_e depending on age, fastOLG=1 vs fastOLG=0, PolicyPath, this should be zero: %.3e \n',modelname,gather(max(abs(PolicyPathA1(:)-PolicyPathA0(:)))))
+        fprintf('Shocks over the path, %s: (V7) pi_e depending on age, fastOLG=1 vs fastOLG=0, AgentDistPath, this should be zero: %.3e \n',modelname,gather(max(abs(AgentDistPathA1(:)-AgentDistPathA0(:)))))
+        fprintf('Shocks over the path, %s: for scale, making pi_e depend on age moves VPath by up to %.3e (must not be zero, or (V7) is empty) \n',modelname,gather(max(abs(VPathA0(:)-VPathR{3}(:)))))
+        clear VPathA0 VPathA1 PolicyPathA0 PolicyPathA1 AgentDistPathA0 AgentDistPathA1
+    end
+
+    clear VPathR PolicyPathR AgentDistPathR AllStatsPathR LCPPathR AgentDistPath PolicyPath AllStatsPath LCPPath AScell LCPcell AggVarsPathD
+end
+
+output=struct();
+
+end
