@@ -1,8 +1,7 @@
 function output=QHDInfHorz_CrossTests_howards(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline)
 % Cross-test: Howards on vs off, for SOPHISTICATED quasi-hyperbolic.
 %
-% This is the regression test for the Howards fix of 2026-09-01
-% (InfHorz_QHSophisticated_Howards_proposal.md steps 2-4). Before that fix, the Howards block in
+% This is the regression test for the Howards fix of 2026-09-01. Before that fix, the Howards block in
 % ValueFnIter_InfHorz_QuasiHyperbolicS_raw iterated Vunderbar from Vhat rather than from
 % Vunderbar, which composes to
 %     Vunderbar = F + beta*E[F] + beta*beta0beta*E^2[Vunderbar]

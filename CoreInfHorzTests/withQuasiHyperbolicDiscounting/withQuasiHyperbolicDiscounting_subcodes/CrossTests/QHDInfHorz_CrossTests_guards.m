@@ -2,12 +2,15 @@ function output=QHDInfHorz_CrossTests_guards(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi
 % Cross-tests for the quasi-hyperbolic INTERFACE guards, and probes of the model shapes that
 % InfHorz quasi-hyperbolic does not support.
 %
-% Everything here is wrapped in try/catch, for two reasons. A guard that stops firing must show
-% up as a failed check rather than as a silently-accepted bad input; and the two KNOWN ISSUE
-% probes at the end are expected to error today, so running them bare would abort the bank.
+% The checks that expect an error are wrapped in try/catch, so that a guard which stops firing
+% shows up as a failed check rather than as a silently-accepted bad input. Test 6 expects a
+% SOLVE, so it is deliberately not wrapped: an error there must abort and be seen.
 %
-% Guards 1-5 must all pass. Probes 6 and 7 are diagnostics: they record the current behaviour of
-% shapes the dispatcher does not support, so that if support is ever added the diary shows it.
+% Guards 0-5c and tests 6-7 must all pass. 6 and 7 were KNOWN ISSUE probes recording unsupported
+% behaviour until 2026-10-21, when both were fixed: multi-dimensional z now solves (the exotic-
+% preference branches were being handed z_grid where every other branch gets z_gridvals), and two
+% endogenous states now raise the interface guard on every path rather than only under the grid
+% interpolation layer.
 
 N_a=prod(n_a);
 N_z=prod(n_z);
@@ -148,52 +151,66 @@ if ok~=1
     fprintf('   unexpected error: %s \n',msg)
 end
 
-%% 6. PROBE (KNOWN ISSUE): a two-dimensional exogenous state
-% ValueFnIter_InfHorz.m converts z_grid to z_gridvals at line ~289, and every other solver
-% branch is handed z_gridvals. The two exotic-preference branches (QuasiHyperbolic at :356/:359
-% and EpsteinZin at :364) are handed the raw stacked z_grid instead. For a single z variable the
-% two are the same column vector, so nothing shows; with two z variables z_gridvals is
-% prod(n_z)-by-2 while z_grid is sum(n_z)-by-1, and CreateReturnFnMatrix_Disc reads
-% z_gridvals(:,2). Expected to error today. The fix is one word at each of the two call sites.
+%% 6. A two-dimensional exogenous state must solve, and agree with the equivalent single z
+% This was PROBE 6 until 2026-10-21, and it errored with 'Index exceeds matrix dimension'.
+% ValueFnIter_InfHorz.m converts z_grid to z_gridvals and hands z_gridvals to every solver branch,
+% but the two exotic-preference branches (QuasiHyperbolic, EpsteinZin) were handed the raw stacked
+% z_grid. With one z variable the two forms are the same column, so nothing showed; with two,
+% z_gridvals is prod(n_z)-by-2 while z_grid is sum(n_z)-by-1, and the return-matrix construction
+% reads column 2. Now fixed at the call sites, so this is a real test.
+%
+% The check: two independent z variables entering the return function only through their product
+% z1*z2 is the SAME model as one z whose grid holds those products in the joint order, with the
+% same joint transition matrix. So V and Policy must agree exactly. This is not a comparison of
+% identical-by-construction paths: the two-dimensional solve goes through CreateGridvals with
+% n_z=[3,2] and a two-z return function, the single-z solve through a one-z return function, and
+% if the joint ordering convention were wrong the 2-d V would come back permuted.
 n_z_2d=[3,2];
 z1_grid=z_grid(1:3);
 z2_grid=[0.9;1.1];
 z_grid_2d=[z1_grid;z2_grid];
 pi_z1=pi_z(1:3,1:3)./sum(pi_z(1:3,1:3),2);
 pi_z2=[0.7,0.3;0.3,0.7];
-pi_z_2d=kron(pi_z2,pi_z1); % ordering irrelevant here, the probe never gets as far as using it
+% z1 is the FASTEST-moving index in the joint state, so pi_z2 is the left kron factor. The ordering
+% matters now that the solve runs: get it wrong and the two models below are genuinely different.
+pi_z_2d=kron(pi_z2,pi_z1);
 ReturnFn_2z=@(aprime,a,z1,z2,r,w,sigma) ReturnFn_nod_z_noe_nosemiz(aprime,a,z1*z2,r,w,sigma);
 
-ok=0; msg='';
-try
-    vf=struct(); vf.exoticpreferences='QuasiHyperbolic'; vf.quasi_hyperbolic='Naive';
-    vf.QHadditionaldiscount='beta0';
-    Vt=ValueFnIter_InfHorz(0,n_a,n_z_2d,[],a_grid,z_grid_2d,pi_z_2d,ReturnFn_2z,Params,DiscountFactorParamNames,[],vf);
-catch ME
-    ok=1; msg=ME.message;
-end
-fprintf('6. PROBE: two-dimensional n_z. Errors today (=1) because the dispatcher is passed z_grid, not z_gridvals: %d \n',ok)
-fprintf('   message: %s \n',msg)
-fprintf('   If this ever prints 0, multi-dimensional z now works and this probe should become a real test. \n')
+vf6=struct(); vf6.exoticpreferences='QuasiHyperbolic'; vf6.quasi_hyperbolic='Naive';
+vf6.QHadditionaldiscount='beta0';
+[V6,Policy6]=ValueFnIter_InfHorz(0,n_a,n_z_2d,[],a_grid,z_grid_2d,pi_z_2d,ReturnFn_2z,Params,DiscountFactorParamNames,[],vf6);
 
-%% 7. PROBE (KNOWN ISSUE): two endogenous states WITHOUT the grid interpolation layer
-% There is no guard on this path, unlike guard 5. The plain-discretization branch of the
-% dispatcher passes n_a straight into ValueFnIter_InfHorz_nod_raw, whose second input is N_a,
-% so a vector n_a reaches code that expects a scalar. Recorded here rather than asserted,
-% because what it does today is not a specification.
+% The equivalent single z: the products, in the same joint order (z1 fastest).
+zprod_grid=kron(z2_grid,ones(3,1)).*kron(ones(2,1),z1_grid);
+[V6one,Policy6one]=ValueFnIter_InfHorz(0,n_a,prod(n_z_2d),[],a_grid,zprod_grid,pi_z_2d,ReturnFn_nod,Params,DiscountFactorParamNames,[],vf6);
+
+fprintf('6. two-dimensional n_z vs the equivalent single z, V, this should be zero: %2.8e \n',max(abs(reshape(V6,[N_a*prod(n_z_2d),1])-reshape(V6one,[N_a*prod(n_z_2d),1]))))
+fprintf('6. two-dimensional n_z vs the equivalent single z, Policy, this should be zero: %.3e \n',max(abs(double(reshape(Policy6,[],1))-double(reshape(Policy6one,[],1)))))
+% Discriminator: the two-dimensional solve must actually depend on z2. If z2 were being dropped
+% (which is what reading the wrong grid column could do silently once the shape error is gone),
+% V would collapse onto the z2-free model and the line above could still pass for the wrong reason.
+[V6flat,~]=ValueFnIter_InfHorz(0,n_a,n_z_2d,[],a_grid,[z1_grid;[1;1]],pi_z_2d,ReturnFn_2z,Params,DiscountFactorParamNames,[],vf6);
+fprintf('6. z2 actually reaches the return fn: max|V(z2 spread) - V(z2 degenerate)| should NOT be zero: %2.8f \n',max(abs(reshape(V6,[N_a*prod(n_z_2d),1])-reshape(V6flat,[N_a*prod(n_z_2d),1]))))
+
+%% 7. Two endogenous states must error with the INTERFACE message, on every path
+% This was PROBE 7 until 2026-10-21. Two endogenous states were refused cleanly with the grid
+% interpolation layer (guard 5) but fell through on the plain and refined paths to fail inside a
+% raw with 'In repelem(A,N1,...,Nn), Nj must be a scalar or a vector of length size(A,j)' -- the
+% same outcome, an unrecognisable message. The guard now sits with the other interface checks, so
+% both entry points raise it, and guard 5 above is the grid-interpolation half of this same check.
+% Matching on a phrase, not the whole string: see the audit-refusal-checks-as-a-set rule, and note
+% that a refusal lifting must show up as a FAILURE here rather than as silence.
 ok=0; msg='';
 try
     vf=struct(); vf.exoticpreferences='QuasiHyperbolic'; vf.quasi_hyperbolic='Naive';
     vf.QHadditionaldiscount='beta0';
     Vt=ValueFnIter_InfHorz(0,n_a_2A,n_z,[],a_grid_2A,z_grid,pi_z,ReturnFn_2A,Params,DiscountFactorParamNames,[],vf);
-    msg='(no error: it returned something)';
 catch ME
     ok=1; msg=ME.message;
 end
-fprintf('7. PROBE: two endogenous states without the grid interpolation layer. Errored: %d \n',ok)
+fprintf('7. two endogenous states without the grid interpolation layer errors, this should be one: %d \n',ok)
+fprintf('7. and it is the interface guard, not a failure inside a raw, this should be one: %d \n',double(contains(msg,'single endogenous state')))
 fprintf('   message: %s \n',msg)
-fprintf('   Two endogenous states are not supported on any InfHorz quasi-hyperbolic path. Guard 5 rejects \n')
-fprintf('   the grid-interpolation case explicitly; this path has no such guard. \n')
 
 %%
 output=struct();

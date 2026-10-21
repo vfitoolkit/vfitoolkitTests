@@ -23,21 +23,38 @@
 % NOT tested here:
 %   - noz: InfHorz QH has no noz code path at all (every raw indexes pi_z and loops over z).
 %   - e / semiz: no InfHorz QH support.
-%   - two endogenous states (2A): not supported on any InfHorz QH path. The GI dispatcher errors
-%     cleanly; the plain and refine paths have no guard. Both are probed in the guards cross-test.
+%   - two endogenous states (2A): not supported on any InfHorz QH path, and since 2026-10-21 the
+%     interface guard sits ahead of every path rather than only inside the GI block, so both entry
+%     points refuse it with the same message. Guard 5 and test 7 of the guards cross-test assert
+%     that, including that the message is the interface one and not a failure inside a raw.
+% CONFIRMED ONCE, NOT KEPT AS CHECKS (2026-10-21 run): the dispatcher used to force both
+% vfoptions.maxiter=1000 and vfoptions.verbose=1 for Sophisticated, and the verbose forcing printed
+% nothing because no quasi-hyperbolic raw read the flag. After making maxiter a default and
+% threading verbose into the four Sophisticated raws, a one-off pair of checks confirmed that a
+% user-set maxiter changes the answer (max|V(maxiter=3)-V(maxiter=10)|=1.708, where the override
+% would have forced both to 1000 and made them identical), that verbose=1 prints the progress line
+% and verbose=0 does not, and that verbose does not change the solution (exactly 0). Those two
+% checks were then removed: they pin option plumbing no model result depends on, and one of them
+% tested evalc as much as the toolkit. Do not re-add them; re-run them by hand if the forcing ever
+% comes back.
+%
+% Tested as of 2026-10-21, having previously been an unsupported shape:
+%   - a two-dimensional exogenous state. The exotic-preference branches were being handed z_grid
+%     where every other solver branch gets z_gridvals, so multi-dim z errored; test 6 of the guards
+%     cross-test now solves it and checks it against the equivalent single z.
 %   - divide-and-conquer: not usable for InfHorz at all.
 %
-% KNOWN FAILING CHECKS (expected; do not chase them as regressions)
-% As of the 2026-10-21 run: 209 checks, 3 failed, all three the same thing -- the Naive postGI
-% maxaprimediff window. They compare the default window against an unconstrained whole-grid search,
-% and the bank now measures the width the window actually NEEDS on that whole-grid run (the reading
-% taken at the default window is effectively censored by the clamp, so it reads as the window size
-% and must not be taken as the requirement). At n_a=251 the need is 53 without d and 61 with d,
-% against a default of ceil(n_a/5)=51. So the default is short by 2 and by 10, which is what those
-% three failures are: Vtilde 2.30e-06 and Policy off by 3 and by 11.
-% This was 16 failures on 2026-09-29. The others were a Howards accelerator bug (fixed), and
-% Sophisticated convergence DIAGNOSTICS that carried check wording and so were being graded as
-% checks -- those now say DIAGNOSTIC and are not graded.
+% KNOWN FAILING CHECKS: none. The bank went fully green on 2026-10-21 at 213 checks, 0 failed.
+% The history is worth keeping, because each round of failures was a different KIND of mistake:
+% 16 failures on 2026-09-29, of which a Howards accelerator bug in the Sophisticated raws was real
+% and fixed, while the rest were Sophisticated convergence DIAGNOSTICS that carried check wording
+% and so were being graded as checks (they now say DIAGNOSTIC and are not graded). Then 3 failures
+% from the Naive postGI maxaprimediff window being short of the width actually needed -- resolved
+% not by widening the default but by removing the window from the quasi-hyperbolic step entirely
+% (it now goes through ValueFnIter_Case1_FHorz at N_j=1). Then 2 failures that were not
+% disagreement at all but the FHorz and InfHorz families encoding a coarse-grid-point optimum
+% differently, fixed by comparing decoded policy values instead of raw indices.
+% Two of those four rounds were the bank measuring a representation rather than a quantity.
 % Nothing here asserts tight Sophisticated convergence: the iteration cycles (about half the state
 % space changes policy every iteration, measured 2026-09-07) and the postGI Sophisticated answer is
 % separately limited by the kinked-Vunderbar collapse at beta0<1, which no window width fixes.
@@ -174,8 +191,7 @@ end % doPart(3): cross-test: z relabel/duplicate
 if doPart(4)==1
     fprintf('\n===== doPart(4): cross-test: Howards on vs off, Sophisticated =====\n')
     %% Cross-test: Howards on vs off, Sophisticated
-    % Regression test for the Howards fix of 2026-09-01 (InfHorz_QHSophisticated_Howards_proposal.md
-    % steps 2-4). Must use beta0<1: at beta0=1 the bug it targets is invisible, so the beta0=1
+    % Regression test for the Howards fix of 2026-09-01. Must use beta0<1: at beta0=1 the bug it targets is invisible, so the beta0=1
     % cross-test above cannot see it. Not a plain on==off check -- see the file header for why.
     output=QHDInfHorz_CrossTests_howards(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(4): cross-test: Howards on vs off, Sophisticated
@@ -190,16 +206,16 @@ if doPart(5)==1
 end % doPart(5): cross-test: interface guards
 
 %% Done!
-% Terminating banner. The bank's last output before this is probe 7 of the guards cross-test,
+% Terminating banner. The bank's last output before this is test 7 of the guards cross-test,
 % which PRINTS A CAUGHT MATLAB ERROR STRING as data -- that is its expected result, not a crash.
 % Without this banner a completed run and a run that died in the guards cross-test look identical
 % at the tail of the diary. Per the 2026-09-20 convention, a stable file size is not evidence that
 % a Dropbox-synced diary is complete; this line is.
 fprintf('\n===== CoreInfHorzQHTests: RUN COMPLETE ===== \n')
 fprintf('If you do not see this line at the end of the diary, the run did not finish. \n')
-fprintf('Note: probes 6 and 7 of the guards cross-test print CAUGHT error messages as data. \n')
-fprintf('They are expected (multi-dim n_z, and two endogenous states, are unsupported paths) \n')
-fprintf('and are NOT failures. Every other check states its own expected value inline. \n')
+fprintf('Note: test 7 of the guards cross-test prints a CAUGHT error message as data. That is the \n')
+fprintf('interface guard firing, which is what the check beside it asserts, not a failure. Every \n')
+fprintf('check states its own expected value inline. \n')
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
