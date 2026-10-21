@@ -246,7 +246,8 @@ if doPart(8)==1
     fprintf('\n===== doPart(8): z and e grids that vary over the path =====\n')
     % z_grid and simoptions.e_grid with a T dimension, through ValueFnOnTransPath, AgentDistOnTransPath (fastOLG=0 and 1), one GE iteration, and the
     % AllStats, LifeCycleProfiles and AggVars path commands. See the header of the subcode.
-    output=CoreFHorzTPath_timevaryinggrids(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
+    addpath('./CoreFHorzTPath_ReturnFns/Semiz_ReturnFns/') % the semiz models; also added inside doPart(3), but parts are independent
+    output=CoreFHorzTPath_timevaryinggrids(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,n_d2_semiz,d2_grid_semiz,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(8): z and e grids that vary over the path
 
 %% Done! Damn that was a lot of tests. Glad that is over.
