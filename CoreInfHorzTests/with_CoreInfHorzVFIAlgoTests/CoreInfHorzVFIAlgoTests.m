@@ -14,6 +14,8 @@
 %   Part 3: WITH GI, preGI and postGI give the same V and Policy
 %   Part 4: with a big n_a (=1500), with and without GI give very similar V
 % With a d, Part 1 also checks solnmethod='purediscretization' (the with-d raws) against the default refinement.
+% Without semiz, Part 1 also checks vfoptions.endogenousvfi=1 (endogenous VFI) for each solver, plus a discriminator that a
+% plain-VFI twin would fail (see CoreInfHorzVFIAlgo_algocompare); doPart(10) times it.
 % Without e and semiz, Part 1 also checks outputkron=1 against the default.
 % The models without z and without e stop after Part 1 (their grid interpolation layer is a single postGI solve).
 % The e models run Part 1, and of Part 2 all but the HowardMix (howardsgreedy=2,3) checks (with e the grid interpolation
@@ -44,6 +46,7 @@
 % doPart(7): Howards settings with two endogenous states
 % doPart(8): semiz (with/without d1, with/without z; Part 1 and a short postGI part)
 % doPart(9): semiz with e (with/without d1, with/without z; Part 1 and a short postGI part)
+% doPart(10): DIAGNOSTIC endogenous VFI runtimes (vfoptions.endogenousvfi=1 against plain VFI; slow)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -52,7 +55,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (written to the parent bank's TestOutput folder)
 if ~exist('../TestOutput','dir')
@@ -179,6 +182,14 @@ if doPart(9)==1
     output=CoreInfHorzVFIAlgo_d1_noz_e_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
     output=CoreInfHorzVFIAlgo_d1_z_e_semiz(n_d_semiz,n_a,n_a_big,n_z,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(9): semiz with e
+
+%% ===== doPart(10): DIAGNOSTIC endogenous VFI runtimes =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): DIAGNOSTIC endogenous VFI runtimes =====\n')
+    %% Does vfoptions.endogenousvfi=1 earn its keep? Plain vs endogenous VFI runtimes across beta, rho_z and n_z
+    % (the V/Policy checks on endogenous VFI are in Part 1 of every model, in CoreInfHorzVFIAlgo_algocompare)
+    output=CoreInfHorzVFIAlgo_ScanEndogenousVFI(Params,DiscountFactorParamNames);
+end % doPart(10): DIAGNOSTIC endogenous VFI runtimes
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
