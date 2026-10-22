@@ -139,10 +139,19 @@ if N_z>0 && l_a==1
         configs(end+1,:)={'greedy3 (HowardMix2)   ',3,0,0,'info'};
     end
 end
+% Every check config gets its vfoptions.endogenousvfi=1 twin: the EndogenousVFI raws (RelativeVFI without z) have their own copies of the
+% Howards step, so they fire the same defect; the e twins already carry the per-term form (a positive control, like the e raws above).
+nconfigs=size(configs,1);
+configs(:,6)={0};
+for cc=1:nconfigs
+    if strcmp(configs{cc,5},'check')
+        configs(end+1,:)={['endoVFI ',configs{cc,1}],configs{cc,2},configs{cc,3},configs{cc,4},'check',1};
+    end
+end
 
 for cc=1:size(configs,1)
     cname=configs{cc,1};
-    vfo=vfoGI; vfo.howardsgreedy=configs{cc,2}; vfo.howardssparse=configs{cc,3}; vfo.postGIrepeat=configs{cc,4};
+    vfo=vfoGI; vfo.howardsgreedy=configs{cc,2}; vfo.howardssparse=configs{cc,3}; vfo.postGIrepeat=configs{cc,4}; vfo.endogenousvfi=configs{cc,6};
 
     if strcmp(configs{cc,5},'info')
         % Greedy Howards: not a check, see the header. try/catch so that an error here does not kill the part.
