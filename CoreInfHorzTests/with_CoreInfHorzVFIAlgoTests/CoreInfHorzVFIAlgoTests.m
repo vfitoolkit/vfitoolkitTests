@@ -217,8 +217,10 @@ if doPart(11)==1
     probeS=sparse(gpuArray([1;1]),gpuArray([1;2]),gpuArray([1;0]),1,2);
     probeSv=gather(full(probeS*gpuArray([5;-Inf])));
     fprintf('GPU probe: sparse() with an explicit zero weight: nnz %i (CPU drops it, 1); times [5;-Inf]: %s (CPU gives 5) \n',nnz(probeS),num2str(probeSv))
-    fprintf('GPU probe: sparse explicit zero weight on a -Inf node is dropped,      should be one: %i \n',probeSv==5)
+    fprintf('GPU probe (informational, a property of the GPU not of the toolkit; the sparse raws no longer rely on it): explicit zero weight on a -Inf node is dropped: %i \n',probeSv==5)
     fprintf('GPU probe: dense [1 0]*[5;-Inf] on the GPU: %s (CPU gives NaN); 0*(-Inf) on the GPU: %s (CPU gives NaN) \n',num2str(gather(gpuArray([1,0])*gpuArray([5;-Inf]))),num2str(gather(gpuArray(0)*gpuArray(-Inf))))
+    probeS2=sparse(gpuArray([1;2]),gpuArray([1;2]),gpuArray([1;1]),2,3); % no explicit zero at all; column 3 is touched by no row
+    fprintf('GPU probe (informational): sparse with NO explicit zero, times [5;6;-Inf] (CPU gives 5 6): %s \n',num2str(gather(full(probeS2*gpuArray([5;6;-Inf])))'))
 
     %% Device 1: the asset grid extends below the natural borrowing limit (fires the zero weight on a dead LOWER node)
     % nod/d, z/noz, e (positive control), two endogenous states. Figs 1-8.

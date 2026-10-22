@@ -71,6 +71,24 @@ fprintf('noGI: NaN count,                                         should be  0: 
 fprintf('noGI: V has -Inf states (else this model is vacuous),    should be one: %i \n',nnz(Vref==-Inf)>0);
 nminfref=nnz(Vref==-Inf);
 
+% The plain (no-GI) sparse Howards raws multiply a sparse matrix into a vector that holds -Inf too, and GPU sparse*vector gives NaN
+% on a -Inf (the probe at the top of the Part), so they are checked here against the indexed reference (class B of the proposal)
+vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=1;
+[Vrefsp,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+Vrefsp=gather(Vrefsp);
+fprintf('noGI sparse1: V census: finite %i, -Inf %i, +Inf %i, NaN %i \n',nnz(isfinite(Vrefsp)),nnz(Vrefsp==-Inf),nnz(Vrefsp==Inf),nnz(isnan(Vrefsp)));
+fprintf('noGI sparse1: -Inf count minus noGI -Inf count,              should be  0: %i \n',nnz(Vrefsp==-Inf)-nminfref);
+finboth=isfinite(Vrefsp)&isfinite(Vref);
+fprintf('noGI sparse1 vs noGI sparse0 on the finite set,         V   should be ~0: %.3e \n',max(abs(Vrefsp(finboth)-Vref(finboth))));
+vfo.maxiter=2000; vfo.maxhowards=2000;
+lastwarn('');
+[Vrefsp,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+msgsp=lastwarn;
+Vrefsp=gather(Vrefsp);
+fprintf('noGI sparse1, Howards never off: converged (no maxiter warning), should be one: %i \n',~contains(msgsp,'maximum number of iterations'));
+finboth=isfinite(Vrefsp)&isfinite(Vref);
+fprintf('noGI sparse1, Howards never off: vs noGI sparse0 on the finite set, V should be ~0: %.3e \n',max(abs(Vrefsp(finboth)-Vref(finboth))));
+
 Vref4=reshape(Vref,sz4);
 Vd=(Vref4==-Inf);
 finref=isfinite(Vref4);
