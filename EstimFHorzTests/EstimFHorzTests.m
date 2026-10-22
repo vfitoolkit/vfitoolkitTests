@@ -27,7 +27,7 @@
 % doPart(3): ExogShockFn and EiidShockFn with estimated shock parameters (J with the grids rebuilt), jequaloneDist as a function (both usergrids), CustomModelStats (both usergrids)
 % doPart(4): the AutoCorrTransProbs, CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets (one restricted each): truth, J, whichcombos 1 vs 0 identical, a recovery
 % doPart(5): sensitivity to calibrated parameters (Jorgensen) vs finite differences, Lambda*Jcalib identity; an unidentified pair (rank(J) short)
-% doPart(6): cohorts entering at different ages: hand-built cohort moments, the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs, the last-age cutoff of a cohort's distribution (simoptions.lastDistAge / estimoptions.cohortlastage), a QuantileCutoffs (matrix) target
+% doPart(6): cohorts entering at different ages: hand-built cohort moments, the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs, the last-age cutoff of a cohort's distribution (simoptions.lastDistAge / estimoptions.cohortlastage), a QuantileCutoffs (matrix) target, whichcombos=0 vs the default =1 identical (both timed)
 % doPart(7): EstimateLifeCycleModel_MomentDerivatives vs finite differences from full AllStats/LifeCycleProfiles runs; omit mask; ExogShockFn; the sorted output
 % doPart(8): runtime of skipestimation with whichcombos=1 vs =0 (informational)
 % doPart(9): parameters DERIVED by ParametrizeParamsFn feeding the shocks and the jequaloneDist function (built 2026-10-12 with the
@@ -37,8 +37,8 @@
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-% doPart(10): cohort AutoCorr targets of the window and log rows (fnname_MperiodAverage, fnname_log, fnname_MperiodAverage_log): truth, the cutoff with M-1, refusals
-% doPart(11): cohort AgeConditionalStats targets of the window and log rows (the 90th percentile of fnname_2periodAverage, fnname_MperiodAverage_log, fnname_log under a restriction): truth, the cutoff with M-1, refusals
+% doPart(10): cohort AutoCorr targets of the window and log rows (fnname_MperiodAverage, fnname_log, fnname_MperiodAverage_log): truth, the cutoff with M-1, refusals, whichcombos=0 vs the default =1 identical (both timed)
+% doPart(11): cohort AgeConditionalStats targets of the window and log rows (the 90th percentile of fnname_2periodAverage, fnname_MperiodAverage_log, fnname_log under a restriction): truth, the cutoff with M-1, refusals, whichcombos=0 vs the default =1 identical (both timed)
 % doPart(12): cohort CustomModelStats targets (TargetMoments.CustomModelStats.cohortC, the same function as without cohorts, with the DFJ full-cell autocorrelation): truth, the N_j cutoff, refusals
 % doPart(13): CrossSectionCovarCorr and AgeConditionalCrossSectionCovarCorr targets of the windows (fnname_2periodAverage, one restricted, an age-conditional window by start age): truth, J, whichcombos 1 vs 0 identical, a recovery
 % doPart(14): eedefault='auto' (the per-parameter finite-difference step): onesideddisagreement, eechosen, J and Sigma at the chosen steps; s.e. at 3, 4 and auto on no-interp, ngridinterp=3, 15, 60 grids (informational)

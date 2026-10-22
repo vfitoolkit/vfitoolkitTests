@@ -18,6 +18,10 @@ function output=EstimFHorz_Cohorts(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Par
 %       distribution up to the cutoff, zero after it, mass = the age weights up to the cutoff (exact); larger than N_j must error
 %   (h) a matrix target, QuantileCutoffs (90th-percentile row), for the cohort entering at age 5: at the truth the objective is zero and the
 %       current moments equal the hand-built ones; the derived cutoff equals forcing N_j (exact); before entry or without N_j columns must error
+%   (i) estimoptions.whichcombos=0 (every statistic any target names, of every targeted function, at every age) vs the default =1, under which
+%       each cohort's AllStats and LifeCycleProfiles calls compute only the targeted combinations (the selectors SetupTargetMoments_FHorz builds
+%       per cohort) and its AutoCorr call only the targeted start ages: identical objective, J and moments (exact), both timed (until 2026-10-23
+%       the cohort objective never set simoptions.whichcombos, so =1 silently did the work of =0)
 % Each driver run is wrapped so an error in the plumbing is reported as a failed check.
 
 FnsToEvaluate.assets=@(aprime,a,z) a;
@@ -100,6 +104,22 @@ if ~isempty(res{1}) && ~isempty(res{2})
 else
     fprintf('Cohorts (b) vector vs auto-detected entry ages: one of the two did not run, this should be zero: %.3e \n',1)
 end
+
+%% (i) estimoptions.whichcombos=0 vs the default =1 (only the targeted combinations: the per-cohort selectors and the AutoCorr start ages)
+estimoptions_i=estimoptions; estimoptions_i.skipestimation=1; estimoptions_i.cohortagejshifter=entryages; estimoptions_i.whichcombos=0;
+simoptions_i=simoptions; simoptions_i.agemass_withCohort=mewjc; % as form 2 above (res{2}), which ran under the default whichcombos=1
+ran=0; objv=NaN; dJ=NaN; dmom=NaN; ti=NaN;
+try
+    t0=tic;
+    [~,~,es_i]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_i,vfoptions,simoptions_i);
+    ti=toc(t0); ran=1; objv=es_i.objectivefnval;
+    if ~isempty(res{2})
+        dJ=CoreMaxAbs(res{2}.variousmatrices.J(:)-es_i.variousmatrices.J(:)); dmom=CoreMaxAbs(res{2}.currentmomentvec(:)-es_i.currentmomentvec(:));
+    end
+catch err
+    fprintf('Cohorts (i): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+end
+fprintf('Cohorts (i) estimoptions.whichcombos=0 (%.1f s) vs the default =1 (%.1f s; only the targeted combinations and start ages): did not run, this should be zero: %.3e; objective, this should be zero: %.3e; J, this should be zero: %.3e; current moments, this should be zero: %.3e \n',ti,tform(2),1-ran,objv,dJ,dmom)
 
 %% (f) the cutoff of each cohort's distribution at its last targeted age (simoptions.lastDistAge, derived by SetupTargetMoments_FHorz_withCohorts)
 % Cohort 1 has an AllStats target so it runs to N_j; cohort 2's targets end four ages before N_j. Forcing both to N_j (estimoptions.cohortlastage) must give identical J and moments.

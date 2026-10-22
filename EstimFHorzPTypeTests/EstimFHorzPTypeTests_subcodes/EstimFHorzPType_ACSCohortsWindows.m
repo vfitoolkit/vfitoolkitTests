@@ -9,6 +9,11 @@ function output=EstimFHorzPType_ACSCohortsWindows(n_d,n_a,n_z,N_j,Names_i,d_grid
 %       N_j with estimoptions.cohortlastage (exact)
 %   (c) must error: the level for one type where the log is targeted (grouped) at the same age (simoptions.logwhichcombos has no type
 %       dimension)
+%   (d) estimoptions.whichcombos=0 (every statistic any target names, of every row, at every age, every type and grouped) vs the default =1,
+%       under which the cohort's LifeCycleProfiles call computes only the targeted (row, age, type or grouped) combinations and their statistics
+%       (simoptions.whichcombos and a per-combination whichstats, with a trailing type dimension, from the selectors SetupTargetMoments_FHorz
+%       builds per cohort): identical objective, J and moments (exact), both timed (until 2026-10-23 the cohort objective never set
+%       simoptions.whichcombos, so =1 silently did the work of =0: every window at every start age for every type, the DFJ2010 slowdown)
 % Each driver run is wrapped so an error in the plumbing is reported as a failed check.
 
 N_i=length(Names_i);
@@ -71,10 +76,11 @@ EstimParamNames={'beta','pension'};
 %% (a) at the truth
 estimoptions_a=estimoptions; estimoptions_a.skipestimation=1; estimoptions_a.cohortagejshifter=entryages;
 simoptions_a=simoptions; simoptions_a.agemass_withCohort=mewjc;
-ran=0; objv=NaN; dmom=NaN; es_a=[];
+ran=0; objv=NaN; dmom=NaN; es_a=[]; ta=NaN;
 try
+    t0=tic;
     [~,~,es_a]=EstimateLifeCycleModel_PType_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,estimoptions_a,vfoptions,simoptions_a);
-    ran=1; objv=es_a.objectivefnval;
+    ta=toc(t0); ran=1; objv=es_a.objectivefnval;
     if length(es_a.currentmomentvec)==nT
         dmom=CoreMaxAbs(es_a.currentmomentvec(:)-hand);
     else
@@ -99,6 +105,21 @@ catch err
 end
 fprintf('ACSCohortsWindows PType (b) derived cutoffs vs both cohorts forced to N_j: did not run, this should be zero: %i; J, this should be zero: %.3e; current moments, this should be zero: %.3e \n',1-ran,dJ,dmom)
 
+%% (d) estimoptions.whichcombos=0 (every statistic of every row at every age, every type and grouped) vs the default =1 (only the targeted combinations: the per-cohort selectors with their type dimension)
+estimoptions_d=estimoptions_a; estimoptions_d.whichcombos=0;
+ran=0; objv=NaN; dJ=NaN; dmom=NaN; td=NaN;
+try
+    t0=tic;
+    [~,~,es_d]=EstimateLifeCycleModel_PType_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,estimoptions_d,vfoptions,simoptions_a);
+    td=toc(t0); ran=1; objv=es_d.objectivefnval;
+    if ~isempty(es_a)
+        dJ=CoreMaxAbs(es_a.variousmatrices.J(:)-es_d.variousmatrices.J(:)); dmom=CoreMaxAbs(es_a.currentmomentvec(:)-es_d.currentmomentvec(:));
+    end
+catch err
+    fprintf('ACSCohortsWindows PType (d): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+end
+fprintf('ACSCohortsWindows PType (d) estimoptions.whichcombos=0 (%.1f s) vs the default =1 (%.1f s; only the targeted combinations, by type): did not run, this should be zero: %i; objective, this should be zero: %.3e; J, this should be zero: %.3e; current moments, this should be zero: %.3e \n',td,ta,1-ran,objv,dJ,dmom)
+
 %% (c) must error: the level for type low where the grouped log is targeted, at the same ages
 TMbad=TM;
 TMbad.AgeConditionalStats.cohort2.inc_2periodAverage.low.Mean=TM.AgeConditionalStats.cohort2.inc_2periodAverage_log.Mean;
@@ -106,7 +127,7 @@ errok=0;
 try
     EstimateLifeCycleModel_PType_MethodOfMoments(EstimParamNames,TMbad,W,Omega,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,estimoptions_a,vfoptions,simoptions_a);
 catch ME
-    errok=contains(ME.message,'both a statistic of');
+    errok=contains(ME.message,'both a statistic'); % either parser's wording: since 2026-10-23 SetupTargetMoments_FHorz (building the cohort's selectors) refuses it first ('both a statistic and its log'), before the cohort parser's own check ('both a statistic of')
     if ~errok
         fprintf('   (the error was: %s) \n',ME.message);
     end

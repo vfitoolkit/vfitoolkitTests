@@ -8,6 +8,9 @@ function output=EstimFHorz_CohortsWindows(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,p
 %   (b) the cutoff of cohort 2's agent distribution at its last targeted age, which for an M-period window is M-1 ages after its
 %       start: identical J and moments to forcing N_j with estimoptions.cohortlastage (exact)
 %   (c) must error: MperiodAverage and MperiodSum rows together in a cohort; a statistic and its log at the same start age
+%   (d) estimoptions.whichcombos=0 (every row at every start age) vs the default =1, under which the cohort's AutoCorr call computes only the
+%       targeted (row, start age) combinations (simoptions.whichcombos built by the cohort objective from the targets' start ages, level and log):
+%       identical objective, J and moments (exact), both timed (until 2026-10-23 the cohort objective never set simoptions.whichcombos)
 % Each driver run is wrapped so an error in the plumbing is reported as a failed check.
 
 FnsToEvaluate.assets=@(aprime,a,z) a;
@@ -57,10 +60,11 @@ EstimParamNames={'beta','pension'};
 %% (a) at the truth
 estimoptions_a=estimoptions; estimoptions_a.skipestimation=1; estimoptions_a.cohortagejshifter=entryages;
 simoptions_a=simoptions; simoptions_a.agemass_withCohort=mewjc;
-ran=0; objv=NaN; dmom=NaN; es_a=[];
+ran=0; objv=NaN; dmom=NaN; es_a=[]; ta=NaN;
 try
+    t0=tic;
     [~,~,es_a]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_a,vfoptions,simoptions_a);
-    ran=1; objv=es_a.objectivefnval;
+    ta=toc(t0); ran=1; objv=es_a.objectivefnval;
     if length(es_a.currentmomentvec)==nT
         dmom=CoreMaxAbs(es_a.currentmomentvec(:)-hand);
     else
@@ -84,6 +88,21 @@ catch err
     fprintf('CohortsWindows (b): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
 end
 fprintf('CohortsWindows (b) derived cutoffs vs both cohorts forced to N_j: did not run, this should be zero: %i; J, this should be zero: %.3e; current moments, this should be zero: %.3e \n',1-ran,dJ,dmom)
+
+%% (d) estimoptions.whichcombos=0 (every row at every start age) vs the default =1 (only the targeted start ages, level and log)
+estimoptions_d=estimoptions_a; estimoptions_d.whichcombos=0;
+ran=0; objv=NaN; dJ=NaN; dmom=NaN; td=NaN;
+try
+    t0=tic;
+    [~,~,es_d]=EstimateLifeCycleModel_MethodOfMoments(EstimParamNames,TM,W,Omega,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist_c,AgeWeightParamNames,[],FnsToEvaluate,estimoptions_d,vfoptions,simoptions_a);
+    td=toc(t0); ran=1; objv=es_d.objectivefnval;
+    if ~isempty(es_a)
+        dJ=CoreMaxAbs(es_a.variousmatrices.J(:)-es_d.variousmatrices.J(:)); dmom=CoreMaxAbs(es_a.currentmomentvec(:)-es_d.currentmomentvec(:));
+    end
+catch err
+    fprintf('CohortsWindows (d): the estimation command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+end
+fprintf('CohortsWindows (d) estimoptions.whichcombos=0 (%.1f s) vs the default =1 (%.1f s; only the targeted start ages): did not run, this should be zero: %i; objective, this should be zero: %.3e; J, this should be zero: %.3e; current moments, this should be zero: %.3e \n',td,ta,1-ran,objv,dJ,dmom)
 
 %% (c) must error
 errcases={'MperiodAverage and MperiodSum rows together in a cohort','a statistic and its log at the same start age'};
