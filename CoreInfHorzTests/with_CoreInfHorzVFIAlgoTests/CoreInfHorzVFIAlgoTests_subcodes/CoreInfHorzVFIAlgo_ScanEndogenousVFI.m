@@ -72,6 +72,55 @@ for bb=1:length(beta_list)
     end
 end
 
+%% SCAN 4b: is the gain at high beta just that the Howards defaults were tuned at beta=0.95?
+% The vfoptions.howards defaults (40 indexed, 80 sparse) were chosen on this bank at beta=0.95. At beta=0.99 plain VFI may
+% simply want more Howards steps, in which case a tuned plain VFI would close the gap to endogenous VFI. So sweep the
+% number of Howards steps for both, and compare the BEST plain runtime with the BEST endogenous one. Without GI (indexed
+% Howards, the default at these grid sizes) and with GI (sparse Howards, its default). rho_z=0.9, n_z=21, n_a=500.
+fprintf('\n================ SCAN 4b: Howards steps x endogenous VFI (does a tuned plain VFI close the gap?) ================\n');
+howardslist=[10,20,40,80,160,320];
+rho=0.9; n_z=21;
+[z_grid,pi_z]=discretizeAR1_FarmerToda(0,rho,0.1*sqrt(1-rho^2),n_z);
+z_grid=exp(z_grid);
+for bb=1:length(beta_list)
+    Params.beta=beta_list(bb);
+    Params.r=0.8*(1/Params.beta-1);
+    for mm=1:2
+        if mm==1
+            n_d=0; d_grid=[];
+            ReturnFn=@(aprime,a,z,r,w,sigma) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,sigma);
+            modelstr='nod, z, noe';
+        else
+            n_d=9; d_grid=linspace(0,1,n_d)';
+            ReturnFn=@(d,aprime,a,z,r,w,sigma,eta,varphi) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,sigma,eta,varphi);
+            modelstr='d, z, noe';
+        end
+        vfoptions=struct(); vfoptions.verbose_advice=0;
+        [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions); % warm up
+        for gi=0:1
+            if gi==0
+                gistr='noGI';
+            else
+                gistr='GI  ';
+            end
+            fprintf('\n---- %s, beta=%1.2f, rho_z=%1.2f, n_z=%d, n_a=%d, %s ----\n',modelstr,Params.beta,rho,n_z,n_a,gistr);
+            tplain=zeros(1,length(howardslist)); tendo=zeros(1,length(howardslist));
+            for hh=1:length(howardslist)
+                vfo=vfoptions; vfo.howards=howardslist(hh);
+                if gi==1
+                    vfo.gridinterplayer=1; vfo.ngridinterp=5;
+                end
+                tic; [Vp,Policyp]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tplain(hh)=toc;
+                vfo.endogenousvfi=1;
+                tic; [Ve,Policye]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tendo(hh)=toc;
+                fprintf('%s howards=%3d: plain %2.4fs, endogenous %2.4fs, speedup %2.2f; max|V diff| %.3e, Pol diff %.3e \n',gistr,howardslist(hh),tplain(hh),tendo(hh),tplain(hh)/tendo(hh),max(abs(Vp(:)-Ve(:))),max(abs(Policyp(:)-Policye(:))));
+            end
+            [tpbest,ip]=min(tplain); [tebest,ie]=min(tendo);
+            fprintf('%s BEST: plain %2.4fs (howards=%d), endogenous %2.4fs (howards=%d), best-vs-best speedup %2.2f \n',gistr,tpbest,howardslist(ip),tebest,howardslist(ie),tpbest/tebest);
+        end
+    end
+end
+
 output=struct();
 
 end
