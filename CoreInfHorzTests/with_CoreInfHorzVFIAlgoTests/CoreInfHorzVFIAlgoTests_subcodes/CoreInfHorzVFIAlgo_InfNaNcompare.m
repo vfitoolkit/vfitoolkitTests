@@ -172,6 +172,18 @@ fprintf('GI pure VFI (howards=0): -Inf count minus noGI -Inf count, should be  0
 % (GI and no-GI V differ genuinely, interpolation refines the choice, so no identity between them is printed; the figure shows both)
 finboth=isfinite(Vpure)&isfinite(Vref);
 fprintf('GI pure VFI vs noGI on the joint finite set, max abs diff (diagnostic, interpolation refines the choice): %.3e \n',max(abs(Vpure(finboth)-Vref(finboth))));
+% The postGIrepeat layer re-centres the +-maxaprimediff window on the first layer's fine optimum, and a re-centred window can settle in
+% a different basin (the postGIrepeat scans in doPart(4)), so the repeat configs are compared against pure VFI WITH the repeat layer:
+% the same window sequence, no Howards. The size of the window effect itself is printed as a diagnostic, not a check.
+if ~withsemiz && ~withQH
+    vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.howards=0; vfo.postGIrepeat=1;
+    [Vpurerep,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    Vpurerep=gather(Vpurerep);
+    finboth=isfinite(Vpurerep)&isfinite(Vpure);
+    fprintf('GI pure VFI with postGIrepeat=1 vs without, max abs diff (diagnostic, the re-centred window''s basin): %.3e \n',max(abs(Vpurerep(finboth)-Vpure(finboth))));
+else
+    Vpurerep=Vpure; % no repeat configs for these models
+end
 
 %% The configs. {name, howardsgreedy, howardssparse, postGIrepeat, kind, endogenousvfi}
 % Without z and without e the grid interpolation layer is a single postGI solve that reads neither howardsgreedy nor
@@ -235,15 +247,21 @@ for cc=1:size(configs,1)
         continue
     end
 
+    if configs{cc,4}>0
+        Vpurecfg=Vpurerep; % the repeat configs against pure VFI with the repeat layer (see above)
+    else
+        Vpurecfg=Vpure;
+    end
+
     %% (a) at the defaults
     [VG,PolicyG]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
     VGcpu=gather(VG);
     fprintf('GI %s: V census: finite %i, -Inf %i, +Inf %i, NaN %i \n',cname,nnz(isfinite(VGcpu)),nnz(VGcpu==-Inf),nnz(VGcpu==Inf),nnz(isnan(VGcpu)));
     fprintf('GI %s: NaN count,                                 should be  0: %i \n',cname,nnz(isnan(VGcpu)));
     fprintf('GI %s: -Inf count minus noGI -Inf count,          should be  0: %i \n',cname,nnz(VGcpu==-Inf)-nminfref);
-    fprintf('GI %s: finite set differs from pure VFI (count),  should be  0: %i \n',cname,nnz(isfinite(VGcpu)~=isfinite(Vpure)));
-    finboth=isfinite(VGcpu)&isfinite(Vpure);
-    fprintf('GI %s: vs pure VFI on the finite set,        V   should be ~0: %.3e \n',cname,max(abs(VGcpu(finboth)-Vpure(finboth))));
+    fprintf('GI %s: finite set differs from pure VFI (count),  should be  0: %i \n',cname,nnz(isfinite(VGcpu)~=isfinite(Vpurecfg)));
+    finboth=isfinite(VGcpu)&isfinite(Vpurecfg);
+    fprintf('GI %s: vs pure VFI on the finite set,        V   should be ~0: %.3e \n',cname,max(abs(VGcpu(finboth)-Vpurecfg(finboth))));
 
     % The firing count, from the returned policy (see the header)
     PolicyG2=reshape(gather(PolicyG),[size(PolicyG,1),prod(sz4)]);
@@ -283,9 +301,9 @@ for cc=1:size(configs,1)
     fprintf('GI %s, Howards never off: converged (no maxiter warning), should be one: %i \n',cname,~contains(msgh,'maximum number of iterations'));
     fprintf('GI %s, Howards never off: V census: finite %i, -Inf %i, +Inf %i, NaN %i \n',cname,nnz(isfinite(VGhcpu)),nnz(VGhcpu==-Inf),nnz(VGhcpu==Inf),nnz(isnan(VGhcpu)));
     fprintf('GI %s, Howards never off: NaN count,                        should be  0: %i \n',cname,nnz(isnan(VGhcpu)));
-    fprintf('GI %s, Howards never off: finite set differs from pure VFI (count), should be  0: %i \n',cname,nnz(isfinite(VGhcpu)~=isfinite(Vpure)));
-    finboth=isfinite(VGhcpu)&isfinite(Vpure);
-    fprintf('GI %s, Howards never off: vs pure VFI on the finite set, V should be ~0: %.3e \n',cname,max(abs(VGhcpu(finboth)-Vpure(finboth))));
+    fprintf('GI %s, Howards never off: finite set differs from pure VFI (count), should be  0: %i \n',cname,nnz(isfinite(VGhcpu)~=isfinite(Vpurecfg)));
+    finboth=isfinite(VGhcpu)&isfinite(Vpurecfg);
+    fprintf('GI %s, Howards never off: vs pure VFI on the finite set, V should be ~0: %.3e \n',cname,max(abs(VGhcpu(finboth)-Vpurecfg(finboth))));
     Vfph=gather(ValueFnFromPolicy_InfHorz(PolicyGh,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,vfo));
     finboth=isfinite(VGhcpu)&isfinite(Vfph);
     fprintf('GI %s, Howards never off: vs ValueFnFromPolicy on the finite set, V should be ~0: %.3e \n',cname,max(abs(VGhcpu(finboth)-Vfph(finboth))));
