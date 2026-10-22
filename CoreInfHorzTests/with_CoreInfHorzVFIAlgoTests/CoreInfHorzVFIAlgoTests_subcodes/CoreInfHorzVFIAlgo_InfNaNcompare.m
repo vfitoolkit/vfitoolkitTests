@@ -1,7 +1,9 @@
 function output=CoreInfHorzVFIAlgo_InfNaNcompare(label,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,vfoptions,figure_c)
 % Engine for the deliberate-trigger tests of the InfHorz grid interpolation layer's Howards step on a
 % model where V contains -Inf (InfHorzGI_InfNaN_proposal.md at the toolkit root). Same role and
-% same inputs as CoreInfHorzVFIAlgo_algocompare, for one model.
+% same inputs as CoreInfHorzVFIAlgo_algocompare, for one model. Handles the plain models, semiz
+% (vfoptions.n_semiz/semiz_grid/SemiExoStateFn, d2 the last d) and sophisticated quasi-hyperbolic
+% (vfoptions.exoticpreferences) models.
 %
 % THE DEFECT. Every Howards step in the postGI raws evaluates the chosen fine-grid point as
 %    lowerprob.*V(lowerind,:)+(1-lowerprob).*V(lowerind+1,:)
@@ -10,7 +12,9 @@ function output=CoreInfHorzVFIAlgo_InfNaNcompare(label,n_d,n_a,n_z,d_grid,a_grid
 % weight on the upper node) and exactly 1 at the window's bottom node. A zero weight on a node where
 % V is -Inf gives 0*(-Inf)=NaN, which wipes the whole (a,z,z') entry, and the isnan line then prices
 % that continuation at 0 instead of V(node,z'). With u<0 that inflates V at every state next to a
-% dead-end state. The fix, already in the _e raws, zeroes each weighted term before the sum.
+% dead-end state. The fix, already in the _e raws, zeroes each weighted term before the sum. (The
+% semiz raws combine EVz(EVindex) and EVz(EVindex+1) the same way before .*Pdz; the sophisticated
+% quasi-hyperbolic raws combine the pi-summed EVlowerH/EVupperH with (1-wupperH)/wupperH.)
 %
 % WHY 'GI vs pure VFI' AT THE DEFAULTS CANNOT SEE IT. Howards is switched off after
 % vfoptions.maxhowards (default 500) iterations of the fine-grid loop, and the plain Bellman
@@ -23,17 +27,25 @@ function output=CoreInfHorzVFIAlgo_InfNaNcompare(label,n_d,n_a,n_z,d_grid,a_grid
 %   (b) with Howards never switched off (maxhowards=maxiter=2000): on the defective raws the
 %       alternation of a correct Bellman step and a wrong Howards step cannot converge, so the solve
 %       hits maxiter (warning) and V is wrong; on the fixed raws it converges and matches pure VFI.
-%       This is the red/green discriminator.
+%       This is the red/green discriminator. (The endogenous twins can converge even on the
+%       defective raws when the mispricing is the same for every state in an exogenous row, since
+%       their span criterion ignores a within-row constant; the below-NBL models catch them.)
 %
 % THE FIRING COUNT is computed from the policy the solve returns, which is the (lower node, L2)
 % pair the Howards step works from: L2==n2short+2 is a chosen coarse node coded as 'all weight on
 % the upper node', so the zero weight is on the LOWER node; L2==1 is the window's bottom node, zero
 % weight on the UPPER node. A state fires when its zero-weight node is -Inf at some (z',e') it can
-% reach. A model where this is 0 is vacuous for this defect, and the subcode says so.
+% reach; with semiz, reachable under the d2 it chose. A model where this is 0 is vacuous for this
+% defect, and the subcode says so.
 %
 % The greedy Howards configs (howardsgreedy=1,2,3) solve a linear system with -Inf in the return
 % vector; the toolkit itself warns that greedy Howards cannot be used when V has -Inf. They are run
 % so that the diary records what they do, but nothing they print is a check.
+%
+% Sophisticated quasi-hyperbolic is run at beta0=1 ONLY: at beta0<1 the continuation being
+% interpolated is kinked and the bank documents that convergence itself is then a diagnostic, not
+% a check (see QHDInfHorz_nod_z_GI), which would confound the red/green reading here. At beta0=1 the
+% two quasi-hyperbolic postGI raws run the same Howards code on Vunderbar and the solution is exact.
 
 fprintf('\n================ %s ================\n',label);
 DF=DiscountFactorParamNames;
@@ -44,6 +56,8 @@ l_a=length(n_a);
 n_a1=n_a(1);
 N_arest=prod(n_a)/n_a1; % 1 unless two endogenous states
 withe=isfield(vfoptions,'n_e');
+withsemiz=isfield(vfoptions,'n_semiz');
+withQH=isfield(vfoptions,'exoticpreferences');
 if withe
     N_e=prod(vfoptions.n_e);
     pi_e_cpu=gather(vfoptions.pi_e(:)'); % [1,N_e]
@@ -52,14 +66,34 @@ else
     pi_e_cpu=1;
 end
 if N_z>0
-    N_zeff=N_z;
     pi_z_cpu=gather(pi_z);
 else
-    N_zeff=1;
     pi_z_cpu=1;
 end
-sz4=[n_a1,N_arest,N_zeff,N_e]; % V as [a1, rest of a, z, e], with singleton dims where the model has none
-l_d=double(N_d>0);
+N_zonly=max(N_z,1);
+if withsemiz
+    % The exogenous state is the joint (semiz,z), semiz fastest, and its transition depends on the chosen d2 (the last d).
+    % pi_semiz is evaluated here on the CPU from the bank's SemiExoStateFn (its parameters are the bank setup's).
+    N_semiz=prod(vfoptions.n_semiz);
+    semiz_grid_cpu=gather(vfoptions.semiz_grid);
+    N_d2=n_d(end);
+    d2_grid_cpu=gather(d_grid(end-N_d2+1:end));
+    pi_semiz_cpu=zeros(N_semiz,N_semiz,N_d2);
+    for ss=1:N_semiz
+        for sp=1:N_semiz
+            for dd=1:N_d2
+                pi_semiz_cpu(ss,sp,dd)=vfoptions.SemiExoStateFn(semiz_grid_cpu(ss),semiz_grid_cpu(sp),d2_grid_cpu(dd),Params.probfindjob,Params.problosejob);
+            end
+        end
+    end
+else
+    N_semiz=1;
+    N_d2=1;
+end
+N_zeff=N_semiz*N_zonly;
+sz4=[n_a1,N_arest,N_zeff,N_e]; % V as [a1, rest of a, (semiz,)z, e], with singleton dims where the model has none
+sz5=[sz4,N_d2]; % deadreach also by the chosen d2 (semiz only)
+l_d=length(n_d)*(N_d>0);
 n2short=5; % vfoptions.ngridinterp
 
 %% No-GI reference: defines the dead-end set (the states where V is -Inf)
@@ -71,24 +105,6 @@ fprintf('noGI: NaN count,                                         should be  0: 
 fprintf('noGI: V has -Inf states (else this model is vacuous),    should be one: %i \n',nnz(Vref==-Inf)>0);
 nminfref=nnz(Vref==-Inf);
 
-% The plain (no-GI) sparse Howards raws multiply a sparse matrix into a vector that holds -Inf too, and GPU sparse*vector gives NaN
-% on a -Inf (the probe at the top of the Part), so they are checked here against the indexed reference (class B of the proposal)
-vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=1;
-[Vrefsp,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-Vrefsp=gather(Vrefsp);
-fprintf('noGI sparse1: V census: finite %i, -Inf %i, +Inf %i, NaN %i \n',nnz(isfinite(Vrefsp)),nnz(Vrefsp==-Inf),nnz(Vrefsp==Inf),nnz(isnan(Vrefsp)));
-fprintf('noGI sparse1: -Inf count minus noGI -Inf count,              should be  0: %i \n',nnz(Vrefsp==-Inf)-nminfref);
-finboth=isfinite(Vrefsp)&isfinite(Vref);
-fprintf('noGI sparse1 vs noGI sparse0 on the finite set,         V   should be ~0: %.3e \n',max(abs(Vrefsp(finboth)-Vref(finboth))));
-vfo.maxiter=2000; vfo.maxhowards=2000;
-lastwarn('');
-[Vrefsp,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-msgsp=lastwarn;
-Vrefsp=gather(Vrefsp);
-fprintf('noGI sparse1, Howards never off: converged (no maxiter warning), should be one: %i \n',~contains(msgsp,'maximum number of iterations'));
-finboth=isfinite(Vrefsp)&isfinite(Vref);
-fprintf('noGI sparse1, Howards never off: vs noGI sparse0 on the finite set, V should be ~0: %.3e \n',max(abs(Vrefsp(finboth)-Vref(finboth))));
-
 Vref4=reshape(Vref,sz4);
 Vd=(Vref4==-Inf);
 finref=isfinite(Vref4);
@@ -98,19 +114,55 @@ upperdead=false(sz4); upperdead(1:end-1,:,:,:)=Vd(2:end,:,:,:);
 fprintf('noGI: finite states with a -Inf lower neighbour (same z,e): %i, with a -Inf upper neighbour: %i \n',nnz(finref&lowerdead),nnz(finref&upperdead));
 fprintf('noGI: some finite state has a -Inf neighbour,            should be one: %i \n',(nnz(finref&lowerdead)+nnz(finref&upperdead))>0);
 
-% deadreach(a1,arest,z,e): is V(a1,arest,z',e') -Inf at some (z',e') reachable from (z,e)?
-% (a Howards weight-0 term on that node, from a state at (z,e), is what fires the defect)
-deadreach=false(sz4);
+% The plain (no-GI) sparse Howards raws multiply a sparse matrix into a vector that holds -Inf too, and GPU sparse*vector gives NaN
+% on a -Inf (the probe at the top of the Part), so they are checked here against the indexed reference (class B of the proposal).
+% (Not for quasi-hyperbolic, which has no sparse raws.)
+if ~withQH
+    vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=1;
+    [Vrefsp,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    Vrefsp=gather(Vrefsp);
+    fprintf('noGI sparse1: V census: finite %i, -Inf %i, +Inf %i, NaN %i \n',nnz(isfinite(Vrefsp)),nnz(Vrefsp==-Inf),nnz(Vrefsp==Inf),nnz(isnan(Vrefsp)));
+    fprintf('noGI sparse1: -Inf count minus noGI -Inf count,              should be  0: %i \n',nnz(Vrefsp==-Inf)-nminfref);
+    finboth=isfinite(Vrefsp)&isfinite(Vref);
+    fprintf('noGI sparse1 vs noGI sparse0 on the finite set,         V   should be ~0: %.3e \n',max(abs(Vrefsp(finboth)-Vref(finboth))));
+    vfo.maxiter=2000; vfo.maxhowards=2000;
+    lastwarn('');
+    [Vrefsp,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    msgsp=lastwarn;
+    Vrefsp=gather(Vrefsp);
+    fprintf('noGI sparse1, Howards never off: converged (no maxiter warning), should be one: %i \n',~contains(msgsp,'maximum number of iterations'));
+    finboth=isfinite(Vrefsp)&isfinite(Vref);
+    fprintf('noGI sparse1, Howards never off: vs noGI sparse0 on the finite set, V should be ~0: %.3e \n',max(abs(Vrefsp(finboth)-Vref(finboth))));
+end
+
+% deadreach(a1,arest,zeff,e,d2): is V(a1,arest,zeff',e') -Inf at some (zeff',e') reachable from (zeff,e) under d2?
+% (a Howards weight-0 term on that node, from a state at (zeff,e) that chose d2, is what fires the defect)
+deadreach=false(sz5);
 Vd2=reshape(Vd,[n_a1*N_arest,N_zeff*N_e]);
 for zz=1:N_zeff
     for ee=1:N_e
-        reach=(pi_z_cpu(zz,:)'>0)&(pi_e_cpu>0); % [N_zeff,N_e], iid e so the e row is the same for every e
-        deadreach(:,:,zz,ee)=reshape(any(Vd2(:,reach(:)),2),[n_a1,N_arest]);
+        for dd=1:N_d2
+            if withsemiz
+                ss=rem(zz-1,N_semiz)+1; % semiz index of the joint state
+                zo=ceil(zz/N_semiz); % z index of the joint state
+                reachz=(pi_semiz_cpu(ss,:,dd)'>0)&(pi_z_cpu(zo,:)>0); % [N_semiz,N_zonly]: joint (semiz',z') reachable, semiz' fastest
+                reach=(reachz(:))&(pi_e_cpu>0); % [N_zeff,N_e]
+            else
+                reach=(pi_z_cpu(zz,:)'>0)&(pi_e_cpu>0); % [N_zeff,N_e], iid e so the e row is the same for every e
+            end
+            deadreach(:,:,zz,ee,dd)=reshape(any(Vd2(:,reach(:)),2),[n_a1,N_arest]);
+        end
     end
 end
 
 %% Pure VFI with the grid interpolation layer: no Howards on either grid, so no defect, the reference for the GI solves
 vfoGI=vfoptions; vfoGI.gridinterplayer=1; vfoGI.ngridinterp=n2short;
+if withQH
+    % Sophisticated quasi-hyperbolic with the grid interpolation layer has no default window (the dispatcher errors); the
+    % value its error message recommends. And no sparse Howards: the quasi-hyperbolic postGI raws have no sparse variant.
+    vfoGI.maxaprimediff=ceil(n_a1/(Params.beta0*4));
+    vfoGI.howardssparse=0;
+end
 vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.howards=0;
 [Vpure,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
 Vpure=gather(Vpure);
@@ -121,31 +173,46 @@ fprintf('GI pure VFI (howards=0): -Inf count minus noGI -Inf count, should be  0
 finboth=isfinite(Vpure)&isfinite(Vref);
 fprintf('GI pure VFI vs noGI on the joint finite set, max abs diff (diagnostic, interpolation refines the choice): %.3e \n',max(abs(Vpure(finboth)-Vref(finboth))));
 
-%% The configs. {name, howardsgreedy, howardssparse, postGIrepeat, kind}
+%% The configs. {name, howardsgreedy, howardssparse, postGIrepeat, kind, endogenousvfi}
 % Without z and without e the grid interpolation layer is a single postGI solve that reads neither howardsgreedy nor
 % howardssparse (see algocompare), so those models get the reference solve and the postGIrepeat layer only.
 % With two endogenous states howardsgreedy>0 is refused by the toolkit. With e, HowardMix (2,3) is refused.
+% With semiz the grid interpolation layer is postGI only: no postGIrepeat, and sparse and greedy Howards only without a d1
+% (with a d1 howardssparse is ignored, so comparing it would compare a solve with itself).
+% Quasi-hyperbolic: one postGI raw per d-ness, no sparse, no greedy, no endogenous VFI (refused for exotic preferences).
 configs=cell(0,5);
 configs(end+1,:)={'greedy0/sparse0        ',0,0,0,'check'};
-configs(end+1,:)={'greedy0/sparse0/repeat1',0,0,1,'check'};
-if N_z>0 || withe
-    configs(end+1,:)={'greedy0/sparse1        ',0,1,0,'check'};
-    configs(end+1,:)={'greedy0/sparse1/repeat1',0,1,1,'check'};
+if ~withsemiz && ~withQH
+    configs(end+1,:)={'greedy0/sparse0/repeat1',0,0,1,'check'};
 end
-if N_z>0 && l_a==1
-    configs(end+1,:)={'greedy1 (HowardGreedy) ',1,0,0,'info'};
-    if ~withe
-        configs(end+1,:)={'greedy2 (HowardMix)    ',2,0,0,'info'};
-        configs(end+1,:)={'greedy3 (HowardMix2)   ',3,0,0,'info'};
+if withsemiz
+    if length(n_d)==1
+        configs(end+1,:)={'greedy0/sparse1        ',0,1,0,'check'};
+        configs(end+1,:)={'greedy1 (HowardGreedy) ',1,0,0,'info'};
+    end
+elseif ~withQH
+    if N_z>0 || withe
+        configs(end+1,:)={'greedy0/sparse1        ',0,1,0,'check'};
+        configs(end+1,:)={'greedy0/sparse1/repeat1',0,1,1,'check'};
+    end
+    if N_z>0 && l_a==1
+        configs(end+1,:)={'greedy1 (HowardGreedy) ',1,0,0,'info'};
+        if ~withe
+            configs(end+1,:)={'greedy2 (HowardMix)    ',2,0,0,'info'};
+            configs(end+1,:)={'greedy3 (HowardMix2)   ',3,0,0,'info'};
+        end
     end
 end
-% Every check config gets its vfoptions.endogenousvfi=1 twin: the EndogenousVFI raws (RelativeVFI without z) have their own copies of the
-% Howards step, so they fire the same defect; the e twins already carry the per-term form (a positive control, like the e raws above).
+% Every check config gets its vfoptions.endogenousvfi=1 twin: the EndogenousVFI raws (RelativeVFI without z, and the semiz
+% twins of both) have their own copies of the Howards step, so they fire the same defect; the e twins already carry the
+% per-term form (a positive control, like the e raws above).
 nconfigs=size(configs,1);
 configs(:,6)={0};
-for cc=1:nconfigs
-    if strcmp(configs{cc,5},'check')
-        configs(end+1,:)={['endoVFI ',configs{cc,1}],configs{cc,2},configs{cc,3},configs{cc,4},'check',1};
+if ~withQH
+    for cc=1:nconfigs
+        if strcmp(configs{cc,5},'check')
+            configs(end+1,:)={['endoVFI ',configs{cc,1}],configs{cc,2},configs{cc,3},configs{cc,4},'check',1};
+        end
     end
 end
 
@@ -187,9 +254,14 @@ for cc=1:size(configs,1)
     else
         iarp=ones(1,prod(sz4));
     end
+    if withsemiz
+        id2=PolicyG2(l_d,:); % the chosen d2 (the last d) sets which semiz' are reachable
+    else
+        id2=ones(1,prod(sz4));
+    end
     [~,~,iz,ie]=ind2sub(sz4,1:prod(sz4));
-    drlower=reshape(deadreach(sub2ind(sz4,L1,iarp,iz,ie)),[1,prod(sz4)]); % reshape: when deadreach is a column (no z, no e, one endogenous state) indexing it with a row gives a column
-    drupper=reshape(deadreach(sub2ind(sz4,L1+1,iarp,iz,ie)),[1,prod(sz4)]);
+    drlower=reshape(deadreach(sub2ind(sz5,L1,iarp,iz,ie,id2)),[1,prod(sz4)]); % reshape: when deadreach is a column (no z, no e, one endogenous state) indexing it with a row gives a column
+    drupper=reshape(deadreach(sub2ind(sz5,L1+1,iarp,iz,ie,id2)),[1,prod(sz4)]);
     finG=isfinite(VGcpu(:))';
     fireslower=nnz(finG & L2==n2short+2 & drlower);
     firesupper=nnz(finG & L2==1 & drupper);
@@ -226,8 +298,8 @@ for cc=1:size(configs,1)
     end
 end
 
-%% Figure: V(a1) at the first and last z, over the first nodes of the a1 grid (where the dead region and the constrained
-% states sit), no GI against the GI solves. -Inf does not plot, so the dead region shows as a gap.
+%% Figure: V(a1) at the first and last exogenous state, over the first nodes of the a1 grid (where the dead region and the
+% constrained states sit), no GI against the GI solves. -Inf does not plot, so the dead region shows as a gap.
 Vpure4=reshape(Vpure,sz4);
 VGdef4=reshape(VGdef,sz4);
 VGnever4=reshape(VGnever,sz4);
@@ -242,7 +314,7 @@ for pp=1:2
         a1_grid(1:na1plot),VGdef4(1:na1plot,1,zplot(pp),1),'b--',...
         a1_grid(1:na1plot),VGnever4(1:na1plot,1,zplot(pp),1),'r:')
     legend('no GI','GI pure VFI','GI defaults','GI Howards never off','Location','southeast')
-    title([label,': z index ',num2str(zplot(pp))])
+    title([label,': exogenous state index ',num2str(zplot(pp))])
     xlabel(['a (first ',num2str(na1plot),' nodes)'])
     ylabel('V')
 end

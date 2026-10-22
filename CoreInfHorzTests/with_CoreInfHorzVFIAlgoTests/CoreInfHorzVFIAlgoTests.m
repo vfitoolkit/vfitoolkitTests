@@ -35,7 +35,8 @@
 % natural borrowing limit; and a -Inf cap on the state at the top z), to fire the grid interpolation layer's Howards step
 % putting a zero interpolation weight on a -Inf node (0*(-Inf)=NaN, then priced at 0). See InfHorzGI_InfNaN_proposal.md at
 % the toolkit root and CoreInfHorzVFIAlgo_InfNaNcompare. It runs the base postGI raws (nod/d, z/noz, two endogenous states)
-% and the _e raws as a positive control, and draws Figs 1-8 and 11-16 (the only figures in this bank).
+% and the _e raws as a positive control (Figs 1-8, 11-16); the semiz raws and their endogenous twins (Figs 21-28, 31-34); and the sophisticated
+% quasi-hyperbolic postGI raws at beta0=1 (Figs 41-44). These are the only figures in this bank.
 %
 % Only doPart(11) draws figures (saved to ../TestOutput as they are drawn); the other parts save only the diary.
 
@@ -232,6 +233,21 @@ if doPart(11)==1
     % nod/d with z, e (positive control), two endogenous states. Figs 11-16.
     output=CoreInfHorzVFIAlgo_InfNaN_capAtTopZ(n_d,d_grid,n_z,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,11);
     for figure_c=11:16
+        exportgraphics(figure(figure_c),['../TestOutput/CoreInfHorzVFIAlgoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    end
+    %% The semiz models (SemiExo postGI raws, their EndogenousVFI and RelativeVFI twins): device 1 on all eight variants (Figs 21-28),
+    % device 2 on the four with z (Figs 31-34)
+    output=CoreInfHorzVFIAlgo_InfNaN_belowNBL_semiz(n_d2_semiz,n_d_semiz,d2_grid_semiz,d_grid_semiz,n_z,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,21);
+    for figure_c=21:28
+        exportgraphics(figure(figure_c),['../TestOutput/CoreInfHorzVFIAlgoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    end
+    output=CoreInfHorzVFIAlgo_InfNaN_capAtTopZ_semiz(n_d2_semiz,n_d_semiz,d2_grid_semiz,d_grid_semiz,n_z,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,31);
+    for figure_c=31:34
+        exportgraphics(figure(figure_c),['../TestOutput/CoreInfHorzVFIAlgoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    end
+    %% Sophisticated quasi-hyperbolic at beta0=1 (the two QuasiHyperbolicS postGI raws), both devices, nod and d (Figs 41-44)
+    output=CoreInfHorzVFIAlgo_InfNaN_QH(n_d,d_grid,n_z,z_grid,pi_z,Params,DiscountFactorParamNames,41);
+    for figure_c=41:44
         exportgraphics(figure(figure_c),['../TestOutput/CoreInfHorzVFIAlgoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
     end
 end % doPart(11): -Inf in V with the grid interpolation layer (deliberate trigger)
