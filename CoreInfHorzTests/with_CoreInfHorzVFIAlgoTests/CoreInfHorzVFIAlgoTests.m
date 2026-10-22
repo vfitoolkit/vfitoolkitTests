@@ -15,7 +15,8 @@
 %   Part 4: with a big n_a (=1500), with and without GI give very similar V
 % With a d, Part 1 also checks solnmethod='purediscretization' (the with-d raws) against the default refinement.
 % Without semiz, Part 1 also checks vfoptions.endogenousvfi=1 (endogenous VFI) for each solver, plus a discriminator that a
-% plain-VFI twin would fail (see CoreInfHorzVFIAlgo_algocompare); doPart(10) times it.
+% plain-VFI twin would fail (see CoreInfHorzVFIAlgo_algocompare); Parts 2, 3 and 3b check it with GI (postGI, preGI, two
+% endogenous states); doPart(10) times it, with and without GI.
 % Without e and semiz, Part 1 also checks outputkron=1 against the default.
 % The models without z and without e stop after Part 1 (their grid interpolation layer is a single postGI solve).
 % The e models run Part 1, and of Part 2 all but the HowardMix (howardsgreedy=2,3) checks (with e the grid interpolation

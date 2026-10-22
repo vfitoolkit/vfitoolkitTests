@@ -278,7 +278,47 @@ vfo=vfoGI; vfo.postGIrepeat=1;
 fprintf('GI:   postGIrepeat=1 vs ref,           V   should be ~0: %.3e \n',max(abs(VG(:)-VG7(:))));
 fprintf('GI:   postGIrepeat=1 vs ref,           Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG7(:))));
 
+% endogenousvfi=1 with GI: each GI solver has its own endogenous twin, which switches from the coarse to the fine grid on
+% the span too, and recovers V in levels after each fine-grid loop (the postGIrepeat layers included).
+vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.endogenousvfi=1;
+[VGE1,PolicyGE1]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('GI:   endoVFI greedy0/sparse0 vs ref,  V   should be ~0: %.3e \n',max(abs(VG(:)-VGE1(:))));
+fprintf('GI:   endoVFI greedy0/sparse0 vs ref,  Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE1(:))));
+
+vfo=vfoGI; vfo.howardsgreedy=1; vfo.howardssparse=0; vfo.endogenousvfi=1;
+[VGE2,PolicyGE2]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('GI:   endoVFI greedy1 vs ref,          V   should be ~0: %.3e \n',max(abs(VG(:)-VGE2(:))));
+fprintf('GI:   endoVFI greedy1 vs ref,          Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE2(:))));
+
+if ~isfield(vfoptions,'n_e') % HowardMix is not implemented with e
+    vfo=vfoGI; vfo.howardsgreedy=2; vfo.howardssparse=0; vfo.endogenousvfi=1;
+    [VGE3,PolicyGE3]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('GI:   endoVFI greedy2 (HowardMix),     V   should be ~0: %.3e \n',max(abs(VG(:)-VGE3(:))));
+    fprintf('GI:   endoVFI greedy2 (HowardMix),     Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE3(:))));
+
+    vfo=vfoGI; vfo.howardsgreedy=3; vfo.howardssparse=0; vfo.endogenousvfi=1;
+    [VGE4,PolicyGE4]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('GI:   endoVFI greedy3 (HowardMix2),    V   should be ~0: %.3e \n',max(abs(VG(:)-VGE4(:))));
+    fprintf('GI:   endoVFI greedy3 (HowardMix2),    Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE4(:))));
+end
+
+vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.lowmemory=1; vfo.endogenousvfi=1;
+[VGE5,PolicyGE5]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('GI:   endoVFI sparse1/lowmemory1,      V   should be ~0: %.3e \n',max(abs(VG(:)-VGE5(:))));
+fprintf('GI:   endoVFI sparse1/lowmemory1,      Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE5(:))));
+
+vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.lowmemory=0; vfo.endogenousvfi=1;
+[VGE6,PolicyGE6]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('GI:   endoVFI sparse1/lowmemory0,      V   should be ~0: %.3e \n',max(abs(VG(:)-VGE6(:))));
+fprintf('GI:   endoVFI sparse1/lowmemory0,      Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE6(:))));
+
+vfo=vfoGI; vfo.postGIrepeat=1; vfo.endogenousvfi=1;
+[VGE7,PolicyGE7]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('GI:   endoVFI postGIrepeat=1,          V   should be ~0: %.3e \n',max(abs(VG(:)-VGE7(:))));
+fprintf('GI:   endoVFI postGIrepeat=1,          Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE7(:))));
+
 clear VG2 VG3 VG4 VG5 VG6 VG7 PolicyG2 PolicyG3 PolicyG4 PolicyG5 PolicyG6 PolicyG7
+clear VGE1 VGE2 VGE3 VGE4 VGE5 VGE6 VGE7 PolicyGE1 PolicyGE2 PolicyGE3 PolicyGE4 PolicyGE5 PolicyGE6 PolicyGE7
 
 %% With e, the grid interpolation layer is so far only implemented for postGI with one endogenous state, so the e
 % models stop here: Parts 3-5 are preGI, two endogenous states and the big grid (remove this block once they are)
@@ -307,6 +347,15 @@ vfo=vfoGI; vfo.howardsgreedy=2; vfo.howardssparse=0; vfo.preGI=1;
 [VpreC,PolicypreC]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
 fprintf('GI:   preGI vs postGI (greedy2),       V   should be ~0: %.3e \n',max(abs(VG(:)-VpreC(:))));
 fprintf('GI:   preGI vs postGI (greedy2),       Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicypreC(:))));
+
+% endogenousvfi=1 with preGI (the preGI endogenous twins), against the postGI reference
+for gg=0:2
+    vfo=vfoGI; vfo.howardsgreedy=gg; vfo.howardssparse=0; vfo.preGI=1; vfo.endogenousvfi=1;
+    [VpreE,PolicypreE]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('GI:   endoVFI preGI vs postGI (greedy%i), V   should be ~0: %.3e \n',gg,max(abs(VG(:)-VpreE(:))));
+    fprintf('GI:   endoVFI preGI vs postGI (greedy%i), Pol should be  0: %.3e \n',gg,max(abs(PolicyG(:)-PolicypreE(:))));
+end
+clear VpreE PolicypreE
 
 % preGI, greedy=3 -- NOT YET IMPLEMENTED for preGI (postGI only). Included, commented out:
 % vfo=vfoGI; vfo.howardsgreedy=3; vfo.howardssparse=0; vfo.preGI=1;
@@ -358,6 +407,21 @@ vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.preGI=0;
 [Vsp2A,Policysp2A]=ValueFnIter_InfHorz(n_d,n_a2A,n_z,d_grid,a_grid2A,z_grid,pi_z,ReturnFn2A,Params,DF,[],vfo);
 fprintf('GI 2A: sparse1 vs sparse0 (postGI),    V   should be ~0: %.3e \n',max(abs(VG2A(:)-Vsp2A(:))));
 fprintf('GI 2A: sparse1 vs sparse0 (postGI),    Pol should be  0: %.3e \n',max(abs(PolicyG2A(:)-Policysp2A(:))));
+
+% endogenousvfi=1 with two endogenous states (the GI2A endogenous twins): the span is over (a1,a2) within each z
+vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.preGI=0; vfo.endogenousvfi=1;
+[VE2A,PolicyE2A]=ValueFnIter_InfHorz(n_d,n_a2A,n_z,d_grid,a_grid2A,z_grid,pi_z,ReturnFn2A,Params,DF,[],vfo);
+fprintf('GI 2A: endoVFI postGI vs ref,          V   should be ~0: %.3e \n',max(abs(VG2A(:)-VE2A(:))));
+fprintf('GI 2A: endoVFI postGI vs ref,          Pol should be  0: %.3e \n',max(abs(PolicyG2A(:)-PolicyE2A(:))));
+vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.preGI=0; vfo.endogenousvfi=1;
+[VE2A,PolicyE2A]=ValueFnIter_InfHorz(n_d,n_a2A,n_z,d_grid,a_grid2A,z_grid,pi_z,ReturnFn2A,Params,DF,[],vfo);
+fprintf('GI 2A: endoVFI sparse1 (postGI),       V   should be ~0: %.3e \n',max(abs(VG2A(:)-VE2A(:))));
+fprintf('GI 2A: endoVFI sparse1 (postGI),       Pol should be  0: %.3e \n',max(abs(PolicyG2A(:)-PolicyE2A(:))));
+vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.preGI=1; vfo.endogenousvfi=1;
+[VE2A,PolicyE2A]=ValueFnIter_InfHorz(n_d,n_a2A,n_z,d_grid,a_grid2A,z_grid,pi_z,ReturnFn2A,Params,DF,[],vfo);
+fprintf('GI 2A: endoVFI preGI vs postGI ref,    V   should be ~0: %.3e \n',max(abs(VG2A(:)-VE2A(:))));
+fprintf('GI 2A: endoVFI preGI vs postGI ref,    Pol should be  0: %.3e \n',max(abs(PolicyG2A(:)-PolicyE2A(:))));
+clear VE2A PolicyE2A
 
 % preGI2A with howardssparse=1 -- NOT YET IMPLEMENTED (postGI only). Included, commented out:
 % vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.preGI=1;

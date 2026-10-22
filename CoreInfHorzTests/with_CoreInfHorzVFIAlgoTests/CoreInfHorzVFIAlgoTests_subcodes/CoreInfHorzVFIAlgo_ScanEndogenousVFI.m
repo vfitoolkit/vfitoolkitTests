@@ -8,7 +8,8 @@ function output=CoreInfHorzVFIAlgo_ScanEndogenousVFI(Params,DiscountFactorParamN
 %
 % Swept: beta in {0.96, 0.99}, rho_z in {0.9, 0.99}, n_z in {7, 21}, for the z (no e) models with and without d, at
 % n_a=500. With Howards at its default, and with Howards off (maxhowards=0, pure VFI), since Howards already does much of
-% what endogenous VFI does. r is set so that beta*(1+r)<1 (r=0.8*(1/beta-1)), so assets do not run off the top of the grid.
+% what endogenous VFI does; and with the grid interpolation layer (ngridinterp=5, Howards at its default). r is set so
+% that beta*(1+r)<1 (r=0.8*(1/beta-1)), so assets do not run off the top of the grid.
 %
 % Nothing here is a check: the V difference is printed against beta/(1-beta)*tolerance, which is the bound on how far each
 % of the two solves is from the true V. Speedups are printed rather than asserted.
@@ -50,13 +51,16 @@ for bb=1:length(beta_list)
                 % Warm up (so the first timed solve is not paying GPU/JIT startup costs)
                 [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions);
 
-                for hh=1:2
+                for hh=1:3
                     vfo=vfoptions;
                     if hh==1
                         hstr='Howards default ';
-                    else
+                    elseif hh==2
                         hstr='Howards OFF     ';
                         vfo.maxhowards=0;
+                    else
+                        hstr='GI, Howards def ';
+                        vfo.gridinterplayer=1; vfo.ngridinterp=5;
                     end
                     tic; [Vp,Policyp]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tp=toc;
                     vfo.endogenousvfi=1;
