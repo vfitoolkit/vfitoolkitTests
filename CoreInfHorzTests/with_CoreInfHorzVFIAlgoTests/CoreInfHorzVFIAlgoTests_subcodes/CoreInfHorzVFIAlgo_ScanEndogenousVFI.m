@@ -52,7 +52,7 @@ for bb=1:length(beta_list)
                 [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions);
 
                 for hh=1:3
-                    vfo=vfoptions;
+                    vfo=vfoptions; vfo.endogenousvfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
                     if hh==1
                         hstr='Howards default ';
                     elseif hh==2
@@ -106,7 +106,7 @@ for bb=1:length(beta_list)
             fprintf('\n---- %s, beta=%1.2f, rho_z=%1.2f, n_z=%d, n_a=%d, %s ----\n',modelstr,Params.beta,rho,n_z,n_a,gistr);
             tplain=zeros(1,length(howardslist)); tendo=zeros(1,length(howardslist));
             for hh=1:length(howardslist)
-                vfo=vfoptions; vfo.howards=howardslist(hh);
+                vfo=vfoptions; vfo.howards=howardslist(hh); vfo.endogenousvfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
                 if gi==1
                     vfo.gridinterplayer=1; vfo.ngridinterp=5;
                 end

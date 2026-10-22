@@ -110,66 +110,85 @@ end
 % endogenousvfi=1 (endogenous VFI; relative VFI when there is no z). Iterates exactly as VFI does but stops on the span over a
 % of V-Vold within each exogenous state, then recovers V in levels, so V agrees with the reference to the same order as the
 % reference is from the true V (beta/(1-beta)*tolerance each), and Policy exactly. Each solver gets its own endogenous twin.
-% (Not for semiz, which the toolkit refuses with endogenousvfi=1 for now.)
-if ~isfield(vfoptions,'n_semiz')
-    vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.endogenousvfi=1;
-    [VE1,PolicyE1]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-    fprintf('noGI: endoVFI greedy0/sparse0 vs ref,  V   should be ~0: %.3e \n',max(abs(V(:)-VE1(:))));
-    fprintf('noGI: endoVFI greedy0/sparse0 vs ref,  Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE1(:))));
+% With semiz the span is over (a,semiz) within each (z,e), as the semiz transitions depend on d.
+vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.endogenousvfi=1;
+[VE1,PolicyE1]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('noGI: endoVFI greedy0/sparse0 vs ref,  V   should be ~0: %.3e \n',max(abs(V(:)-VE1(:))));
+fprintf('noGI: endoVFI greedy0/sparse0 vs ref,  Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE1(:))));
 
-    vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.endogenousvfi=1;
-    [VE2,PolicyE2]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-    fprintf('noGI: endoVFI greedy0/sparse1 vs ref,  V   should be ~0: %.3e \n',max(abs(V(:)-VE2(:))));
-    fprintf('noGI: endoVFI greedy0/sparse1 vs ref,  Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE2(:))));
+vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.endogenousvfi=1;
+[VE2,PolicyE2]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('noGI: endoVFI greedy0/sparse1 vs ref,  V   should be ~0: %.3e \n',max(abs(V(:)-VE2(:))));
+fprintf('noGI: endoVFI greedy0/sparse1 vs ref,  Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE2(:))));
 
-    vfo=vfoptions; vfo.howardsgreedy=1; vfo.howardssparse=0; vfo.endogenousvfi=1;
-    [VE3,PolicyE3]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-    fprintf('noGI: endoVFI greedy1 vs ref,          V   should be ~0: %.3e \n',max(abs(V(:)-VE3(:))));
-    fprintf('noGI: endoVFI greedy1 vs ref,          Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE3(:))));
+vfo=vfoptions; vfo.howardsgreedy=1; vfo.howardssparse=0; vfo.endogenousvfi=1;
+[VE3,PolicyE3]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('noGI: endoVFI greedy1 vs ref,          V   should be ~0: %.3e \n',max(abs(V(:)-VE3(:))));
+fprintf('noGI: endoVFI greedy1 vs ref,          Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE3(:))));
 
-    vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.howards=0; vfo.endogenousvfi=1;
-    [VE4,PolicyE4]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-    fprintf('noGI: endoVFI howards=0 vs ref,        V   should be ~0: %.3e \n',max(abs(V(:)-VE4(:))));
-    fprintf('noGI: endoVFI howards=0 vs ref,        Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE4(:))));
+vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.howards=0; vfo.endogenousvfi=1;
+[VE4,PolicyE4]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+fprintf('noGI: endoVFI howards=0 vs ref,        V   should be ~0: %.3e \n',max(abs(V(:)-VE4(:))));
+fprintf('noGI: endoVFI howards=0 vs ref,        Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE4(:))));
 
-    if prod(n_d)>0
-        vfo=vfoptions; vfo.lowmemory=1; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.endogenousvfi=1;
-        [VE5,PolicyE5]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-        fprintf('noGI: endoVFI lowmemory1 vs ref,       V   should be ~0: %.3e \n',max(abs(V(:)-VE5(:))));
-        fprintf('noGI: endoVFI lowmemory1 vs ref,       Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE5(:))));
+if prod(n_d)>0
+    vfo=vfoptions; vfo.lowmemory=1; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.endogenousvfi=1;
+    [VE5,PolicyE5]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('noGI: endoVFI lowmemory1 vs ref,       V   should be ~0: %.3e \n',max(abs(V(:)-VE5(:))));
+    fprintf('noGI: endoVFI lowmemory1 vs ref,       Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE5(:))));
 
-        % the with-d raws are only reached with solnmethod='purediscretization'
-        vfo=vfoptions; vfo.solnmethod='purediscretization'; vfo.endogenousvfi=1;
-        [VE6,PolicyE6]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-        fprintf('noGI: endoVFI purediscretization,      V   should be ~0: %.3e \n',max(abs(V(:)-VE6(:))));
-        fprintf('noGI: endoVFI purediscretization,      Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE6(:))));
+    % the with-d raws are only reached with solnmethod='purediscretization'
+    vfo=vfoptions; vfo.solnmethod='purediscretization'; vfo.endogenousvfi=1;
+    [VE6,PolicyE6]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('noGI: endoVFI purediscretization,      V   should be ~0: %.3e \n',max(abs(V(:)-VE6(:))));
+    fprintf('noGI: endoVFI purediscretization,      Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE6(:))));
 
-        vfo=vfoptions; vfo.solnmethod='purediscretization'; vfo.howards=0; vfo.endogenousvfi=1;
-        [VE7,PolicyE7]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-        fprintf('noGI: endoVFI purediscretization h=0,  V   should be ~0: %.3e \n',max(abs(V(:)-VE7(:))));
-        fprintf('noGI: endoVFI purediscretization h=0,  Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE7(:))));
-    end
-
-    % The discriminator: without it, a twin that was just plain VFI would pass every check above. Start from the endogenous
-    % solution plus an arbitrary function of the exogenous states, f, which changes neither the policy nor the change in V
-    % net of a function of the exogenous states. The residual of VE1 has a span within each exogenous state of at most
-    % beta*tolerance, so endogenous VFI must stop after the first iteration, and recover the same V in levels. Plain VFI from
-    % the same start is out by about (1-beta)*f in levels, so must run into maxiter=3.
-    szV=size(V);
-    fexo=reshape(10+3*cos(1:prod(szV(2:end))),[1,szV(2:end)]);
-    vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.endogenousvfi=1; vfo.maxiter=3; vfo.V0=VE1+fexo;
-    lastwarn('');
-    [VE8,PolicyE8]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-    msgE8=lastwarn;
-    fprintf('noGI: endoVFI from VE+f(exog), maxiter=3, converged,     should be one: %i \n',~contains(msgE8,'maximum number of iterations'));
-    fprintf('noGI: endoVFI from VE+f(exog), maxiter=3 vs ref,  V   should be ~0: %.3e \n',max(abs(V(:)-VE8(:))));
-    fprintf('noGI: endoVFI from VE+f(exog), maxiter=3 vs ref,  Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE8(:))));
-    vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.maxiter=3; vfo.V0=VE1+fexo;
-    lastwarn('');
-    [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-    msgE9=lastwarn;
-    fprintf('noGI: plain VFI from VE+f(exog), maxiter=3, hit maxiter, should be one: %i \n',contains(msgE9,'maximum number of iterations'));
+    vfo=vfoptions; vfo.solnmethod='purediscretization'; vfo.howards=0; vfo.endogenousvfi=1;
+    [VE7,PolicyE7]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('noGI: endoVFI purediscretization h=0,  V   should be ~0: %.3e \n',max(abs(V(:)-VE7(:))));
+    fprintf('noGI: endoVFI purediscretization h=0,  Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE7(:))));
 end
+
+% The discriminator: without it, a twin that was just plain VFI would pass every check above. Start from the endogenous
+% solution plus an arbitrary function of the exogenous states, f, which changes neither the policy nor the change in V
+% net of a function of the exogenous states. The residual of VE1 has a span within each exogenous state of at most
+% beta*tolerance, so endogenous VFI must stop after the first iteration, and recover the same V in levels. Plain VFI from
+% the same start is out by about (1-beta)*f in levels, so must run into maxiter=3.
+% (V is [n_a,(n_semiz),(n_z),(n_e)]; f varies over the exogenous dimensions only, so not over semiz)
+szV=size(V); if isfield(vfoptions,'n_semiz'), kexo=3; else, kexo=2; end
+fexo=reshape(10+3*cos(1:prod(szV(kexo:end))),[ones(1,kexo-1),szV(kexo:end)]);
+vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.endogenousvfi=1; vfo.maxiter=3; vfo.V0=VE1+fexo;
+lastwarn('');
+[VE8,PolicyE8]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+msgE8=lastwarn;
+fprintf('noGI: endoVFI from VE+f(exog), maxiter=3, converged,     should be one: %i \n',~contains(msgE8,'maximum number of iterations'));
+fprintf('noGI: endoVFI from VE+f(exog), maxiter=3 vs ref,  V   should be ~0: %.3e \n',max(abs(V(:)-VE8(:))));
+fprintf('noGI: endoVFI from VE+f(exog), maxiter=3 vs ref,  Pol should be  0: %.3e \n',max(abs(Policy(:)-PolicyE8(:))));
+vfo=vfoptions; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.maxiter=3; vfo.V0=VE1+fexo; vfo.endogenousvfi=0;
+lastwarn('');
+[~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+msgE9=lastwarn;
+fprintf('noGI: plain VFI from VE+f(exog), maxiter=3, hit maxiter, should be one: %i \n',contains(msgE9,'maximum number of iterations'));
+
+% The defaults that depend on the discount factor (see ValueFnIter_InfHorz): from beta=0.97 endogenous VFI with 40 Howards
+% steps (indexed Howards, as at these grid sizes without GI), below it plain VFI with round(2/(1-beta)) Howards steps. So the
+% default solve must be identical to the explicit one: the same code runs.
+ParamsDefault=Params;
+for bdef=[0.95,0.99]
+    ParamsDefault.(DF{1})=bdef;
+    vfo=vfoptions;
+    [VD,PolicyD]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,ParamsDefault,DF,[],vfo);
+    vfo=vfoptions; vfo.howardssparse=0;
+    if bdef>=0.97
+        vfo.endogenousvfi=1; vfo.howards=40;
+    else
+        vfo.endogenousvfi=0; vfo.howards=round(2/(1-bdef));
+    end
+    [VX,PolicyX]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,ParamsDefault,DF,[],vfo);
+    fprintf('noGI: defaults at beta=%1.2f vs explicit (endogenousvfi=%i, howards=%i), V   should be  0: %.3e \n',bdef,vfo.endogenousvfi,vfo.howards,max(abs(VD(:)-VX(:))));
+    fprintf('noGI: defaults at beta=%1.2f vs explicit (endogenousvfi=%i, howards=%i), Pol should be  0: %.3e \n',bdef,vfo.endogenousvfi,vfo.howards,max(abs(PolicyD(:)-PolicyX(:))));
+end
+clear ParamsDefault VD VX PolicyD PolicyX
 
 clear V2 V3 V4 V5 V6 V7 V8 V9 V10 V11 Policy2 Policy3 Policy4 Policy5 Policy6 Policy7 Policy8 Policy9 Policy10 Policy11
 clear VE1 VE2 VE3 VE4 VE5 VE6 VE7 VE8 PolicyE1 PolicyE2 PolicyE3 PolicyE4 PolicyE5 PolicyE6 PolicyE7 PolicyE8
@@ -217,7 +236,31 @@ if isfield(vfoptions,'n_semiz')
         fprintf('GI:   greedy1 vs ref,                  V   should be ~0: %.3e \n',max(abs(VG(:)-VG3(:))));
         fprintf('GI:   greedy1 vs ref,                  Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyG3(:))));
     end
-    clear VG VG3 VG6 VG8 VG9 PolicyG PolicyG3 PolicyG6 PolicyG8 PolicyG9
+    % endogenousvfi=1 with semiz and GI: the semiz GI endogenous twins, for each config above
+    vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.endogenousvfi=1;
+    [VGE,PolicyGE]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('GI:   endoVFI vs ref,                  V   should be ~0: %.3e \n',max(abs(VG(:)-VGE(:))));
+    fprintf('GI:   endoVFI vs ref,                  Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE(:))));
+    vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.howards=0; vfo.endogenousvfi=1;
+    [VGE,PolicyGE]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    fprintf('GI:   endoVFI howards=0 vs ref,        V   should be ~0: %.3e \n',max(abs(VG(:)-VGE(:))));
+    fprintf('GI:   endoVFI howards=0 vs ref,        Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE(:))));
+    if length(n_d)>1
+        vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=0; vfo.lowmemory=1; vfo.endogenousvfi=1;
+        [VGE,PolicyGE]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+        fprintf('GI:   endoVFI lowmemory1 vs ref,       V   should be ~0: %.3e \n',max(abs(VG(:)-VGE(:))));
+        fprintf('GI:   endoVFI lowmemory1 vs ref,       Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE(:))));
+    else
+        vfo=vfoGI; vfo.howardsgreedy=0; vfo.howardssparse=1; vfo.endogenousvfi=1;
+        [VGE,PolicyGE]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+        fprintf('GI:   endoVFI sparse1 vs ref,          V   should be ~0: %.3e \n',max(abs(VG(:)-VGE(:))));
+        fprintf('GI:   endoVFI sparse1 vs ref,          Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE(:))));
+        vfo=vfoGI; vfo.howardsgreedy=1; vfo.howardssparse=0; vfo.endogenousvfi=1;
+        [VGE,PolicyGE]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+        fprintf('GI:   endoVFI greedy1 vs ref,          V   should be ~0: %.3e \n',max(abs(VG(:)-VGE(:))));
+        fprintf('GI:   endoVFI greedy1 vs ref,          Pol should be  0: %.3e \n',max(abs(PolicyG(:)-PolicyGE(:))));
+    end
+    clear VG VG3 VG6 VG8 VG9 VGE PolicyG PolicyG3 PolicyG6 PolicyG8 PolicyG9 PolicyGE
     fprintf('GI parts (2-5) otherwise not run, with semiz the grid interpolation layer is so far only postGI \n');
     output=struct();
     return

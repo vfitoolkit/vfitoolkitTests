@@ -66,7 +66,7 @@ for zz=1:length(nz_list)
                 Params.r=0.8*(1/Params.beta-1);
                 th=zeros(1,length(howardslist)); the=zeros(1,length(howardslist));
                 for hh=1:length(howardslist)
-                    vfo=vfoptions; vfo.howards=howardslist(hh);
+                    vfo=vfoptions; vfo.howards=howardslist(hh); vfo.endogenousvfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
                     tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); th(hh)=toc;
                     vfo.endogenousvfi=1;
                     tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); the(hh)=toc;
