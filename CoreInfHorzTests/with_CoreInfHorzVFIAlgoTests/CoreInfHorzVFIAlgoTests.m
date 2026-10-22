@@ -31,7 +31,13 @@
 % Some (option x GI) combinations are not yet implemented in the toolkit; those
 % lines are included but commented out (see CoreInfHorzVFIAlgo_algocompare.m).
 %
-% No figures are drawn anywhere in this bank, so only the diary is saved.
+% doPart(11) is a DELIBERATE TRIGGER, not an algorithm comparison: a model whose V contains -Inf (an asset grid below the
+% natural borrowing limit; and a -Inf cap on the state at the top z), to fire the grid interpolation layer's Howards step
+% putting a zero interpolation weight on a -Inf node (0*(-Inf)=NaN, then priced at 0). See InfHorzGI_InfNaN_proposal.md at
+% the toolkit root and CoreInfHorzVFIAlgo_InfNaNcompare. It runs the base postGI raws (nod/d, z/noz, two endogenous states)
+% and the _e raws as a positive control, and draws Figs 1-8 and 11-16 (the only figures in this bank).
+%
+% Only doPart(11) draws figures (saved to ../TestOutput as they are drawn); the other parts save only the diary.
 
 %% Which parts to run
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
@@ -48,6 +54,7 @@
 % doPart(8): semiz (with/without d1, with/without z; Part 1 and a short postGI part)
 % doPart(9): semiz with e (with/without d1, with/without z; Part 1 and a short postGI part)
 % doPart(10): DIAGNOSTIC endogenous VFI runtimes (vfoptions.endogenousvfi=1 against plain VFI; slow)
+% doPart(11): -Inf in V with the grid interpolation layer (deliberate trigger of the Howards zero-weight-on-a--Inf-node defect)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -56,7 +63,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (written to the parent bank's TestOutput folder)
 if ~exist('../TestOutput','dir')
@@ -139,6 +146,8 @@ if doPart(5)==1
     % (n_z is swept because the vfoptions.howardssparse default triggers on N_z>100, but the timings
     %  had only ever been done at n_z=5. This scan builds its own z, so takes no z inputs.)
     output=CoreInfHorzVFIAlgo_ScanHowardsSettings(Params,DiscountFactorParamNames);
+    % And how the number of Howards steps should depend on beta (the defaults were chosen at beta=0.95)
+    output=CoreInfHorzVFIAlgo_ScanHowardsBeta(Params,DiscountFactorParamNames);
 end % doPart(5): Howards settings scan
 
 %% ===== doPart(6): Howards defaults on big grids =====
@@ -191,6 +200,39 @@ if doPart(10)==1
     % (the V/Policy checks on endogenous VFI are in Part 1 of every model, in CoreInfHorzVFIAlgo_algocompare)
     output=CoreInfHorzVFIAlgo_ScanEndogenousVFI(Params,DiscountFactorParamNames);
 end % doPart(10): DIAGNOSTIC endogenous VFI runtimes
+
+%% ===== doPart(11): -Inf in V with the grid interpolation layer (deliberate trigger) =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): -Inf in V with the grid interpolation layer (deliberate trigger) =====\n')
+    %% GPU probes first (InfHorzGI_InfNaN_proposal.md, section 5 step 0). Two things the proposal could only verify on CPU
+    % MATLAB decide whether the sparse Howards raws (class B) and the preGI interp1 Howards (class C) share the defect:
+    %  - interp1 on a gpuArray with a -Inf node: CPU gives -Inf on the open intervals touching that node, exact values at the
+    %    nodes, and no NaN. A NaN here would make the main-loop interp1 a second entry point for the defect.
+    %  - sparse() on gpuArray inputs with an explicit zero weight, times a vector holding -Inf: CPU drops the zero at
+    %    construction, so the product is 5 where a dense [1 0]*[5;-Inf] is NaN. If the GPU keeps the zero, the sparse
+    %    Howards raws do 0*(-Inf) too and join the fix.
+    probeinterp=gather(interp1(gpuArray((1:3)'),gpuArray([-5;-Inf;-3]),gpuArray(linspace(1,3,9)')));
+    fprintf('GPU probe: interp1 with a -Inf middle node, 9 query points from node 1 to node 3: %s \n',mat2str(probeinterp',4))
+    fprintf('GPU probe: interp1 with a -Inf node gives no NaN,                      should be one: %i \n',~any(isnan(probeinterp)))
+    probeS=sparse(gpuArray([1;1]),gpuArray([1;2]),gpuArray([1;0]),1,2);
+    probeSv=gather(full(probeS*gpuArray([5;-Inf])));
+    fprintf('GPU probe: sparse() with an explicit zero weight: nnz %i (CPU drops it, 1); times [5;-Inf]: %s (CPU gives 5) \n',nnz(probeS),num2str(probeSv))
+    fprintf('GPU probe: sparse explicit zero weight on a -Inf node is dropped,      should be one: %i \n',probeSv==5)
+    fprintf('GPU probe: dense [1 0]*[5;-Inf] on the GPU: %s (CPU gives NaN); 0*(-Inf) on the GPU: %s (CPU gives NaN) \n',num2str(gather(gpuArray([1,0])*gpuArray([5;-Inf]))),num2str(gather(gpuArray(0)*gpuArray(-Inf))))
+
+    %% Device 1: the asset grid extends below the natural borrowing limit (fires the zero weight on a dead LOWER node)
+    % nod/d, z/noz, e (positive control), two endogenous states. Figs 1-8.
+    output=CoreInfHorzVFIAlgo_InfNaN_belowNBL(n_d,d_grid,n_z,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,1);
+    for figure_c=1:8
+        exportgraphics(figure(figure_c),['../TestOutput/CoreInfHorzVFIAlgoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    end
+    %% Device 2: a -Inf cap on the state at the top z (fires the zero weight on a dead UPPER node)
+    % nod/d with z, e (positive control), two endogenous states. Figs 11-16.
+    output=CoreInfHorzVFIAlgo_InfNaN_capAtTopZ(n_d,d_grid,n_z,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,11);
+    for figure_c=11:16
+        exportgraphics(figure(figure_c),['../TestOutput/CoreInfHorzVFIAlgoTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+    end
+end % doPart(11): -Inf in V with the grid interpolation layer (deliberate trigger)
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
