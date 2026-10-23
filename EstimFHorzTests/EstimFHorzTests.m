@@ -29,7 +29,7 @@
 % doPart(5): sensitivity to calibrated parameters (Jorgensen) vs finite differences, Lambda*Jcalib identity; an unidentified pair (rank(J) short)
 % doPart(6): cohorts entering at different ages: hand-built cohort moments, the vector and the auto-detected entry ages, one cohort equals the standard estimator, a recovery, must-error inputs, the last-age cutoff of a cohort's distribution (simoptions.lastDistAge / estimoptions.cohortlastage), a QuantileCutoffs (matrix) target, whichcombos=0 vs the default =1 identical (both timed)
 % doPart(7): EstimateLifeCycleModel_MomentDerivatives vs finite differences from full AllStats/LifeCycleProfiles runs; omit mask; ExogShockFn; the sorted output
-% doPart(8): runtime of skipestimation with whichcombos=1 vs =0 (informational)
+% doPart(8): runtime of skipestimation with whichcombos=1 vs =0 (informational); skipjacobian=1 (one evaluation, no Jacobian) vs skipestimation alone, ignored without skipestimation, timed
 % doPart(9): parameters DERIVED by ParametrizeParamsFn feeding the shocks and the jequaloneDist function (built 2026-10-12 with the
 %            fix it pins: calibrateshocks used to name-match only EstimParamNames, silently freezing shocks whose dependence runs
 %            through the derived parameters; now ParseParametrizeParamsFn / estimoptions.ParametrizeParamsFn_OutputNames feed the
@@ -106,7 +106,7 @@ end % doPart(7)
 
 %% ===== doPart(8): runtime, whichcombos=1 vs =0 (informational) =====
 if doPart(8)==1
-    fprintf('\n===== doPart(8): runtime, whichcombos=1 vs =0 (informational) =====\n')
+    fprintf('\n===== doPart(8): runtime, whichcombos=1 vs =0 (informational); skipjacobian =====\n')
     output=EstimFHorz_Runtime(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,ReturnFn,jequaloneDist);
 end % doPart(8)
 
