@@ -20,6 +20,7 @@
 % be finished off by running just the parts that never got to run.
 % doPart(1): figs 1-4
 % doPart(2): cross-tests
+% doPart(3): z and e grids that vary over the path (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -28,7 +29,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1];
+doPart=[1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -100,6 +101,14 @@ if doPart(2)==1
     output=CoreFHorzTPathExpAssetz_CrossTest2_nod1(T,PricePath,ParamPath,n_d_withoutd1,n_a,n_z,N_j,d_grid_withoutd1,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
     output=CoreFHorzTPathExpAssetz_CrossTest2_d1(T,PricePath,ParamPath,n_d_withd1,n_a,n_z,N_j,d_grid_withd1,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
 end % doPart(2): cross-tests
+
+%% ===== doPart(3): z and e grids that vary over the path =====
+if doPart(3)==1
+    fprintf('\n===== doPart(3): z and e grids that vary over the path =====\n')
+    % Drifting z and e grids vs the same model with the drift as parameters on ParamPath: value fn, agent dist,
+    % AggVars and one GE iteration, fastOLG=0 and 1. See the header of the subcode.
+    output=CoreFHorzTPathExpAssetz_timevaryinggrids(T,PricePath,ParamPath,n_d_withoutd1,n_a,n_z,N_j,d_grid_withoutd1,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(3): z and e grids that vary over the path
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run

@@ -19,6 +19,7 @@
 % be finished off by running just the parts that never got to run.
 % doPart(1): figs 1-8
 % doPart(2): cross-tests
+% doPart(3): z and e grids that vary over the path (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -27,7 +28,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1];
+doPart=[1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('../TestOutput','dir')
@@ -130,6 +131,14 @@ if doPart(2)==1
 
     output=QHDFHorzTPath_CrossTests_d_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(2): cross-tests
+
+%% ===== doPart(3): z and e grids that vary over the path =====
+if doPart(3)==1
+    fprintf('\n===== doPart(3): z and e grids that vary over the path =====\n')
+    % Drifting z and e grids vs the same model with the drift as parameters on ParamPath, Naive and Sophisticated:
+    % value fn, agent dist and one GE iteration, fastOLG=0 and 1. See the header of the subcode.
+    output=QHDFHorzTPath_timevaryinggrids(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline);
+end % doPart(3): z and e grids that vary over the path
 
 % all looking good :)
 
