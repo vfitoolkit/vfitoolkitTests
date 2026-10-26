@@ -90,6 +90,23 @@ Policy_init_PT.ze=PolicyPath_PT.ze(:,:,:,:,:,1);
 AgentDist_initial_PT=StationaryDist_Case1_FHorz_PType(jequaloneDist_PT,AgeWeightParamNames,PTypeDistParamNames,Policy_init_PT,n_d,n_a,n_z_PT,N_j,Names_i,pi_z_PT,Params,simopt_PT);
 AgentDistPath_PT=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial_PT, jequaloneDist_PT, PricePath, ParamPath, PolicyPath_PT, AgeWeightParamNames, PTypeDistParamNames,n_d,n_a,n_z_PT,N_j,Names_i,pi_z_PT, T,Params, transpathoptionsbaseline, simopt_PT);
 
+%% (PA8) Statistics along the path, with (z,e) different for each ptype
+% FnsToEvaluate by ptype (their inputs differ with the shocks). Each ptype's AllStats and life-cycle
+% profiles must equal the commands without permanent types on its solo paths (checked in the loop below).
+FnsToEvaluate_PT=struct();
+FnsToEvaluate_PT.assets.none=@(aprime,a) a;
+FnsToEvaluate_PT.assets.z=@(aprime,a,z) a;
+FnsToEvaluate_PT.assets.e=@(aprime,a,e) a;
+FnsToEvaluate_PT.assets.ze=@(aprime,a,z,e) a;
+FnsToEvaluate_PT.earnings.none=@(aprime,a,w,kappa_j) w*kappa_j;
+FnsToEvaluate_PT.earnings.z=@(aprime,a,z,w,kappa_j) w*kappa_j*z;
+FnsToEvaluate_PT.earnings.e=@(aprime,a,e,w,kappa_j) w*kappa_j*e;
+FnsToEvaluate_PT.earnings.ze=@(aprime,a,z,e,w,kappa_j) w*kappa_j*z*e;
+AllStats_PT=EvalFnOnTransPath_AllStats_Case1_FHorz_PType(FnsToEvaluate_PT, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params, T, n_d, n_a, n_z_PT, N_j, Names_i, d_grid, a_grid,z_grid_PT, transpathoptionsbaseline, simopt_PT);
+LCP_PT=LifeCycleProfiles_TransPath_FHorz_Case1_PType(FnsToEvaluate_PT, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params, T, n_d, n_a, n_z_PT, N_j, Names_i, d_grid, a_grid,z_grid_PT, transpathoptionsbaseline, simopt_PT);
+OutputTypes={'Mean','Median','Variance','LorenzCurve','Gini','QuantileCutoffs','QuantileMeans'};
+fnnames=fieldnames(FnsToEvaluate_PT);
+
 %% Four independent single-type solves
 for ii=1:N_i
     nm=Names_i{ii};
@@ -119,6 +136,66 @@ for ii=1:N_i
 
     fprintf('ShockTests 4 types, AgentDistInit(type %s), this should be zero: %.3e \n',nm,max(abs(AgentDist_initial_PT.(nm)(:)-AgentDist_initial_solo(:))))
     fprintf('ShockTests 4 types, AgentDistPath(type %s), this should be zero: %.3e \n',nm,max(abs(AgentDistPath_PT.(nm)(:)-AgentDistPath_solo(:))))
+
+    % (PA8) this ptype's stats vs the commands without permanent types on its solo paths
+    FnsToEvaluate_solo=struct();
+    FnsToEvaluate_solo.assets=FnsToEvaluate_PT.assets.(nm);
+    FnsToEvaluate_solo.earnings=FnsToEvaluate_PT.earnings.(nm);
+    REF=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluate_solo, AgentDistPath_solo, PolicyPath_solo, PricePath, ParamPath, Params, T, n_d, n_a, n_z_PT.(nm), N_j, d_grid, a_grid,z_grid_PT.(nm), transpathoptionsbaseline, simopt_solo);
+    REFL=LifeCycleProfiles_TransPath_FHorz_Case1(FnsToEvaluate_solo, AgentDistPath_solo, PolicyPath_solo, PricePath, ParamPath, Params, T, n_d, n_a, n_z_PT.(nm), N_j, d_grid, a_grid, z_grid_PT.(nm), transpathoptionsbaseline, simopt_solo);
+    % every field of the reference, to any depth, found in the PType output with the ptype name after the FnsToEvaluate name
+    maxdiff=0; nanmismatch=0;
+    queue={};
+    REFnames=fieldnames(REF);
+    for kk=1:length(REFnames)
+        queue{end+1}=REFnames(kk);
+    end
+    while ~isempty(queue)
+        fieldpath=queue{1};
+        queue(1)=[];
+        O=getfield(REF,fieldpath{:});
+        if isstruct(O)
+            Onames=fieldnames(O);
+            for kk=1:length(Onames)
+                queue{end+1}=[fieldpath,Onames(kk)];
+            end
+        else
+            Ppath=[fieldpath(1),{nm},fieldpath(2:end)];
+            P=AllStats_PT;
+            found=1;
+            for kk=1:length(Ppath)
+                if isstruct(P) && isfield(P,Ppath{kk})
+                    P=P.(Ppath{kk});
+                else
+                    found=0;
+                    break
+                end
+            end
+            if found==0
+                nanmismatch=nanmismatch+1;
+            elseif iscell(O) % text (the comments): must be the same text
+                nanmismatch=nanmismatch+(~isequal(P,O));
+            else
+                maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+                nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+            end
+        end
+    end
+    fprintf('ShockTests 4 types, (PA8) EvalFnOnTransPath_AllStats_PType vs without permanent types (type %s), every stat, this should be zero: %.3e \n',nm,maxdiff)
+    fprintf('ShockTests 4 types, (PA8) EvalFnOnTransPath_AllStats_PType vs without permanent types (type %s), positions NaN (or text) in one but not the other, or missing, this should be zero: %i \n',nm,nanmismatch)
+    maxdiff=0; nanmismatch=0;
+    for ff=1:length(fnnames)
+        for oo=1:length(OutputTypes)
+            PI=gather(LCP_PT.(fnnames{ff}).(nm).initialages.(OutputTypes{oo}));
+            PB=gather(LCP_PT.(fnnames{ff}).(nm).bornduringtranstion.(OutputTypes{oo}));
+            OI=gather(REFL.(fnnames{ff}).initialages.(OutputTypes{oo}));
+            OB=gather(REFL.(fnnames{ff}).bornduringtranstion.(OutputTypes{oo}));
+            maxdiff=max([maxdiff; abs(PI(:)-OI(:)); abs(PB(:)-OB(:))],[],'omitnan');
+            nanmismatch=nanmismatch+sum(isnan(PI(:))~=isnan(OI(:)))+sum(isnan(PB(:))~=isnan(OB(:)));
+        end
+    end
+    fprintf('ShockTests 4 types, (PA8) LifeCycleProfiles_TransPath_PType vs without permanent types (type %s), all seven outputs, this should be zero: %.3e \n',nm,maxdiff)
+    fprintf('ShockTests 4 types, (PA8) LifeCycleProfiles_TransPath_PType vs without permanent types (type %s), entries NaN in one but not the other, this should be zero: %i \n',nm,nanmismatch)
 end
 
 output=struct();

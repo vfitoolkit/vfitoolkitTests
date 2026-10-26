@@ -70,6 +70,30 @@ fprintf('One iter of GE TPath (fastOLG=0), PType vs no-PType, this should be zer
 
 fprintf('One iter of GE TPath, PType with/without fastOLG, this should be zero: %.3e \n',max(abs(PricePath_PT1.r(:)-PricePath_PT0.r(:))))
 
+%% The same with Anderson acceleration (GEnewprice=2)
+% warmup=0 and maxiter=3, so iterations 2 and 3 are Anderson steps (at maxiter=2 Anderson would still be
+% the shooting algorithm here, as iteration 1 has no history to mix)
+transpathoptionsA=rmfield(transpathoptions,'GEnewprice3');
+transpathoptionsA.GEnewprice=2;
+transpathoptionsA.GEnewprice2.howtoupdate=transpathoptions.GEnewprice3.howtoupdate;
+transpathoptionsA.maxiter=3;
+transpathoptionsA.anderson.warmup=0;
+transpathoptionsA.anderson.safeguard=0;
+transpathoptionsA.fastOLG=1;
+PricePathA_PT1=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, N_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptionsA, simoptions, vfoptions);
+PricePathA_NoPT1=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, jequaloneDist, n_d, n_a, n_z, N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsA, simoptions, vfoptions);
+transpathoptionsA.fastOLG=0;
+PricePathA_PT0=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, N_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptionsA, simoptions, vfoptions);
+% The shooting algorithm for the same number of iterations, to show the Anderson steps were taken
+transpathoptionsS3=transpathoptions;
+transpathoptionsS3.maxiter=3;
+transpathoptionsS3.fastOLG=1;
+PricePathS3_PT1=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, N_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptionsS3, simoptions, vfoptions);
+
+fprintf('Anderson at maxiter=3 GE TPath (fastOLG=1), PType vs no-PType, this should be zero: %.3e \n',max(abs(PricePathA_PT1.r(:)-PricePathA_NoPT1.r(:))))
+fprintf('Anderson at maxiter=3 GE TPath, PType with/without fastOLG, this should be zero: %.3e \n',max(abs(PricePathA_PT1.r(:)-PricePathA_PT0.r(:))))
+fprintf('Anderson vs shooting at maxiter=3 GE TPath (fastOLG=1), PType, this should NOT be zero: %.3e \n',max(abs(PricePathA_PT1.r(:)-PricePathS3_PT1.r(:))))
+
 output=struct();
 
 end

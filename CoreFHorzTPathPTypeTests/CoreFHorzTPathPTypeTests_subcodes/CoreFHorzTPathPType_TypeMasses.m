@@ -121,6 +121,126 @@ AggVarsPath4n=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, AgentDi
 fprintf('Type masses (fastOLG=%i): (4) without the weights path, AgentDistPath.ptweights is AgentDist_initial.ptweights, this should be zero: %.3e \n',fastOLG,max(abs(reshape(AgentDistPath4n.ptweights,[],1)-ptw_initial))+abs(numel(AgentDistPath4n.ptweights)-N_i))
 fprintf('Type masses (fastOLG=%i): (4) standalone vs inside the path, no weights path, pooled, this should be zero: %.3e \n',fastOLG,max(abs(gather(AggVarsPath4n.assets.Mean(1:T-1)+10*AggVarsPath4n.earnings.Mean(1:T-1))-gather(GEcondnPath1.g))))
 
+%% (PA7)/(PL5) statistics along the path with the weights path (fastOLG=1 only: the stats commands take the paths)
+%   (PA7) AllStats, pooled and by ptype, vs the stationary PType AllStats period by period with
+%         StationaryDist.ptweights the weights of that period
+%   (PL5) the pooled life-cycle profiles vs the per-period stationary PType profiles with the weights of
+%         that period, in the cohort layout
+% Each ptype's agent dist does not depend on the weights, so the per-ptype stats with and without the weights
+% path must be the same, while the pooled ones must differ.
+if fastOLG==1
+    AllStats4=EvalFnOnTransPath_AllStats_Case1_FHorz_PType(FnsToEvaluate, AgentDistPath4, PolicyPath4, PricePath, ParamPath2, Params_PT, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptions4, simoptions);
+    AllStats4n=EvalFnOnTransPath_AllStats_Case1_FHorz_PType(FnsToEvaluate, AgentDistPath4n, PolicyPath4n, PricePath, ParamPath, Params_PT, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptions4, simoptions);
+    LCP4=LifeCycleProfiles_TransPath_FHorz_Case1_PType(FnsToEvaluate, AgentDistPath4, PolicyPath4, PricePath, ParamPath2, Params_PT, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptions4, simoptions);
+    OutputTypes={'Mean','Median','Variance','LorenzCurve','Gini','QuantileCutoffs','QuantileMeans'};
+    scalarstat=[1,1,1,0,1,0,0]; % Mean, Median, Variance, Gini are one number per age
+    fnnames=fieldnames(FnsToEvaluate);
+    PricePathNamesS=fieldnames(PricePath);
+    ParamPathNamesS=fieldnames(ParamPath);
+    AScell=cell(1,T);
+    LCPcell=cell(1,T);
+    for tt=1:T
+        Params_tt=Params_PT;
+        for kk=1:length(PricePathNamesS)
+            Params_tt.(PricePathNamesS{kk})=PricePath.(PricePathNamesS{kk})(tt);
+        end
+        for kk=1:length(ParamPathNamesS)
+            Params_tt.(ParamPathNamesS{kk})=ParamPath.(ParamPathNamesS{kk})(tt);
+        end
+        Params_tt.ptweights_mass=ptwPath(:,tt);
+        StationaryDist_tt=struct(); Policy_tt=struct();
+        for ii=1:N_i
+            StationaryDist_tt.(Names_i{ii})=AgentDistPath4.(Names_i{ii})(:,:,:,tt);
+            Policy_tt.(Names_i{ii})=PolicyPath4.(Names_i{ii})(:,:,:,:,tt);
+        end
+        StationaryDist_tt.ptweights=ptwPath(:,tt);
+        AScell{tt}=EvalFnOnAgentDist_AllStats_FHorz_Case1_PType(StationaryDist_tt,Policy_tt,FnsToEvaluate,Params_tt,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
+        LCPcell{tt}=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist_tt,Policy_tt,FnsToEvaluate,Params_tt,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptions);
+    end
+    maxdiff=0; nanmismatch=0;
+    for tt=1:T
+        AS=AScell{tt};
+        queue={{}};
+        while ~isempty(queue)
+            fieldpath=queue{1};
+            queue(1)=[];
+            if isempty(fieldpath)
+                O=AS;
+            else
+                O=getfield(AS,fieldpath{:});
+            end
+            if isstruct(O)
+                Onames=fieldnames(O);
+                for kk=1:length(Onames)
+                    queue{end+1}=[fieldpath,Onames(kk)];
+                end
+            elseif ischar(O) || isstring(O) || iscell(O) % text (the comments): must be the same text
+                P=getfield(AllStats4,fieldpath{:});
+                nanmismatch=nanmismatch+(~isequal(P{tt},O));
+            else
+                O=gather(O);
+                P=getfield(AllStats4,fieldpath{:});
+                P=P(:,tt);
+                maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+                nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+            end
+        end
+    end
+    fprintf('Type masses (fastOLG=%i): (PA7) weights path, EvalFnOnTransPath_AllStats_PType vs the stationary PType AllStats with that period''s weights, pooled and by ptype, every stat, this should be zero: %.3e \n',fastOLG,maxdiff)
+    fprintf('Type masses (fastOLG=%i): (PA7) weights path, EvalFnOnTransPath_AllStats_PType vs the stationary PType AllStats with that period''s weights, positions NaN (or text) in one but not the other, this should be zero: %i \n',fastOLG,nanmismatch)
+    maxdiff=0;
+    for ii=1:N_i
+        for ff=1:length(fnnames)
+            statnames=fieldnames(AllStats4.(fnnames{ff}).(Names_i{ii}));
+            for kk=1:length(statnames)
+                O=AllStats4n.(fnnames{ff}).(Names_i{ii}).(statnames{kk});
+                if isnumeric(O)
+                    maxdiff=max([maxdiff; abs(AllStats4.(fnnames{ff}).(Names_i{ii}).(statnames{kk})(:)-O(:))],[],'omitnan');
+                end
+            end
+        end
+    end
+    fprintf('Type masses (fastOLG=%i): (PA7) by ptype, with vs without the weights path, this should be zero: %.3e \n',fastOLG,maxdiff)
+    fprintf('Type masses (fastOLG=%i): (PA7) pooled mean of assets, with vs without the weights path, this should NOT be zero: %.3e \n',fastOLG,max(abs(AllStats4.assets.Mean-AllStats4n.assets.Mean)))
+    maxdiff=0; nanmismatch=0;
+    for ff=1:length(fnnames)
+        for oo=1:length(OutputTypes)
+            PI=gather(LCP4.(fnnames{ff}).initialages.(OutputTypes{oo}));
+            PB=gather(LCP4.(fnnames{ff}).bornduringtranstion.(OutputTypes{oo}));
+            OI=nan(size(PI));
+            OB=nan(size(PB));
+            for tt=1:min(T,N_j)
+                temp=gather(LCPcell{tt}.(fnnames{ff}).(OutputTypes{oo}));
+                for jj=1:N_j-tt+1
+                    if scalarstat(oo)==1
+                        OI(jj,jj+tt-1)=temp(jj+tt-1);
+                    else
+                        OI(:,jj,jj+tt-1)=temp(:,jj+tt-1);
+                    end
+                end
+            end
+            for bb=1:T
+                for age=1:N_j
+                    tt=bb+age-1;
+                    if tt<=T
+                        temp=gather(LCPcell{tt}.(fnnames{ff}).(OutputTypes{oo}));
+                        if scalarstat(oo)==1
+                            OB(bb,age)=temp(age);
+                        else
+                            OB(:,bb,age)=temp(:,age);
+                        end
+                    end
+                end
+            end
+            maxdiff=max([maxdiff; abs(PI(:)-OI(:)); abs(PB(:)-OB(:))],[],'omitnan');
+            nanmismatch=nanmismatch+sum(isnan(PI(:))~=isnan(OI(:)))+sum(isnan(PB(:))~=isnan(OB(:)));
+        end
+    end
+    fprintf('Type masses (fastOLG=%i): (PL5) weights path, pooled LifeCycleProfiles_TransPath_PType vs the per-period stationary PType profiles with that period''s weights, all seven outputs, this should be zero: %.3e \n',fastOLG,maxdiff)
+    fprintf('Type masses (fastOLG=%i): (PL5) weights path, pooled LifeCycleProfiles_TransPath_PType vs the per-period stationary PType profiles, entries NaN in one but not the other, this should be zero: %i \n',fastOLG,nanmismatch)
+    clear AScell LCPcell AllStats4 AllStats4n LCP4
+end
+
 %% (5) the weights path together with mewj paths by ptype
 % typeA's age weights tilt towards the old, typeB's towards the young, both starting from Params.mewj
 tilt=linspace(-1,1,N_j)';
@@ -160,6 +280,22 @@ if fastOLG==1
     fprintf('Type masses GE path: (6) Anderson reached toleranceGEcondns, should be one: %i (GE condn distance %.3e, toleranceGEcondns 1e-4) \n',distA<=1e-4,distA)
     fprintf('Type masses GE path: (6) Anderson vs shooting, same eqm path, should be small: %.3e \n',max(abs(PricePath6A.r(:)-PricePath6S.r(:))))
     fprintf('Type masses GE path: (6) for scale, the eqm r moves along the path by %.3e (must not be zero) \n',max(PricePath6S.r(:))-min(PricePath6S.r(:)))
+    % (6') Anderson with memory=0 is the shooting algorithm, at a fixed 3 iterations; with a history it is not
+    transpathoptions6S3=transpathoptions6S;
+    transpathoptions6S3.maxiter=3;
+    PricePath6S3=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath2, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns6, Params_PT, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions6S3, simoptions, vfoptions);
+    transpathoptions6A3=transpathoptions6A;
+    transpathoptions6A3.maxiter=3;
+    transpathoptions6A3.anderson.warmup=0;
+    transpathoptions6A3.anderson.safeguard=0;
+    transpathoptions6A3.anderson.memory=0;
+    PricePath6A30=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath2, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns6, Params_PT, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions6A3, simoptions, vfoptions);
+    transpathoptions6A3=rmfield(transpathoptions6A3,'anderson');
+    transpathoptions6A3.anderson.warmup=0;
+    transpathoptions6A3.anderson.safeguard=0;
+    PricePath6A35=TransitionPath_Case1_FHorz_PType(PricePath, ParamPath2, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns6, Params_PT, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions6A3, simoptions, vfoptions);
+    fprintf('Type masses GE path: (6'') Anderson with memory=0 vs shooting, both at maxiter=3, this should be zero: %.3e \n',max(abs(PricePath6A30.r(:)-PricePath6S3.r(:))))
+    fprintf('Type masses GE path: (6'') Anderson with the default memory vs shooting, both at maxiter=3, this should NOT be zero: %.3e \n',max(abs(PricePath6A35.r(:)-PricePath6S3.r(:))))
 end
 
 %% (7) weights that differ from AgentDist_initial.ptweights (each also prints a warning, which is not a check)

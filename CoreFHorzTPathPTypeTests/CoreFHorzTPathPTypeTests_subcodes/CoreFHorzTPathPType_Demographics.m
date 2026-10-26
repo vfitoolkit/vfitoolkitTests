@@ -246,6 +246,9 @@ transpathoptions8.fastOLG=fastOLG;
 [~,PolicyPath8]=ValueFnOnTransPath_Case1_FHorz_PType(PricePath, ParamPath2, T, V_final_PT, Policy_final_PT, Params2, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptions8, vfoptions);
 AgentDistPath8=AgentDistOnTransPath_Case1_FHorz_PType(AgentDist_initial2, jequaloneDist, PricePath, ParamPath2, PolicyPath8, AgeWeightParamNames, PTypeDistParamNames,n_d,n_a,n_z,N_j,Names_i,pi_z, T,Params2, transpathoptions8, simoptions);
 AggVarsPath8=EvalFnOnTransPath_AggVars_Case1_FHorz_PType(FnsToEvaluate, AgentDistPath8, PolicyPath8, PricePath, ParamPath2, Params2, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptions8, simoptions);
+if fastOLG==1
+    AllStats8=EvalFnOnTransPath_AllStats_Case1_FHorz_PType(FnsToEvaluate, AgentDistPath8, PolicyPath8, PricePath, ParamPath2, Params2, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptions8, simoptions);
+end
 for ii=1:N_i
     nm=Names_i{ii};
     ParamPath_ii=ParamPath;
@@ -257,6 +260,83 @@ for ii=1:N_i
     fprintf('Demographics by ptype (fastOLG=%i): (8) standalone commands, mewj path by ptype, PType vs solo, earnings (type %s), this should be zero: %.3e \n',fastOLG,nm,max(abs(AggVarsPath8.earnings.(nm).Mean(:)-AggVarsPath8solo.earnings.Mean(:))))
     % and the standalone aggregates against the ones inside the path (the decoupled GE condition of (2))
     fprintf('Demographics by ptype (fastOLG=%i): (8) standalone vs inside the path, mewj path by ptype (type %s), this should be zero: %.3e \n',fastOLG,nm,max(abs(gather(AggVarsPath8.assets.(nm).Mean(1:T-1)+10*AggVarsPath8.earnings.(nm).Mean(1:T-1))-gather(GEcondnPath2D.g.(nm)))))
+    if fastOLG==1
+        % (PA9) AllStats of this ptype vs the command without PType on the solo paths with its own mewj path
+        AllStats8solo=EvalFnOnTransPath_AllStats_Case1_FHorz(FnsToEvaluate, AgentDistPath8solo, PolicyPath8solo, PricePath, ParamPath_ii, Params_solo{ii}, T, n_d, n_a, n_z, N_j, d_grid, a_grid,z_grid, transpathoptions8, simoptions);
+        % every field of the reference, to any depth, found in the PType output with the ptype name after the FnsToEvaluate name
+        maxdiff=0; nanmismatch=0;
+        queue={};
+        REFnames=fieldnames(AllStats8solo);
+        for kk=1:length(REFnames)
+            queue{end+1}=REFnames(kk);
+        end
+        while ~isempty(queue)
+            fieldpath=queue{1};
+            queue(1)=[];
+            O=getfield(AllStats8solo,fieldpath{:});
+            if isstruct(O)
+                Onames=fieldnames(O);
+                for kk=1:length(Onames)
+                    queue{end+1}=[fieldpath,Onames(kk)];
+                end
+            else
+                Ppath=[fieldpath(1),{nm},fieldpath(2:end)];
+                P=AllStats8;
+                found=1;
+                for kk=1:length(Ppath)
+                    if isstruct(P) && isfield(P,Ppath{kk})
+                        P=P.(Ppath{kk});
+                    else
+                        found=0;
+                        break
+                    end
+                end
+                if found==0
+                    nanmismatch=nanmismatch+1;
+                elseif iscell(O) % text (the comments): must be the same text
+                    nanmismatch=nanmismatch+(~isequal(P,O));
+                else
+                    maxdiff=max([maxdiff; abs(P(:)-O(:))],[],'omitnan');
+                    nanmismatch=nanmismatch+sum(isnan(P(:))~=isnan(O(:)));
+                end
+            end
+        end
+        fprintf('Demographics by ptype (fastOLG=%i): (PA9) EvalFnOnTransPath_AllStats_PType with the mewj path by ptype vs without permanent types on the solo paths, every stat (type %s), this should be zero: %.3e \n',fastOLG,nm,maxdiff)
+        fprintf('Demographics by ptype (fastOLG=%i): (PA9) EvalFnOnTransPath_AllStats_PType with the mewj path by ptype vs without permanent types on the solo paths, positions NaN (or text) in one but not the other, or missing (type %s), this should be zero: %i \n',fastOLG,nm,nanmismatch)
+    end
+end
+
+%% (PL4) The pooled life-cycle profile when the age weights differ by ptype (fastOLG=1 only: the stats commands take the paths)
+% Pooled across ptypes, the mean at age j in period t is sum_i ptweight_i*m_ij(t)*Mean_ij(t) / sum_i ptweight_i*m_ij(t),
+% where m_ij(t) is the mass of age j in ptype i's agent dist in period t (here mewj(j,t) of that ptype, which differs
+% across ptypes) and Mean_ij(t) is the mean of ptype i at age j. Checked on the cohorts born during the transition
+% (cohort b at age j is period b+j-1). A command that pooled the ages with the ptweights alone would get
+% sum_i ptweight_i*Mean_ij(t), which must differ from it.
+if fastOLG==1
+    LCP8=LifeCycleProfiles_TransPath_FHorz_Case1_PType(FnsToEvaluate, AgentDistPath8, PolicyPath8, PricePath, ParamPath2, Params2, T, n_d, n_a, n_z, N_j, Names_i, d_grid, a_grid,z_grid, transpathoptions8, simoptions);
+    massPath8=cell(N_i,1);
+    for ii=1:N_i
+        massPath8{ii}=gather(reshape(sum(sum(AgentDistPath8.(Names_i{ii}),1),2),[N_j,T])); % N_j-by-T
+    end
+    maxdiff=0; maxdiffwrong=0;
+    for bb=1:T
+        for jj=1:N_j
+            tt=bb+jj-1;
+            if tt<=T
+                num=0; den=0; wrong=0;
+                for ii=1:N_i
+                    Mean_ij=LCP8.assets.(Names_i{ii}).bornduringtranstion.Mean(bb,jj);
+                    num=num+ptw(ii)*massPath8{ii}(jj,tt)*Mean_ij;
+                    den=den+ptw(ii)*massPath8{ii}(jj,tt);
+                    wrong=wrong+ptw(ii)*Mean_ij;
+                end
+                maxdiff=max(maxdiff,abs(LCP8.assets.bornduringtranstion.Mean(bb,jj)-num/den));
+                maxdiffwrong=max(maxdiffwrong,abs(num/den-wrong));
+            end
+        end
+    end
+    fprintf('Demographics by ptype (fastOLG=%i): (PL4) pooled age-conditional mean of assets vs the age-mass-weighted ptype means, mewj path by ptype, this should be zero: %.3e \n',fastOLG,maxdiff)
+    fprintf('Demographics by ptype (fastOLG=%i): (PL4) the age-mass-weighted pooled mean vs the one weighted by ptweights alone, this should NOT be zero: %.3e \n',fastOLG,maxdiffwrong)
 end
 
 output=struct();

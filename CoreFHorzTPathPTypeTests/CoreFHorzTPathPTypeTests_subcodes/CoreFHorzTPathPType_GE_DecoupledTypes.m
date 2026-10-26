@@ -171,6 +171,37 @@ for ii=1:N_i
     fprintf('GE decoupled types (fastOLG=%i), PricePathptype_vectoroutput 1 vs 0 (type %s), this should be zero: %.3e \n',fastOLG,nm,max(abs(reshape(PricePath_GEvec.r(ii,:),[],1)-PricePath_GE.r.(nm)(:))))
 end
 
+%% Anderson acceleration (GEnewprice=2)
+% Anderson is not separable by ptype: each step solves one least-squares problem over the whole price
+% path, every ptype's interest rate included, so it does not equal four solo Anderson solves. With
+% anderson.memory=0 there is no history to mix and every step is a plain shooting step, so the PType
+% Anderson solve must equal the PType shooting solve exactly. At maxiter=3 (iterations 2 and 3 would
+% mix if there were a history, as warmup=0); and with the default memory, Anderson must then differ
+% from shooting.
+transpathoptionsA=rmfield(transpathoptions,{'GEnewprice3','PricePathptype_vectoroutput'});
+transpathoptionsA.GEnewprice=2;
+transpathoptionsA.GEnewprice2.howtoupdate=transpathoptions.GEnewprice3.howtoupdate;
+transpathoptionsA.maxiter=3;
+transpathoptionsA.anderson.warmup=0;
+transpathoptionsA.anderson.safeguard=0;
+transpathoptionsA.anderson.memory=0;
+PricePathA0=TransitionPath_Case1_FHorz_PType(PricePath_PT, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist_PT, n_d_PT, n_a_PT, n_z_PT, N_j, Names_i, d_grid_PT,a_grid_PT,z_grid_PT, pi_z_PT, ReturnFn_PT, FnsToEvaluate, GeneralEqmEqns, Params_PT, DiscountFactorParamNames_GE, AgeWeightParamNames, PTypeDistParamNames, transpathoptionsA, simopt_PT, vfopt_PT);
+transpathoptionsA=rmfield(transpathoptionsA,'anderson');
+transpathoptionsA.anderson.warmup=0;
+transpathoptionsA.anderson.safeguard=0;
+PricePathA5=TransitionPath_Case1_FHorz_PType(PricePath_PT, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist_PT, n_d_PT, n_a_PT, n_z_PT, N_j, Names_i, d_grid_PT,a_grid_PT,z_grid_PT, pi_z_PT, ReturnFn_PT, FnsToEvaluate, GeneralEqmEqns, Params_PT, DiscountFactorParamNames_GE, AgeWeightParamNames, PTypeDistParamNames, transpathoptionsA, simopt_PT, vfopt_PT);
+transpathoptionsS3=rmfield(transpathoptions,'PricePathptype_vectoroutput');
+transpathoptionsS3.maxiter=3;
+PricePathS3=TransitionPath_Case1_FHorz_PType(PricePath_PT, ParamPath, T, V_final_PT, AgentDist_initial_PT, jequaloneDist_PT, n_d_PT, n_a_PT, n_z_PT, N_j, Names_i, d_grid_PT,a_grid_PT,z_grid_PT, pi_z_PT, ReturnFn_PT, FnsToEvaluate, GeneralEqmEqns, Params_PT, DiscountFactorParamNames_GE, AgeWeightParamNames, PTypeDistParamNames, transpathoptionsS3, simopt_PT, vfopt_PT);
+maxdiff0=0; maxdiff5=0;
+for ii=1:N_i
+    nm=Names_i{ii};
+    maxdiff0=max(maxdiff0,max(abs(PricePathA0.r.(nm)(:)-PricePathS3.r.(nm)(:))));
+    maxdiff5=max(maxdiff5,max(abs(PricePathA5.r.(nm)(:)-PricePathS3.r.(nm)(:))));
+end
+fprintf('GE decoupled types (fastOLG=%i), Anderson with memory=0 vs shooting, both at maxiter=3, all four types, this should be zero: %.3e \n',fastOLG,maxdiff0)
+fprintf('GE decoupled types (fastOLG=%i), Anderson with the default memory vs shooting, both at maxiter=3, all four types, this should NOT be zero: %.3e \n',fastOLG,maxdiff5)
+
 output=struct();
 
 end

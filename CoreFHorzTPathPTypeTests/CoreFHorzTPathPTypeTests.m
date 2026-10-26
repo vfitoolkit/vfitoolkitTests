@@ -39,6 +39,25 @@
 %        pooled aggregates against the weighted solo ones period by period, GEptype unaffected, the
 %        standalone commands, with mewj paths by ptype, a general eqm path, and weights that differ from
 %        AgentDist_initial.ptweights.
+%   12:  z and e grids (and pi_z, pi_e) that vary over the path, by ptype: one ptype by input grids, the other
+%        by ExogShockFn/EiidShockFn with their parameters on the ParamPath; against solo solves, fastOLG 1 vs 0,
+%        the stats against the stationary PType commands given each period's grids, and general eqm by ptype.
+%   13:  an experience asset (with its aprimeFn parameter on the ParamPath), an experience asset that depends
+%        on z (with z varying over the path) and the grid interpolation layer, one ptype each, against solo
+%        solves: value fn, agent dist, aggregates, stats and general eqm by ptype.
+%
+% Anderson acceleration (GEnewprice=2) is in the main bank too. Anderson only mixes once it has a history
+% (iteration 1 is a plain shooting step, and by default so is iteration 2, anderson.warmup=2), so at the
+% maxiter=2 used for shooting it would be the shooting algorithm. Each Anderson check runs anderson.warmup=0
+% and maxiter=3, and prints that Anderson then differs from shooting ('should NOT be zero'). Exact oracles:
+% identical types against the solver without permanent types (parts 3-7); where the general eqm condition is
+% by ptype (GEptype) Anderson is not separable by ptype, so anderson.memory=0, which is the shooting
+% algorithm, against shooting (parts 8-13).
+%
+% EvalFnOnTransPath_AllStats_Case1_FHorz_PType and LifeCycleProfiles_TransPath_FHorz_Case1_PType are checked
+% in parts 3-6 and 9-13: against the commands without permanent types (N_i=1, identical types, and each ptype
+% on its own paths), and pooled against the stationary PType commands period by period. In parts 4-7 the
+% stats run with fastOLG=1 only (the stats commands take the paths, which are laid out the same either way).
 % The algorithms themselves (shooting vs Anderson) are compared in with_CoreFHorzTPathPTypeAlgoTests.
 %% Which parts to run
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
@@ -56,6 +75,8 @@
 % doPart(9): GE with _tminus1/_tplus1 by ptype vs solo solves
 % doPart(10): age weights and demographics by ptype (no figures)
 % doPart(11): permanent type masses changing over the path (no figures)
+% doPart(12): z and e grids varying over the path by ptype (no figures)
+% doPart(13): experience assets and grid interpolation by ptype (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -64,7 +85,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -87,6 +108,9 @@ addpath('./CoreFHorzTPathPType_ReturnFns/')
 addpath('../CoreFHorzTPathTests/CoreFHorzTPath_ReturnFns/')
 addpath('../CoreFHorzTPathTests/CoreFHorzTPath_ReturnFns/Semiz_ReturnFns/')
 addpath('../CoreFHorzTPathTests/CoreFHorzTPathTests_Setup/')
+% and the return functions of the experience asset banks (doPart(13))
+addpath('../CoreFHorzTPathExpAssetTests/CoreFHorzTPathExpAsset_ReturnFns/')
+addpath('../CoreFHorzTPathExpAssetzTests/CoreFHorzTPathExpAssetz_ReturnFns/')
 
 % Setup: builds on CoreFHorzTPath_setup and adds PType-specific pieces
 CoreFHorzTPathPType_setup
@@ -117,8 +141,8 @@ if doPart(3)==1
     output=CoreFHorzTPathPType_GETPath_1iter(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i);
 
     %% 5. Two identical types: single vs per-type FnsToEvaluate — should give identical output
-    % (AllStats and AgeConditionalStats on the transition path are not yet
-    % implemented for PType; commented-out blocks in the subcode await them.)
+    % (AggVars, AllStats with and without conditionalrestrictions, life-cycle profiles, and one GE iteration
+    % with shooting and with Anderson)
     output=CoreFHorzTPathPType_PerTypeFnsToEvaluate(T,PricePath,ParamPath,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,N_i,Names_i,transpathoptionsbaseline);
 
     %% ShockTests: one PType solve with 4 different (z,e) combos
@@ -218,6 +242,18 @@ if doPart(11)==1
     output=CoreFHorzTPathPType_TypeMasses(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,transpathoptionsbaseline,1);
     output=CoreFHorzTPathPType_TypeMasses(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,AgeWeightParamNames,transpathoptionsbaseline,0);
 end % doPart(11): permanent type masses changing over the path (no figures)
+
+%% ===== doPart(12): z and e grids varying over the path by ptype (no figures) =====
+if doPart(12)==1
+    fprintf('\n===== doPart(12): z and e grids varying over the path by ptype (no figures) =====\n')
+    output=CoreFHorzTPathPType_timevaryinggrids(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(12): z and e grids varying over the path by ptype (no figures)
+
+%% ===== doPart(13): experience assets and grid interpolation by ptype (no figures) =====
+if doPart(13)==1
+    fprintf('\n===== doPart(13): experience assets and grid interpolation by ptype (no figures) =====\n')
+    output=CoreFHorzTPathPType_ExpAsset(T,PricePath,ParamPath,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(13): experience assets and grid interpolation by ptype (no figures)
 
 % All looks good!
 

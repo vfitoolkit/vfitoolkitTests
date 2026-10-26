@@ -116,6 +116,22 @@ for ii=1:N_i
 end
 fprintf('Demographics by ptype GE path: (7a) for scale, 10 shooting iterations moved r by %.3e (typeA; must not be zero) \n',max(abs(PricePath7a.r.typeA(:)-PricePath.r(:))))
 
+%% (7c) Anderson with memory=0 at the same fixed 10 iterations: every step is a plain shooting step, so == (7a)
+% (Anderson is not separable by ptype, so it is not compared with solo solves; with a history it must then differ)
+transpathoptions7c=rmfield(transpathoptions7a,'GEnewprice3');
+transpathoptions7c.GEnewprice=2;
+transpathoptions7c.GEnewprice2.howtoupdate={'rmarket','r',0,0.5};
+transpathoptions7c.anderson.warmup=0;
+transpathoptions7c.anderson.safeguard=0;
+transpathoptions7c.anderson.memory=0;
+PricePath7c0=TransitionPath_Case1_FHorz_PType(PricePath_PT, ParamPath_PT, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params_PT, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions7c, simoptions, vfoptions);
+transpathoptions7c=rmfield(transpathoptions7c,'anderson');
+transpathoptions7c.anderson.warmup=0;
+transpathoptions7c.anderson.safeguard=0;
+PricePath7c5=TransitionPath_Case1_FHorz_PType(PricePath_PT, ParamPath_PT, T, V_final_PT, AgentDist_initial_PT, jequaloneDist, n_d, n_a, n_z, N_j, Names_i, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params_PT, DiscountFactorParamNames, AgeWeightParamNames, PTypeDistParamNames, transpathoptions7c, simoptions, vfoptions);
+fprintf('Demographics by ptype GE path: (7c) Anderson with memory=0 vs shooting, both at maxiter=10, both types, this should be zero: %.3e \n',max([max(abs(PricePath7c0.r.typeA(:)-PricePath7a.r.typeA(:))),max(abs(PricePath7c0.r.typeB(:)-PricePath7a.r.typeB(:)))]))
+fprintf('Demographics by ptype GE path: (7c) Anderson with the default memory vs shooting, both at maxiter=10, both types, this should NOT be zero: %.3e \n',max([max(abs(PricePath7c5.r.typeA(:)-PricePath7a.r.typeA(:))),max(abs(PricePath7c5.r.typeB(:)-PricePath7a.r.typeB(:)))]))
+
 %% (7b) to convergence: Anderson and shooting
 transpathoptions7bS=transpathoptionsS_PT;
 transpathoptions7bS.maxiter=500;
