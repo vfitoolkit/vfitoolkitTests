@@ -56,6 +56,7 @@ fprintf('CalibFHorzPTypeTests, run started %s, doPart=[%s] \n',char(datetime('no
 
 addpath('../../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
 addpath('./CalibFHorzPTypeTests_subcodes/')
+addpath('../../CoreFHorzTests/CoreFHorz_ReturnFns/Semiz_ReturnFns/') % ReturnFn_nod1_noz_noe_semiz for part 7 (4): several banks have a file of that name with other state arguments, so it must be put on the path here rather than found wherever it happens to be (2026-10-13 it found CoreFHorzExpAssetUTests' six-state version left by an earlier run, and failed to compile)
 addpath('../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
 addpath('../../CoreFHorzTests/CoreFHorzTests_Setup/') % CoreFHorzSetup_SemiExoStateFn, for the semi-exogenous model of part 7
 
