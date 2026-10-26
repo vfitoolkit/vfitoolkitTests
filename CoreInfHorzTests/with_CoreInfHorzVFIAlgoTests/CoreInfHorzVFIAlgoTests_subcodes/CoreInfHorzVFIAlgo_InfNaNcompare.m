@@ -152,7 +152,7 @@ if ~withQH && (~withsemiz || length(n_d)==1)
         else
             gname='noGI endoVFI greedy1';
         end
-        vfo=vfoptions; vfo.howardsgreedy=1; vfo.howardssparse=0; vfo.endogenousvfi=endo;
+        vfo=vfoptions; vfo.howardsgreedy=1; vfo.howardssparse=0; vfo.relativevfi=endo;
         try
             [Vrefg,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
             Vrefg=gather(Vrefg);
@@ -229,7 +229,7 @@ else
     Vpurerep=Vpure; % no repeat configs for these models
 end
 
-%% The configs. {name, howardsgreedy, howardssparse, postGIrepeat, kind, endogenousvfi}
+%% The configs. {name, howardsgreedy, howardssparse, postGIrepeat, kind, relativevfi}
 % Without z and without e the grid interpolation layer is a single postGI solve that reads neither howardsgreedy nor
 % howardssparse (see algocompare), so those models get the reference solve and the postGIrepeat layer only.
 % With two endogenous states howardsgreedy>0 is refused by the toolkit. With e, HowardMix (2,3) is refused.
@@ -259,7 +259,7 @@ elseif ~withQH
         end
     end
 end
-% Every check config gets its vfoptions.endogenousvfi=1 twin: the EndogenousVFI raws (RelativeVFI without z, and the semiz
+% Every check config gets its vfoptions.relativevfi=1 twin: the EndogenousVFI raws (RelativeVFI without z, and the semiz
 % twins of both) have their own copies of the Howards step, so they fire the same defect; the e twins already carry the
 % per-term form (a positive control, like the e raws above).
 nconfigs=size(configs,1);
@@ -274,7 +274,7 @@ end
 
 for cc=1:size(configs,1)
     cname=configs{cc,1};
-    vfo=vfoGI; vfo.howardsgreedy=configs{cc,2}; vfo.howardssparse=configs{cc,3}; vfo.postGIrepeat=configs{cc,4}; vfo.endogenousvfi=configs{cc,6};
+    vfo=vfoGI; vfo.howardsgreedy=configs{cc,2}; vfo.howardssparse=configs{cc,3}; vfo.postGIrepeat=configs{cc,4}; vfo.relativevfi=configs{cc,6};
 
     if configs{cc,4}>0
         Vpurecfg=Vpurerep; % the repeat configs against pure VFI with the repeat layer (see above)

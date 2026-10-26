@@ -45,7 +45,7 @@
 % cross-test asserts):
 %   - noz: every Epstein-Zin InfHorz raw loops over z, and with n_z=0 that loop never ran, so
 %     the solve returned V=0 and Policy=0 silently. Now an error (2026-10-22).
-%   - e / semiz / endogenousvfi: refused by ValueFnIter_InfHorz itself.
+%   - e / semiz / relativevfi: refused by ValueFnIter_InfHorz itself.
 %   - survivalprobability / WarmGlowBequestsFn / EZmortalityriskaversion / EZoneminusbeta=2:
 %     all need ages; EZmortalityriskaversion and EZoneminusbeta=2 used to be ignored, now errors.
 %   - EZutils=2: mentioned in an old comment as 'traditional EZ with endogenous labor', never

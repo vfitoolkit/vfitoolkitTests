@@ -14,7 +14,7 @@
 %   Part 3: WITH GI, preGI and postGI give the same V and Policy
 %   Part 4: with a big n_a (=1500), with and without GI give very similar V
 % With a d, Part 1 also checks solnmethod='purediscretization' (the with-d raws) against the default refinement.
-% Without semiz, Part 1 also checks vfoptions.endogenousvfi=1 (endogenous VFI) for each solver, plus a discriminator that a
+% Without semiz, Part 1 also checks vfoptions.relativevfi=1 (endogenous VFI) for each solver, plus a discriminator that a
 % plain-VFI twin would fail (see CoreInfHorzVFIAlgo_algocompare); Parts 2, 3 and 3b check it with GI (postGI, preGI, two
 % endogenous states); doPart(10) times it, with and without GI.
 % Without e and semiz, Part 1 also checks outputkron=1 against the default.
@@ -54,7 +54,7 @@
 % doPart(7): Howards settings with two endogenous states
 % doPart(8): semiz (with/without d1, with/without z; Part 1 and a short postGI part)
 % doPart(9): semiz with e (with/without d1, with/without z; Part 1 and a short postGI part)
-% doPart(10): DIAGNOSTIC endogenous VFI runtimes (vfoptions.endogenousvfi=1 against plain VFI; slow)
+% doPart(10): DIAGNOSTIC endogenous VFI runtimes (vfoptions.relativevfi=1 against plain VFI; slow)
 % doPart(11): -Inf in V with the grid interpolation layer (deliberate trigger of the Howards zero-weight-on-a--Inf-node defect)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
@@ -197,7 +197,7 @@ end % doPart(9): semiz with e
 %% ===== doPart(10): DIAGNOSTIC endogenous VFI runtimes =====
 if doPart(10)==1
     fprintf('\n===== doPart(10): DIAGNOSTIC endogenous VFI runtimes =====\n')
-    %% Does vfoptions.endogenousvfi=1 earn its keep? Plain vs endogenous VFI runtimes across beta, rho_z and n_z
+    %% Does vfoptions.relativevfi=1 earn its keep? Plain vs endogenous VFI runtimes across beta, rho_z and n_z
     % (the V/Policy checks on endogenous VFI are in Part 1 of every model, in CoreInfHorzVFIAlgo_algocompare)
     output=CoreInfHorzVFIAlgo_ScanEndogenousVFI(Params,DiscountFactorParamNames);
 end % doPart(10): DIAGNOSTIC endogenous VFI runtimes

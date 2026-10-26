@@ -1,5 +1,5 @@
 function output=CoreInfHorzVFIAlgo_ScanEndogenousVFI(Params,DiscountFactorParamNames)
-% SCAN 4 (DIAGNOSTIC): is endogenous VFI (vfoptions.endogenousvfi=1) actually faster?
+% SCAN 4 (DIAGNOSTIC): is endogenous VFI (vfoptions.relativevfi=1) actually faster?
 %
 % Endogenous VFI iterates exactly as VFI does, but stops on the span over a of V-Vold within each exogenous state, rather
 % than on the sup over all states. That span shrinks at rate beta*alpha_y (alpha_y measures how quickly the endogenous
@@ -22,7 +22,7 @@ n_z_list=[7,21];
 n_a=500;
 a_grid=5*linspace(0,1,n_a)'.^3;
 
-fprintf('\n================ SCAN 4: endogenous VFI (vfoptions.endogenousvfi=1), runtimes against plain VFI ================\n');
+fprintf('\n================ SCAN 4: endogenous VFI (vfoptions.relativevfi=1), runtimes against plain VFI ================\n');
 
 for bb=1:length(beta_list)
     Params.beta=beta_list(bb);
@@ -52,7 +52,7 @@ for bb=1:length(beta_list)
                 [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions);
 
                 for hh=1:3
-                    vfo=vfoptions; vfo.endogenousvfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
+                    vfo=vfoptions; vfo.relativevfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
                     if hh==1
                         hstr='Howards default ';
                     elseif hh==2
@@ -63,7 +63,7 @@ for bb=1:length(beta_list)
                         vfo.gridinterplayer=1; vfo.ngridinterp=5;
                     end
                     tic; [Vp,Policyp]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tp=toc;
-                    vfo.endogenousvfi=1;
+                    vfo.relativevfi=1;
                     tic; [Ve,Policye]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); te=toc;
                     fprintf('%s plain %2.4fs, endogenous %2.4fs, speedup %2.2f; max|V diff| %.3e (bound per solve %.1e), Pol diff %.3e \n',hstr,tp,te,tp/te,max(abs(Vp(:)-Ve(:))),Vbound,max(abs(Policyp(:)-Policye(:))));
                 end
@@ -106,12 +106,12 @@ for bb=1:length(beta_list)
             fprintf('\n---- %s, beta=%1.2f, rho_z=%1.2f, n_z=%d, n_a=%d, %s ----\n',modelstr,Params.beta,rho,n_z,n_a,gistr);
             tplain=zeros(1,length(howardslist)); tendo=zeros(1,length(howardslist));
             for hh=1:length(howardslist)
-                vfo=vfoptions; vfo.howards=howardslist(hh); vfo.endogenousvfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
+                vfo=vfoptions; vfo.howards=howardslist(hh); vfo.relativevfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
                 if gi==1
                     vfo.gridinterplayer=1; vfo.ngridinterp=5;
                 end
                 tic; [Vp,Policyp]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tplain(hh)=toc;
-                vfo.endogenousvfi=1;
+                vfo.relativevfi=1;
                 tic; [Ve,Policye]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tendo(hh)=toc;
                 fprintf('%s howards=%3d: plain %2.4fs, endogenous %2.4fs, speedup %2.2f; max|V diff| %.3e, Pol diff %.3e \n',gistr,howardslist(hh),tplain(hh),tendo(hh),tplain(hh)/tendo(hh),max(abs(Vp(:)-Ve(:))),max(abs(Policyp(:)-Policye(:))));
             end
@@ -121,7 +121,7 @@ for bb=1:length(beta_list)
     end
 end
 
-%% SCAN 3d: robustness of the beta-dependent defaults (vfoptions.endogenousvfi from beta>=0.97, and vfoptions.howards)
+%% SCAN 3d: robustness of the beta-dependent defaults (vfoptions.relativevfi from beta>=0.97, and vfoptions.howards)
 % The defaults were chosen from SCAN 3c, which used n_a=500 and rho_z=0.9 throughout. Here: a bigger grid (n_a=1500 at
 % rho_z=0.9) and a more persistent z (rho_z=0.97 at n_a=500), both at n_z=21, for beta in {0.95,0.96,0.97,0.98,0.99}.
 % Each cell times plain and endogenous VFI at every number of Howards steps, and the actual default solve (nothing set),
@@ -160,9 +160,9 @@ for cc=1:length(cellslist)
                 Params.r=0.8*(1/Params.beta-1);
                 th=zeros(1,length(howardslist)); the=zeros(1,length(howardslist));
                 for hh=1:length(howardslist)
-                    vfo=vfoptions; vfo.howards=howardslist(hh); vfo.endogenousvfi=0;
+                    vfo=vfoptions; vfo.howards=howardslist(hh); vfo.relativevfi=0;
                     tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); th(hh)=toc;
-                    vfo.endogenousvfi=1;
+                    vfo.relativevfi=1;
                     tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); the(hh)=toc;
                 end
                 vfo=vfoptions; % the defaults

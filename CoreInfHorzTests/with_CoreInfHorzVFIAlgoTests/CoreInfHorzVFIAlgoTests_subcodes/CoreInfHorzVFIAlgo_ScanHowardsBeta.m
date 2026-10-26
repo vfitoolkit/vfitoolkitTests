@@ -1,6 +1,6 @@
 function output=CoreInfHorzVFIAlgo_ScanHowardsBeta(Params,DiscountFactorParamNames)
 % SCAN 3c (DIAGNOSTIC): how should the default number of Howards steps (vfoptions.howards) depend on beta, and does a
-% tuned plain VFI close the gap to endogenous VFI (vfoptions.endogenousvfi=1) at high beta?
+% tuned plain VFI close the gap to endogenous VFI (vfoptions.relativevfi=1) at high beta?
 %
 % The defaults (40 with indexed Howards, 80 with sparse Howards) were chosen on this bank at beta=0.95. The endogenous VFI
 % scan (SCAN 4b) found that at beta=0.99 plain VFI is fastest at 160-320 Howards steps, and that the defaults cost it up
@@ -66,9 +66,9 @@ for zz=1:length(nz_list)
                 Params.r=0.8*(1/Params.beta-1);
                 th=zeros(1,length(howardslist)); the=zeros(1,length(howardslist));
                 for hh=1:length(howardslist)
-                    vfo=vfoptions; vfo.howards=howardslist(hh); vfo.endogenousvfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
+                    vfo=vfoptions; vfo.howards=howardslist(hh); vfo.relativevfi=0; % plain VFI (the default from beta=0.97 is endogenous VFI)
                     tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); th(hh)=toc;
-                    vfo.endogenousvfi=1;
+                    vfo.relativevfi=1;
                     tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); the(hh)=toc;
                 end
                 [tbest,ib]=min(th);

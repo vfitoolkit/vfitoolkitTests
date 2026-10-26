@@ -14,7 +14,7 @@ function output=EZInfHorz_CrossTests_guards(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_
 %   5  'EZoneminusbeta must be 0 or 1'   ValueFnIter_InfHorz_EpsteinZin (new)
 %   6  'EZmortalityriskaversion'         ValueFnIter_InfHorz_EpsteinZin (new)
 %   7  'survivalprobability'             ValueFnIter_InfHorz_EpsteinZin
-%   8  'n_e' / 'n_semiz' / 'endogenousvfi'   ValueFnIter_InfHorz (the main dispatcher)
+%   8  'n_e' / 'n_semiz' / 'relativevfi'   ValueFnIter_InfHorz (the main dispatcher)
 %   9  'exogenous state z'               ValueFnIter_InfHorz_EpsteinZin (new; was V=0 silently)
 %   10 'grid interpolation layer'        ValueFnIter_InfHorz_EpsteinZin (new; was silently ignored)
 %   10b 'lowmemory'                      ValueFnIter_InfHorz_EpsteinZin (new; lowmemory=2 fell through to an undefined VKron)
@@ -171,7 +171,7 @@ end
 fprintf('7b. WarmGlowBequestsFn errors with the interface message, this should be one: %d \n',ok)
 fprintf('   message: %s \n',msg)
 
-%% 8. iid e, semiz and endogenousvfi are refused by ValueFnIter_InfHorz itself
+%% 8. iid e, semiz and relativevfi are refused by ValueFnIter_InfHorz itself
 ok=0; msg='';
 try
     vf=vfbase; vf.n_e=3; vf.e_grid=[0.9;1;1.1]; vf.pi_e=[1/3;1/3;1/3];
@@ -192,12 +192,12 @@ fprintf('8b. semiz with Epstein-Zin errors with the interface message, this shou
 fprintf('   message: %s \n',msg)
 ok=0; msg='';
 try
-    vf=vfbase; vf.endogenousvfi=1;
+    vf=vfbase; vf.relativevfi=1;
     Vt=ValueFnIter_InfHorz(0,n_a,n_z,[],a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vf); %#ok<NASGU>
 catch ME
-    ok=double(contains(ME.message,'endogenousvfi')); msg=ME.message;
+    ok=double(contains(ME.message,'relativevfi')); msg=ME.message;
 end
-fprintf('8c. endogenousvfi=1 with Epstein-Zin errors with the interface message, this should be one: %d \n',ok)
+fprintf('8c. relativevfi=1 with Epstein-Zin errors with the interface message, this should be one: %d \n',ok)
 fprintf('   message: %s \n',msg)
 
 %% 9. No exogenous state (n_z=0) must error

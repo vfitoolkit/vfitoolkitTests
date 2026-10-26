@@ -1282,7 +1282,7 @@ shapes.
 
 - **Parts 1–2:** without d and with d, each on `{noz,z} × {noe,e}`. Every config is checked
   against a pure-VFI reference: Howards variants, greedy Howards, postGI and the postGIrepeat
-  layer, preGI, `endogenousvfi=1` (with a `V0=VE+f(exog)` discriminator), `outputkron=1`, and the
+  layer, preGI, `relativevfi=1` (with a `V0=VE+f(exog)` discriminator), `outputkron=1`, and the
   default-vs-explicit identity at beta=0.95 and 0.99.
 - **Part 3:** cross-test of a dummy d against no d.
 - **Parts 8–9:** the same treatment for semiz and semiz+e.
