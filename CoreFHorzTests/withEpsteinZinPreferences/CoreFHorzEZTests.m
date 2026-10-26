@@ -51,6 +51,7 @@
 % doPart(5): figs 9-16
 % doPart(6): cross-tests 3
 % doPart(7): cross-tests 4
+% doPart(8): feasibility conventions: -Inf states and zero returns (deliberate trigger, no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -59,7 +60,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('../TestOutput','dir')
@@ -339,6 +340,22 @@ if doPart(7)==1
 
     output=EZFHorz_CrossTests2_d1_semiz(n_d_semiz,n_a,n_a_big,n_z,N_j,d_grid_semiz,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(7): cross-tests 4
+
+%% ===== doPart(8): feasibility conventions: -Inf states and zero returns =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): feasibility conventions: -Inf states and zero returns =====\n')
+    %% DELIBERATE TRIGGER (2026-10-27) for two conventions shared by every Epstein-Zin raw, in both horizons:
+    % (A) a -Inf continuation is passed through the (ezc4*V')^ezc5 transform untouched, which under negative-valued
+    %     utility (ezc3=ezc4=-1) comes out of ezc3*beta*(.) as +Inf: a choice leading to a dead state is valued +Inf.
+    %     Model: a_grid extended below the natural borrowing limit, so V has -Inf states; the vNM solve of the same
+    %     budget gives the reference dead set. Plain, lowmemory, DC, GI and DC+GI legs, all three cases.
+    % (B) a return of EXACTLY zero at a feasible choice is rewritten to -Inf (temp2(ReturnMatrix==0)=-Inf).
+    %     Model: a subsistence floor that yields a zero return when consumption is below xbar (forced at a=0 for the
+    %     low-kappa_j ages); the floorval=0 solve must be continuous with a floorval=1e-10 solve.
+    % Written to run RED on the raws as they stood. See the header of EZFHorz_CrossTests_feasibility, and the
+    % InfHorz twin in part 6 of CoreInfHorzEZTests.
+    output=EZFHorz_CrossTests_feasibility(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
+end % doPart(8): feasibility conventions: -Inf states and zero returns
 
 %% Done! (Remember: the two-endogenous-state (with2A) EZ tests are still to be added.)
 %% One verdict for the whole run

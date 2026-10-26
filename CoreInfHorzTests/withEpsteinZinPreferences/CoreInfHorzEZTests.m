@@ -33,13 +33,13 @@
 %     ../../CoreInfHorzEZTests_proposal.md); when it lands, figs 3-4 (nod_z_GI, d_z_GI) go in as a sixth part
 %     and guard 10 is retired.
 %   - a feasible return of exactly zero is treated as infeasible by every Epstein-Zin raw, in both
-%     horizons (temp2(ReturnMatrix==0)=-Inf). The three ReturnFn families here are strictly signed
-%     so the bank never meets it. Documented, not tested, not changed.
+%     horizons (temp2(ReturnMatrix==0)=-Inf). The three ReturnFn families of parts 1-5 are strictly
+%     signed so those parts never meet it. Part 6 (added 2026-10-27) is the deliberate trigger.
 %   - V=-Inf entries (a state with no feasible choice) are not handled consistently by the
 %     negative-utility branch (the -Inf passes through the (ezc4*V)^ezc5 transform untouched and
-%     comes out of ezc3*beta*(.) as +Inf). Same in the FHorz raws. The bank's models have every
-%     state feasible (a_grid starts at 0, income w*z>0), so V is finite everywhere and this is
-%     never reached. Documented, not tested.
+%     comes out of ezc3*beta*(.) as +Inf). Same in the FHorz raws. The models of parts 1-5 have
+%     every state feasible (a_grid starts at 0, income w*z>0), so V is finite everywhere there.
+%     Part 6 is the deliberate trigger for this too.
 %
 % NOT tested here (unsupported, each refused with an interface message that the guards
 % cross-test asserts):
@@ -105,6 +105,7 @@
 % doPart(3): cross-test: vNM collapses, EZoneminusbeta scaling, homogeneity
 % doPart(4): cross-test: z disguises (split, permute, degenerate, two-dimensional)
 % doPart(5): cross-test: interface guards and the 2A probe
+% doPart(6): feasibility conventions: -Inf states and zero returns (deliberate trigger, no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -113,7 +114,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1];
+doPart=[1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the parent bank's TestOutput)
 if ~exist('../TestOutput','dir')
@@ -229,6 +230,18 @@ if doPart(5)==1
     % check rather than as a crash that aborts the rest of the bank.
     output=EZInfHorz_CrossTests_guards(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
 end % doPart(5): cross-test: interface guards and the 2A probe
+
+%% ===== doPart(6): feasibility conventions: -Inf states and zero returns =====
+if doPart(6)==1
+    fprintf('\n===== doPart(6): feasibility conventions: -Inf states and zero returns =====\n')
+    %% DELIBERATE TRIGGER (2026-10-27) for the two conventions the header above documents as 'not tested':
+    % (A) a -Inf continuation passes through the negative-utility transform untouched and comes out of
+    %     ezc3*beta*(.) as +Inf; (B) a return of exactly zero at a feasible choice is rewritten to -Inf.
+    % Model A: a_grid extended below the natural borrowing limit (the vNM solve gives the reference dead set).
+    % Model B: a subsistence floor yielding a zero return, floorval=0 vs 1e-10 for continuity.
+    % Written to run RED on the raws as they stood; the FHorz twin is part 8 of CoreFHorzEZTests.
+    output=EZInfHorz_CrossTests_feasibility(n_a,n_z,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
+end % doPart(6): feasibility conventions: -Inf states and zero returns
 
 %% Done!
 % Terminating banner. The bank's last output before this is the guards cross-test, which PRINTS
