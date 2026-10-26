@@ -121,6 +121,60 @@ for bb=1:length(beta_list)
     end
 end
 
+%% SCAN 3d: robustness of the beta-dependent defaults (vfoptions.endogenousvfi from beta>=0.97, and vfoptions.howards)
+% The defaults were chosen from SCAN 3c, which used n_a=500 and rho_z=0.9 throughout. Here: a bigger grid (n_a=1500 at
+% rho_z=0.9) and a more persistent z (rho_z=0.97 at n_a=500), both at n_z=21, for beta in {0.95,0.96,0.97,0.98,0.99}.
+% Each cell times plain and endogenous VFI at every number of Howards steps, and the actual default solve (nothing set),
+% and reports the default's runtime against the best of all of them, plus where the threshold would want to be.
+fprintf('\n================ SCAN 3d: robustness of the beta-dependent defaults (n_a=1500; rho_z=0.97) ================\n');
+howardslist=[20,40,80,160,320,640];
+cellslist={[21,1500,0.9],[21,500,0.97]}; % n_z, n_a, rho_z
+beta3d_list=[0.95,0.96,0.97,0.98,0.99];
+for cc=1:length(cellslist)
+    n_z=cellslist{cc}(1); n_a=cellslist{cc}(2); rho=cellslist{cc}(3);
+    a_grid=5*linspace(0,1,n_a)'.^3;
+    [z_grid,pi_z]=discretizeAR1_FarmerToda(0,rho,0.1*sqrt(1-rho^2),n_z);
+    z_grid=exp(z_grid);
+    for mm=1:2
+        if mm==1
+            n_d=0; d_grid=[];
+            ReturnFn=@(aprime,a,z,r,w,sigma) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,sigma);
+            modelstr='nod';
+        else
+            n_d=9; d_grid=linspace(0,1,n_d)';
+            ReturnFn=@(d,aprime,a,z,r,w,sigma,eta,varphi) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,sigma,eta,varphi);
+            modelstr='d  ';
+        end
+        for gi=0:1
+            vfoptions=struct(); vfoptions.verbose_advice=0;
+            if gi==1
+                vfoptions.gridinterplayer=1; vfoptions.ngridinterp=5;
+                gistr='GI  ';
+            else
+                gistr='noGI';
+            end
+            Params.beta=0.95; Params.r=0.8*(1/Params.beta-1);
+            [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfoptions); % warm up
+            for bb=1:length(beta3d_list)
+                Params.beta=beta3d_list(bb);
+                Params.r=0.8*(1/Params.beta-1);
+                th=zeros(1,length(howardslist)); the=zeros(1,length(howardslist));
+                for hh=1:length(howardslist)
+                    vfo=vfoptions; vfo.howards=howardslist(hh); vfo.endogenousvfi=0;
+                    tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); th(hh)=toc;
+                    vfo.endogenousvfi=1;
+                    tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); the(hh)=toc;
+                end
+                vfo=vfoptions; % the defaults
+                tic; [~,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo); wait(gpuDevice); tdef=toc;
+                [tbest,ib]=min(th); [tebest,ie]=min(the);
+                fprintf('%s %s n_z=%d n_a=%4d rho_z=%1.2f beta=%1.2f: plain %s | endo %s | default %2.4fs = %2.2fx best-of-all | PLAIN best h=%d, ENDO best h=%d, best plain/best endo %2.2f \n',...
+                    modelstr,gistr,n_z,n_a,rho,Params.beta,mat2str(th,4),mat2str(the,4),tdef,tdef/min(tbest,tebest),howardslist(ib),howardslist(ie),tbest/tebest);
+            end
+        end
+    end
+end
+
 output=struct();
 
 end
