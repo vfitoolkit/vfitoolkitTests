@@ -38,9 +38,15 @@ function output=CoreInfHorzVFIAlgo_InfNaNcompare(label,n_d,n_a,n_z,d_grid,a_grid
 % reach; with semiz, reachable under the d2 it chose. A model where this is 0 is vacuous for this
 % defect, and the subcode says so.
 %
-% The greedy Howards configs (howardsgreedy=1,2,3) solve a linear system with -Inf in the return
-% vector; the toolkit itself warns that greedy Howards cannot be used when V has -Inf. They are run
-% so that the diary records what they do, but nothing they print is a check.
+% GREEDY HOWARDS (howardsgreedy=1, and the HowardMix raws at 2 and 3) replaces the iterated step by one
+% direct solve of (I-beta*T_E)V=Ftemp. A direct solve is global: one -Inf in Ftemp gives NaN in every
+% entry of V, and a finite Ftemp at a state whose policy puts positive weight on a dead state gives a
+% finite V where the truth is -Inf. Before the fix the plain raws refused (error on a non-finite
+% Ftemp) and the GI raws warned after the fact. The fix (InfHorzGI_InfNaN_proposal.md, section 8)
+% solves on the live states only: the dead set is the closure of {V==-Inf} under the policy, the
+% live block is exact on its own, and V is -Inf on the dead set. The greedy configs are therefore
+% checks like every other config, both with the grid interpolation layer (below) and without it
+% (the 'noGI greedy1' block, which also covers the plain HowardGreedy raws and their endogenous twins).
 %
 % Sophisticated quasi-hyperbolic is run at beta0=1 ONLY: at beta0<1 the continuation being
 % interpolated is kinked and the bank documents that convergence itself is then a diagnostic, not
@@ -135,6 +141,44 @@ if ~withQH
     fprintf('noGI sparse1, Howards never off: vs noGI sparse0 on the finite set, V should be ~0: %.3e \n',max(abs(Vrefsp(finboth)-Vref(finboth))));
 end
 
+% The plain (no-GI) greedy Howards raws solve (I-beta*T_E)\Ftemp in one go (see the header): checked against the indexed
+% reference, and with the endogenous-VFI twin (the EndogenousVFI/RelativeVFI HowardGreedy raws). Not for quasi-hyperbolic (no greedy
+% raws) and not for semiz with a d1 (greedy is not implemented there). try/catch so that the refusal on the unfixed raws shows as
+% a failed check rather than killing the part.
+if ~withQH && (~withsemiz || length(n_d)==1)
+    for endo=0:1
+        if endo==0
+            gname='noGI greedy1';
+        else
+            gname='noGI endoVFI greedy1';
+        end
+        vfo=vfoptions; vfo.howardsgreedy=1; vfo.howardssparse=0; vfo.endogenousvfi=endo;
+        try
+            [Vrefg,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+            Vrefg=gather(Vrefg);
+            fprintf('%s: solved without error,                            should be one: 1 \n',gname);
+            fprintf('%s: V census: finite %i, -Inf %i, +Inf %i, NaN %i \n',gname,nnz(isfinite(Vrefg)),nnz(Vrefg==-Inf),nnz(Vrefg==Inf),nnz(isnan(Vrefg)));
+            fprintf('%s: NaN count,                                         should be  0: %i \n',gname,nnz(isnan(Vrefg)));
+            fprintf('%s: -Inf count minus noGI -Inf count,                  should be  0: %i \n',gname,nnz(Vrefg==-Inf)-nminfref);
+            finboth=isfinite(Vrefg)&isfinite(Vref);
+            fprintf('%s vs noGI sparse0 on the finite set,                V   should be ~0: %.3e \n',gname,max(abs(Vrefg(finboth)-Vref(finboth))));
+            vfo.maxiter=2000; vfo.maxhowards=2000;
+            lastwarn('');
+            [Vrefg,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+            msgg=lastwarn;
+            Vrefg=gather(Vrefg);
+            fprintf('%s, Howards never off: converged (no maxiter warning), should be one: %i \n',gname,~contains(msgg,'maximum number of iterations'));
+            fprintf('%s, Howards never off: NaN count,                      should be  0: %i \n',gname,nnz(isnan(Vrefg)));
+            fprintf('%s, Howards never off: -Inf count minus noGI -Inf count, should be  0: %i \n',gname,nnz(Vrefg==-Inf)-nminfref);
+            finboth=isfinite(Vrefg)&isfinite(Vref);
+            fprintf('%s, Howards never off: vs noGI sparse0 on the finite set, V should be ~0: %.3e \n',gname,max(abs(Vrefg(finboth)-Vref(finboth))));
+        catch ME
+            fprintf('%s: errored: %s \n',gname,ME.message);
+            fprintf('%s: solved without error,                            should be one: 0 \n',gname);
+        end
+    end
+end
+
 % deadreach(a1,arest,zeff,e,d2): is V(a1,arest,zeff',e') -Inf at some (zeff',e') reachable from (zeff,e) under d2?
 % (a Howards weight-0 term on that node, from a state at (zeff,e) that chose d2, is what fires the defect)
 deadreach=false(sz5);
@@ -200,7 +244,7 @@ end
 if withsemiz
     if length(n_d)==1
         configs(end+1,:)={'greedy0/sparse1        ',0,1,0,'check'};
-        configs(end+1,:)={'greedy1 (HowardGreedy) ',1,0,0,'info'};
+        configs(end+1,:)={'greedy1 (HowardGreedy) ',1,0,0,'check'};
     end
 elseif ~withQH
     if N_z>0 || withe
@@ -208,10 +252,10 @@ elseif ~withQH
         configs(end+1,:)={'greedy0/sparse1/repeat1',0,1,1,'check'};
     end
     if N_z>0 && l_a==1
-        configs(end+1,:)={'greedy1 (HowardGreedy) ',1,0,0,'info'};
+        configs(end+1,:)={'greedy1 (HowardGreedy) ',1,0,0,'check'};
         if ~withe
-            configs(end+1,:)={'greedy2 (HowardMix)    ',2,0,0,'info'};
-            configs(end+1,:)={'greedy3 (HowardMix2)   ',3,0,0,'info'};
+            configs(end+1,:)={'greedy2 (HowardMix)    ',2,0,0,'check'};
+            configs(end+1,:)={'greedy3 (HowardMix2)   ',3,0,0,'check'};
         end
     end
 end
@@ -232,21 +276,6 @@ for cc=1:size(configs,1)
     cname=configs{cc,1};
     vfo=vfoGI; vfo.howardsgreedy=configs{cc,2}; vfo.howardssparse=configs{cc,3}; vfo.postGIrepeat=configs{cc,4}; vfo.endogenousvfi=configs{cc,6};
 
-    if strcmp(configs{cc,5},'info')
-        % Greedy Howards: not a check, see the header. try/catch so that an error here does not kill the part.
-        lastwarn('');
-        try
-            [VG,~]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
-            VG=gather(VG);
-            finboth=isfinite(VG)&isfinite(Vpure);
-            fprintf('GI %s (informational, greedy Howards is not supported with -Inf in V): V census: finite %i, -Inf %i, +Inf %i, NaN %i; max abs diff vs pure VFI on the joint finite set %.3e; last warning: %s \n',...
-                cname,nnz(isfinite(VG)),nnz(VG==-Inf),nnz(VG==Inf),nnz(isnan(VG)),max(abs(VG(finboth)-Vpure(finboth))),lastwarn);
-        catch ME
-            fprintf('GI %s (informational, greedy Howards is not supported with -Inf in V): errored: %s \n',cname,ME.message);
-        end
-        continue
-    end
-
     if configs{cc,4}>0
         Vpurecfg=Vpurerep; % the repeat configs against pure VFI with the repeat layer (see above)
     else
@@ -254,7 +283,15 @@ for cc=1:size(configs,1)
     end
 
     %% (a) at the defaults
-    [VG,PolicyG]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    % try/catch: before the greedy fix the semiz greedy raws refused with an error, which killed the Part (2026-10-27 run);
+    % an error now prints as one failed check and the next config runs.
+    try
+        [VG,PolicyG]=ValueFnIter_InfHorz(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DF,[],vfo);
+    catch ME
+        fprintf('GI %s: errored: %s \n',cname,ME.message);
+        fprintf('GI %s: solved without error,                      should be one: 0 \n',cname);
+        continue
+    end
     VGcpu=gather(VG);
     fprintf('GI %s: V census: finite %i, -Inf %i, +Inf %i, NaN %i \n',cname,nnz(isfinite(VGcpu)),nnz(VGcpu==-Inf),nnz(VGcpu==Inf),nnz(isnan(VGcpu)));
     fprintf('GI %s: NaN count,                                 should be  0: %i \n',cname,nnz(isnan(VGcpu)));
