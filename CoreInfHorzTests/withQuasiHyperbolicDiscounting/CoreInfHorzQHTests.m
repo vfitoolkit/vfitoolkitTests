@@ -84,6 +84,7 @@
 % doPart(3): cross-test: z relabel/duplicate
 % doPart(4): cross-test: Howards on vs off, Sophisticated
 % doPart(5): cross-test: interface guards
+% doPart(6): cross-test: endogenous VFI for Naive (the exponential solve), at beta=0.99
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -92,7 +93,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1];
+doPart=[1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the parent bank's TestOutput)
 if ~exist('../TestOutput','dir')
@@ -204,6 +205,15 @@ if doPart(5)==1
     % check rather than as a crash that aborts the rest of the bank.
     output=QHDInfHorz_CrossTests_guards(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(5): cross-test: interface guards
+
+%% ===== doPart(6): cross-test: endogenous VFI for Naive =====
+if doPart(6)==1
+    fprintf('\n===== doPart(6): cross-test: endogenous VFI for Naive =====\n')
+    %% Naive solves the exponential problem first, by standard VFI, which is where endogenous VFI applies (the default
+    % from beta>=0.97). Plain vs endogenous VFI on every call site of that solve, the default at beta=0.99, and the
+    % Sophisticated refusal.
+    output=QHDInfHorz_CrossTests_endovfi(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline,simoptionsbaseline);
+end % doPart(6): cross-test: endogenous VFI for Naive
 
 %% Done!
 % Terminating banner. The bank's last output before this is test 7 of the guards cross-test,
