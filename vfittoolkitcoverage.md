@@ -3,9 +3,9 @@
 The doc opens with a **suite index** that lists every bank and sub-bank in five tables: FHorz
 stationary, InfHorz stationary, transition paths, calibration + estimation, and other. Each row
 gives the bank's part count, its latest evidence and its git state. After the index come the
-detailed sections, which cover the FHorz stationary banks, the InfHorz stationary banks and the
-FHorz transition-path banks. The GE, calibration, estimation and discretization banks have index
-rows only.
+detailed sections, which cover the FHorz stationary banks, the InfHorz stationary banks, the
+general-equilibrium banks and the transition-path banks (FHorz and InfHorz). The calibration,
+estimation and discretization banks have index rows only.
 
 Last updated: 2026-10-27
 
@@ -81,7 +81,7 @@ This is a static count: a check inside a loop runs more than once.
 | CoreFHorzTPathExpAssetzTests | — | 3 | 173 | 8 | 2026-10-23: **dies in doPart(1)**, the same OOM | committed |
 | CoreFHorzTPathTwoEndoTests | — | 1 | 256 | 16 | **never run** | committed |
 | CoreFHorzTPathRiskyAssetTests | — | 5 | 422 | 16 | **never run** | **untracked** |
-| CoreFHorzTPathPTypeTests | — | 13 | 160 | 9 | 2026-10-27: reaches doPart(6), no closing banner (still running, or the Dropbox copy lags) | modified, 2 subcodes untracked |
+| CoreFHorzTPathPTypeTests | — | 13 | 160 | 9 | run in progress 2026-10-27 (past doPart(12) at 10:34); no closing banner yet | modified, 2 subcodes untracked |
 | | with_CoreFHorzTPathPTypeAlgoTests | 3 | 30 | 2 | all 3, 2026-10-27: 84, 0 | committed |
 | CoreInfHorzTPathTests | — | 6 (5 on) | 737 | 97 | parts 4–5, 2026-10-13: 117, 0 | committed |
 | | with_CoreInfHorzTPathAlgoTests | 2 | 57 | 5 | both, 2026-10-06: 96, **12** (part 1) | driver modified |
@@ -1132,9 +1132,8 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
   - `CoreFHorzQHTests` (baseline, 32 subtests) — 4016 checks, none nonzero. Note this diary uses
     a different closing-marker style from the ExpAsset-family banks, so the per-figure counting
     used above does not apply to it.
-  - `CoreFHorzTPathQHTests` — bank exists (440 check sites) but has **never produced a
-    diary**. See the FHorz transition-path section at the end of this doc: it is one of five
-    TPath banks in that state.
+  - `CoreFHorzTPathQHTests`: ~~has never produced a diary~~. All 3 parts were green on
+    2026-10-23 (486 checks, 0 failed). See the transition-path section at the end of this doc.
 - **QH**: RiskyAsset is now the only family with no QH mirror, and it has no QH raws.
   ~~ExpAssetU and ExpAssetsemiz~~ were closed at the end of August, and both mirrors have diaries
   dated 2026-10-02. **No QH mirror has a with2A2 tier yet.** That is the last item in the with2A2
@@ -1352,196 +1351,299 @@ The InfHorz counterpart of CoreFHorzPTypeTests. Each part is one subcode:
 - **The main bank's diary is partial,** as described above. One full run, with every doPart set
   to 1, would re-establish evidence for parts 3–8, 10 and 11.
 
-## FHorz transition-path (TPath) banks
+## General-equilibrium banks
 
-> **Snapshot of 2026-09-05. The transition-path table in the suite index at the top
-> supersedes it.** Since this snapshot, every FHorz TPath bank except TwoEndo and the new
-> RiskyAsset bank has produced a diary. CoreFHorzTPathTests grew doParts 6–8: `_tminus1/_tplus1`,
-> population demographics, AllStats/LifeCycleProfiles along the path, z/e grids that vary over
-> the path, and fastOLG=0 vs 1 inside the path. Its first full run since then, all 8 parts on
-> 2026-10-23, gave 860 checks and 0 failed. The two Algo sub-banks were also added. Statements
-> below such as "never produced a diary" and "554 of 1718 executed" are kept as history.
+Written 2026-10-27. Stationary GE has its own two banks. GE also appears inside banks whose main
+subject is something else, which are listed at the end of the table.
 
-Everything above is the *stationary* FHorz suite. The transition-path banks are a separate set,
-excluded from the main table and from every count in it (the `panel vs dist` note already says
-"TPath banks excluded throughout"). Surveyed 2026-09-05.
+| bank | parts | files | check sites | latest evidence | git |
+|---|---|---|---|---|---|
+| CoreStationaryGeneralEqm | 18 | 23 | 129 | **all 18, 2026-10-09 (diary `_allparts_2026-10-09b`): 137 checks, 2 failed**, both the known InfHorz lsqnonlin failure (below) | committed |
+| CalibAndEstim/CalibStationaryGeneralEqmTests | 11 (only part 11 on) | 18 | 93 | OLG parts 1–6 green 2026-10-13 (66/0 + 73/0 + part 6); latest diary, part 11 2026-10-22: 18, **1** | **untracked** |
+| *GE inside other banks* | | | | | |
+| CoreInfHorzTests/withEntryExit, part 2 | 1 | | | 2026-10-12: 12, **3** | committed |
+| every FHorz TPath variant | | | | a one-iteration GE path (Anderson) as a shape check | |
+| FHorz TPath Algo and PTypeAlgo | 2 + 3 | | | GEnewprice 1/2/3 compared, plus GEptype islands; PTypeAlgo 84/0, Algo 101/1 | committed |
+| CoreFHorzTPathPTypeTests, parts 4–9 | 6 | | | GE with types vs no-PType, GEptype, `_tminus1/_tplus1` by type; run in progress | modified |
+| CoreInfHorzTPathTests, part 6 | 1 | | | localsearch inside a real GE path; no surviving CoreSummary line | committed |
 
-| bank | variants | cross-tests | subcodes | check sites | of which `close to zero` | diary |
+Here *check sites* counts `fprintf` lines with `should be` or `should NOT be`.
+
+### CoreStationaryGeneralEqm
+
+The model is Aiyagari-style with endogenous labour and a government. It has three GE prices
+(`r`, `Tr`, `tau_c`) and three GE conditions (CapitalMarket, GovBudget, ConsTax). The bank runs
+four families: InfHorz, FHorz, InfHorz PType and FHorz PType (`N_i=2`, `sigma` 2.2 vs 1.8). It
+draws no figures, so the diary is its only output.
+
+| parts | what | families |
+|---|---|---|
+| 1 | `constrainpositivemethod` round trips. These are pure transform checks with no solve. | — |
+| 2, 4, 6, 8 | **fminalgo agreement**: 1 (fminsearch), 5 (shooting), 8 (lsqnonlin), 9 (Anderson Type-II and Type-I) all reach the same equilibrium; 4 (CMA-ES) runs in FHorz only | all four |
+| 3, 5, 7, 9 | **constraint invariance**: `constrain0to1` on r, `constrainpositive` on Tr (unset, `'softplus'`, `'log'`), `constrainAtoB` on tau_c, all three together; each must reproduce the unconstrained answer | all four |
+| 10–13 | `intermediateEqns` (plain, chained, AggVar-consuming), `jequaloneDist` as a function, and shock grids determined in GE (`pi_z` age-invariant, age-dependent, for one ptype only) | all four |
+| 14–15 | **GEptype**: GE conditions by ptype (identical types, solved types, distinct types vs an independent re-derivation, all-three-per-type vs two solo solves, a per-type intermediate) | FHorz PType, InfHorz PType |
+| 16–17 | GEptype constraint invariance, fminalgo 1/5/9 (a constrained per-type price spans N_i slots) | FHorz PType, InfHorz PType |
+| 18 | `multiGEweights` reach lsqnonlin (4 conditions in 3 prices, one of them conflicting) | FHorz |
+
+Three design points carry the bank:
+
+- **`maxiter=0` neutral variants (parts 10–15).** These evaluate the GE conditions once at the
+  prices in `Params`, so a variant costs one model solve rather than about 150. Two such runs of
+  the same model must agree **bit-identically**, so these are identity checks, not "near zero"
+  ones. Each has a geared "should NOT be zero" partner, so nothing passes vacuously, and a
+  frozen-grid re-evaluation that catches a grid left stale at the initial prices.
+- **The `log` vs `softplus` non-vacuity guard.** `log` is the only non-default
+  `constrainpositivemethod` that goes through a full GE solve. The bank checks that it *differs*
+  from `softplus`, which proves the option reaches the solver at all. Its invariance check is
+  deliberately loose: on InfHorz the `log` run does not really converge.
+- **The run is cut to about 11 h.** It was about 25 h before 2026-10-09: CMA-ES runs in part 4
+  only, InfHorz Anderson Type-I is capped at 500 iterations, the shooting factors were retuned,
+  and part 18 was redesigned. Each change is explained in its subcode.
+
+Toolkit bugs these parts found while being built (all fixed):
+
+- `gpuArray` called on a function-handle `jequaloneDist` in FHorz GE.
+- `maxiter=0` with a per-type price, in all three PType dispatchers.
+- A ptype-as-a-dimension `jequaloneDist` that could never be reached.
+- `paramnamesptype` never built in InfHorz PType.
+- InfHorz and MixHorz GEptype subfns that did not exist.
+- `multiGEweights` dropped before lsqnonlin.
+
+### CalibStationaryGeneralEqmTests
+
+This bank tests `CalibrateOLGModel` (parts 1–6) and `CalibrateBIHAModel` (parts 7–11), in both
+joint and nested mode. The model is the same three-price one. Each horizon runs: the moment vector
+plus GE conditions vs hand-built (exact), objective forms and lsqnonlin `resnorm` (exact),
+joint vs nested at the same prices, round trips (`{joint, nested} × {lsqnonlin, fminsearch}`),
+then shocks, CustomModelStats, intermediateEqns and `jequaloneDist` as a function, and runtime.
+
+**OLG is green on current code** (2026-10-13). **BIHA is not settled.** In the InfHorz economy,
+`beta*(1+r)` sits so close to 1 that the 0.01 finite-difference probes leave the stationary region
+(`K` hits the grid top, or V diverges). The joint round trips therefore fail, and the latest run's
+one failure is part 11(a), where the joint ExogShockFn run did not run. The bank is untracked and,
+per the test-first rule, stays so until BIHA is green. The PType versions are planned for this same
+bank.
+
+### Coverage by command and option
+
+| GE entry point | tested in |
+|---|---|
+| `HeteroAgentStationaryEqm_Case1_FHorz` | CoreStationaryGeneralEqm, CalibSGE, FHorz TPath PType and Algo banks |
+| `HeteroAgentStationaryEqm_InfHorz` | CoreStationaryGeneralEqm, CalibSGE, InfHorz TPath, EntryExit |
+| `HeteroAgentStationaryEqm_Case1_FHorz_PType` | CoreStationaryGeneralEqm, FHorz TPath PType |
+| `HeteroAgentStationaryEqm_InfHorz_PType` | CoreStationaryGeneralEqm |
+| `CalibrateOLGModel`, `CalibrateBIHAModel` | CalibSGE |
+| **`HeteroAgentStationaryEqm_MixHorz_PType`** (incl. its new GEptype subfn) | **nothing** |
+| **`HeteroAgentStationaryEqm_FHorz_PType2L`** | **nothing** |
+| **`HeteroAgentStationaryEqm_FHorz_CPU`** | **nothing** |
+| **`CalibrateOLGModel_PType`, `CalibrateBIHAModel_PType`** | **nothing**; planned in CalibSGE |
+
+| option | tested | not tested |
+|---|---|---|
+| `heteroagentoptions.fminalgo` | 1, 4 (FHorz only), 5, 8, 9 (Type-I and Type-II) | **0, 2, 3, 6, 7** |
+| `transpathoptions.GEnewprice` | 1, 2, 3 | — |
+| constraints | `constrain0to1`, `constrainpositive` (`softplus`, `log`), `constrainAtoB`, all three together, and per-type under GEptype | — |
+| other | `intermediateEqns` (and per ptype), `GEptype`, `multiGEweights`, shock grids in GE, `jequaloneDist` as a function, `maxiter=0` | a `jequaloneDist` function handle in **PType** GE; the `n_p` price-grid path |
+
+### Known failures
+
+- **InfHorz `fminalgo=8` (lsqnonlin) does not converge**, in both the plain and PType families. It
+  stops with the largest GE condition about 0.07 and `tau_c` negative, 0.065 and 0.069 away from
+  fminalgo=1. This has happened in every full run since 2026-09-20, and FHorz is fine. The likely
+  cause is `finitedifferencestepsize=1e-2`. For `|x|<1` that is an *absolute* step, about 25% of
+  `r=0.04`, so the Jacobian is a wide secant; on InfHorz, where `K(r)` is steep, the probes land
+  far from the solution. This is the same wall that breaks the BIHA joint calibration. The
+  default is unchanged (the user's call). These two lines are the bank's whole failure count, so
+  any third failure is new.
+- **CMA-ES (`fminalgo=4`) does not reproduce from run to run,** even with the rng fix, so its
+  numbers are not a regression baseline. Two non-PType lines still hold it to the tight
+  `near zero` bar, while the PType ones use `this should be small`. The tight ones will
+  eventually fail spuriously.
+- **EntryExit part 2 had 3 failures** (2026-10-12), not yet diagnosed.
+
+### Gaps
+
+- **Four GE entry points have no test at all:** MixHorz PType, PType2L, the CPU path and the two
+  PType calibration commands. MixHorz GEptype and InfHorz GEptype were built test-first on
+  2026-09-23. InfHorz GEptype now runs in parts 15 and 17; MixHorz has never run.
+- **fminalgo 0, 2, 3, 6 and 7 are untested.** 6 is constrained fmincon, which needs bounds.
+- **A `jequaloneDist` function handle in PType GE is untested.** The bank's PType
+  `jequaloneDist` is numeric.
+- **Every test uses one model,** the three-price Aiyagari one. There is no asset-family GE (no
+  ExpAsset or RiskyAsset in GE), no semiz GE, and no EZ or QH preferences in stationary GE.
+- **The BIHA calibration is not green,** as described above.
+
+## Transition-path banks
+
+Written 2026-10-27 from the drivers' part maps, the diaries, the commit messages and the toolkit
+source. It replaces the 2026-09-05 survey. That survey's claims "five of six banks have never
+produced a diary" and "554 of 1718 check sites ever executed" no longer hold.
+
+In this section, *check sites* counts `fprintf` lines containing `should be` in each bank's own
+files. *Subcodes* counts the bank's subcode files, excluding cross-tests.
+
+| bank | parts | subcodes | cross-tests | check sites | of which `close to zero` | latest evidence |
 |---|---|---|---|---|---|---|
-| `CoreFHorzTPathTests` | 8 nosemiz + 8 semiz | 6 | 22 | 554 | 32 | **2026-08-27, complete** |
-| `CoreFHorzTPathTests/withQuasiHyperbolicDiscounting` | 8 | 2 | 10 | 440 | 32 | never |
-| `CoreFHorzTPathExpAssetTests` | 8 | — | 8 | 256 | 16 | never |
-| `CoreFHorzTPathExpAssetzTests` | 4 | 2 | 6 | 168 | 8 | never |
-| `CoreFHorzTPathTwoEndoTests` | 8 | — | 8 | 256 | 16 | never |
-| `CoreFHorzTPathPTypeTests` | 7 tests | — | 7 | 44 ‡ | 9 | never |
-| **total** | | | **61** | **1718** | **113** | |
+| CoreFHorzTPathTests | 8 | 20 | 6 | 716 | 32 | **all 8, 2026-10-23: 860 checks, 0 failed** |
+| └ withQuasiHyperbolicDiscounting | 3 | 8 | 2 | 446 | 32 | **all 3, 2026-10-23: 486, 0** |
+| └ with_CoreFHorzTPathAlgoTests | 2 | 2 | — | 29 | 2 | both, 2026-10-26: 101, **1** (part 1) |
+| CoreFHorzTPathExpAssetTests | 2 | 9 | — | 261 | 16 | 2026-10-23: **dies in doPart(1)**, GPU OOM |
+| CoreFHorzTPathExpAssetzTests | 3 | 5 | 2 | 173 | 8 | 2026-10-23: **dies in doPart(1)**, the same OOM |
+| CoreFHorzTPathTwoEndoTests | 1 | 8 | — | 256 | 16 | **never run** |
+| CoreFHorzTPathRiskyAssetTests | 5 | 16 | 5 | 422 | 16 | **never run**: test-first, and the toolkit refuses `riskyasset` on a path; untracked |
+| CoreFHorzTPathPTypeTests | 13 | 15 | — | 160 | 9 | run in progress 2026-10-27, past doPart(12) at 10:34; no closing banner yet |
+| └ with_CoreFHorzTPathPTypeAlgoTests | 3 | 3 | — | 30 | 2 | **all 3, 2026-10-27: 84, 0** |
+| CoreInfHorzTPathTests | 6 (part 3 off) | 14 | — | 737 | 97 | parts 4–5, 2026-10-13: 117, 0 |
+| └ with_CoreInfHorzTPathAlgoTests | 2 | 7 | 1 | 57 | 5 | both, 2026-10-06: 96, **12** (part 1) |
+| **total** | | | | **3287** | **235** | |
 
-‡ static `fprintf` sites. The PType checks sit inside `for ii=1:N_i` loops, so at runtime it is
-about **73** — `N_i=2` everywhere except `ShockTests_4types`, which uses 4.
-
-**1718 check sites are written; 554 of them — 32% — have ever executed.** That is the headline.
-Five of the six banks have never produced a diary, and `CoreInfHorzTPathTests` (out of scope here)
-is the only other TPath bank in the suite that has.
+Four of the eleven have a clean, complete latest run: the main FHorz bank, its QH mirror,
+PTypeAlgo, and (if its run finishes green) PType.
 
 ### What a TPath variant tests that a stationary variant does not
 
-The extra axis is **`transpathoptions.fastOLG` ∈ {0,1}**, crossed with the same
-`{base, DC, GI, DC+GI}` ladder and the same `lowmemory` ladder as the stationary banks — hence
-the `Divide-and-conquer (slowOLG)` / `(fastOLG)` / `(with GI, slowOLG)` / `(with GI, fastOLG)`
-quartet on every label. On top of that each variant runs four oracles:
+The extra axis is **`transpathoptions.fastOLG` ∈ {0,1}**. It is crossed with the same
+`{base, DC, GI, DC+GI}` ladder and the same `lowmemory` ladder as the stationary banks. On top of
+that, each variant runs four oracles:
 
-- **`Do nothing TPath`** — a constant `PricePath`/`ParamPath` must reproduce the stationary solve
-  exactly, checked on `V`, `Policy` and `AgentDist`. This is the load-bearing oracle of the whole
-  TPath suite: it is the only one that pins the path code to an independently-computed answer
-  rather than to another tier of itself.
-- **one iteration of the GE transition path** (`transpathoptions.maxiter=1`), with/without
-  fastOLG and with/without GI. Explicitly a shape check — the subcodes say so — the GE core
-  being tested in `CoreStationaryGeneralEqm`.
-- **big-`a_grid` GI convergence** — `StationaryDist with/without grid interp … close to zero`
-  plus the eyeballed moment rows, the same construction as the stationary banks' QH/EZ mirrors.
-- **cross-tests** — `z as e`, `z and e 1/2`, `semiz as z`, and (ExpAssetz) a fake-`z`
-  experienceassetz against plain experienceasset.
+- **Do-nothing TPath.** A constant `PricePath`/`ParamPath` must reproduce the stationary solve
+  exactly, on `V`, `Policy` and `AgentDist`. This is the load-bearing oracle of the whole TPath
+  suite. It is the only one that pins the path code to an independently computed answer rather
+  than to another tier of itself.
+- **One iteration of the GE path** (`maxiter=1`, Anderson `GEnewprice=2`), with and without
+  fastOLG and with and without GI. It is a shape check; the GE solver algorithms themselves are
+  compared in the Algo sub-banks.
+- **Big-`a_grid` GI convergence.** These are the `close to zero` lines.
+- **Statistics along the path.** Since 2026-10-20, every main-bank variant checks
+  `EvalFnOnTransPath_AllStats_Case1_FHorz` and `LifeCycleProfiles_TransPath_FHorz_Case1` against
+  the standalone commands period by period.
 
-The QH mirror adds the Naive/Sophisticated split with `Valt`/`Vunderbar`/`Policyalt` channels and
-a `beta0=1` collapse onto exponential, exactly mirroring the stationary QH banks.
+`V_final` is a mandatory input to every path solve, so the terminal condition is exercised by every
+variant. There is no rarely taken branch like the stationary `V_Jplus1`, which produced eleven
+defects in the stationary families.
 
-### The one run there is
+### CoreFHorzTPathTests
 
-`CoreFHorzTPathTestsdiary.txt`, 2026-08-27, is **clean and complete**: all 16 figures, all 554
-check sites reached (the static and diary counts agree exactly), **534 printing `0.00000000`**,
-16 `close to zero` GI-convergence lines, and 4 lines at `0.00000001`. No errors, no OOM, no
-aborted script — this is the only TPath bank known to run end to end.
+| parts | what |
+|---|---|
+| 1–2 | nosemiz, figs 1–8: `{nod,d} × {noz,z} × {noe,e}`, plus cross-tests `z as e` and `z and e` |
+| 3–5 | semiz, figs 9–16, plus cross-tests `semiz as z` |
+| 6 | `_tminus1` and `_tplus1` in the GE conditions, and `LifeCycleProfiles` with lagged and led FnsToEvaluate |
+| 7 | population demographics; semiz in-path aggregates vs the standalone commands; `simoptions.fastOLG` 0 vs 1 inside the path |
+| 8 | z and e grids that vary over the path (incl. semiz models, shock fns on a path, moving `pi_z`/`pi_e`, a `fastOLG=0` path with a `fastOLG=1` dist) |
 
-Two caveats on reading it:
+All 8 parts ran on 2026-10-23: 860 checks, 0 failed.
 
-- **It predates the `%.3e` conversion.** All five TPath banks were moved onto `%.3e` in `917bb7c`
-  (2026-09-01), but this diary is from 08-27, so it is a `%2.8f` reading and the ULP-floor
-  section above applies in full: its "534 exactly zero" means "534 below 5e-9", and the four
-  `0.00000001` lines are floor-level, not faults. The next run will report honest small non-zeros
-  and that is expected, not a regression.
-- **It is still representative.** The only substantive change to the bank since is
-  `QHadditionaldiscount` going from `{'beta0'}` to `'beta0'` in the *QH* driver (`b119a89`);
-  everything else in the 33 touched files is format strings.
+**QH mirror:** Naive and Sophisticated with the `Valt`/`Vunderbar`/`Policyalt` channels, the
+beta0=1 collapse onto the exponential case, and time-varying grids. All 3 parts green on
+2026-10-23.
 
-### The header comment about semiz was stale (fixed 2026-09-05)
+**Algo sub-banks (FHorz and PType):** these compare the GEnewprice algorithms (shooting,
+Anderson, and so on) against each other on models without and with d. PTypeAlgo adds GEptype
+islands.
 
-`CoreFHorzTPathTests.m` said `with/without semiz [tests built; toolkit does not yet implement
-FHorz TPath with semiz]` at the top and `NOTE: these require the toolkit to implement FHorz TPath
-with semiz (not yet done)` above the second half. **Both were wrong.**
-`ValueFnIter/TransPathFHorz/subcodes/ValueFnOnTransPath_FHorz_SemiExo.m` exists and is dispatched
-from `ValueFnOnTransPath_Case1_FHorz.m:178`, and the 08-27 run executed figures 9–16 and all 231
-semiz check sites with no errors — the comments would have led someone to skip the working half
-of the script. Both replaced with the dispatch fact.
+### The experience-asset, two-endo and risky-asset banks
 
-The `NOT YET IMPLEMENTED` comments in `CoreFHorzTPathPTypeTests` were checked at the same time and
-are all still accurate: neither `EvalFnOnTransPath_AllStats_Case1_FHorz_PType` nor
-`LifeCycleProfiles_TransPath_FHorz_Case1_PType` exists, and nor does a non-PType
-`EvalFnOnTransPath_AllStats_Case1_FHorz` (only InfHorz has one).
+- **ExpAsset (8 variants + time-varying grids) and ExpAssetz (4 variants + fake-z cross-tests
+  + time-varying grids):** both cover withA1 nosemiz only. Their drivers mark semiz and noa1
+  `[NOT YET IMPLEMENTED]`, and the toolkit refuses both combinations. **Both currently die in
+  doPart(1)** with GPU out-of-memory at
+  `AgentDistOnTransPath_Case1_FHorz` (`repelem(N_a1*(a2primeIndexesPath-1),1,2,1)`). The fault is
+  the toolkit's memory use, not the tests. Until that is fixed, these 434 check sites are dark.
+- **TwoEndo:** 8 nosemiz variants with two standard endogenous states. It is committed and has
+  never run.
+- **RiskyAsset:** noa1 and withA1 tiers, 16 variants and 5 cross-tests. It was written test-first
+  on 2026-09-06 and is untracked. `ValueFnOnTransPath_Case1_FHorz` now refuses
+  `vfoptions.riskyasset>=1` with an error rather than silently returning a different model, so
+  every variant errors until the toolkit family exists. The scope is in
+  `TPath_RiskyAsset_proposal.md` (toolkit repo).
 
-### Six silent-wrong-answer holes on the TPath side — all guarded 2026-09-06
+Two annotations in the ExpAsset drivers are still open. They can't be checked until the OOM is
+fixed:
 
-The TPath entry points dispatch on `experienceasset` / `experienceassetz` / `n_semiz` and nothing
-else, so every other non-standard combination fell through to the standard-endogenous-state code
-and returned a different model without complaint. Four such combinations existed; all now error.
+- **ExpAsset, figures 2 and 4:** `RUNS BUT: Policy differs by 2`. This is attributed to DC
+  breaking ties differently, but that has been asserted, not shown. The stationary banks settle
+  such cases by showing `max|dV|=0` at the differing points, and the subcode has the diagnostic
+  block for it.
+- **ExpAssetz, figure 4:** `Some of the lowmemory are not quite right, seems to be just the
+  Policy`. **This is unexplained and is the most likely real defect in the TPath suite.** The
+  stationary banks treat a `lowmemory` disagreement as never a tie.
 
-| combination | was | now |
-|---|---|---|
-| `riskyasset` on a TPath | zero mentions anywhere in the TPath tree | `error` |
-| `residualasset` on a TPath | zero mentions anywhere in the TPath tree | `error` |
-| `experienceasset(z)` + `semiz` | semiz tested *before* asset type, so it reached `ValueFnOnTransPath_FHorz_SemiExo`, which has zero knowledge of experience assets | `error` |
-| `QuasiHyperbolic` + `semiz` (compute path) | QH dispatched before the semiz branch; the QH subfn never mentions semiz | `error` |
-| `QuasiHyperbolic` + `semiz` (GE path) | the GE path has its *own* QH implementation, which never reads `n_semiz` | `error` |
-| `QuasiHyperbolic` + `experienceasset(z)` (GE path) | the GE substep dispatcher returns at the expasset branch *before* the QH branch, and the ExpAsset substep has zero mentions of `exoticpreferences` — so QH was silently dropped, while the compute-only path errors on the same model | `error` |
+### CoreFHorzTPathPTypeTests
 
-Guards added at all five entry points: `ValueFnOnTransPath_Case1_FHorz`,
-`ValueFnOnTransPath_FHorz_QuasiHyperbolic`, `AgentDistOnTransPath_Case1_FHorz`,
-`TransitionPath_Case1_FHorz`, and `TransitionPath_Case1_FHorz_PType` — the last needs its own copy
-because it builds per-type option structures and drives the substeps directly instead of routing
-through `TransitionPath_Case1_FHorz`. The PType value-fn and agent-dist commands do route through
-their guarded non-PType versions, so they inherit.
+| parts | what |
+|---|---|
+| 1–2 | Names_i forms; identical types vs one solve |
+| 3 | figs 1–2 |
+| 4–7 | GE with types vs a no-PType solve, with and without semiz, `fastOLG` 1 and 0 |
+| 8 | GE with decoupled types (GEptype) vs solo solves |
+| 9 | `_tminus1`/`_tplus1` by ptype |
+| 10 | age weights and demographics by ptype |
+| 11 | type masses that change over the path |
+| 12 | z and e grids that vary over the path, by ptype |
+| 13 | experience assets and grid interpolation by ptype |
 
-### riskyasset and residualasset: the detail
+The 2026-09-05 blocker is gone: `EvalFnOnTransPath_AllStats_Case1_FHorz_PType` and
+`LifeCycleProfiles_TransPath_FHorz_Case1_PType` both exist now, and `PerTypeFnsToEvaluate` calls
+them live. **Much of this bank is uncommitted.** The live stats calls and the latest extensions to the
+driver and 11 subcodes are working-tree changes on top of the 2026-10-07 commit, and parts 12–13
+sit in two untracked subcodes. They are
+waiting on the run in progress. **Per-type `N_j` is not allowed on a
+TPath**, unlike in the stationary PType commands, so there is deliberately no PerTypeNj test.
 
-`riskyasset` and `residualasset` appear in **zero files** under `ValueFnIter/TransPathFHorz/`,
-`StationaryDist/TransPathFHorz/`, `EvaluateFnOnAgentDist/TransPathFHorz/` and `TransitionPaths/`.
-Not "errors with a message" — absent. `ValueFnOnTransPath_Case1_FHorz` never reads
-`vfoptions.riskyasset`, so such a model is dispatched down the standard-endogenous-state path with
-`n_u`/`pi_u`/`aprimeFn`/`refine_d` simply unread, and a different model comes back without
-complaint. Every neighbouring unsupported combination guards — `experienceasset`+noa1
-(`ValueFnOnTransPath_FHorz_ExpAsset.m:49`), `experienceassetz`+z-varying
-(`TransitionPath_Case1_FHorz.m:366`), `experienceasset`+QH
-(`ValueFnOnTransPath_FHorz_QuasiHyperbolic.m:21`) — these two do not.
+### CoreInfHorzTPathTests
 
-`TPath_RiskyAsset_proposal.md` (toolkit repo, 2026-09-05) scopes both the guards and a full
-RiskyAsset TPath family: 80 SingleStep raws, a 16-variant test bank, and the reason `withA1` has
-to be built before `noa1`.
+| parts | what |
+|---|---|
+| 1 | one endogenous state; only figs 3–4 are live |
+| 2 | two endogenous states (figs 9–10) |
+| 3 | `_tminus1`/`_tplus1`; **switched off** |
+| 4 | localsearch on its own, against DC and with GI; lowmemory as an identity |
+| 5 | localsearch with d, and with d plus GI |
+| 6 | localsearch inside a real GE path, by shooting and by Anderson; the stationary-GE two-tier invariant; `nlocalsearch` as a starting window |
 
-### QH + semiz is silently wrong, not an error
+The driver covers `{nod,d} × {noz,z} × {noe,e}` × DC × GI × lowmemory, with **no semiz**, which
+the driver says is deliberate for this build. Only parts 4–5 have a current diary (10-13: 117, 0).
+Parts 1, 2 and 6 have no surviving CoreSummary line. The Algo sub-bank compares the GE algorithms
+and cross-tests a stacked `d_grid` against a joint one. Its last run (10-06) had **12 failures in
+part 1, not yet diagnosed**.
 
-`ValueFnOnTransPath_Case1_FHorz.m:108-111` dispatches to
-`ValueFnOnTransPath_FHorz_QuasiHyperbolic` and **returns**, which is *before* the semiz branch at
-`:178`. The QH subfunction never mentions `semiz` — zero occurrences in the file. So
-`exoticpreferences='QuasiHyperbolic'` together with `vfoptions.n_semiz` does not error; it
-computes the no-semiz answer and hands it back.
+### Guards: combinations that used to give silently wrong answers
 
-The QH driver's own banner already calls this combination `[NOT SUPPORTED by
-ValueFnOnTransPath_FHorz_QuasiHyperbolic]`, so the intent is documented — it is the *enforcement*
-that is missing. The idiom to copy is three lines away in the same file:
+On 2026-09-06 the TPath entry points gained guards for every combination that used to fall
+through to the standard-endogenous-state code and return a different model without complaint.
+All of them now error:
 
-```matlab
-if vfoptions.experienceasset>=1
-    error('ValueFnOnTransPath_FHorz_QuasiHyperbolic: experienceasset not yet supported')
-end
-```
+| combination | where it used to go wrong |
+|---|---|
+| `riskyasset` on a TPath | never read; it was solved as a standard asset |
+| `residualasset` on a TPath | never read; it was solved as a standard asset |
+| `experienceasset(z)` + `semiz` | reached the SemiExo subfn, which knows nothing of experience assets |
+| QH + `semiz` (compute path and GE path) | QH was dispatched before the semiz branch and never reads `n_semiz` |
+| QH + `experienceasset(z)` (GE path) | the ExpAsset substep has no `exoticpreferences`, so QH was dropped |
 
-`experienceasset` gets a guard; `semiz` does not. One `prod(vfoptions.n_semiz)>0` error beside it
-closes it.
+The guards are at `ValueFnOnTransPath_Case1_FHorz`, `ValueFnOnTransPath_FHorz_QuasiHyperbolic`,
+`AgentDistOnTransPath_Case1_FHorz`, `TransitionPath_Case1_FHorz` and
+`TransitionPath_Case1_FHorz_PType`. PType needs its own copy because it drives the substeps
+directly.
 
-### Open items recorded in the drivers themselves
-
-These are annotations the drivers already carry, not new findings — but they are the only record
-of them, and they are the reason four of these banks have no diary worth keeping:
-
-- **`CoreFHorzTPathExpAssetTests`, figures 2 and 4** — `RUNS BUT: Policy differs by 2, Claude
-  claims it is just about how DC handles indifferent policies different from without DC`. That
-  is the standard argmax-tie story and is probably right, but it is asserted, not demonstrated:
-  the stationary banks settle these by showing `max|dV|` at the differing points is 0. The
-  subcode has the diagnostic block for it (`(d2_nonDC, d2_DC) -> count`, diff counts by `t` and
-  by `j`); nobody has run it and written the answer down.
-- **`CoreFHorzTPathExpAssetzTests`, figure 4** — `Some of the lowmemory are not quite right,
-  seems to be just the Policy (V seems fine); at first I thought L2flag, but appears to impact
-  the DC (without GI) so that is not the reason.` **This one is unexplained and is the most
-  likely real defect in the TPath suite.** A `lowmemory` disagreement is the check the stationary
-  banks treat as never tied — "every `lowmemory` check exactly zero" is one of the three
-  discriminators that separate the ULP floor from a fault.
-- **OOM is routine here.** Four of the largest configurations replace `a_grid_big` with a
-  hand-built `n_a_notsobig` (501, 501, 301, 251 points) to fit. Same ceiling as the stationary
-  ExpAsset banks, hit earlier because a path holds `T` periods at once.
-- **`CoreFHorzTPathPTypeTests`** is blocked on two toolkit functions that do not exist:
-  `EvalFnOnTransPath_AllStats_Case1_FHorz_PType` and
-  `LifeCycleProfiles_TransPath_FHorz_Case1_PType`. The corresponding blocks in
-  `..._PerTypeFnsToEvaluate.m` are commented out awaiting them. Also noted there: **per-type
-  `N_j` is not allowed on a TPath**, unlike the stationary PType commands, so there is
-  deliberately no `PerTypeNj` test.
-
-### Coverage gaps relative to the stationary suite
-
-Whole axes that the stationary banks cover and the TPath banks do not:
+### Gaps relative to the stationary suite
 
 | axis | stationary | TPath |
 |---|---|---|
-| asset tiers | noa1 / withA1 / with2A1 | withA1 only (plus a separate TwoEndo bank) |
-| families | ExpAsset, U, e, z, ze, semiz, RiskyAsset, ResidAsset | ExpAsset, ExpAssetz only |
-| exotic prefs | QH, EZ, AA, GP | QH only, and unrun |
-| semiz | every family | main bank only (ExpAsset/ExpAssetz drivers say `NOT YET IMPLEMENTED`) |
-| `V_Jplus1` | 520 subcodes | n/a — the path's terminal condition is `V_final`, exercised by every variant |
+| asset tiers | noa1 / withA1 / with2A / with2A2 | withA1 (plus TwoEndo); noa1 only in the never-run RiskyAsset bank |
+| families | ExpAsset, U, e, z, ze, semiz, RiskyAsset, ResidAsset | ExpAsset and ExpAssetz, both OOM; RiskyAsset test-first |
+| exotic prefs | QH, EZ, AA, GP | QH only (green) |
+| semiz | every family | main bank and PType only |
+| PType | FHorz and InfHorz | FHorz only; **no InfHorz PType TPath bank** |
+| InfHorz | 1A, 2A, semiz, e | no semiz; only parts 4–5 have current evidence |
 
-The `V_Jplus1` row is the one place the TPath banks are structurally *better* off: `V_final` is a
-mandatory input to every path solve, so there is no separate rarely-taken branch of the kind that
-produced eleven defects in the stationary families.
+**The next steps that would most improve coverage**, in order of expected yield:
 
-**The cheapest thing to do next is run the five banks that have never run.** They are written,
-committed, and on `%.3e`; the main bank's clean 554 says the shared setup and the shared oracle
-shapes work. Order by expected yield: ExpAssetz (a recorded unexplained `lowmemory` Policy
-difference), then ExpAsset (an asserted-but-unverified tie), then the QH mirror (440 sites, never
-executed once), then TwoEndo and PType.
+1. **Fix the ExpAsset TPath OOM** in `AgentDistOnTransPath_Case1_FHorz`. It darkens two banks
+   (434 sites), and behind it sit the unexplained ExpAssetz `lowmemory` Policy difference and the
+   unverified ExpAsset tie.
+2. **Run TwoEndo** (256 sites, never run, no toolkit blocker known).
+3. **Diagnose the 12 InfHorz TPathAlgo failures and the 1 FHorz TPathAlgo failure.**
+4. **Re-run InfHorz TPath parts 1, 2 and 6**, and decide whether part 3 should stay off.
