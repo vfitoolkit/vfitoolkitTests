@@ -1,32 +1,158 @@
 # VFI Toolkit — test coverage
 
-Coverage of the FHorz core test banks. The transition-path banks are covered separately, in
-the FHorz transition-path section at the end. Tier is assigned from each subcode's directory
-(`Noa1_subcodes` / `With2A1_subcodes` / else), not its filename — filenames misattribute
-cross-tests. Format in the tier columns is `variants + cross-testsx`.
+The doc opens with a **suite index** that lists every bank and sub-bank in five tables: FHorz
+stationary, InfHorz stationary, transition paths, calibration + estimation, and other. Each row
+gives the bank's part count, its latest evidence and its git state. After the index come the
+detailed sections, which cover the FHorz stationary banks, the InfHorz stationary banks and the
+FHorz transition-path banks. The GE, calibration, estimation and discretization banks have index
+rows only.
 
-`ResidAsset` is the one bank with a single tier, so it has no tier subdirectories at all: its 16
-withA1 subcodes sit at the top level of `..._subcodes/` and in `Semiz_subcodes/`. A tier rule
-that keys off directory names must fall through to withA1 for it, not skip it.
+Last updated: 2026-10-27
 
-Last updated: 2026-09-05
+## Suite index
+
+How to read the *latest evidence* column:
+
+- **Source.** Taken from the `CoreSummary` per-part lines (`doPart(N): ... X checks, Y failed`)
+  in the current diary. If a later partial run overwrote the diary, the figures come from an
+  archived diary in `TestOutput/` or from the commit message that recorded the GPU run, and the
+  commit hash is given.
+- **Partial runs.** Most current diaries cover only the parts that were re-run last. A bank whose
+  diary shows parts 12–13 has *not* gone red on parts 1–11; they simply weren't in that run.
+- **Older diaries.** Diaries written before `CoreSummary` existed (late September) have no
+  per-part lines and are marked *pre-CoreSummary*.
+- **`failed`.** Copied as printed, not re-diagnosed. The known benign case is the DC2A exact-tie
+  artefact (Policy off by one index with `max|dV|=0`; see the QH ExpAsset entry under Known open
+  items). Read the `[diag]` lines before treating a count of 1 or 3 as a defect.
+- **Surveyed 2026-10-27** from the working tree: diaries, driver `doPart` vectors and
+  `git status`.
+
+### FHorz stationary
+
+| bank | sub-bank | parts | latest evidence | git |
+|---|---|---|---|---|
+| CoreFHorzTests | — | 13 | parts 12–13 2026-10-14: 3143 checks, 0 failed; part 10 2026-10-03: 2569, 0 | committed |
+| | withQuasiHyperbolicDiscounting | 9 | all 9, 2026-09-23: 4464, 0 | committed |
+| | withEpsteinZinPreferences | 7 | all 7, 2026-09-23: 4332, 0 | committed |
+| | withAmbiguityAversion | 4 | all 4, 2026-09-23: 428, 0 | committed |
+| | withGulPesendorferPrefs | 8 | all 8, 2026-09-23: 1034, 0 | committed |
+| CoreFHorzExpAssetTests | — | 19 | full run 2026-10-01 (`ef38eea`): 2446, 1 (fig 42 DC2A tie); the five with2A2 parts 930, 0 | committed |
+| | withQuasiHyperbolicDiscounting | 6 | part 6, 2026-10-02: 783, 3; parts 1–5 pre-CoreSummary | driver modified |
+| | withGulPesendorferPrefs | 3 | all 3, 2026-09-25: 506, 0 | committed |
+| CoreFHorzExpAssetUTests | — | 19 | 2026-10-14 (`6fc8053`): parts 15–19 700, 0; parts 1–14 1455, 1 (DC2A tie). Diary holds only the 1–14 run | committed |
+| | withQuasiHyperbolicDiscounting | 6 | parts 5–6, 2026-10-02: 1536, 4; parts 1–4 pre-CoreSummary | driver modified |
+| CoreFHorzExpAsseteTests | — | 16 | 2026-10-12 (`d7f06e7`): parts 1–11 856, 0; parts 12–16 580, 0 | committed |
+| | withQuasiHyperbolicDiscounting | 4 | parts 1–2 2026-09-25: 1808, 0; parts 3–4 2026-10-02: 1336, 0 | committed |
+| CoreFHorzExpAssetzTests | — | 17 | all 17, 2026-10-12 (`b0f782e`): 1539, 0 | committed |
+| | withQuasiHyperbolicDiscounting | 3 | parts 1–2 2026-09-26: 1808, 0; part 3 2026-10-02: 1224, 0 | committed |
+| CoreFHorzExpAssetzeTests | — | 16 | 2026-10-02 (`79e89f7`): parts 1–10 494, 0; parts 12–16 352, 0; part 11 left off (fig 12 OOM) | driver modified |
+| | withQuasiHyperbolicDiscounting | 2 | both, 2026-10-02: 1800, 0 | committed |
+| CoreFHorzExpAssetsemizTests | — | 9 | parts 7–9 2026-10-16 (`f3837fe`): 574, 0; parts 5–6 2026-10-16: 327, 1. Parts 1–4 and 5–6 need separate MATLAB sessions (memory ceiling, `39940a0`) | committed |
+| | withQuasiHyperbolicDiscounting | 3 | parts 1–2 2026-09-26: 1808, 0; part 3 2026-10-02: 1336, 1 | driver modified |
+| CoreFHorzRiskyAssetTests | — | 6 | parts 1–3 2026-09-29: 472, 0; parts 4–6 2026-10-02: 939, 0 | committed |
+| | withEpsteinZinPreferences | 4 | all 4, 2026-09-23: 7233, 0 | committed |
+| | withAmbiguityAversion | 2 | both, 2026-09-23: 220, 0 | committed |
+| CoreFHorzResidAssetTests | — | 4 | **never run**: test-first, 4 of 64 raws exist | **untracked** |
+| CoreFHorzPTypeTests | — | 21 | every part has a 0-failed run: 1–8 and 10–19 2026-09-30, 20–21 2026-10-03, 9 2026-10-16 | committed |
+
+### InfHorz stationary
+
+| bank | sub-bank | parts | latest evidence | git |
+|---|---|---|---|---|
+| CoreInfHorzTests | — | 11 | parts 1, 2, 9, 2026-10-27: 178, 0 | committed |
+| | withQuasiHyperbolicDiscounting | 6 | all 6, 2026-10-27: 253, 0 | committed |
+| | with_CoreInfHorzVFIAlgoTests | 11 | parts 1, 2, 8, 9, 11, 2026-10-27: 3649, 0 | committed |
+| | withEntryExit | 3 (2 on) | parts 2–3, 2026-10-12: 18, **3 (part 2, GE entry/exit, fig 5)** | committed |
+| | withEpsteinZinPreferences | 5 | **never run**: Tier 1 built (see `CoreInfHorzEZTests_proposal.md`) | **untracked** |
+| CoreInfHorzPTypeTests | — | 15 | parts 12, 14, 15, 2026-10-12: 118, 0 | committed |
+| CoreInfHorzInheritAssetTests | — | 3 | 2026-09-14, pre-CoreSummary | committed |
+
+### Transition paths (FHorz and InfHorz)
+
+The `check sites` column counts `fprintf` lines containing `should be` in the bank's own files.
+This is a static count: a check inside a loop runs more than once.
+
+| bank | sub-bank | parts | check sites | of which `close to zero` | latest evidence | git |
+|---|---|---|---|---|---|---|
+| CoreFHorzTPathTests | — | 8 | 716 | 32 | all 8, 2026-10-23: 860, 0 | committed |
+| | withQuasiHyperbolicDiscounting | 3 | 446 | 32 | all 3, 2026-10-23: 486, 0 | committed |
+| | with_CoreFHorzTPathAlgoTests | 2 | 29 | 2 | both, 2026-10-26: 101, **1** (part 1) | committed |
+| CoreFHorzTPathExpAssetTests | — | 2 | 261 | 16 | 2026-10-23: **dies in doPart(1)**, GPU OOM in `AgentDistOnTransPath_Case1_FHorz` (`repelem` of `a2primeIndexesPath`) | committed |
+| CoreFHorzTPathExpAssetzTests | — | 3 | 173 | 8 | 2026-10-23: **dies in doPart(1)**, the same OOM | committed |
+| CoreFHorzTPathTwoEndoTests | — | 1 | 256 | 16 | **never run** | committed |
+| CoreFHorzTPathRiskyAssetTests | — | 5 | 422 | 16 | **never run** | **untracked** |
+| CoreFHorzTPathPTypeTests | — | 13 | 160 | 9 | 2026-10-27: reaches doPart(6), no closing banner (still running, or the Dropbox copy lags) | modified, 2 subcodes untracked |
+| | with_CoreFHorzTPathPTypeAlgoTests | 3 | 30 | 2 | all 3, 2026-10-27: 84, 0 | committed |
+| CoreInfHorzTPathTests | — | 6 (5 on) | 737 | 97 | parts 4–5, 2026-10-13: 117, 0 | committed |
+| | with_CoreInfHorzTPathAlgoTests | 2 | 57 | 5 | both, 2026-10-06: 96, **12** (part 1) | driver modified |
+| **total** | | | **3287** | **235** | | |
+
+### Calibration and estimation
+
+All of these banks now live in **`CalibAndEstim/`**. They were moved there on 2026-10-27, and
+every `addpath` reaching outside that folder (to `SharedSubcodes`, the Core return functions and
+setups) gained one extra `../`. Paths between the Calib and Estim banks were already relative to
+each other and did not change. The git column below describes the files themselves; the move is
+staged as renames and has not been committed yet.
+
+| bank | sub-bank | parts | latest evidence | git |
+|---|---|---|---|---|
+| CalibFHorzTests | — | 11 | parts 8, 11, 2026-10-14: 89, 0 | committed |
+| CalibFHorzPTypeTests | — | 11 | parts 8, 11, 2026-10-14: 86, 0 | driver modified |
+| CalibInfHorzTests | — | 7 | parts 1–6, 2026-10-13: 163, 0 | committed |
+| CalibInfHorzPTypeTests | — | 6 | parts 1–5, 2026-10-13: 144, 0 | committed |
+| CalibStationaryGeneralEqmTests | — | 11 (1 on) | part 11, 2026-10-22: 18, **1** | **untracked** |
+| EstimFHorzTests | — | 14 | part 8, 2026-10-23: 9, 0 | committed |
+| | withMaxLikelihood | 10 | all 10, 2026-10-16: 204, 0 | committed |
+| EstimFHorzPTypeTests | — | 11 | part 7, 2026-10-23: 9, 0 | committed |
+| | withMaxLikelihood | 3 | all 3, 2026-10-16: 53, 0 | committed |
+
+### Other
+
+| bank | parts | latest evidence | git |
+|---|---|---|---|
+| CoreStationaryGeneralEqm | 18 | all 18, diary `_allparts_2026-10-09b`: 137, **2** (parts 2 and 6, fminalgo agreement) | committed |
+| DiscretizationMethodTests | 12 (10 on) | 2026-09-20, pre-CoreSummary banner: 3380, **7** (accuracy bars; the diary lists all seven) | driver modified, P11_CIR untracked |
 
 ## CoreFHorzTests + the ExpAsset family + RiskyAsset + ResidAsset
 
-| bank | noa1 | withA1 | with2A | var | x-tests | panel vs dist | V_Jplus1 | core raws | QH | EZ | AA |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| CoreFHorzTests | — | 16+6x | 16+4x | 32 | 10 | 32/32 | 32 + 32 QH + 16 EZ | 142 | 42 | 24 | 16 |
-| ExpAsset | 16+10x | 16+14x | 16+2x | 48 | 26 | 48/48 | 48 + 48 QH | 128 | 48 | — | — |
-| ExpAssetU | 16+10x | 16+14x | 16+2x | 48 | 26 | 48/48 | 48 + 48 QH | 128 | 48 | — | — |
-| ExpAssete | 8+16x | 8+8x | 8+2x | 24 | 26 | 24/24 | 24 + 24 QH | 64 | 24 | — | — |
-| ExpAssetz | 8+16x | 8+8x | 8+4x | 24 | 28 | 24/24 | 24 + 24 QH | 64 | 24 | — | — |
-| ExpAssetze | 4+4x | 4+16x | 4+2x | 12 | 22 | 12/12 | 12 + 12 QH | 32 | 12 | — | — |
-| ExpAssetsemiz | 8+4x | 8+6x | 8+2x | 24 | 12 | 24/24 | 24 + 24 QH | 64 | 24 | — | — |
-| RiskyAsset | 16+0x | 16+25x | 16+4x | 48 | 29 | 48/48 | 32 + 32 EZ | 128 | none | 50 | — |
-| ResidAsset | n/a | 16+22x | — | 16 | 22 | 16/16 ‡ | 16 | 4 ‡‡ | none | — | — |
-| **total** | | | | **276** | **201** | **276/276** | **520** | | **222** | **74** | **16** |
+**Recounted 2026-10-27, adding a `with2A2` column** for the two-experience-asset tier, which
+landed in all six ExpAsset families between 2026-10-01 and 2026-10-16. Tiers are attributed by
+**the driver `doPart` section that calls the subcode**, and that applies to cross-tests too, because
+all of a bank's cross-tests share one `CrossTests/` directory. Two consequences:
 
-477 subtests in the main banks, plus 222 QH, 74 EZ and 16 AA = **789**.
+- **ExpAsset and ExpAssetU** move 4 cross-tests from withA1 to noa1. These are the
+  `CrossTests4_{nod1,d1}_{nosemiz,semiz}` files: the noa1 parts call them, but they were counted
+  as withA1 because their names have no `_noa1_`. Neither bank's total changes.
+- **ExpAssetz parts 9–12** are with2A1 even though the driver's part map labels them "withA1".
+  The subcodes are `..._with2A1`. They are counted as with2A here, as before.
+
+In the with2A column, `(n OOM)` means n of the tier's variant calls are commented out in the
+driver because they run out of GPU memory. They are counted, but have never run.
+
+| bank | noa1 | withA1 | with2A | with2A2 | var | x-tests | panel vs dist | V_Jplus1 | core raws | QH | EZ | AA | GP |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| CoreFHorzTests | — | 16+6x | 16+4x | — | 32 | 10 | 32/32 | 32 + 32 QH + 16 EZ | 142 | 42 | 24 | 16 | 40 |
+| ExpAsset | 16+14x | 16+10x | 16+2x (4 OOM) | 32+8x | 80 | 34 | 80/80 | 80 + 48 QH | 128 | 48 | — | — | 18 |
+| ExpAssetU | 16+14x | 16+10x | 16+2x (5 OOM) | 32+8x | 80 | 34 | 80/80 | 80 + 48 QH | 128 | 48 | — | — | — |
+| ExpAssete | 8+16x | 8+8x | 8+2x (1 OOM) | 16+8x | 40 | 34 | 40/40 | 40 + 24 QH | 64 | 24 | — | — | — |
+| ExpAssetz | 8+16x | 8+8x | 8+4x (1 OOM) | 16+8x | 40 | 36 | 40/40 | 40 + 24 QH | 64 | 24 | — | — | — |
+| ExpAssetze | 4+4x | 4+16x | 4+2x (1 OOM) | 8+8x | 20 | 30 | 20/20 | 20 + 12 QH | 32 | 12 | — | — | — |
+| ExpAssetsemiz | 8+4x | 8+6x | 8+2x (1 OOM) | 16+6x | 40 | 18 | 40/40 | 40 + 24 QH | 64 | 24 | — | — | — |
+| RiskyAsset | 16+0x | 16+25x | 16+4x | — | 48 | 29 | 48/48 | 32 + 32 EZ | 128 | none | 50 | — | — |
+| ResidAsset | n/a | 16+22x | — | — | 16 | 22 | 16/16 ‡ | 16 | 4 ‡‡ | none | — | — | — |
+| **total** | | | | | **396** | **247** | **396/396** | **640** | | **222** | **74** | **16** | **58** |
+
+643 subtests in the main banks, plus 222 QH, 74 EZ, 16 AA and 58 GP = **1013**. Of the
+643, with2A2 accounts for 166: 120 variants and 46 cross-tests. Before this recount the table
+said 789, which did not count GP at all. Without GP the comparable figure is 955.
+
+The with2A2 tier added **no new core raws**. Each existing raw handles `l_a2==2` in its own
+branches, so the raw-count table further down is unchanged. **The QH mirrors have no with2A2
+tier yet.** That is the last item in the with2A2 programme.
+
+Every with2A2 variant carries a `V_Jplus1` block and a panel-vs-dist comparison. That accounts for
+the whole 520 → 640 rise in the V_Jplus1 column (+120).
 
 **Every experience-asset family now has a QH mirror with a solver behind it, and every mirror is
 complete at raw level.** ExpAssetU (48) and ExpAssetsemiz (24) were the last two showing `none`;
@@ -329,6 +455,10 @@ corrupted continuations via the EV NaN-scrub; fixed by guarding every MostTempti
 same latent pattern but their models cannot trigger it (earnings never vanish); a
 guarded port there is a recorded follow-up. With2A1/SemiExo GP-ExpAsset tiers and the
 u/e/z/ze/semiz siblings remain gaps (dispatchers error). Unblocks KLM2021.
+
+Re-counted 2026-10-27, `*_raw.m` per family: **no change** to any row. The with2A2 tier
+(two experience assets) was implemented as `l_a2==2` branches inside the existing raws, so it
+added no new files.
 
 | family | total raws | QH | EZ | AA | GP | core |
 |---|---|---|---|---|---|---|
@@ -1005,11 +1135,14 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
   - `CoreFHorzTPathQHTests` — bank exists (440 check sites) but has **never produced a
     diary**. See the FHorz transition-path section at the end of this doc: it is one of five
     TPath banks in that state.
-- **QH**: no mirror at all for ExpAssetU, ExpAssetsemiz or RiskyAsset. For ExpAssetsemiz
-  and ExpAssetU this is a *toolkit* gap — neither family has any QH raws — so closing it
-  means solver code, not tests.
-- **EZ**: mirrors exist only for the baseline and RiskyAsset. The entire ExpAsset family
+- **QH**: RiskyAsset is now the only family with no QH mirror, and it has no QH raws.
+  ~~ExpAssetU and ExpAssetsemiz~~ were closed at the end of August, and both mirrors have diaries
+  dated 2026-10-02. **No QH mirror has a with2A2 tier yet.** That is the last item in the with2A2
+  programme.
+- **EZ**: the FHorz mirrors still exist only for the baseline and RiskyAsset. The ExpAsset family
   has no Epstein-Zin coverage, and the toolkit has no EZ raws for those families either.
+  The first InfHorz EZ bank (`CoreInfHorzTests/withEpsteinZinPreferences`, Tier 1) is built but
+  has never run, and it is untracked.
 - **Panel means are not reproducible across calls.** `SimPanelIndexes_FHorz_*` simulates each
   agent's lifecycle inside an unconditional `parfor`, so the shock draws happen on the workers
   and a client-side `rng(1)` does not reset their streams. Two calls on identical models give
@@ -1033,7 +1166,8 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
 - **Missing Epstein-Zin raw**: `RiskyAsset/EpsteinZinSemiExo` has 7 of the 8 noa1
   combinations — `RiskyAsset_EpsteinZin_noa1_e_semiz` (d1, z, e, semiz) is absent while all
   seven siblings exist. Looks like an oversight rather than a deliberate omission.
-- RiskyAsset is the one bank that recently ran clean to completion.
+- ~~RiskyAsset is the one bank that recently ran clean to completion.~~ No longer true. The suite
+  index lists the most recent run of every bank.
 - **ResidualAsset blocker: FIXED in the working tree 2026-08-25, not yet run.**
   `CreateResidualAssetFnMatrix_Case1` used `d_gridvals` before defining it; the parameter is now
   named `d_gridvals` and the redundant `CreateGridvals` line is gone (the callers already pass
@@ -1099,7 +1233,134 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
   baseline and takes the rest of the script with it; in ExpAssete/ExpAssetz/ExpAssetsemiz
   it hits the *trailing* big-grid block, after that subtest's exact checks have printed.
 
+## InfHorz stationary banks
+
+Written 2026-10-27 from the drivers' part maps, the diaries and the commit messages. The
+transition-path banks are in the transition-path table of the suite index, and the GE banks are
+in "Other". In this section *variants* and *cross-tests* count distinct subcodes called per part.
+*Check sites* counts `fprintf` lines containing `should be` in the bank's own files.
+
+| bank | parts | variants | cross-tests | other subcodes | check sites | latest evidence |
+|---|---|---|---|---|---|---|
+| CoreInfHorzTests | 11 | 18 | 12 | 3 stats parts | 415 | parts 1, 2, 9 2026-10-27: 178, 0 |
+| └ with_CoreInfHorzVFIAlgoTests | 11 | 16 | 1 | 7 scans + 5 -Inf triggers | 144 | parts 1, 2, 8, 9, 11 2026-10-27: 3649, 0 |
+| └ withQuasiHyperbolicDiscounting | 6 | 4 | 5 | — | 268 | all 6 2026-10-27: 253, 0 |
+| └ withEntryExit | 3 (part 1 off) | 2 | 1 (guards) | — | 77 | parts 2–3 2026-10-12: 18, **3** |
+| └ withEpsteinZinPreferences | 5 | 1 + oracle | 3 | — | 128 | **never run, untracked** |
+| CoreInfHorzPTypeTests | 15 | — | — | 15 part subcodes | 84 | all 14 original parts GPU-green 2026-10-07; parts 12, 14, 15 2026-10-27: 118, 0 |
+| CoreInfHorzInheritAssetTests | 3 | 1 | 2 | — | 27 | 2026-09-14, pre-CoreSummary, no errors |
+
+### CoreInfHorzTests: tiers
+
+The main bank has no noa1 tier and no V_Jplus1 axis. Neither concept applies to an infinite
+horizon.
+
+| tier | parts | variants | cross-tests |
+|---|---|---|---|
+| 1A nosemiz | 1–2 | 8: `{nod,d} × {noz,z} × {noe,e}` | 4: `{nod,d} × {plain, e}` |
+| 2A nosemiz | 3–5 | **2: `{nod,d}`, z only, no e** | 4: second state ignored, first state ignored |
+| 1A semiz | 9–11 | 8: `{nod1,d1} × {noz,z} × {noe,e}` | 4: trivial z with semiz; a semiz that is really a markov equals z |
+| stats | 6–8 | AutoCorrTransProbs brute force (z, e, z+e, semiz+z, semiz+z+e); conditional restrictions in CrossSection, AllStats and AutoCorr against brute force (1A and 2A); `whichcombos` | — |
+
+Each variant runs the base solve and the grid-interpolation solve (`gridinterplayer=1`,
+`ngridinterp=5`). On both it checks `lowmemory` 0 vs 1, `howards=0` (pure VFI) against the
+default, and the `ValueFnFromPolicy` oracle. It then compares the stationary distribution with and
+without GI on a big `a_grid` (a `close to zero` line), checks the iid-e marginal against `pi_e`, and
+runs the downstream commands: AggVars, AllStats, AutoCorrTransProbs, CrossSection, ProbDensityFn,
+ValuesOnGrid, PolicyInd2Val, and SimPanelValues against the distribution.
+
+The solver-algorithm axis lives in VFIAlgo rather than here: Howards variants, greedy Howards,
+postGI and preGI, endogenous VFI, and sparse vs dense.
+
+**Runtime evidence is thin for parts 3–8, 10 and 11.** The current diary (10-27) covers only
+parts 1, 2 and 9. The commit messages record parts 1–2 and 6 as GPU-green on 2026-10-21. The other
+parts have no surviving CoreSummary line because later partial runs overwrote the diary.
+
+### with_CoreInfHorzVFIAlgoTests
+
+This sub-bank compares solver algorithms on the same model, rather than covering shock or asset
+shapes.
+
+- **Parts 1–2:** without d and with d, each on `{noz,z} × {noe,e}`. Every config is checked
+  against a pure-VFI reference: Howards variants, greedy Howards, postGI and the postGIrepeat
+  layer, preGI, `endogenousvfi=1` (with a `V0=VE+f(exog)` discriminator), `outputkron=1`, and the
+  default-vs-explicit identity at beta=0.95 and 0.99.
+- **Part 3:** cross-test of a dummy d against no d.
+- **Parts 8–9:** the same treatment for semiz and semiz+e.
+- **Parts 4–7 and 10 are diagnostic scans, not checks:** maxaprimediff, postGIrepeat, Howards
+  settings against beta, Howards on big grids, Howards with two endogenous states, and
+  endogenous-VFI runtimes. They print tables to read.
+- **Part 11** deliberately triggers -Inf in V under GI, on 30 models: below the natural borrowing
+  limit, capped at top z, their semiz twins, and QH. It is the regression guard for the eight
+  toolkit commits on -Inf in V with GI and greedy Howards: 2831 checks, 0 failed, 2026-10-27.
+
+### withQuasiHyperbolicDiscounting
+
+- **Variants:** 4, `{nod,d} × {plain,GI}`, z only.
+- **Cross-tests:**
+  - beta0=1 collapses to the exponential case.
+  - z relabelled or duplicated.
+  - Howards on vs off for Sophisticated.
+  - Interface guards.
+  - Endogenous VFI for Naive, plain vs endogenous at every call site of the exponential solve,
+    together with the Sophisticated refusal.
+- **Status:** GPU-green on 2026-10-21 and again on 2026-10-27, at 253 checks.
+
+### withEntryExit, withEpsteinZinPreferences, InheritAsset
+
+- **EntryExit:**
+  - Part 1 (endogenous exit) is off by default, as the driver explains.
+  - Part 2 is general equilibrium with entry and exit. The latest diary shows **3 failed** checks
+    there, and they have not been diagnosed.
+  - Part 3 holds the guards and out-of-scope probes.
+- **EZ (Tier 1):** solver variants (figs 1–2), a brute-force oracle, collapse to vNM, the
+  EZoneminusbeta scaling, homogeneity, four z disguises, and guards plus a 2A probe.
+  - It has never run. See `CoreInfHorzEZTests_proposal.md`.
+  - Tier 2 is not written. It must carry the -Inf-in-V rules into the EZ GI, sparse and greedy
+    raws, and refuse greedy Howards for EZ.
+- **InheritAsset:** one supported tier (d1, noa1, z, noe), a cross-test against a de-risked
+  inheritance asset in the plain one-asset model, and shape guards. Every other shape errors.
+
+### CoreInfHorzPTypeTests
+
+The InfHorz counterpart of CoreFHorzPTypeTests. Each part is one subcode:
+
+- **Parts 1–8, the type machinery:**
+  - The Names_i forms.
+  - Grouped AllStats and AggVars via z-identity.
+  - Identical types vs one solve, and two types vs separate solves with and without d.
+  - A zero-mass type.
+  - Shocks per type: grids, n_z and ExogShockFn.
+  - The discount factor per type.
+  - No z.
+- **Parts 9–15, the PType stats commands:**
+  - Conditional restrictions in AllStats against brute force.
+  - The four new PType commands: ValuesOnGrid, CrossSectionCovarCorr, AutoCorrTransProbs and
+    SimPanelValues.
+  - Grouped CrossSection and AutoCorr via z-identity.
+  - `whichcombos` with the type dimension.
+
+### Gaps relative to FHorz
+
+- **No asset-family banks.** There is no InfHorz ExperienceAsset, RiskyAsset or ResidualAsset
+  bank. InheritAsset is the only asset family, and it covers one tier.
+- **The 2A tier is two variants, not a tier.** It has z only, no e, no semiz, and no
+  `{noz}` cell. FHorz runs 16 variants at with2A.
+- **Exotic preferences:** QH is green, EZ has never run, and there is no AA or GP mirror. The QH
+  mirror is z-only: no e and no semiz.
+- **No divide-and-conquer tier** in any InfHorz stationary bank.
+- **The main bank's diary is partial,** as described above. One full run, with every doPart set
+  to 1, would re-establish evidence for parts 3–8, 10 and 11.
+
 ## FHorz transition-path (TPath) banks
+
+> **Snapshot of 2026-09-05. The transition-path table in the suite index at the top
+> supersedes it.** Since this snapshot, every FHorz TPath bank except TwoEndo and the new
+> RiskyAsset bank has produced a diary. CoreFHorzTPathTests grew doParts 6–8: `_tminus1/_tplus1`,
+> population demographics, AllStats/LifeCycleProfiles along the path, z/e grids that vary over
+> the path, and fastOLG=0 vs 1 inside the path. Its first full run since then, all 8 parts on
+> 2026-10-23, gave 860 checks and 0 failed. The two Algo sub-banks were also added. Statements
+> below such as "never produced a diary" and "554 of 1718 executed" are kept as history.
 
 Everything above is the *stationary* FHorz suite. The transition-path banks are a separate set,
 excluded from the main table and from every count in it (the `panel vs dist` note already says

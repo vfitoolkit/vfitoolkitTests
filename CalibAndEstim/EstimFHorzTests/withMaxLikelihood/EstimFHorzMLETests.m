@@ -57,9 +57,9 @@ end
 diary ../TestOutput/EstimFHorzMLETestsdiary.txt
 fprintf('EstimFHorzMLETests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
-addpath('../../SharedSubcodes/') % CoreSummary, CoreMaxAbs, shared by the Core banks
+addpath('../../../SharedSubcodes/') % CoreSummary, CoreMaxAbs, shared by the Core banks
 addpath('../EstimFHorzTests_subcodes/') % EstimFHorz_setup, the model shared with EstimFHorzTests
-addpath('../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
+addpath('../../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
 addpath('./withMaxLikelihood_subcodes/')
 
 %% The model: the EstimFHorzTests model, with the grid interpolation layer as in the EstimFHorzTests subcodes

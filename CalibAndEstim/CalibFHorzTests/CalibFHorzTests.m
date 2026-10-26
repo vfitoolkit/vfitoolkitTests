@@ -56,9 +56,9 @@ end
 diary ./TestOutput/CalibFHorzTestsdiary.txt
 fprintf('CalibFHorzTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
-addpath('../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
+addpath('../../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
 addpath('./CalibFHorzTests_subcodes/')
-addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
+addpath('../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
 
 %% The model: the CoreFHorzTests nod_z_noe life-cycle model on small grids
 n_d=0;

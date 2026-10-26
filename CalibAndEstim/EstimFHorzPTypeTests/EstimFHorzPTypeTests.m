@@ -50,11 +50,11 @@ end
 diary ./TestOutput/EstimFHorzPTypeTestsdiary.txt
 fprintf('EstimFHorzPTypeTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
-addpath('../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
+addpath('../../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
 addpath('./EstimFHorzPTypeTests_subcodes/')
-addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
+addpath('../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
 addpath('../CalibFHorzPTypeTests/CalibFHorzPTypeTests_subcodes/') % the shock, initial-distribution and custom-statistics functions are shared with CalibFHorzPTypeTests
-addpath('../CoreFHorzTests/CoreFHorzTests_Setup/') % CoreFHorzSetup_SemiExoStateFn, for a later semi-exogenous part
+addpath('../../CoreFHorzTests/CoreFHorzTests_Setup/') % CoreFHorzSetup_SemiExoStateFn, for a later semi-exogenous part
 
 %% The model: the CoreFHorzPTypeTests part-22 model on small grids (shared with withMaxLikelihood/)
 EstimFHorzPType_setup

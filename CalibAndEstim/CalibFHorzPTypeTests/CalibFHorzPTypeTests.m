@@ -54,10 +54,10 @@ end
 diary ./TestOutput/CalibFHorzPTypeTestsdiary.txt
 fprintf('CalibFHorzPTypeTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
-addpath('../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
+addpath('../../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
 addpath('./CalibFHorzPTypeTests_subcodes/')
-addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
-addpath('../CoreFHorzTests/CoreFHorzTests_Setup/') % CoreFHorzSetup_SemiExoStateFn, for the semi-exogenous model of part 7
+addpath('../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
+addpath('../../CoreFHorzTests/CoreFHorzTests_Setup/') % CoreFHorzSetup_SemiExoStateFn, for the semi-exogenous model of part 7
 
 %% The model: the CoreFHorzPTypeTests part-21 model on small grids
 n_d=0;

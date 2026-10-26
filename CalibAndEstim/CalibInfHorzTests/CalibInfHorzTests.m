@@ -53,9 +53,9 @@ end
 diary ./TestOutput/CalibInfHorzTestsdiary.txt
 fprintf('CalibInfHorzTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
-addpath('../SharedSubcodes/') % CoreSummary, CoreStructLeaves, CoreMaxAbs, shared by the Core banks
+addpath('../../SharedSubcodes/') % CoreSummary, CoreStructLeaves, CoreMaxAbs, shared by the Core banks
 addpath('./CalibInfHorzTests_subcodes/')
-addpath('../CoreInfHorzTests/CoreInfHorz_ReturnFns/') % the return functions are shared with CoreInfHorzTests
+addpath('../../CoreInfHorzTests/CoreInfHorz_ReturnFns/') % the return functions are shared with CoreInfHorzTests
 
 %% The model: the CoreInfHorzTests nod_z model (CoreInfHorz_setup parameters), with more income risk and a longer asset grid
 % CoreInfHorz_setup has an innovation standard deviation of 0.03 and a_grid up to 5. With so little risk the borrowing constraint

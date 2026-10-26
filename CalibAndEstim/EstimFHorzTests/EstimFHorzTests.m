@@ -54,9 +54,9 @@ end
 diary ./TestOutput/EstimFHorzTestsdiary.txt
 fprintf('EstimFHorzTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
-addpath('../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
+addpath('../../SharedSubcodes/') % CoreSummary, CoreStructLeaves, shared by the Core banks
 addpath('./EstimFHorzTests_subcodes/')
-addpath('../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
+addpath('../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
 addpath('../CalibFHorzTests/CalibFHorzTests_subcodes/') % the shock, initial-distribution and custom-statistics functions are shared with CalibFHorzTests
 
 %% The model: the CoreFHorzTests nod_z_noe life-cycle model on small grids (shared with withMaxLikelihood/)

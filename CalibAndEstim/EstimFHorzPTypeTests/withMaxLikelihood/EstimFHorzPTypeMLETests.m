@@ -39,9 +39,9 @@ end
 diary ../TestOutput/EstimFHorzPTypeMLETestsdiary.txt
 fprintf('EstimFHorzPTypeMLETests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
-addpath('../../SharedSubcodes/') % CoreSummary, CoreMaxAbs, shared by the Core banks
+addpath('../../../SharedSubcodes/') % CoreSummary, CoreMaxAbs, shared by the Core banks
 addpath('../EstimFHorzPTypeTests_subcodes/') % EstimFHorzPType_setup, the model shared with EstimFHorzPTypeTests
-addpath('../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
+addpath('../../../CoreFHorzTests/CoreFHorz_ReturnFns/') % the return functions are shared with CoreFHorzTests
 addpath('../../EstimFHorzTests/withMaxLikelihood/withMaxLikelihood_subcodes/') % EstimFHorzMLE_SimulatePanel, the single-type panel simulator
 addpath('./withMaxLikelihood_subcodes/')
 

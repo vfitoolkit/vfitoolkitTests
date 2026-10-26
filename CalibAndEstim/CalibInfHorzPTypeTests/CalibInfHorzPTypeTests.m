@@ -48,9 +48,9 @@ end
 diary ./TestOutput/CalibInfHorzPTypeTestsdiary.txt
 fprintf('CalibInfHorzPTypeTests, run started %s, doPart=[%s] \n',char(datetime('now')),sprintf('%i',doPart))
 
-addpath('../SharedSubcodes/') % CoreSummary, CoreStructLeaves, CoreMaxAbs, shared by the Core banks
+addpath('../../SharedSubcodes/') % CoreSummary, CoreStructLeaves, CoreMaxAbs, shared by the Core banks
 addpath('./CalibInfHorzPTypeTests_subcodes/')
-addpath('../CoreInfHorzTests/CoreInfHorz_ReturnFns/') % the return functions are shared with CoreInfHorzTests
+addpath('../../CoreInfHorzTests/CoreInfHorz_ReturnFns/') % the return functions are shared with CoreInfHorzTests
 
 %% The model: the CoreInfHorzPTypeTests model (two types by wage) on the CalibInfHorzTests grids and income risk
 n_d=0;
