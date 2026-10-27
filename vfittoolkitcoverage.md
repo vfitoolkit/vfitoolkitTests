@@ -63,7 +63,7 @@ How to read the *latest evidence* column:
 | | withQuasiHyperbolicDiscounting | 6 | all 6, 2026-10-27: 253, 0 | committed |
 | | with_CoreInfHorzVFIAlgoTests | 11 | parts 1, 2, 8, 9, 11, 2026-10-27: 3649, 0 | committed |
 | | withEntryExit | 3 (2 on) | parts 2–3, 2026-10-12: 18, **3 (part 2, GE entry/exit, fig 5)** | committed |
-| | withEpsteinZinPreferences | 5 | **never run**: Tier 1 built (see `CoreInfHorzEZTests_proposal.md`) | **untracked** |
+| | withEpsteinZinPreferences | 8 | all 8, 2026-10-28: 568, 0 | committed |
 | CoreInfHorzPTypeTests | — | 15 | parts 12, 14, 15, 2026-10-12: 118, 0 | committed |
 | CoreInfHorzInheritAssetTests | — | 3 | 2026-09-14, pre-CoreSummary | committed |
 
@@ -1140,8 +1140,8 @@ ReturnFn returns `-Inf` wherever `c<=0`, so the plain max is `Inf` and silently 
   programme.
 - **EZ**: the FHorz mirrors still exist only for the baseline and RiskyAsset. The ExpAsset family
   has no Epstein-Zin coverage, and the toolkit has no EZ raws for those families either.
-  The first InfHorz EZ bank (`CoreInfHorzTests/withEpsteinZinPreferences`, Tier 1) is built but
-  has never run, and it is untracked.
+  The InfHorz EZ bank (`CoreInfHorzTests/withEpsteinZinPreferences`) is complete: eight parts,
+  GPU-green at 568 checks on 2026-10-28, committed; see the InfHorz section.
 - **Panel means are not reproducible across calls.** `SimPanelIndexes_FHorz_*` simulates each
   agent's lifecycle inside an unconditional `parfor`, so the shock draws happen on the workers
   and a client-side `rng(1)` does not reset their streams. Two calls on identical models give
@@ -1245,7 +1245,7 @@ in "Other". In this section *variants* and *cross-tests* count distinct subcodes
 | └ with_CoreInfHorzVFIAlgoTests | 11 | 16 | 1 | 7 scans + 5 -Inf triggers | 144 | parts 1, 2, 8, 9, 11 2026-10-27: 3649, 0 |
 | └ withQuasiHyperbolicDiscounting | 6 | 4 | 5 | — | 268 | all 6 2026-10-27: 253, 0 |
 | └ withEntryExit | 3 (part 1 off) | 2 | 1 (guards) | — | 77 | parts 2–3 2026-10-12: 18, **3** |
-| └ withEpsteinZinPreferences | 5 | 1 + oracle | 3 | — | 128 | **never run, untracked** |
+| └ withEpsteinZinPreferences | 8 | 4 + oracle | 5 | — | 225 | all 8 2026-10-28: 568, 0 |
 | CoreInfHorzPTypeTests | 15 | — | — | 15 part subcodes | 84 | all 14 original parts GPU-green 2026-10-07; parts 12, 14, 15 2026-10-27: 118, 0 |
 | CoreInfHorzInheritAssetTests | 3 | 1 | 2 | — | 27 | 2026-09-14, pre-CoreSummary, no errors |
 
@@ -1305,18 +1305,58 @@ shapes.
     together with the Sophisticated refusal.
 - **Status:** GPU-green on 2026-10-21 and again on 2026-10-27, at 253 checks.
 
-### withEntryExit, withEpsteinZinPreferences, InheritAsset
+### withEpsteinZinPreferences
+
+The EZ sibling of the QH sub-bank, built 2026-10-22 to 28 in three rounds (Tier 1, the
+feasibility-conventions round, Tier 2), each committed only after its GPU run was green. Every
+model is run three times: consumption units (`EZutils=0`), utility units with a positive-valued
+utility fn, utility units with a negative-valued one. V and Policy only. z is overridden to a
+riskier process than the parent's (innovation std 0.2) so that risk aversion moves the policy.
+
+- **Variants:** 4, `{nod,d} × {plain,GI}`, z only (figs 1–4), plus a brute-force oracle: a tiny
+  model iterated to a fixed point by loops written from the recursion formulas, sharing nothing
+  with the toolkit.
+- **Cross-tests:**
+  - Collapse to vNM: gamma=1/phi in consumption units (V an affine transform of the vNM V),
+    EZriskaversion=0 in utility units; EZoneminusbeta=1 vs manual scaling; homogeneity of degree
+    one in consumption units, at gamma=3 and gamma=20. Policy comparisons between two different
+    solves are graded through the EZ value of the other solve's policy (ValueFnFromPolicy), with
+    the raw index difference printed as a diagnostic, because near-ties can flip a grid point in
+    infinite horizon.
+  - z disguises: split, permuted, degenerate vs a 1-point z, and a two-dimensional z vs the
+    equivalent single z on both lowmemory paths.
+  - Interface guards (every refusal asserted by a phrase of its message) and the 2A probe, which
+    shows two endogenous states WORK on the plain EZ path and so are tested rather than guarded.
+  - Feasibility conventions (part 6, the deliberate trigger that was red before the 2026-10-27
+    toolkit fix): a dead state under negative utility used to come out of the sign chain as +Inf,
+    and a return of exactly zero used to be rewritten to -Inf. Both fixed in both horizons; the
+    FHorz twin is CoreFHorzEZTests part 8.
+  - -Inf in V under the grid interpolation layer (part 8): the EZ twin of the VFIAlgo bank's
+    part 11, two devices, at the defaults and with Howards never switched off, firing counts
+    positive.
+- **What the recursion identity does here:** every solver variant rebuilds the Epstein-Zin
+  recursion from the FORMULA at the returned policy (with the two-point interpolated transformed
+  expectation under GI) and prints beside it the same identity at the vNM-collapse risk
+  aversion, which must be well above zero. That pair is what makes a wrong exponent or a dropped
+  sign convention loud.
+- **Toolkit work the bank drove:** interface guards and maxiter/verbose in the EZ dispatcher and
+  raws (`cce9fe3e`); `ValueFnFromPolicy_InfHorz_EpsteinZin` (same commit); the feasibility
+  conventions in all 156 EZ files of both horizons plus the myopic start (`6fd1dc58`,
+  `EZ_feasibility_conventions_proposal.md`); the postGI raws with and without d and the GI branch
+  of the dispatcher and of ValueFnFromPolicy (`d9943792`).
+- **Refused, with a message, rather than ignored:** noz, e, semiz, endogenousvfi, survival
+  probabilities, warm-glow, EZmortalityriskaversion, EZoneminusbeta=2, EZutils=2, lowmemory>1,
+  and under the layer preGI, greedy Howards, postGIrepeat>0 and two endogenous states.
+  howardssparse is not read on this path (dense two-point Howards, as for QH).
+- **Status:** GPU-green on 2026-10-28, all 8 parts, 568 checks.
+
+### withEntryExit, InheritAsset
 
 - **EntryExit:**
   - Part 1 (endogenous exit) is off by default, as the driver explains.
   - Part 2 is general equilibrium with entry and exit. The latest diary shows **3 failed** checks
     there, and they have not been diagnosed.
   - Part 3 holds the guards and out-of-scope probes.
-- **EZ (Tier 1):** solver variants (figs 1–2), a brute-force oracle, collapse to vNM, the
-  EZoneminusbeta scaling, homogeneity, four z disguises, and guards plus a 2A probe.
-  - It has never run. See `CoreInfHorzEZTests_proposal.md`.
-  - Tier 2 is not written. It must carry the -Inf-in-V rules into the EZ GI, sparse and greedy
-    raws, and refuse greedy Howards for EZ.
 - **InheritAsset:** one supported tier (d1, noa1, z, noe), a cross-test against a de-risked
   inheritance asset in the plain one-asset model, and shape guards. Every other shape errors.
 
@@ -1345,8 +1385,8 @@ The InfHorz counterpart of CoreFHorzPTypeTests. Each part is one subcode:
   bank. InheritAsset is the only asset family, and it covers one tier.
 - **The 2A tier is two variants, not a tier.** It has z only, no e, no semiz, and no
   `{noz}` cell. FHorz runs 16 variants at with2A.
-- **Exotic preferences:** QH is green, EZ has never run, and there is no AA or GP mirror. The QH
-  mirror is z-only: no e and no semiz.
+- **Exotic preferences:** QH and EZ are green, and there is no AA or GP mirror. Both mirrors are
+  z-only: no e and no semiz (the toolkit refuses both under InfHorz exotic preferences).
 - **No divide-and-conquer tier** in any InfHorz stationary bank.
 - **The main bank's diary is partial,** as described above. One full run, with every doPart set
   to 1, would re-establish evidence for parts 3–8, 10 and 11.
