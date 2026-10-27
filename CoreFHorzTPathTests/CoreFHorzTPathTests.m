@@ -22,6 +22,8 @@
 % doPart(6): _tminus1 and _tplus1 (no figures)
 % doPart(7): population demographics (no figures)
 % doPart(8): z and e grids that vary over the path (no figures)
+% doPart(9): localsearch, the local-search value fn step, slowOLG (no figures, no general eqm)
+% doPart(10): localsearch inside a general eqm transition path, by shooting, slowOLG (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -30,7 +32,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -249,6 +251,26 @@ if doPart(8)==1
     addpath('./CoreFHorzTPath_ReturnFns/Semiz_ReturnFns/') % the semiz models; also added inside doPart(3), but parts are independent
     output=CoreFHorzTPath_timevaryinggrids(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,n_d2_semiz,d2_grid_semiz,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(8): z and e grids that vary over the path
+
+%% ===== doPart(9): localsearch, the local-search value fn step =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): localsearch, the local-search value fn step =====\n')
+    %% vfoptions.localsearch=1: aprime restricted to a window around a reference, slowOLG
+    % Direct calls to the single-step dispatcher on all four corners (without/with d, without/with GI),
+    % every age at once. The strong check is that a window of three points centred on the exact seed
+    % reference reproduces the unrestricted V exactly; the discriminator is that the same window around
+    % the wrong reference does not. See the header of the subcode.
+    output=CoreFHorzTPath_localsearch(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params);
+end % doPart(9): localsearch, the local-search value fn step
+
+%% ===== doPart(10): localsearch inside a general eqm transition path, by shooting =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): localsearch inside a general eqm transition path, by shooting =====\n')
+    %% The CoreFHorzTPathAlgoTests firm model, a null reform from a bumped guess, plain shooting against
+    % shooting with local search on all four corners; then ValueFnOnTransPath ignoring localsearch=1, and
+    % the refusals as a set. See the header of the subcode.
+    output=CoreFHorzTPath_localsearch_shooting(T,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(10): localsearch inside a general eqm transition path, by shooting
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 
