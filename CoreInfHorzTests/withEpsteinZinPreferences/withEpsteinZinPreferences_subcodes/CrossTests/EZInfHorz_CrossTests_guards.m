@@ -16,10 +16,11 @@ function output=EZInfHorz_CrossTests_guards(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_
 %   7  'survivalprobability'             ValueFnIter_InfHorz_EpsteinZin
 %   8  'n_e' / 'n_semiz' / 'relativevfi'   ValueFnIter_InfHorz (the main dispatcher)
 %   9  'exogenous state z'               ValueFnIter_InfHorz_EpsteinZin (new; was V=0 silently)
-%   10 'grid interpolation layer'        ValueFnIter_InfHorz_EpsteinZin (new; was silently ignored)
-%   10b 'lowmemory'                      ValueFnIter_InfHorz_EpsteinZin (new; lowmemory=2 fell through to an undefined VKron)
+%   10a 'postGI only' / 10b 'greedy Howards' / 10c 'postGIrepeat' / 10d 'single endogenous state'
+%                                        ValueFnIter_InfHorz_EpsteinZin, the grid interpolation layer's refusals (Tier 2, 2026-10-27)
+%   10e 'lowmemory'                      ValueFnIter_InfHorz_EpsteinZin (new; lowmemory=2 fell through to an undefined VKron)
 %   12 'not a recognized option'         ValueFnIter_InfHorz (the exoticpreferences whitelist)
-%   13 'EZriskaversion' / 'grid interpolation layer'   ValueFnFromPolicy_InfHorz_EpsteinZin
+%   13 'EZriskaversion'                  ValueFnFromPolicy_InfHorz_EpsteinZin
 %
 % Test 11 is the 2A PROBE: two endogenous states have no guard on the Epstein-Zin path, and are
 % expected to WORK, because the Epstein-Zin raws only ever use prod(n_a) (unlike the
@@ -214,18 +215,37 @@ end
 fprintf('9. n_z=0 with Epstein-Zin errors with the interface message (not a silent V=0), this should be one: %d \n',ok)
 fprintf('   message: %s \n',msg)
 
-%% 10. The grid interpolation layer must error (it was silently ignored until 2026-10-22)
-% When Tier 2 (an Epstein-Zin InfHorz GI implementation) lands, this test is retired and figs
-% 3-4 take its place.
+%% 10. The grid interpolation layer: what the Epstein-Zin postGI path refuses
+% (Until 2026-10-22 gridinterplayer=1 was silently ignored; from 2026-10-22 to 27 it errored; since
+% Tier 2 it works, see figs 3-4. What remains refused is preGI, greedy Howards and postGIrepeat.)
 ok=0; msg='';
 try
-    vf=vfbase; vf.gridinterplayer=1; vf.ngridinterp=5;
+    vf=vfbase; vf.gridinterplayer=1; vf.ngridinterp=5; vf.preGI=1;
     Vt=ValueFnIter_InfHorz(0,n_a,n_z,[],a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vf); %#ok<NASGU>
 catch ME
-    ok=double(contains(ME.message,'grid interpolation layer')); msg=ME.message;
+    ok=double(contains(ME.message,'postGI only')); msg=ME.message;
 end
-fprintf('10. gridinterplayer=1 with Epstein-Zin errors with the interface message, this should be one: %d \n',ok)
+fprintf('10a. gridinterplayer=1 with preGI=1 errors with the interface message, this should be one: %d \n',ok)
 fprintf('   message: %s \n',msg)
+ok=0; msg='';
+try
+    vf=vfbase; vf.gridinterplayer=1; vf.ngridinterp=5; vf.howardsgreedy=1;
+    Vt=ValueFnIter_InfHorz(0,n_a,n_z,[],a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vf); %#ok<NASGU>
+catch ME
+    ok=double(contains(ME.message,'greedy Howards')); msg=ME.message;
+end
+fprintf('10b. gridinterplayer=1 with howardsgreedy=1 errors with the interface message (the EZ Howards step is not linear in V), this should be one: %d \n',ok)
+fprintf('   message: %s \n',msg)
+ok=0; msg='';
+try
+    vf=vfbase; vf.gridinterplayer=1; vf.ngridinterp=5; vf.postGIrepeat=1;
+    Vt=ValueFnIter_InfHorz(0,n_a,n_z,[],a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,[],vf); %#ok<NASGU>
+catch ME
+    ok=double(contains(ME.message,'postGIrepeat')); msg=ME.message;
+end
+fprintf('10c. gridinterplayer=1 with postGIrepeat=1 errors with the interface message, this should be one: %d \n',ok)
+fprintf('   message: %s \n',msg)
+% (10d, two endogenous states with the grid interpolation layer, sits inside test 11 below, after the 2A model is set up.)
 ok=0; msg='';
 try
     vf=vfbase; vf.lowmemory=2;
@@ -233,7 +253,7 @@ try
 catch ME
     ok=double(contains(ME.message,'lowmemory')); msg=ME.message;
 end
-fprintf('10b. lowmemory=2 with Epstein-Zin errors with the interface message, this should be one: %d \n',ok)
+fprintf('10e. lowmemory=2 with Epstein-Zin errors with the interface message, this should be one: %d \n',ok)
 fprintf('   message: %s \n',msg)
 
 %% 11. The 2A probe: two endogenous states, the second ignored, must reproduce the one-state solve
@@ -250,6 +270,16 @@ ReturnFn_cons_2A=@(aprime,a2prime,a,a2,z,r,w) EZReturnFn_cons_nod_z(aprime,a,z,r
 ReturnFn_posU_2A=@(aprime,a2prime,a,a2,z,r,w,ezsigma) EZReturnFn_positiveUtils_nod_z(aprime,a,z,r,w,ezsigma);
 ReturnFn_negU_2A=@(aprime,a2prime,a,a2,z,r,w,ezsigma) EZReturnFn_negativeUtils_nod_z(aprime,a,z,r,w,ezsigma);
 ReturnFn_cons_d_2A=@(d,aprime,a2prime,a,a2,z,r,w,varphi) EZReturnFn_cons_d_z(d,aprime,a,z,r,w,varphi);
+% 10d. Two endogenous states WITH the grid interpolation layer must error (the EZ postGI raws are single-asset)
+ok=0; msg='';
+try
+    vf=vfbase; vf.gridinterplayer=1; vf.ngridinterp=5;
+    Vt=ValueFnIter_InfHorz(0,n_a_2A,n_z,[],a_grid_2A,z_grid,pi_z,ReturnFn_cons_2A,Params,DiscountFactorParamNames,[],vf); %#ok<NASGU>
+catch ME
+    ok=double(contains(ME.message,'single endogenous state')); msg=ME.message;
+end
+fprintf('10d. gridinterplayer=1 with two endogenous states errors with the interface message, this should be one: %d \n',ok)
+fprintf('   message: %s \n',msg)
 for ezcase=1:3
     vf11=struct();
     vf11.exoticpreferences='EpsteinZin';
@@ -330,15 +360,7 @@ if ok0==1
     end
     fprintf('13a. ValueFnFromPolicy with missing EZriskaversion errors, this should be one: %d \n',ok)
     fprintf('   message: %s \n',msg)
-    ok=0; msg='';
-    try
-        vf=vfbase; vf.gridinterplayer=1; vf.ngridinterp=5;
-        Vt=ValueFnFromPolicy_InfHorz(Policy0,0,n_a,n_z,[],a_grid,z_grid,pi_z,ReturnFn_cons,Params,DiscountFactorParamNames,vf); %#ok<NASGU>
-    catch ME
-        ok=double(contains(ME.message,'grid interpolation layer')); msg=ME.message;
-    end
-    fprintf('13b. ValueFnFromPolicy with gridinterplayer=1 errors, this should be one: %d \n',ok)
-    fprintf('   message: %s \n',msg)
+    % (13b, ValueFnFromPolicy refusing the grid interpolation layer, was retired with Tier 2 on 2026-10-27: it works now, see figs 3-4.)
 else
     fprintf('13. skipped: the positive control did not solve, so there is no Policy to hand to ValueFnFromPolicy, this should be one: 0 \n')
 end

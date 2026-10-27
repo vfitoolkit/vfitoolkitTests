@@ -27,11 +27,15 @@
 %     two names for one solve, so there is none.
 %   - vfoptions.howardsgreedy and vfoptions.howardssparse are not read by any Epstein-Zin raw
 %     (only howards and maxhowards are). Not checked, for the same reason.
-%   - the grid interpolation layer is NOT implemented. Until 2026-10-22 vfoptions.gridinterplayer=1
-%     was silently ignored (coarse solve, one-row Policy); it now errors, and the guards cross-test
-%     asserts that. A GI implementation is the planned Tier 2 of this bank (see
-%     ../../CoreInfHorzEZTests_proposal.md); when it lands, figs 3-4 (nod_z_GI, d_z_GI) go in as a sixth part
-%     and guard 10 is retired.
+%   - the grid interpolation layer (Tier 2, 2026-10-27): postGI only, with dense two-point Howards,
+%     via ValueFnIter_InfHorz_EpsteinZin_postGI_nod_raw and ..._Refine_postGI_raw (d refined out of
+%     the raw return first, which is preference-independent). What is interpolated is the
+%     TRANSFORMED expectation E[(ezc4*V')^ezc5], before the certainty-equivalent power, as the FHorz
+%     EZ GI raws do. The dispatcher refuses preGI=1, howardsgreedy>0 (the EZ Howards step is not
+%     linear in V, so no direct solve) and postGIrepeat>0, and does not read howardssparse (same as
+%     the quasi-hyperbolic path). Figs 3-4 are the GI subcodes; part 8 is the -Inf-in-V trigger for
+%     the GI Howards step. Until 2026-10-22 gridinterplayer=1 was silently ignored (coarse solve,
+%     one-row Policy), then it errored (2026-10-22 to 27), now it works.
 %   - a feasible return of exactly zero is treated as infeasible by every Epstein-Zin raw, in both
 %     horizons (temp2(ReturnMatrix==0)=-Inf). The three ReturnFn families of parts 1-5 are strictly
 %     signed so those parts never meet it. Part 6 (added 2026-10-27) is the deliberate trigger.
@@ -106,6 +110,8 @@
 % doPart(4): cross-test: z disguises (split, permute, degenerate, two-dimensional)
 % doPart(5): cross-test: interface guards and the 2A probe
 % doPart(6): feasibility conventions: -Inf states and zero returns (deliberate trigger, no figures)
+% doPart(7): grid interpolation layer (figs 3-4)
+% doPart(8): grid interpolation layer with -Inf in V (deliberate trigger, no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -114,7 +120,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the parent bank's TestOutput)
 if ~exist('../TestOutput','dir')
@@ -242,6 +248,34 @@ if doPart(6)==1
     % Written to run RED on the raws as they stood; the FHorz twin is part 8 of CoreFHorzEZTests.
     output=EZInfHorz_CrossTests_feasibility(n_a,n_z,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
 end % doPart(6): feasibility conventions: -Inf states and zero returns
+
+%% ===== doPart(7): grid interpolation layer (figs 3-4) =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): grid interpolation layer (figs 3-4) =====\n')
+    %% without d, with z, with the grid interpolation layer
+    figure_c=3;
+    output=EZInfHorz_nod_z_GI(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreInfHorzEZTests_Fig',num2str(figure_c),'_ConsUnits.png'],'Resolution',150)
+    exportgraphics(figure(100+figure_c),['../TestOutput/CoreInfHorzEZTests_Fig',num2str(figure_c),'_PositiveUtils.png'],'Resolution',150)
+    exportgraphics(figure(200+figure_c),['../TestOutput/CoreInfHorzEZTests_Fig',num2str(figure_c),'_NegativeUtils.png'],'Resolution',150)
+
+    %% with d, with z, with the grid interpolation layer
+    figure_c=4;
+    output=EZInfHorz_d_z_GI(n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,figure_c);
+    exportgraphics(figure(figure_c),['../TestOutput/CoreInfHorzEZTests_Fig',num2str(figure_c),'_ConsUnits.png'],'Resolution',150)
+    exportgraphics(figure(100+figure_c),['../TestOutput/CoreInfHorzEZTests_Fig',num2str(figure_c),'_PositiveUtils.png'],'Resolution',150)
+    exportgraphics(figure(200+figure_c),['../TestOutput/CoreInfHorzEZTests_Fig',num2str(figure_c),'_NegativeUtils.png'],'Resolution',150)
+end % doPart(7): grid interpolation layer (figs 3-4)
+
+%% ===== doPart(8): grid interpolation layer with -Inf in V (deliberate trigger) =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): grid interpolation layer with -Inf in V (deliberate trigger) =====\n')
+    %% The EZ twin of part 11 of CoreInfHorzVFIAlgoTests: models whose V contains -Inf (a_grid below the natural
+    % borrowing limit; a -Inf cap on the state at the top z), solved with the grid interpolation layer at the
+    % defaults and with Howards never switched off, against pure VFI and the plain Epstein-Zin solve. The firing
+    % count says whether the zero-weight-on-a-dead-node case was reached. See InfHorzGI_InfNaN_proposal.md.
+    output=EZInfHorz_CrossTests_GIinfnan(n_a,n_z,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames);
+end % doPart(8): grid interpolation layer with -Inf in V (deliberate trigger)
 
 %% Done!
 % Terminating banner. The bank's last output before this is the guards cross-test, which PRINTS
