@@ -20,7 +20,8 @@
 % doPart(6): localsearch, the local-search value fn step, without and with a decision variable (no figures, no general eqm)
 % doPart(7): localsearch inside a real general eqm transition path, by shooting (no figures)
 % doPart(8): ExogShockFn and EiidShockFn on the path, vs explicit grids (no figures)
-% doPart(9): two endogenous states (figs 17-18)
+% doPart(9): constraints on the prices of a general eqm transition path (no figures)
+% doPart(10): two endogenous states (figs 17-18)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -29,7 +30,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -228,9 +229,19 @@ if doPart(8)==1
     output=CoreInfHorzTPath_ShockFns(T,PricePath,ParamPath,n_a,n_z,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,vfoptionsbaseline);
 end % doPart(8): ExogShockFn and EiidShockFn on the path
 
-%% ===== doPart(9): two endogenous states (figs 17-18) =====
+%% ===== doPart(9): constraints on the prices =====
 if doPart(9)==1
-    fprintf('\n===== doPart(9): two endogenous states (figs 17-18) =====\n')
+    fprintf('\n===== doPart(9): constraints on the prices =====\n')
+    %% transpathoptions.constrainpositive/constrain0to1/constrainAtoB on the general eqm transition path
+    % Not a change of variables (as the stationary general eqm uses) but a fraction-to-the-boundary rule on each
+    % update, so bounds that never bind must change nothing, and one binding update must be the rule applied by
+    % hand. Shooting only so far; Anderson and quasi-Newton refuse constraints until they apply the rule too.
+    output=CoreInfHorzTPath_constraints(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end % doPart(9): constraints on the prices
+
+%% ===== doPart(10): two endogenous states (figs 17-18) =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): two endogenous states (figs 17-18) =====\n')
     %% with2A: TWO endogenous states (triggers the DC2A/GI2A code paths)
     % Simplified Kitao (2008) entrepreneur model: endogenous states are asset and occupation.
     % Uses its own grids and its own price/param path (both built in the setup), because the model
@@ -245,7 +256,7 @@ if doPart(9)==1
     figure_c=18;
     output=CoreInfHorzTPath_d_z_noe_nosemiz_with2A(T,PricePath_2A,ParamPath_2A,n_d_2A,n_a_2A,n_a_2A_big,n_z_2A,d_grid_2A,a_grid_2A,a_grid_2A_big,z_grid_2A,pi_z_2A,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,n_d_2A,n_a_2A_GE,d_grid_2A,a_grid_2A_GE,figure_c);
     exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
-end % doPart(9): two endogenous states (figs 17-18)
+end % doPart(10): two endogenous states (figs 17-18)
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
