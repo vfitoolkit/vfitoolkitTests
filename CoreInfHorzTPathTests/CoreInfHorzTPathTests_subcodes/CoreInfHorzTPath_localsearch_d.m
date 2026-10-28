@@ -282,10 +282,10 @@ fprintf('localsearch d: (10) divide-and-conquer on a restricted sweep is accepte
 % needs, while the full sweeps honour it. The refusal check is replaced by the identity below rather
 % than deleted, which is the stronger statement anyway.
 % This is the FIFTH refusal check in this bank to outlive the thing it refused, after the with-d one,
-% the GI one, the Anderson one and the lowmemory one in doPart(4) section (13). The lesson is not
+% the GI one, the Anderson one and the lowmemory one in doPart(6) (CoreInfHorzTPath_localsearch section (13)). The lesson is not
 % "remember to delete it" -- it is that the refusal strings in a bank have to be audited against the
 % toolkit's actual error messages as a SET, because fixing the instance that happens to fail leaves
-% the others. doPart(4) section (13) was updated in the same commit that left this one behind.
+% the others. CoreInfHorzTPath_localsearch section (13) was updated in the same commit that left this one behind.
 vfoptions10=vfoptionsS; vfoptions10.localsearch=1; vfoptions10.nlocalsearch=2;
 vfoptions10.lowmemory=0;
 [V10a,P10a]=ValueFnIter_InfHorz_TPath_SingleStep(VnextS,n_d,n_a,n_z,d_gridvals, a_gridG, z_gridvals, pi_zG, ReturnFn, ParamsS, DiscountFactorParamNames, ReturnFnParamNames, [], vfoptions10);
@@ -419,7 +419,7 @@ end
 % in the value fn checks can see a violation: they all compare the DECODED fine point, which is the
 % same number under either spelling. The failure surfaces only once a Policy reaches the
 % distribution, as an out-of-range index inside sparse() in
-% AgentDist_InfHorz_TPath_SingleStep_nProbs_raw -- which is where it surfaced, in doPart(6), on the
+% AgentDist_InfHorz_TPath_SingleStep_nProbs_raw -- which is where it surfaced, in doPart(7), on the
 % first GI solve ever run inside a general eqm path.
 % So it is checked directly here, and stressed: the reference is PINNED TO THE TOP OF THE GRID, so
 % loweredge sits at N_a-2n for every state and the window's top coarse point IS N_a. Any state whose
@@ -451,7 +451,7 @@ fprintf('localsearch d + GI: (14) the decoded fine point still lies inside the w
 fprintf('localsearch d + GI: (14) for information, the largest coarse channel seen was %i against N_a=%i \n',P1max15,N_a)
 
 %% (15) DIVIDE-AND-CONQUER WITH LOCAL SEARCH, WITH A d
-% The with-d corners of what doPart(4) section (19) does without one, and the corner that needed real
+% The with-d corners of what CoreInfHorzTPath_localsearch section (19) does without one, and the corner that needed real
 % arithmetic rather than a returned variable. Two halves, doing opposite things:
 %   - A RESTRICTED sweep IGNORES divideandconquer, so the answer is identical bit for bit.
 %   - A SEED sweep HONOURS it, and with d and no interpolation layer that meant splitting DC1_raw's
@@ -511,7 +511,7 @@ fprintf('localsearch d + GI: (15) same, Policy in every channel, this should be 
 fprintf('localsearch d + GI: (15) same, the per-d reference, this should be zero: %.3e \n',dcRgap15G)
 
 % THE SEED SWEEP WITH d AND NO GI: DC1_raw's split level-2 max against LSseed_raw, which does the
-% same split without DC. This is the pair that section (11) of doPart(6) does for LSseed_raw against
+% same split without DC. This is the pair that section (11) of doPart(7) does for LSseed_raw against
 % the folded standard raw; here it is DC1_raw's turn, and the internal reference check is what makes
 % it a test of the split rather than of DC.
 vfoptions15S=vfoptionsS;

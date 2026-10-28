@@ -1,6 +1,6 @@
 function output=CoreInfHorzTPath_localsearch_shooting(T,n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline)
 % Checks vfoptions.localsearch=1 on a REAL general eqm transition path, solved by shooting.
-% doPart(4) and doPart(5) test the restricted value fn step against a given price path. This is the
+% doPart(6) (localsearch and localsearch_d) tests the restricted value fn step against a given price path. This is the
 % first part where the restriction is inside a general eqm solve and so can affect the answer.
 %
 % THE SCHEME. Iteration 1 is a standard sweep, whatever divideandconquer and gridinterplayer are set
@@ -46,7 +46,7 @@ function output=CoreInfHorzTPath_localsearch_shooting(T,n_d_GE,n_a_GE,n_z,d_grid
 %
 % WHAT THIS PART DOES NOT MEASURE: wall clock. At n_a_GE=201 the sweep is about 2e5 elements, far
 % below the kernel launch floor, so every solve here is launch bound and a timing would say nothing.
-% The speed of the restricted sweep is measured in doPart(5) on the big grid. What this part is for
+% The speed of the restricted sweep is measured in doPart(6) (CoreInfHorzTPath_localsearch_d) on the big grid. What this part is for
 % is whether the scheme CONVERGES TO THE SAME PLACE, how many verification sweeps it costs, and the
 % window trajectory the ratchet settles on. Check (7) adds the measurements that bear on whether the
 % Anderson algorithm could be given local search at all; the edge-hit RATE is not that number, since
@@ -237,7 +237,7 @@ end
 fprintf('localsearch shooting: (6) a ratchet step below one is refused by name, should be one: %i \n',err6)
 
 %% (7) THE GRID INTERPOLATION LAYER, which is the GE scheme's untested half
-% doPart(4) and doPart(5) cover the restricted value fn STEP with GI. What they cannot cover is the
+% doPart(6) (localsearch and localsearch_d) covers the restricted value fn STEP with GI. What they cannot cover is the
 % two GI paths that only exist inside the general eqm scheme, and that nothing had ever run before
 % this block:
 %   - Step1 converting a STANDARD sweep's Policy into a coarse reference, which under GI means
@@ -415,7 +415,7 @@ fprintf('localsearch shooting d: (10) with d and GI, nlocalsearch starting at 3 
 % solves above exercise it too, but only through the general eqm residual, which would hide a small
 % error.
 ReturnFnParamNamesd=ReturnFnParamNamesFn(ReturnFnd,n_d_GE,n_a_GE,n_z,0,vfoptions,ParamsGEd);
-% The same branch doPart(5) uses: with a single d the dispatcher wants the grid itself, and
+% The same branch doPart(6) (CoreInfHorzTPath_localsearch_d) uses: with a single d the dispatcher wants the grid itself, and
 % CreateGridvals is only for a joint grid over several d. Passing the wrong one of these is a
 % kind-mismatch that no arity check would catch.
 if isscalar(n_d_GE)
@@ -595,7 +595,7 @@ fprintf('localsearch Anderson d: (15) for scale, toleranceGEcondns here is %.3e,
 % with a model too big for an unrestricted sweep can do -- errored on iteration 1's first restricted
 % step and the seed route was unreachable. It is now ignored on the restricted sweeps and honoured on
 % the seed ones, which is the whole point: the full sweeps are the ones that have to fit in memory.
-% WHAT THIS EXERCISES that doPart(4) section (19) and doPart(5) section (15) cannot. Those hold the
+% WHAT THIS EXERCISES that doPart(6) (CoreInfHorzTPath_localsearch section (19) and CoreInfHorzTPath_localsearch_d section (15)) cannot. Those hold the
 % single step to an identity. Here the two kinds of sweep ALTERNATE inside a general eqm solve, under
 % the ratchet, with the reference built by a DC seed raw on iteration 1 and on every verification
 % sweep and then consumed by a restricted raw that is not a DC raw. The DC raws' references are the
@@ -635,7 +635,7 @@ fprintf('localsearch DC: (16) no d, with GI, the DC+localsearch solve moved off 
 
 % WITH d, which is where the seed route stops being a returned variable and becomes arithmetic:
 % DC1_raw's level-2 max is SPLIT, one max over aprime giving the per-d reference and then one over d
-% giving Policy. doPart(5) section (15) holds that split to LSseed_raw on a single step; this runs it
+% giving Policy. doPart(6) (CoreInfHorzTPath_localsearch_d section (15)) holds that split to LSseed_raw on a single step; this runs it
 % inside the solve, where a wrong reference shows up as a window centred on the wrong aprime for the
 % d the next sweep goes on to choose.
 vfoptions16d=vfoptions;

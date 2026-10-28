@@ -235,7 +235,7 @@ fprintf('localsearch: (7) for scale, the same step with the default reference in
 % Each is tested at the level that raises it: the three nlocalsearch refusals are the command's own
 % validation. The fourth check used to be a refusal too and is now the opposite of one.
 % There is no with-d refusal to check any more. It was here until d was implemented, and it is now
-% doPart(5) that covers that case -- the same thing that happened to the gridinterplayer refusal when
+% doPart(6) (CoreInfHorzTPath_localsearch_d) that covers that case -- the same thing that happened to the gridinterplayer refusal when
 % the interpolation layer was implemented. A refusal check has to be deleted the moment the thing it
 % refuses starts working, or it fails for the best possible reason.
 err=zeros(1,4);
@@ -520,7 +520,7 @@ fprintf('localsearch+GI: big grid (n_a=%i, ngridinterp=%i), the unrestricted GI 
 % The restricted step costs (2n+1) coarse points plus a FIXED 2*ngridinterp+3 fine ones, so it grows
 % at 2 points per unit of nlocalsearch rather than at 2*(1+ngridinterp). That is why the encoding
 % with a coarse layer was kept: see the header of the LS1_GI1 raw for the one-pass numbers it was
-% chosen over. Expect the speed-up to decay only slowly in n here, unlike the no-d run in doPart(5)
+% chosen over. Expect the speed-up to decay only slowly in n here, unlike the no-d run in doPart(6) (CoreInfHorzTPath_localsearch_d)
 % where the one-pass version fell from 16.1x to 2.6x over n=1 to 10.
 for nls=[1,2,5,10]
     vfoptionsBGI=vfoptionsGI;
@@ -670,7 +670,7 @@ fprintf('localsearch: (17) for information, feeding it back raised V at %i of %i
 % in the value fn checks can see a violation: they all compare the DECODED fine point, which is the
 % same number under either spelling. The failure surfaces only once a Policy reaches the
 % distribution, as an out-of-range index inside sparse() in
-% AgentDist_InfHorz_TPath_SingleStep_nProbs_raw -- which is where it surfaced, in doPart(6), on the
+% AgentDist_InfHorz_TPath_SingleStep_nProbs_raw -- which is where it surfaced, in doPart(7), on the
 % first GI solve ever run inside a general eqm path.
 % So it is checked directly here, and stressed: the reference is PINNED TO THE TOP OF THE GRID, so
 % loweredge sits at N_a-2n for every state and the window's top coarse point IS N_a. Any state whose
@@ -715,8 +715,8 @@ fprintf('localsearch+GI: (18) for information, the largest coarse channel seen w
 %     without moving V. So V is held to zero and the disagreement count is reported.
 % level1n is swept, so a pass cannot rest on one value being harmless, and the last run leaves it
 % UNSET, which is the state a user who never set it is in.
-% The with-d corners are in doPart(5) section (15) -- DC1_raw's split level-2 max is the one piece of
-% real arithmetic this needed -- and the whole thing end to end is doPart(6) section (16).
+% The with-d corners are in doPart(6) (CoreInfHorzTPath_localsearch_d section (15)) -- DC1_raw's split level-2 max is the one piece of
+% real arithmetic this needed -- and the whole thing end to end is doPart(7) section (16).
 vfoptions19=vfoptionsS;
 vfoptions19.localsearch=1;
 vfoptions19.nlocalsearch=2;

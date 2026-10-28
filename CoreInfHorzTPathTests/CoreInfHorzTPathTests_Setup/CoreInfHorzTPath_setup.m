@@ -128,3 +128,39 @@ Params.lbar=l_grid_2A(21); % fixed labor supply for entrepreneurs (=0.6, and exa
 % terminal values are what the subcode uses for the period-0 (terminal) VFI.
 PricePath_2A.r=[linspace(0.03,0.04,floor(T/2)),0.04*ones(1,T-floor(T/2))];
 ParamPath_2A.w=[linspace(1.5,1.4,floor(T/2)),1.4*ones(1,T-floor(T/2))];
+
+
+%% Semi-exogenous state (semiz) models, used by the doPart(9) and doPart(10) subcodes (appended 2026-10-27)
+% The same semiz model as CoreInfHorzTests doPart(9)-(11) (and the FHorz setups): semiz is employment,
+% n_semiz=2, semiz_grid=[0;1] (1 is employed), whose transitions pi_semiz(semiz,semiz',d2) depend on a
+% binary search effort d2, the LAST decision variable. The d1 models also have labour supply d1 in front
+% of it (the same d1 grid as the d models).
+% The semiz fields are put on COPIES of the baselines, vfoptionsbaseline_semiz/simoptionsbaseline_semiz,
+% and not on vfoptionsbaseline/simoptionsbaseline themselves, so that no existing subcode can pick them up.
+n_semiz=2; % hardcoded into CoreInfHorzTPathSetup_SemiExoStateFn
+semiz_grid=[0; 1]; % interpretation: 1 is employed, 0 is not-employed
+l_dsemiz=1; % one decision variable (the last, d2) drives the semiz transitions
+n_d_semiz=[n_d,2]; % n_d for semiz models with d1: [n_d1,n_d2]
+n_d2_semiz=2; % n_d for semiz models without d1
+d_grid_semiz=[d_grid; 0;1]; % d grid for semiz models with d1, binary d2
+d2_grid_semiz=[0;1]; % d grid for semiz models without d1, binary d2
+% GE-block grids of the d1 semiz models (the finer d1 grid of the d models' GE block, same binary d2)
+n_d_semiz_GE=[n_d_GE,2];
+d_grid_semiz_GE=[d_grid_GE; 0;1];
+
+Params.uempbenefit=0.2;
+Params.searcheffortcost=0.6;
+Params.probfindjob=0.7;
+Params.problosejob=0.3;
+
+SemiExoStateFn=@(n,nprime,dsemiz,probfindjob,problosejob) CoreInfHorzTPathSetup_SemiExoStateFn(n,nprime,dsemiz,probfindjob,problosejob);
+vfoptionsbaseline_semiz=vfoptionsbaseline; % carries the e as well, which the semiz e subcodes copy across
+vfoptionsbaseline_semiz.n_semiz=n_semiz;
+vfoptionsbaseline_semiz.semiz_grid=semiz_grid;
+vfoptionsbaseline_semiz.SemiExoStateFn=SemiExoStateFn;
+vfoptionsbaseline_semiz.l_dsemiz=l_dsemiz;
+simoptionsbaseline_semiz=simoptionsbaseline;
+simoptionsbaseline_semiz.n_semiz=n_semiz;
+simoptionsbaseline_semiz.semiz_grid=semiz_grid;
+simoptionsbaseline_semiz.SemiExoStateFn=SemiExoStateFn;
+simoptionsbaseline_semiz.l_dsemiz=l_dsemiz; % simoptions.d_grid is set in each subcode, from the d_grid it is given

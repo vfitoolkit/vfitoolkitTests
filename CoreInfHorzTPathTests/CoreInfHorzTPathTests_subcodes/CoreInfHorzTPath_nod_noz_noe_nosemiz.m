@@ -1,4 +1,14 @@
 function output=CoreInfHorzTPath_nod_noz_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,n_d_GE,n_a_GE,d_grid_GE,a_grid_GE,figure_c)
+% without d, without z, without e (fig 1).
+% REGENERATED 2026-10-27 from the live CoreInfHorzTPath_nod_z_noe_nosemiz (fig 3), adapted to
+% this model. The six dark doPart(1) subcodes had fallen behind the two live z ones (tolerances,
+% the deleted spelling-unsafe GI Policy-index comparisons, the FHorz cross-checks including the
+% path-varying shock block, the stationary-GE two-tier invariant wired as a real check, the
+% convergence-criterion block),
+% so each was rebuilt from its live sibling rather than patched. Support for no z and no e on
+% the InfHorz transition path commands is being built in the toolkit test-first, so this subcode
+% is written against the intended interface: "no z" is n_z=0, z_grid=[], pi_z=[], passed
+% positionally as in the stationary CoreInfHorzTests noz subcodes.
 
 % Setup vfoptions and simoptions
 vfoptions=struct();
@@ -13,7 +23,7 @@ simoptions=struct();
 simoptions.tolerance=1e-9;
 n_d=0; d_grid=[];
 n_d_GE=0; d_grid_GE=[]; % nod: no decision variable in the GE block either
-n_z=0; z_grid=[]; pi_z=[];
+n_z=0; z_grid=[]; pi_z=[]; % noz: no markov z (the inputs stay positional, as empty)
 
 ReturnFn=@(aprime,a,r,w,sigma) ReturnFn_nod_noz_noe_nosemiz(aprime,a,r,w,sigma);
 
@@ -55,6 +65,23 @@ simoptions2=simoptions;
 
 fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath2(:))))
 fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
+
+% IDENTICAL BY CONSTRUCTION in this model, kept only because it is cheap: lowmemory loops over the
+% exogenous states, and a model with no z and no e has none, so there is nothing for lowmemory=1 to
+% loop over. These lines are NOT evidence that the lowmemory loop works (the z and e subcodes are).
+% lowmemory should give same answer
+vfoptions1.lowmemory=1;
+[VPath1B,PolicyPath1B]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+vfoptions1.lowmemory=0;
+
+vfoptions2.lowmemory=1;
+[VPath2B,PolicyPath2B]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
+vfoptions2.lowmemory=0;
+
+fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath1B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath1B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath2(:)-VPath2B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath2(:)-PolicyPath2B(:))))
 
 %% ValueFnFromPolicy along the path: recomputing V from the policy must reproduce VPath
 % ValueFnFromPolicyOnTransPath_InfHorz evaluates the Bellman at the given PolicyPath instead of
@@ -142,11 +169,12 @@ clear V_FH Policy_FH ParamsFH vfoptionsFH temp1 temp2 dev AgentDistPathFH StatDi
 
 %% Cross-check against an FHorz solve, with a shock process that varies along the path
 % Skipped for this subcode: there is no markov z here, so transpathoptions.zpathtrivial has
-% nothing to vary. (epathtrivial, the iid-e analogue, is a separate flag and is not covered.)
+% nothing to vary. (epathtrivial, the iid-e analogue, is covered by the path-varying e block in the
+% e subcodes.)
 fprintf('TPath vs FHorz (path-varying z): skipped, this model has no markov z \n')
 
 %%
-clear VPath1 VPath2 PolicyPath1 PolicyPath2
+clear VPath1 VPath2 PolicyPath1 PolicyPath2 VPath1B VPath2B PolicyPath1B PolicyPath2B
 
 %% Solve with grid-interpolation. With and without divide-and-conquer
 vfoptions3=vfoptions1_GI;
@@ -160,6 +188,23 @@ simoptions4=simoptions3;
 
 fprintf('Divide-and-conquer (with GI), this should be zero: %.3e \n',max(abs(VPath3(:)-VPath4(:))))
 fprintf('Divide-and-conquer (with GI), this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
+
+% IDENTICAL BY CONSTRUCTION in this model, kept only because it is cheap: lowmemory loops over the
+% exogenous states, and a model with no z and no e has none, so there is nothing for lowmemory=1 to
+% loop over. These lines are NOT evidence that the lowmemory loop works (the z and e subcodes are).
+% lowmemory should give same answer
+vfoptions3.lowmemory=1;
+[VPath3B,PolicyPath3B]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions3);
+vfoptions3.lowmemory=0;
+
+vfoptions4.lowmemory=1;
+[VPath4B,PolicyPath4B]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
+vfoptions4.lowmemory=0;
+
+fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath3(:)-VPath3B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath3B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath4(:)-VPath4B(:))))
+fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath4(:)-PolicyPath4B(:))))
 
 %% ValueFnFromPolicy along the path, grid-interpolation tier
 VfromPolicyPath=ValueFnFromPolicyOnTransPath_InfHorz(PolicyPath4,V_final_GI,ParamPath,PricePath,T,n_d,n_a,n_z,d_grid,a_grid,z_grid, pi_z, ReturnFn, Params, DiscountFactorParamNames, vfoptions4);
@@ -185,16 +230,12 @@ vfoptionsFH_GI.V_Jplus1=V_final_GI;
 temp1=reshape(VPath4,[],T); temp2=reshape(V_FH,[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
 fprintf('TPath vs FHorz (with DC and GI), this should be zero, V: %.3e \n',max(abs(dev(:))))
-% THE RAW POLICY INDEX COMPARISON IS DELETED HERE, not loosened: under the interpolation layer a
-% point on a coarse node has TWO legal spellings, (P1,L2=1) and (P1-1,L2=ngridinterp+2), so a raw
-% channel difference of exactly 1+ngridinterp is the same aprime named two ways and neither spelling
-% is canonical. The PolicyVals comparison immediately below is the real check, and is spelling-proof
-% by construction. In the subcodes that DO run, this same check read 6.000e+00 at ngridinterp=5 while
-% the PolicyVals line beside it read 4e-16 or exactly zero: a test defect, not a solver defect.
-% This subcode is commented out of the driver, so this one was never observed either way -- which is
-% the reason to delete it rather than wait for it. A wrong check that happens to pass is worse than
-% one that fails, because nothing ever prompts you to look at it.
-% The two lines that computed the comparison go with it; dev is rebuilt below for PolicyVals.
+temp1=reshape(PolicyPath4,[],T); temp2=reshape(Policy_FH,[],N_jFH);
+dev=temp1(:,1:N_jFH)-temp2;
+% DELETED, same reason as the other raw Policy index comparisons under the interpolation layer, and
+% this one PASSED -- the two spellings coincided here. A wrong check that passes is worse than a
+% wrong check that fails, because nothing ever prompts you to look at it. The PolicyVals comparison
+% immediately below is the real check and is spelling-proof by construction.
 temp1=reshape(PolicyInd2Val_InfHorz_TPath(PolicyPath4,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions4),[],T);
 temp2=reshape(PolicyInd2Val_FHorz(Policy_FH,n_d,n_a,n_z,N_jFH,d_grid,a_grid,vfoptions4),[],N_jFH);
 dev=temp1(:,1:N_jFH)-temp2;
@@ -243,7 +284,7 @@ end
 clear V_FH Policy_FH ParamsFH vfoptionsFH_GI temp1 temp2 dev AgentDistPathFH StatDist_FH AggVarsPathFH AllStatsPathFH AgeCondStats_FH simoptionsFH
 
 %%
-clear VPath3 VPath4 PolicyPath3 PolicyPath4
+clear VPath3 VPath4 PolicyPath3 PolicyPath4 VPath3B VPath4B PolicyPath3B PolicyPath4B
 
 %% Big a_grid: moments along path should be close with/without grid interp
 [VPath2b,PolicyPath2b]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_big, Policy_final_big, Params, n_d, n_a_big, n_z, d_grid, a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
@@ -297,8 +338,10 @@ fprintf('With/without grid interp, should get much the same moments (for big a_g
 % assets. Measured: the max sits at a-index 29 of 1001 (a=1.1e-4), and the cumulative difference is
 % LARGER than the pointwise one, which rules out the adjacent-node-splitting explanation -- the mass
 % genuinely sits on different bottom nodes. No fix removes that; it is what GI does.
-AD2=reshape(gather(AgentDistPath2),[prod(n_a_big),prod(n_z),T]);
-AD4=reshape(gather(AgentDistPath4),[prod(n_a_big),prod(n_z),T]);
+% [] absorbs the exogenous states, whatever they are: the z subcodes write prod(n_z) there, which is 0
+% with no z, and with an e the dist has a further dimension, so that form would error in this subcode.
+AD2=reshape(gather(AgentDistPath2),prod(n_a_big),[],T);
+AD4=reshape(gather(AgentDistPath4),prod(n_a_big),[],T);
 ADcdf2=cumsum(sum(AD2,2),1); ADcdf4=cumsum(sum(AD4,2),1);
 [ADdevmax,ADdevwhere]=max(abs(AgentDistPath2(:)-AgentDistPath4(:)));
 AggVarNamesGI=fieldnames(AggVarsPath2);
@@ -334,56 +377,60 @@ clear AD2 AD4 ADcdf2 ADcdf4 ADdevmax ADdevwhere AggVarNamesGI devmoment m2 m4
 % command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and TransitionProbs is
 % (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
 %
-% Guarded: the command has no branch for N_z=0, and no e support at all (it defaults simoptions.n_e
-% but never reads it), so the noz and e subcodes would either error or silently return the wrong
-% thing. Remove the guard once the toolkit covers those cases.
-if prod(n_z)>0 && ~isfield(simoptions,'n_e')
-    simoptionsAC=simoptions2;
-    simoptionsAC.whichstats=ones(7,1); % pin, so AllStats and this command are asked for the same things
-    % assets only: nextassets is the chosen aprime set, whose number of distinct values changes
-    % along the path, and EvalFnOnTransPath_AutoCorrTransProbs_InfHorz preallocates
-    % TransitionProbs at a fixed size from the tt=2 slice, so it errors when that count moves.
-    simoptionsAC.transprobs={'assets'};
-    % PolicyPath2 was cleared further up, so re-solve the plain path here. Deliberately the small
-    % grid, not n_a_big: the command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and
-    % TransitionProbs is (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
-    [~,PolicyPathAC]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
-    AgentDistPathAC=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathAC, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptionsAC);
-    AggVarsPathAC=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, transpathoptionsbaseline, simoptionsAC);
-    AllStatsPathAC=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, transpathoptionsbaseline, simoptionsAC);
-    CorrTransProbsPathAC=EvalFnOnTransPath_AutoCorrTransProbs_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, pi_z, transpathoptionsbaseline, simoptionsAC);
+% NOT GUARDED HERE. The z subcodes skip this block for the noz and e models, because the command
+% had no branch for N_z=0 and no e support. That support is being built test-first, so in this
+% subcode the block runs: an error here is the toolkit not yet covering this model, not a test defect.
+simoptionsAC=simoptions2;
+simoptionsAC.whichstats=ones(7,1); % pin, so AllStats and this command are asked for the same things
+% assets only: nextassets is the chosen aprime set, whose number of distinct values changes
+% along the path, and EvalFnOnTransPath_AutoCorrTransProbs_InfHorz preallocates
+% TransitionProbs at a fixed size from the tt=2 slice, so it errors when that count moves.
+simoptionsAC.transprobs={'assets'};
+% PolicyPath2 was cleared further up, so re-solve the plain path here. Deliberately the small
+% grid, not n_a_big: the command builds the full (N_a*N_z)-by-(N_a*N_z) transition matrix, and
+% TransitionProbs is (number of distinct values)^2-by-(T-1), both of which grow fast in n_a.
+[~,PolicyPathAC]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
+AgentDistPathAC=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathAC, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptionsAC);
+AggVarsPathAC=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, transpathoptionsbaseline, simoptionsAC);
+AllStatsPathAC=EvalFnOnTransPath_AllStats_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, transpathoptionsbaseline, simoptionsAC);
+CorrTransProbsPathAC=EvalFnOnTransPath_AutoCorrTransProbs_InfHorz(FnsToEvaluate, AgentDistPathAC, PolicyPathAC, PricePath, ParamPath, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, pi_z, transpathoptionsbaseline, simoptionsAC);
 
-    for fnname=fieldnames(FnsToEvaluate)'
-        dev=CorrTransProbsPathAC.(fnname{1}).Mean-AggVarsPathAC.(fnname{1}).Mean;
-        fprintf('AutoCorrTransProbs vs AggVars along TPath, this should be zero, Mean %s: %.3e \n',fnname{1},max(abs(dev)))
-        dev=CorrTransProbsPathAC.(fnname{1}).StdDeviation-AllStatsPathAC.(fnname{1}).StdDeviation;
-        fprintf('AutoCorrTransProbs vs AllStats along TPath, this should be zero, StdDeviation %s: %.3e \n',fnname{1},max(abs(dev)))
-    end
+for fnname=fieldnames(FnsToEvaluate)'
+    dev=CorrTransProbsPathAC.(fnname{1}).Mean-AggVarsPathAC.(fnname{1}).Mean;
+    fprintf('AutoCorrTransProbs vs AggVars along TPath, this should be zero, Mean %s: %.3e \n',fnname{1},max(abs(dev)))
+    dev=CorrTransProbsPathAC.(fnname{1}).StdDeviation-AllStatsPathAC.(fnname{1}).StdDeviation;
+    fprintf('AutoCorrTransProbs vs AllStats along TPath, this should be zero, StdDeviation %s: %.3e \n',fnname{1},max(abs(dev)))
+end
 
-    for fnname=fieldnames(FnsToEvaluate)'
-        sdthis=CorrTransProbsPathAC.(fnname{1}).StdDeviation(2:T);
-        sdlag=CorrTransProbsPathAC.(fnname{1}).StdDeviation(1:T-1);
+% NO SHOCKS IN THIS MODEL, so the agent dist can sit on a single point (with beta*(1+r)<1 everyone
+% runs their assets down to the bottom of the grid) and a std deviation can be exactly zero. Then
+% AutoCorrelation is 0/0, which is NaN, and CoreSummary rightly fails a printed NaN. So the identity
+% is only checked where it is defined, and otherwise a non-check line says why it was not.
+for fnname=fieldnames(FnsToEvaluate)'
+    sdthis=CorrTransProbsPathAC.(fnname{1}).StdDeviation(2:T);
+    sdlag=CorrTransProbsPathAC.(fnname{1}).StdDeviation(1:T-1);
+    if all(sdlag.*sdthis>0)
         dev=CorrTransProbsPathAC.(fnname{1}).AutoCorrelation(1:T-1)-CorrTransProbsPathAC.(fnname{1}).AutoCovariance(1:T-1)./(sdlag.*sdthis);
         fprintf('AutoCorrTransProbs internal, corr=cov/(sd*sd), this should be zero, %s: %.3e \n',fnname{1},max(abs(dev)))
         fprintf('AutoCorrTransProbs internal, max abs AutoCorrelation (should be at most one), %s: %2.8f \n',fnname{1},max(abs(CorrTransProbsPathAC.(fnname{1}).AutoCorrelation(1:T-1))))
+    else
+        fprintf('AutoCorrTransProbs internal, corr=cov/(sd*sd), %s: not checked, the std deviation is zero in %i of the %i period pairs (deterministic model), where AutoCorrelation is 0/0 \n',fnname{1},sum(~(sdlag.*sdthis>0)),T-1)
     end
-
-    % The command only fills TransitionProbs in when the set of distinct values is the same in
-    % consecutive periods, so check the field is there before using it.
-    for fnname={'assets'}
-        if isfield(CorrTransProbsPathAC.(fnname{1}),'TransitionProbs')
-            TPac=CorrTransProbsPathAC.(fnname{1}).TransitionProbs;
-            fprintf('AutoCorrTransProbs TransitionProbs %s: size %s, smallest entry (should not be negative): %2.10f \n',fnname{1},mat2str(size(TPac)),min(TPac(:)))
-            fprintf('AutoCorrTransProbs TransitionProbs %s, row sums should be one, max abs deviation: %2.10f \n',fnname{1},max(abs(sum(TPac,2)-1),[],'all'))
-            fprintf('AutoCorrTransProbs TransitionProbs %s, column sums, max abs deviation from one: %2.10f \n',fnname{1},max(abs(sum(TPac,1)-1),[],'all'))
-        else
-            fprintf('AutoCorrTransProbs TransitionProbs %s: not returned, the distinct values are not the same in consecutive periods \n',fnname{1})
-        end
-    end
-    clear simoptionsAC PolicyPathAC AgentDistPathAC AggVarsPathAC AllStatsPathAC CorrTransProbsPathAC TPac sdthis sdlag dev
-else
-    fprintf('AutoCorrTransProbs along TPath: skipped, EvalFnOnTransPath_AutoCorrTransProbs_InfHorz has no N_z=0 branch and no e support \n')
 end
+
+% The command only fills TransitionProbs in when the set of distinct values is the same in
+% consecutive periods, so check the field is there before using it.
+for fnname={'assets'}
+    if isfield(CorrTransProbsPathAC.(fnname{1}),'TransitionProbs')
+        TPac=CorrTransProbsPathAC.(fnname{1}).TransitionProbs;
+        fprintf('AutoCorrTransProbs TransitionProbs %s: size %s, smallest entry (should not be negative): %2.10f \n',fnname{1},mat2str(size(TPac)),min(TPac(:)))
+        fprintf('AutoCorrTransProbs TransitionProbs %s, row sums should be one, max abs deviation: %2.10f \n',fnname{1},max(abs(sum(TPac,2)-1),[],'all'))
+        fprintf('AutoCorrTransProbs TransitionProbs %s, column sums, max abs deviation from one: %2.10f \n',fnname{1},max(abs(sum(TPac,1)-1),[],'all'))
+    else
+        fprintf('AutoCorrTransProbs TransitionProbs %s: not returned, the distinct values are not the same in consecutive periods \n',fnname{1})
+    end
+end
+clear simoptionsAC PolicyPathAC AgentDistPathAC AggVarsPathAC AllStatsPathAC CorrTransProbsPathAC TPac sdthis sdlag dev
 
 %% Plots
 fig=figure(figure_c);
@@ -408,14 +455,14 @@ ParamPathConstant.sigma=Params.sigma*ones(1,T);
 AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptions1);
 PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions1);
 
-Vfin_rep=repmat(V_final,1,1,T);
+Vfin_rep=repmat(V_final,1,1,1,T);
 fprintf('Constant TPath (no DC, no GI), this should be zero, V: %.3e \n',max(abs(VPath1(:)-Vfin_rep(:))))
-Polfin_rep=repmat(Policy_final,1,1,1,T);
+Polfin_rep=repmat(Policy_final,1,1,1,1,T);
 fprintf('Constant TPath (no DC, no GI), this should be zero, Policy: %.3e \n',max(abs(PolicyPath1(:)-Polfin_rep(:))))
 PolicyValsfin=PolicyInd2Val_InfHorz(Policy_final,n_d,n_a,n_z,d_grid,a_grid,vfoptions1);
 PolicyValsfin_rep=repmat(PolicyValsfin(:),1,T); % T is the last dimension of PolicyValsPath
 fprintf('Constant TPath (no DC, no GI), this should be zero, PolicyVals: %.3e \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_rep(:))))
-AD_rep=repmat(AgentDist_initial,1,1,T);
+AD_rep=repmat(AgentDist_initial,1,1,1,T);
 fprintf('Constant TPath (no DC, no GI), this should be zero, AgentDist (note: tolerance=1e-6): %.3e \n',max(abs(AgentDistPath1(:)-AD_rep(:))))
 
 clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
@@ -439,16 +486,20 @@ AgentDist_initial_GI=StationaryDist_InfHorz(Policy_final_GI,n_d,n_a,n_z,pi_z,sim
 AgentDistPath1=AgentDistOnTransPath_InfHorz(AgentDist_initial_GI, PricePathConstant, ParamPathConstant, PolicyPath1, n_d, n_a, n_z, pi_z, T, Params, transpathoptionsbaseline, simoptions4);
 PolicyValsPath1=PolicyInd2Val_InfHorz_TPath(PolicyPath1,n_d,n_a,n_z,T,d_grid,a_grid,vfoptions4);
 
-Vfin_rep_GI=repmat(V_final_GI,1,1,T);
+Vfin_rep_GI=repmat(V_final_GI,1,1,1,T);
 fprintf('Constant TPath (with DC and GI), this should be zero, V: %.3e \n',max(abs(VPath1(:)-Vfin_rep_GI(:))))
-% THE RAW POLICY INDEX COMPARISON IS DELETED HERE TOO, for the reason given at the GI cross-check
-% against FHorz above: a coarse node has two legal spellings, so a raw channel difference of exactly
-% 1+ngridinterp is the same aprime. PolicyVals below is the check. Polfin_rep_GI went with it, since
-% nothing else read it.
+% Polfin_rep_GI is gone with the raw Policy index comparison it was the only input to.
+% THE RAW POLICY INDEX COMPARISON IS DELETED, not fixed: under the interpolation layer a point on a
+% coarse node has TWO legal spellings, (P1,L2=1) and (P1-1,L2=1+ngridinterp+1), so a raw channel
+% difference of exactly 1+ngridinterp is the same aprime named two ways. That is what this reported --
+% 6.000e+00 at ngridinterp=5 -- while the PolicyVals comparison beside it read 4e-16 or exactly zero.
+% The values agreeing to machine precision IS the check; the index comparison was testing the
+% encoding, and testing it wrongly. See the header of the LS1_GI1 raws for why neither spelling is
+% canonical.
 PolicyValsfin_GI=PolicyInd2Val_InfHorz(Policy_final_GI,n_d,n_a,n_z,d_grid,a_grid,vfoptions4);
 PolicyValsfin_GI_rep=repmat(PolicyValsfin_GI(:),1,T);
 fprintf('Constant TPath (with DC and GI), this should be zero, PolicyVals: %.3e \n',max(abs(PolicyValsPath1(:)-PolicyValsfin_GI_rep(:))))
-AD_rep_GI=repmat(AgentDist_initial_GI,1,1,T);
+AD_rep_GI=repmat(AgentDist_initial_GI,1,1,1,T);
 fprintf('Constant TPath (with DC and GI), this should be zero, AgentDist (note: tolerance=1e-6): %.3e \n',max(abs(AgentDistPath1(:)-AD_rep_GI(:))))
 
 clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
@@ -458,11 +509,30 @@ clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
 % the non-GE commands, or calls TransitionPath_InfHorz with a dummy GE eqn and maxiter=1, so
 % nothing ever updates.
 %
-% A Cobb-Douglas firm supplies BOTH prices from its first order conditions:
-%     r = firmalpha*firmA*(K^(firmalpha-1))*(N^(1-firmalpha)) - firmdelta   (MPK less depreciation)
-%     w = (1-firmalpha)*firmA*(K^firmalpha)*(N^(-firmalpha))                (MPL)
-% so w is a general eqm price here, not a ParamPath entry as it is elsewhere in this file.
-% K is aggregate assets and N aggregate labour supply.
+% A SMALL OPEN ECONOMY WITH FOREIGN CAPITAL, NOT THE CLOSED-ECONOMY FIRM OF THE z AND e SUBCODES.
+% r is the fixed world rate, Params.r (0.05, with beta=0.95, so beta*(1+r)<1), and is NOT a general
+% eqm price. The Cobb-Douglas firm uses an exogenous stock of foreign capital firmKbar plus the
+% domestic household capital K=E[a], and hires labour N. The single general eqm price is the wage,
+% from the firm's MPL:
+%     w = (1-firmalpha)*firmA*((firmKbar+K)^firmalpha)*(N^(-firmalpha))
+% Labour is inelastic in this model (there is no d), so N=1 and N does not appear in the eqn.
+%
+% WHY NOT THE GE OF THE z AND e SUBCODES (used here until 2026-10-27): with no shocks and
+% beta*(1+r)<1 everyone runs their assets down to a=0, so K=0 and the closed-economy MPK is infinite;
+% above r=1/beta-1 assets run up to the top of the grid. That stationary eqm sits at r=1/beta-1 with K
+% indeterminate, which is not well posed.
+% WHY THIS ONE IS WELL POSED: firmKbar>0 keeps the MPL finite at K=0. With beta*(1+r)<1 the
+% stationary dist is a=0 whatever w is, so K=0, and the stationary eqm is
+% w*=(1-firmalpha)*firmA*firmKbar^firmalpha: unique, and in closed form (checked below). The
+% transition is NOT trivial: on a bumped w path households save to smooth consumption, so K_t>0,
+% which raises w_t, so the general eqm path solver has a genuine fixed point to find (the constant
+% path w*, with K=0 throughout).
+%
+% firmKbar=2, the same in both noz noe subcodes. With firmalpha=0.36 and firmA=0.5, the stationary
+% eqm (where K=0) is w*=0.64*0.5*2^0.36*N^(-0.36)=0.4107*N^(-0.36). In the nod model N=1, so
+% w*=0.4107; in the d model labour supply at w~0.45 is about N=0.69 (from the FOC below), and
+% N^(-0.36)=1.14 gives w*~0.47. Both are in the ballpark of the z models' w~0.44 (which in the nod
+% model alone would need firmKbar=(0.44/0.32)^(1/0.36)=2.42).
 %
 % Both solvers are given the SAME residual-form GeneralEqmEqns. That works because the path uses
 % transpathoptions.GEnewprice=2 rather than the default 1: GEnewprice=1 treats the eqns as price
@@ -473,29 +543,31 @@ clear VPath1 PolicyPath1 AgentDistPath1 PolicyValsPath1
 % firm* names are used because the 2A entrepreneur ReturnFn already uses alpha and delta with its
 % own (Kitao) meanings.
 Params.firmalpha=0.36;
-Params.firmdelta=0.05;
 Params.firmA=0.5;
+Params.firmKbar=2;
+
+wclosed=(1-Params.firmalpha)*Params.firmA*Params.firmKbar^Params.firmalpha; % the stationary eqm w (K=0, N=1), in closed form
 
 FnsToEvaluateGE.K=@(aprime,a) a;
-FnsToEvaluateGE.N=@(aprime,a) 1;
 
-GeneralEqmEqnsGE.CapitalMarket=@(r,K,N,firmalpha,firmdelta,firmA) r-(firmalpha*firmA*(K^(firmalpha-1))*(N^(1-firmalpha))-firmdelta);
-GeneralEqmEqnsGE.LabourMarket=@(w,K,N,firmalpha,firmA) w-((1-firmalpha)*firmA*(K^firmalpha)*(N^(-firmalpha)));
+GeneralEqmEqnsGE.LabourMarket=@(w,K,firmalpha,firmA,firmKbar) w-((1-firmalpha)*firmA*((firmKbar+K)^firmalpha));
 
-heteroagentoptionsGE=struct(); % default fminalgo, and no constraints on r or w
+heteroagentoptionsGE=struct(); % default fminalgo, and no constraint on w
 
-[p_eqm,GEcondns]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptions1, vfoptions1);
-fprintf('Stationary GE: r=%2.8f, w=%2.8f \n',p_eqm.r,p_eqm.w)
-fprintf('Stationary GE conditions (these should be close to zero): CapitalMarket=%.3e, LabourMarket=%.3e \n',GEcondns.CapitalMarket,GEcondns.LabourMarket)
+[p_eqm,GEcondns]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'w'}, heteroagentoptionsGE, simoptions1, vfoptions1);
+fprintf('Stationary GE: w=%2.8f (closed form %2.8f), at the world rate r=%2.8f \n',p_eqm.w,wclosed,Params.r)
+fprintf('Stationary GE conditions (these should be close to zero): LabourMarket=%.3e \n',GEcondns.LabourMarket)
+fprintf('Stationary GE, w against its closed form (1-firmalpha)*firmA*firmKbar^firmalpha, this should be close to zero: %.3e \n',abs(p_eqm.w-wclosed))
 
 % The path needs the EQUILIBRIUM V_final and initial dist, else the null reform is not exact
-ParamsGE=Params;
-ParamsGE.r=p_eqm.r;
+ParamsGE=Params; % r stays the world rate
 ParamsGE.w=p_eqm.w;
 [V_finalGE,Policy_finalGE]=ValueFnIter_InfHorz(n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,ReturnFn,ParamsGE,DiscountFactorParamNames,[],vfoptions1);
 AgentDist_initialGE=StationaryDist_InfHorz(Policy_finalGE,n_d_GE,n_a_GE,n_z,pi_z,simoptions1,ParamsGE,[]);
+% K=0 at the stationary dist is what makes the closed form the answer, so check it directly
+AggVarsGE=EvalFnOnAgentDist_AggVars_InfHorz(AgentDist_initialGE,Policy_finalGE,FnsToEvaluateGE,ParamsGE,[],n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,simoptions1);
+fprintf('Stationary GE, K=E[a] at the stationary dist (beta*(1+r)<1 and no shocks, so everyone sits at a=0), this should be close to zero: %.3e \n',AggVarsGE.K.Mean)
 
-PricePathGE.r=p_eqm.r*ones(1,T);
 PricePathGE.w=p_eqm.w*ones(1,T);
 ParamPathGE.sigma=Params.sigma*ones(1,T); % constant: nothing actually changes, this is a null reform
 
@@ -509,51 +581,40 @@ transpathoptionsGE.verbose=0;
 % it throughout; the ALGORITHMS are compared in the with_CoreInfHorzTPathAlgoTests sub-bank, not
 % here. howtoupdate columns are {GEcondn name, price name, add, factor}, and
 % updatePricePathNew_TPath_tt does new = old + add*factor*residual - (1-add)*factor*residual.
-% Both residuals are of the form (price - its firm FOC), so a POSITIVE residual means the price is
-% too high and must come down: hence add=0 (subtract) for both. The rows have to be in the same
-% order as the PricePath fields (r then w), because add and factor are applied to the prices
-% positionally by row. setupGEnewprice3_shooting has a reorder meant to lift that requirement,
-% but it matches on the wrong column of howtoupdate and so never fires.
+% The residual is (w - MPL), so a POSITIVE residual means w is too high and must come down: add=0.
 transpathoptionsGE.GEnewprice=2;
-transpathoptionsGE.GEnewprice2.howtoupdate={'CapitalMarket','r',0,0.1; ...
-                                            'LabourMarket','w',0,0.1};
+transpathoptionsGE.GEnewprice2.howtoupdate={'LabourMarket','w',0,0.1};
 
 % (i) Start from the equilibrium path. The update formulae return the same prices, so the solver
 % must leave the path alone.
 PricePathGEOut=TransitionPath_InfHorz(PricePathGE, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsGE, simoptions1, vfoptions1, []);
-% The CapitalMarket eqn is r-(MPK-delta), so its residual is already in units of r, and is exactly how
-% far r has to move to clear the market. The path moves r there, so the deviation from p_eqm.r equals
-% that residual and the ratio below should be about one. A ratio near one says the path is right and
-% p_eqm is off by the stationary solver's own residual; a ratio far from one says the path is wrong.
-% w has no such identity (it moves only because K moves, with a model-dependent elasticity), so w is
-% reported as a diagnostic rather than checked.
-fprintf('Null-reform GE from the equilibrium path, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathGEOut.r-p_eqm.r))/abs(GEcondns.CapitalMarket))
-fprintf('Null-reform GE from the equilibrium path, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathGEOut.r-p_eqm.r)),max(abs(PricePathGEOut.w-p_eqm.w)))
+% The LabourMarket eqn is w-MPL, so its residual is already in units of w; and at the stationary dist
+% K=0 for any w near w*, so the MPL does not move with w and the path moves w by exactly that residual.
+% The ratio below is therefore about one -- BUT IT IS ONLY A DIAGNOSTIC, and not in a form CoreSummary
+% counts: this is a one-price problem that is linear in w, so the stationary residual can sit at
+% round-off, and then the ratio is round-off over round-off (or the path, already inside its
+% tolerance, does not move at all and the ratio reads zero). The counted check is the line after it,
+% against the closed form, which has no such conditioning problem.
+fprintf('Null-reform GE from the equilibrium path, deviation in w over the stationary LabourMarket residual, this should be about one: %2.4f \n',max(abs(PricePathGEOut.w-p_eqm.w))/abs(GEcondns.LabourMarket))
+fprintf('Null-reform GE from the equilibrium path, max deviation of w from its closed form, this should be close to zero: %.3e \n',max(abs(PricePathGEOut.w-wclosed)))
 
-% (ii) Start from a bumped guess: both prices bumped by between 1%% and 5%%, by a different amount
-% in every period, over the first two-thirds of the path only (r rising 1->5%%, w falling 5->1%%, so
-% the two have different profiles). The solver must pull both back to the equilibrium path.
+% (ii) Start from a bumped guess: w bumped by between 5%% and 1%% (falling), by a different amount in
+% every period, over the first two-thirds of the path only. A falling w makes households save, so K
+% leaves zero along the guessed path, and the solver must pull w back to the equilibrium path.
 Tbump=floor(2*T/3);
-bumpr=0.01+0.04*linspace(0,1,Tbump);
 bumpw=0.05-0.04*linspace(0,1,Tbump);
 PricePathBumped=PricePathGE;
-PricePathBumped.r(1:Tbump)=PricePathGE.r(1:Tbump).*(1+bumpr);
 PricePathBumped.w(1:Tbump)=PricePathGE.w(1:Tbump).*(1+bumpw);
 transpathoptionsGE.maxiter=100; % the bumped solve has to actually travel, so give it more iterations
 PricePathBumpedOut=TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsGE, simoptions1, vfoptions1, []);
-fprintf('Null-reform GE bumped guess, max initial deviation: r %2.8f, w %2.8f \n',max(abs(PricePathBumped.r-p_eqm.r)),max(abs(PricePathBumped.w-p_eqm.w)))
-% Same ratio, from a different starting point: two starts landing on the same r is what says the path
-% has converged rather than been cut off by maxiter.
-fprintf('Null-reform GE from a bumped guess, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathBumpedOut.r-p_eqm.r))/abs(GEcondns.CapitalMarket))
-fprintf('Null-reform GE from a bumped guess, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathBumpedOut.r-p_eqm.r)),max(abs(PricePathBumpedOut.w-p_eqm.w)))
+fprintf('Null-reform GE bumped guess, max initial deviation: w %2.8f \n',max(abs(PricePathBumped.w-p_eqm.w)))
+fprintf('Null-reform GE from a bumped guess, deviation in w over the stationary LabourMarket residual, this should be about one: %2.4f \n',max(abs(PricePathBumpedOut.w-p_eqm.w))/abs(GEcondns.LabourMarket))
+fprintf('Null-reform GE from a bumped guess, max deviation of w from its closed form, this should be close to zero: %.3e \n',max(abs(PricePathBumpedOut.w-wclosed)))
 
 %% The same general equilibrium tests again, on the divide-and-conquer + grid-interpolation tier
 % Everything above runs on the plain tier (vfoptions1 is a bare struct). This repeat changes ONLY
 % the solution method -- same FnsToEvaluateGE, same GeneralEqmEqnsGE, same grids, same
-% howtoupdate, same bump -- so any difference is attributable to DC+GI alone. Two things come out
-% of it: whether GI smooths the GE objective enough to tighten the residuals (interpolating the
-% asset policy off the coarse grid does far more for that than adding grid points), and a
-% cross-check that the two tiers agree on r_eqm and w_eqm.
+% howtoupdate, same bump -- so any difference is attributable to DC+GI alone.
 vfoptionsGE_GI=vfoptions1;
 vfoptionsGE_GI.divideandconquer=1;
 vfoptionsGE_GI.gridinterplayer=1;
@@ -562,54 +623,62 @@ simoptionsGE_GI=simoptions1;
 simoptionsGE_GI.gridinterplayer=1;
 simoptionsGE_GI.ngridinterp=5;
 
-[p_eqm_GI,GEcondns_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGE_GI, vfoptionsGE_GI);
-fprintf('Stationary GE (with DC and GI): r=%2.8f, w=%2.8f \n',p_eqm_GI.r,p_eqm_GI.w)
-fprintf('Stationary GE conditions (with DC and GI), these should be close to zero: CapitalMarket=%.3e, LabourMarket=%.3e \n',GEcondns_GI.CapitalMarket,GEcondns_GI.LabourMarket)
-% THE TWO TIERS MUST AGREE ON THE EQUILIBRIUM, and this is now a CHECK and not a print. It used to
-% read 'the two tiers should agree', which is not one of the four phrases CoreSummary counts, so the
-% number was computed and printed on every run and never read by anything. That is a worse failure
-% than a missing test: the invariant is stated in the code and measured every run, and only the
-% enforcement was absent, so a grep for the counted phrases finds nothing wrong.
-% FIVE OF THIS BANK'S TEN SUBCODES HAVE A d, and in those the no-GI stationary solve stalls rather
-% than converging: K=E[a] and N=E[d*z] are step functions of the prices on coarse grids, so the
-% general eqm objective is piecewise-constant and fminsearch stops where it starts. On the d_z model
-% that stall is at w=0.68066 against the GI tier's w=0.43767, so this line has been printing a
-% difference of about 0.24 beneath a sentence asserting it should be zero.
-% The fix, measured in CoreInfHorzTPath_localsearch_shooting: solve WITH GI first, then re-solve the
-% no-GI tier STARTING FROM that answer. HeteroAgentStationaryEqm_InfHorz takes its initial guess from
-% Parameters.r and Parameters.w. That moved the d_z model to w=0.44304 at a residual 90x smaller.
-% NOT AN IDENTITY. The two tiers discretise differently, so a correct pair still differs by the
-% discretisation gap -- about 5e-03 in w on the with-d model. The close-to-zero bar of 0.1 passes
-% that comfortably and still catches a stall an order of magnitude above it.
-fprintf('Stationary GE, the two tiers must agree on r, this should be close to zero: %.3e \n',abs(p_eqm_GI.r-p_eqm.r))
+[p_eqm_GI,GEcondns_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'w'}, heteroagentoptionsGE, simoptionsGE_GI, vfoptionsGE_GI);
+fprintf('Stationary GE (with DC and GI): w=%2.8f \n',p_eqm_GI.w)
+fprintf('Stationary GE conditions (with DC and GI), these should be close to zero: LabourMarket=%.3e \n',GEcondns_GI.LabourMarket)
+fprintf('Stationary GE (with DC and GI), w against its closed form, this should be close to zero: %.3e \n',abs(p_eqm_GI.w-wclosed))
+% THE TWO TIERS MUST AGREE ON THE EQUILIBRIUM, as a counted check (see the z subcodes for why it is
+% not a mere print). Here K=0 on both tiers, so both solve the same one-price problem and should land
+% on the same w up to the stationary solver's tolerance.
 fprintf('Stationary GE, the two tiers must agree on w, this should be close to zero: %.3e \n',abs(p_eqm_GI.w-p_eqm.w))
 
 ParamsGE_GI=Params;
-ParamsGE_GI.r=p_eqm_GI.r;
 ParamsGE_GI.w=p_eqm_GI.w;
 [V_finalGE_GI,Policy_finalGE_GI]=ValueFnIter_InfHorz(n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,ReturnFn,ParamsGE_GI,DiscountFactorParamNames,[],vfoptionsGE_GI);
 AgentDist_initialGE_GI=StationaryDist_InfHorz(Policy_finalGE_GI,n_d_GE,n_a_GE,n_z,pi_z,simoptionsGE_GI,ParamsGE_GI,[]);
 
-PricePathGE_GI.r=p_eqm_GI.r*ones(1,T);
 PricePathGE_GI.w=p_eqm_GI.w*ones(1,T);
 
 transpathoptionsGE.maxiter=25; % as above: the no-change solve starts at the answer
 PricePathGEOut_GI=TransitionPath_InfHorz(PricePathGE_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE_GI, DiscountFactorParamNames, transpathoptionsGE, simoptionsGE_GI, vfoptionsGE_GI, []);
-fprintf('Null-reform GE (with DC and GI) from the equilibrium path, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathGEOut_GI.r-p_eqm_GI.r))/abs(GEcondns_GI.CapitalMarket))
-fprintf('Null-reform GE (with DC and GI) from the equilibrium path, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathGEOut_GI.r-p_eqm_GI.r)),max(abs(PricePathGEOut_GI.w-p_eqm_GI.w)))
+fprintf('Null-reform GE (with DC and GI) from the equilibrium path, deviation in w over the stationary LabourMarket residual, this should be about one: %2.4f \n',max(abs(PricePathGEOut_GI.w-p_eqm_GI.w))/abs(GEcondns_GI.LabourMarket))
+fprintf('Null-reform GE (with DC and GI) from the equilibrium path, max deviation of w from its closed form, this should be close to zero: %.3e \n',max(abs(PricePathGEOut_GI.w-wclosed)))
 
-% Same bump profile as the plain tier (bumpr/bumpw/Tbump are reused, so the two tiers face an
-% identical perturbation and the results are directly comparable)
+% Same bump profile as the plain tier (bumpw/Tbump are reused, so the two tiers face an identical
+% perturbation and the results are directly comparable)
 PricePathBumped_GI=PricePathGE_GI;
-PricePathBumped_GI.r(1:Tbump)=PricePathGE_GI.r(1:Tbump).*(1+bumpr);
 PricePathBumped_GI.w(1:Tbump)=PricePathGE_GI.w(1:Tbump).*(1+bumpw);
 transpathoptionsGE.maxiter=100; % as above: the bumped solve has to actually travel
 PricePathBumpedOut_GI=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE_GI, DiscountFactorParamNames, transpathoptionsGE, simoptionsGE_GI, vfoptionsGE_GI, []);
-fprintf('Null-reform GE (with DC and GI) bumped guess, max initial deviation: r %2.8f, w %2.8f \n',max(abs(PricePathBumped_GI.r-p_eqm_GI.r)),max(abs(PricePathBumped_GI.w-p_eqm_GI.w)))
-fprintf('Null-reform GE (with DC and GI) from a bumped guess, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r))/abs(GEcondns_GI.CapitalMarket))
-fprintf('Null-reform GE (with DC and GI) from a bumped guess, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r)),max(abs(PricePathBumpedOut_GI.w-p_eqm_GI.w)))
+fprintf('Null-reform GE (with DC and GI) bumped guess, max initial deviation: w %2.8f \n',max(abs(PricePathBumped_GI.w-p_eqm_GI.w)))
+fprintf('Null-reform GE (with DC and GI) from a bumped guess, deviation in w over the stationary LabourMarket residual, this should be about one: %2.4f \n',max(abs(PricePathBumpedOut_GI.w-p_eqm_GI.w))/abs(GEcondns_GI.LabourMarket))
+fprintf('Null-reform GE (with DC and GI) from a bumped guess, max deviation of w from its closed form, this should be close to zero: %.3e \n',max(abs(PricePathBumpedOut_GI.w-wclosed)))
 
-clear FnsToEvaluateGE vfoptionsGE_GI simoptionsGE_GI p_eqm_GI GEcondns_GI ParamsGE_GI V_finalGE_GI Policy_finalGE_GI AgentDist_initialGE_GI PricePathGE_GI PricePathGEOut_GI PricePathBumped_GI PricePathBumpedOut_GI GeneralEqmEqnsGE heteroagentoptionsGE p_eqm GEcondns ParamsGE V_finalGE Policy_finalGE AgentDist_initialGE PricePathGE ParamPathGE transpathoptionsGE PricePathGEOut PricePathBumped PricePathBumpedOut bumpr bumpw Tbump
+%% Does the convergence criterion actually decide, or does maxiter always cut the loop off first?
+% Every other GE solve in this bank runs to a maxiter it reaches, so none of them ever exercise
+% transpathoptions.toleranceGEcondns. Here the cap is generous and Anderson is what gets there
+% quickly. This used to lean on GEnewprice=3's additionalfactor ramp to converge inside the cap;
+% that option is shooting-only and now lives in the with_CoreInfHorzTPathAlgoTests sub-bank.
+transpathoptionsGE_conv=transpathoptionsGE;
+transpathoptionsGE_conv.maxiter=250;
+[PricePathConv,GEcondnPathConv]=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE_GI, DiscountFactorParamNames, transpathoptionsGE_conv, simoptionsGE_GI, vfoptionsGE_GI);
+% GEcondnPathConv holds the general eqm eqns along the returned path, one row per eqn. This rebuilds
+% the exact number the solver's loop tests: scalarize within each period by multiGEcriterion=1 (the
+% root-sum-of-squares, with the default weights of one; with one eqn just its absolute value), then
+% take the L-Infinity norm over time.
+GEcondnDist=max(abs(GEcondnPathConv.LabourMarket));
+fprintf('Convergence criterion, GE condn distance of the returned path: %2.10f, should be at or below toleranceGEcondns=%2.10f \n',GEcondnDist,1e-4)
+
+% The same solve with one more iteration allowed. If the loop stopped because the general eqm
+% conditions got small then the extra iteration is never taken and the two paths are identical; if it
+% stopped because it ran out of iterations then that extra one moves the prices. Far cheaper than
+% raising the cap by a large factor, and just as decisive.
+transpathoptionsGE_conv.maxiter=251;
+PricePathConv_plus1=TransitionPath_InfHorz(PricePathBumped_GI, ParamPathGE, T, V_finalGE_GI, AgentDist_initialGE_GI, n_d_GE, n_a_GE, n_z, d_grid_GE,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE_GI, DiscountFactorParamNames, transpathoptionsGE_conv, simoptionsGE_GI, vfoptionsGE_GI);
+fprintf('Convergence criterion decided rather than maxiter, one more iteration changes nothing, this should be zero, w: %.3e \n',max(abs(PricePathConv_plus1.w-PricePathConv.w)))
+clear transpathoptionsGE_conv PricePathConv PricePathConv_plus1 GEcondnPathConv GEcondnDist
+
+clear FnsToEvaluateGE vfoptionsGE_GI simoptionsGE_GI p_eqm_GI GEcondns_GI ParamsGE_GI V_finalGE_GI Policy_finalGE_GI AgentDist_initialGE_GI PricePathGE_GI PricePathGEOut_GI PricePathBumped_GI PricePathBumpedOut_GI GeneralEqmEqnsGE heteroagentoptionsGE p_eqm GEcondns ParamsGE V_finalGE Policy_finalGE AgentDist_initialGE AggVarsGE PricePathGE ParamPathGE transpathoptionsGE PricePathGEOut PricePathBumped PricePathBumpedOut bumpw Tbump wclosed
 
 %% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
 transpathoptions.maxiter=1;

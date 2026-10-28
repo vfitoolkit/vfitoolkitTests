@@ -185,6 +185,12 @@ z_grid_KFTT=exp(z_grid_KFTT); % same exp() convention as the baseline z_grid
 z_grid_KFTT=z_grid_KFTT(:,1:T); % KFTT returns Jz=T+1 columns; the TPath wants T
 
 [VPathZ,PolicyPathZ]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid_KFTT, pi_z_KFTT, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
+% ValueFnFromPolicy with the z process varying along the path. Until 2026-10-28 the z-only branch of
+% ValueFnFromPolicyOnTransPath_InfHorz read a fixed z_grid and pi_z, so here it would have evaluated every period at
+% the period-1 process; the fixed-process check above could never see that.
+VfromPolicyPathZ=ValueFnFromPolicyOnTransPath_InfHorz(PolicyPathZ,V_final,ParamPath,PricePath,T,n_d,n_a,n_z,d_grid,a_grid,z_grid_KFTT, pi_z_KFTT, ReturnFn, Params, DiscountFactorParamNames, vfoptions2);
+fprintf('ValueFnFromPolicy along TPath with z varying along the path, this should be zero: %.3e \n',max(abs(VfromPolicyPathZ(:)-VPathZ(:))))
+clear VfromPolicyPathZ
 
 ParamsFHZ=Params;
 ParamsFHZ.r=PricePath.r(1:N_jFH);
