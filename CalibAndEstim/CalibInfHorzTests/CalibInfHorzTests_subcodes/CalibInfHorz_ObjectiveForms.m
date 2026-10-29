@@ -19,6 +19,8 @@ function output=CalibInfHorz_ObjectiveForms(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_
 %   (j) logmoments by name, a restricted (three-level) AllStats name and a CrossSectionCovarCorr name: the expected vector
 %   (k) a non-uniform weights vector of the right length: zero objective; one of the wrong length must error
 %   (l) caliboptions.whichcombos=0: the same current moments as =1, exactly
+%   (m) MethodOfMoments with a weight matrix W under lsqnonlin, perturbed targets: calibsummary.objvalue equals (m-t)'*W*(m-t) at the
+%       returned point (the driver hands lsqnonlin chol(W)); the old elementwise sqrt(W) would not
 % The four targets (one AllStats, one restricted AllStats, one AutoCorrTransProbs, one CrossSectionCovarCorr) are all scalars here
 % (InfHorz), so the per-target-name and per-entry forms of logmoments coincide in length; (i) still exercises the name form.
 
@@ -217,6 +219,33 @@ if ~isempty(cur{1}) && ~isempty(cur{6}) && length(cur{1})==length(cur{6})
     fprintf('ObjectiveForms (l) whichcombos=0 vs =1 through CalibrateInfHorzAgentModel: current moments, this should be zero: %.3e \n',CoreMaxAbs(cur{6}-cur{1}))
 else
     fprintf('ObjectiveForms (l) whichcombos=0 vs =1: one of the two did not run or the lengths differ, this should be zero: %.3e \n',1)
+end
+% (m) MethodOfMoments with a weight matrix through the driver under lsqnonlin: the driver hands lsqnonlin R=chol(W) as the weights, so
+% the residual is R*(m-t) and lsqnonlin's resnorm (returned as calibsummary.objvalue) is (m-t)'*R'*R*(m-t)=(m-t)'*W*(m-t). Perturbed
+% targets so m~=t at the returned point. Under the old elementwise sqrt(W) the resnorm is (m-t)'*S'*S*(m-t) with S=sqrt(W), which
+% differs from (m-t)'*W*(m-t) as W is not diagonal: the inverted check confirms this W tells the two apart.
+Wm=diag(linspace(0.5,1.5,nAll))+0.1*(ones(nAll)-eye(nAll))/nAll; % as the W of (c): symmetric, positive definite (diagonally dominant)
+caliboptions_m=caliboptions_g; caliboptions_m.metric='MethodOfMoments'; caliboptions_m.weights=Wm;
+ranm=0;
+try
+    [~,calibsummary_m]=CalibrateInfHorzAgentModel(CalibParamNames1,TMpert,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,[],FnsToEvaluate,caliboptions_m,vfoptions,simoptions);
+    ranm=1;
+catch err
+    fprintf('ObjectiveForms (m) MethodOfMoments through CalibrateInfHorzAgentModel errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+end
+if ranm==1
+    cm=calibsummary_m.currentmomentvec(:); tm=calibsummary_m.targetmomentvec(:);
+    if length(cm)==nAll && length(tm)==nAll
+        dm=cm-tm;
+        handObj=dm'*Wm*dm;
+        Sm=sqrt(Wm);
+        oldObj=dm'*(Sm'*Sm)*dm;
+        fprintf('ObjectiveForms (m) MethodOfMoments with a weight matrix through CalibrateInfHorzAgentModel (lsqnonlin, perturbed targets): did not run, this should be zero: %.3e; calibsummary.objvalue vs (m-t)''*W*(m-t) at the returned point, relative, this should be zero: %.3e; the old elementwise sqrt(W) resnorm vs (m-t)''*W*(m-t), relative, should NOT be zero: %.3e \n',0,abs(calibsummary_m.objvalue-handObj)/abs(handObj),abs(oldObj-handObj)/abs(handObj))
+    else
+        fprintf('ObjectiveForms (m) MethodOfMoments through CalibrateInfHorzAgentModel: calibsummary has %i current and %i target entries, not %i, this should be zero: %.3e \n',length(cm),length(tm),nAll,1)
+    end
+else
+    fprintf('ObjectiveForms (m) MethodOfMoments with a weight matrix through CalibrateInfHorzAgentModel: did not run, this should be zero: %.3e \n',1)
 end
 
 end
