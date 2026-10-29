@@ -1,9 +1,9 @@
-function F=ReturnFn_nod_z_e_nosemiz(a1prime,a2prime,a1,a2,z,e,r,w,kappa_j,sigma,agej,Jr,pension,phi1,phi2)
+function F=ReturnFn2A_nod_noz_e_nosemiz(a1prime,a2prime,a1,a2,e,r,w,kappa_j,sigma,agej,Jr,pension,phi1,phi2)
 
 F=-Inf;
 
 if agej<Jr
-    c=(1+r)*a1+w*kappa_j*z*e-a1prime+a2-a2prime;
+    c=(1+r)*a1+w*kappa_j*e-a1prime+a2-a2prime;
 else
     c=(1+r)*a1+pension-a1prime+a2-a2prime;
 end

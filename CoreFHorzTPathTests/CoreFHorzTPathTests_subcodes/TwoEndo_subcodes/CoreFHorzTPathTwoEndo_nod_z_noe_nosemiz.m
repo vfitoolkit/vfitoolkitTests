@@ -1,40 +1,33 @@
-function output=CoreFHorzTPathTwoEndo_d_noz_e_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c)
+function output=CoreFHorzTPathTwoEndo_nod_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,N_j,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c)
 
 % Setup vfoptions and simoptions
 vfoptions=struct();
 simoptions=struct();
-n_z=0; z_grid=[]; pi_z=[];
-
-% iid shocks
-vfoptions.n_e=vfoptionsbaseline.n_e;
-vfoptions.e_grid=vfoptionsbaseline.e_grid;
-vfoptions.pi_e=vfoptionsbaseline.pi_e;
-simoptions.n_e=simoptionsbaseline.n_e;
-simoptions.e_grid=simoptionsbaseline.e_grid;
-simoptions.pi_e=simoptionsbaseline.pi_e;
+% nod variant -- drop d
+n_d=0; d_grid=[];
 
 % zero assets, mid points for any shocks
-jequaloneDist_big=zeros([n_a_big,vfoptions.n_e],'gpuArray');
-jequaloneDist_big(1,1,ceil(vfoptions.n_e/2))=1;
-jequaloneDist=zeros([n_a,vfoptions.n_e],'gpuArray');
-jequaloneDist(1,1,ceil(vfoptions.n_e/2))=1;
+jequaloneDist_big=zeros([n_a_big,n_z],'gpuArray');
+jequaloneDist_big(1,1,ceil(n_z/2))=1;
+jequaloneDist=zeros([n_a,n_z],'gpuArray');
+jequaloneDist(1,1,ceil(n_z/2))=1;
 
-ReturnFn=@(d,a1prime,a2prime,a1,a2,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension,phi1,phi2) ReturnFn_d_noz_e_nosemiz(d,a1prime,a2prime,a1,a2,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension,phi1,phi2);
+ReturnFn=@(a1prime,a2prime,a1,a2,z,r,w,kappa_j,sigma,agej,Jr,pension,phi1,phi2) ReturnFn2A_nod_z_noe_nosemiz(a1prime,a2prime,a1,a2,z,r,w,kappa_j,sigma,agej,Jr,pension,phi1,phi2);
 
 % Setup some FnsToEvaluate
-FnsToEvaluate.assets=@(d,a1prime,a2prime,a1,a2,e) a1;
-FnsToEvaluate.house=@(d,a1prime,a2prime,a1,a2,e) a2;
-FnsToEvaluate.earnings=@(d,a1prime,a2prime,a1,a2,e,w,kappa_j) w*kappa_j*d*e;
+FnsToEvaluate.assets=@(a1prime,a2prime,a1,a2,z) a1;
+FnsToEvaluate.house=@(a1prime,a2prime,a1,a2,z) a2;
+FnsToEvaluate.earnings=@(a1prime,a2prime,a1,a2,z,w,kappa_j) w*kappa_j*z;
 
 
 % Need period T for V and Policy
-V_final=zeros([n_a,vfoptions.n_e,N_j],'gpuArray');
-Policy_final=ones([3,n_a,vfoptions.n_e,N_j],'gpuArray');
-Policy_final_GI=ones([5,n_a,vfoptions.n_e,N_j],'gpuArray');
+V_final=zeros([n_a,n_z,N_j],'gpuArray');
+Policy_final=ones([2,n_a,n_z,N_j],'gpuArray');
+Policy_final_GI=ones([4,n_a,n_z,N_j],'gpuArray');
 % big versions of them
-V_final_big=zeros([n_a_big,vfoptions.n_e,N_j],'gpuArray');
-Policy_final_big=ones([3,n_a_big,vfoptions.n_e,N_j],'gpuArray');
-Policy_final_big_GI=ones([5,n_a_big,vfoptions.n_e,N_j],'gpuArray');
+V_final_big=zeros([n_a_big,n_z,N_j],'gpuArray');
+Policy_final_big=ones([2,n_a_big,n_z,N_j],'gpuArray');
+Policy_final_big_GI=ones([4,n_a_big,n_z,N_j],'gpuArray');
 
 %% With vs Without fastOLG
 transpathoptionsslow.fastOLG=0;

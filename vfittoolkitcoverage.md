@@ -74,12 +74,12 @@ This is a static count: a check inside a loop runs more than once.
 
 | bank | sub-bank | parts | check sites | of which `close to zero` | latest evidence | git |
 |---|---|---|---|---|---|---|
-| CoreFHorzTPathTests | — | 8 | 716 | 32 | all 8, 2026-10-23: 860, 0 | committed |
+| CoreFHorzTPathTests | — | 13 | — | — | all 13, 2026-10-29: 1814, 0 | committed |
 | | withQuasiHyperbolicDiscounting | 3 | 446 | 32 | all 3, 2026-10-23: 486, 0 | committed |
 | | with_CoreFHorzTPathAlgoTests | 2 | 29 | 2 | both, 2026-10-26: 101, **1** (part 1) | committed |
+| | doParts 12-13 (was CoreFHorzTPathTwoEndoTests) | 2 | 256 | 16 | first run 2026-10-28, again in the full run 2026-10-29: 256, 0 | committed |
 | CoreFHorzTPathExpAssetTests | — | 2 | 261 | 16 | 2026-10-23: **dies in doPart(1)**, GPU OOM in `AgentDistOnTransPath_Case1_FHorz` (`repelem` of `a2primeIndexesPath`) | committed |
 | CoreFHorzTPathExpAssetzTests | — | 3 | 173 | 8 | 2026-10-23: **dies in doPart(1)**, the same OOM | committed |
-| CoreFHorzTPathTwoEndoTests | — | 1 | 256 | 16 | **never run** | committed |
 | CoreFHorzTPathRiskyAssetTests | — | 5 | 422 | 16 | **never run** | **untracked** |
 | CoreFHorzTPathPTypeTests | — | 13 | 160 | 9 | run in progress 2026-10-27 (past doPart(12) at 10:34); no closing banner yet | modified, 2 subcodes untracked |
 | | with_CoreFHorzTPathPTypeAlgoTests | 3 | 30 | 2 | all 3, 2026-10-27: 84, 0 | committed |
@@ -1525,12 +1525,12 @@ files. *Subcodes* counts the bank's subcode files, excluding cross-tests.
 
 | bank | parts | subcodes | cross-tests | check sites | of which `close to zero` | latest evidence |
 |---|---|---|---|---|---|---|
-| CoreFHorzTPathTests | 8 | 20 | 6 | 716 | 32 | **all 8, 2026-10-23: 860 checks, 0 failed** |
+| CoreFHorzTPathTests | 13 | 31 | 6 | — | — | **all 13, 2026-10-29: 1814 checks, 0 failed** (parts 9-13 added 2026-10-27/28) |
 | └ withQuasiHyperbolicDiscounting | 3 | 8 | 2 | 446 | 32 | **all 3, 2026-10-23: 486, 0** |
 | └ with_CoreFHorzTPathAlgoTests | 2 | 2 | — | 29 | 2 | both, 2026-10-26: 101, **1** (part 1) |
+| └ doParts 12-13 (was CoreFHorzTPathTwoEndoTests, merged 2026-10-28) | 2 | 8 | — | 256 | 16 | **256, 0** (2026-10-29, inside the full run) |
 | CoreFHorzTPathExpAssetTests | 2 | 9 | — | 261 | 16 | 2026-10-23: **dies in doPart(1)**, GPU OOM |
 | CoreFHorzTPathExpAssetzTests | 3 | 5 | 2 | 173 | 8 | 2026-10-23: **dies in doPart(1)**, the same OOM |
-| CoreFHorzTPathTwoEndoTests | 1 | 8 | — | 256 | 16 | **never run** |
 | CoreFHorzTPathRiskyAssetTests | 5 | 16 | 5 | 422 | 16 | **never run**: test-first, and the toolkit refuses `riskyasset` on a path; untracked |
 | CoreFHorzTPathPTypeTests | 13 | 15 | — | 160 | 9 | run in progress 2026-10-27, past doPart(12) at 10:34; no closing banner yet |
 | └ with_CoreFHorzTPathPTypeAlgoTests | 3 | 3 | — | 30 | 2 | **all 3, 2026-10-27: 84, 0** |
@@ -1591,7 +1591,8 @@ islands.
   doPart(1)** with GPU out-of-memory at
   `AgentDistOnTransPath_Case1_FHorz` (`repelem(N_a1*(a2primeIndexesPath-1),1,2,1)`). The fault is
   the toolkit's memory use, not the tests. Until that is fixed, these 434 check sites are dark.
-- **TwoEndo:** 8 nosemiz variants with two standard endogenous states. It is committed and has
+- **TwoEndo:** 8 nosemiz variants with two standard endogenous states. Merged into CoreFHorzTPathTests as
+  doPart(12) (without e) and doPart(13) (with e) on 2026-10-28, and first ran then: 256 checks, 0 failed. Before that it had
   never run.
 - **RiskyAsset:** noa1 and withA1 tiers, 16 variants and 5 cross-tests. It was written test-first
   on 2026-09-06 and is untracked. `ValueFnOnTransPath_Case1_FHorz` now refuses
@@ -1672,7 +1673,7 @@ directly.
 
 | axis | stationary | TPath |
 |---|---|---|
-| asset tiers | noa1 / withA1 / with2A / with2A2 | withA1 (plus TwoEndo); noa1 only in the never-run RiskyAsset bank |
+| asset tiers | noa1 / withA1 / with2A / with2A2 | withA1 (plus two endogenous states, CoreFHorzTPathTests doPart 12-13); noa1 only in the never-run RiskyAsset bank |
 | families | ExpAsset, U, e, z, ze, semiz, RiskyAsset, ResidAsset | ExpAsset and ExpAssetz, both OOM; RiskyAsset test-first |
 | exotic prefs | QH, EZ, AA, GP | QH only (green) |
 | semiz | every family | main bank and PType only |
@@ -1684,6 +1685,6 @@ directly.
 1. **Fix the ExpAsset TPath OOM** in `AgentDistOnTransPath_Case1_FHorz`. It darkens two banks
    (434 sites), and behind it sit the unexplained ExpAssetz `lowmemory` Policy difference and the
    unverified ExpAsset tie.
-2. **Run TwoEndo** (256 sites, never run, no toolkit blocker known).
+2. ~~Run TwoEndo~~ DONE 2026-10-28: merged into CoreFHorzTPathTests as doPart(12)-(13), 256 checks, 0 failed.
 3. **Diagnose the 12 InfHorz TPathAlgo failures and the 1 FHorz TPathAlgo failure.**
 4. **Re-run InfHorz TPath parts 1, 2 and 6**, and decide whether part 3 should stay off.

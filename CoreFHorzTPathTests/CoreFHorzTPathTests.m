@@ -1,4 +1,4 @@
-% Implement lots of tests of the core VFI Toolkit FHorz commands
+% Implement lots of tests of the core VFI Toolkit FHorz transition path commands, with one and two endogenous states
 % with/without d
 % with/without z
 % with/without e
@@ -22,8 +22,11 @@
 % doPart(6): _tminus1 and _tplus1 (no figures)
 % doPart(7): population demographics (no figures)
 % doPart(8): z and e grids that vary over the path (no figures)
-% doPart(9): localsearch, the local-search value fn step, slowOLG (no figures, no general eqm)
-% doPart(10): localsearch inside a general eqm transition path, by shooting, slowOLG (no figures)
+% doPart(9): localsearch, the local-search value fn step, both layouts, z/noz/e/noz_e, DC seeds (no figures, no general eqm)
+% doPart(10): localsearch inside a general eqm transition path: shooting and Anderson, both layouts, DC, e, noz (no figures)
+% doPart(11): shocks that vary by age, and four raw fixes (no figures)
+% doPart(12): two endogenous states, without e (figs 17-20; was CoreFHorzTPathTwoEndoTests)
+% doPart(13): two endogenous states, with e (figs 21-24; was CoreFHorzTPathTwoEndoTests)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -32,7 +35,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -50,8 +53,14 @@ addpath('./CoreFHorzTPathTests_subcodes/')
 addpath('./CoreFHorzTPathTests_Setup/')
 addpath('./CoreFHorzTPath_ReturnFns/')
 addpath('./CoreFHorzTPathTests_subcodes/CrossTests/')
+% The two endogenous state parts, doPart(12)-(13). Their ReturnFns are ReturnFn2A_*: the same model names as
+% the one-asset ReturnFns, with two-asset signatures, so they cannot share a name on the path.
+addpath('./CoreFHorzTPathTests_subcodes/TwoEndo_subcodes/')
+addpath('./CoreFHorzTPath_ReturnFns/TwoEndo_ReturnFns/')
 % Setup so that use the same d,a,z,e,semiz in all the models that use them
 CoreFHorzTPath_setup
+% and the two endogenous state grids and parameters, under _2A names (touches no one-asset variable)
+CoreFHorzTPathTwoEndo_setup
 
 %% Uncomment to test with age-dependent shocks
 % z_grid=z_grid.*ones(1,N_j,'gpuArray');
@@ -260,7 +269,7 @@ if doPart(9)==1
     % every age at once. The strong check is that a window of three points centred on the exact seed
     % reference reproduces the unrestricted V exactly; the discriminator is that the same window around
     % the wrong reference does not. See the header of the subcode.
-    output=CoreFHorzTPath_localsearch(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params);
+    output=CoreFHorzTPath_localsearch(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params);
 end % doPart(9): localsearch, the local-search value fn step
 
 %% ===== doPart(10): localsearch inside a general eqm transition path, by shooting =====
@@ -269,8 +278,70 @@ if doPart(10)==1
     %% The CoreFHorzTPathAlgoTests firm model, a null reform from a bumped guess, plain shooting against
     % shooting with local search on all four corners; then ValueFnOnTransPath ignoring localsearch=1, and
     % the refusals as a set. See the header of the subcode.
-    output=CoreFHorzTPath_localsearch_shooting(T,n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+    output=CoreFHorzTPath_localsearch_shooting(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
 end % doPart(10): localsearch inside a general eqm transition path, by shooting
+
+%% ===== doPart(11): shocks that vary by age, and four raw fixes =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): shocks that vary by age, and four raw fixes =====\n')
+    %% Every other part uses e and z grids and pi_e that do not vary with age, under which two of these bugs
+    % gave the right numbers by accident. See the header of the subcode.
+    output=CoreFHorzTPath_agedependent_rawfixes(T,PricePath,ParamPath,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames);
+end % doPart(11): shocks that vary by age, and four raw fixes
+
+%% ===== doPart(12): two endogenous states, without e (figs 17-20) =====
+if doPart(12)==1
+    fprintf('\n===== doPart(12): two endogenous states, without e (figs 17-20) =====\n')
+    %% Two endogenous states (a1 continuous, a2 on four points), so the DC2A and GI2A code paths. These were
+    % CoreFHorzTPathTwoEndoTests until 2026-10-28; their grids and parameters are the _2A ones from
+    % CoreFHorzTPathTwoEndo_setup. No semiz yet.
+    %% without d, without z, without e, without semiz
+    figure_c=17;
+    output=CoreFHorzTPathTwoEndo_nod_noz_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_big_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_big_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d, without z, without e, without semiz
+    figure_c=18;
+    output=CoreFHorzTPathTwoEndo_d_noz_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_big_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_big_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% without d, with z, without e, without semiz
+    figure_c=19;
+    output=CoreFHorzTPathTwoEndo_nod_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_big_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_big_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d, with z, without e, without semiz
+    figure_c=20;
+    output=CoreFHorzTPathTwoEndo_d_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_big_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_big_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(12): two endogenous states, without e (figs 17-20)
+
+%% ===== doPart(13): two endogenous states, with e (figs 21-24) =====
+if doPart(13)==1
+    fprintf('\n===== doPart(13): two endogenous states, with e (figs 21-24) =====\n')
+    %% As doPart(12), with an e variable. A part of its own because the with d, z and e model is the one
+    % most likely to run out of memory (it uses the middle-sized a1 grid for that reason), so it can be
+    % rerun on its own.
+    %% without d, without z, with e, without semiz
+    figure_c=21;
+    output=CoreFHorzTPathTwoEndo_nod_noz_e_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_big_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_big_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d, without z, with e, without semiz
+    figure_c=22;
+    output=CoreFHorzTPathTwoEndo_d_noz_e_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_big_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_big_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% without d, with z, with e, without semiz
+    figure_c=23;
+    output=CoreFHorzTPathTwoEndo_nod_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_big_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_big_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+
+    %% with d, with z, with e, without semiz
+    figure_c=24;
+    output=CoreFHorzTPathTwoEndo_d_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_notsobig_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
+    exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
+end % doPart(13): two endogenous states, with e (figs 21-24)
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 

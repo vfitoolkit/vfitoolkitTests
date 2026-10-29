@@ -335,7 +335,7 @@ nothing else in the output would say so.
 | CoreFHorzTPathExpAssetzTests | 2 | 4 | 166 |
 | CoreFHorzTPathQHTests | 2 | 8 | (no diary yet) |
 
-Not converted, single section each: `CoreFHorzTPathExpAssetTests`, `CoreFHorzTPathTwoEndoTests`.
+Not converted, single section each: `CoreFHorzTPathExpAssetTests`, `CoreFHorzTPathTwoEndoTests` (the latter since merged into `CoreFHorzTPathTests` as doPart(12)-(13), 2026-10-28).
 
 ### CoreInfHorz banks (added 2026-09-22)
 
