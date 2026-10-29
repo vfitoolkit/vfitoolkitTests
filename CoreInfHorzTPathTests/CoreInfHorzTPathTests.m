@@ -235,7 +235,8 @@ if doPart(9)==1
     %% transpathoptions.constrainpositive/constrain0to1/constrainAtoB on the general eqm transition path
     % Not a change of variables (as the stationary general eqm uses) but a fraction-to-the-boundary rule on each
     % update, so bounds that never bind must change nothing, and one binding update must be the rule applied by
-    % hand. Shooting only so far; Anderson and quasi-Newton refuse constraints until they apply the rule too.
+    % hand. Shooting, Anderson (both types, and with local search) and quasi-Newton (whose rule shortens the whole
+    % Newton step by one scalar, so the by-hand check covers the unconstrained prices too).
     output=CoreInfHorzTPath_constraints(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end % doPart(9): constraints on the prices
 
