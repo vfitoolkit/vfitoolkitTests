@@ -286,7 +286,7 @@ if doPart(11)==1
     fprintf('\n===== doPart(11): shocks that vary by age, and four raw fixes =====\n')
     %% Every other part uses e and z grids and pi_e that do not vary with age, under which two of these bugs
     % gave the right numbers by accident. See the header of the subcode.
-    output=CoreFHorzTPath_agedependent_rawfixes(T,PricePath,ParamPath,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames);
+    output=CoreFHorzTPath_agedependent_rawfixes(T,PricePath,ParamPath,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,vfoptionsbaseline);
 end % doPart(11): shocks that vary by age, and four raw fixes
 
 %% ===== doPart(12): two endogenous states, without e (figs 17-20) =====

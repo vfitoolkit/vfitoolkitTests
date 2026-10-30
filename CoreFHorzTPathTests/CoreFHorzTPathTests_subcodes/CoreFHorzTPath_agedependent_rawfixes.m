@@ -1,4 +1,4 @@
-function output=CoreFHorzTPath_agedependent_rawfixes(T,PricePath,ParamPath,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames)
+function output=CoreFHorzTPath_agedependent_rawfixes(T,PricePath,ParamPath,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,vfoptionsbaseline)
 % Checks for four slowOLG/fastOLG transition-path raw bugs fixed 2026-10-28. No figures, no general eqm.
 % Every other part of this bank uses e and z grids and pi_e that do NOT vary with age, and under those
 % the first two bugs give the right numbers by accident: that is how they survived a 956-check run. So
@@ -110,6 +110,117 @@ for ll=1:2
                 fprintf('%s: lowmemory=%i, DC against no DC, V, this should be zero: %.3e \n',lab,lm,max(abs(VPathD(:)-VPath0(:))))
             catch ME
                 fprintf('%s: lowmemory=%i, DC errored (%s), this should be zero: %.3e \n',lab,lm,ME.message,1)
+            end
+        end
+    end
+end
+clear VPath0 VPathD
+
+%% (C2) The same, through the grid interpolation layer, quasi-hyperbolic discounting and a semi-exogenous state
+% The DC+GI, QH and SemiExo divide-and-conquer raws have the same index arrays and the same lookups, so the
+% same fix. Each case: divide-and-conquer against no divide-and-conquer at a single d point (a single d1
+% point, with the binary d2, for semiz), both layouts. GI with every shock case and lowmemory 0 and 1; QH
+% Naive and Sophisticated with and without GI; semiz with and without z, with and without GI.
+for ll=1:2
+    transpathoptionsC.fastOLG=ll-1;
+    % (C2a) grid interpolation layer
+    for ss=1:4
+        vfoptions=struct(); vfoptions.gridinterplayer=1; vfoptions.ngridinterp=5;
+        if ss==1
+            ReturnFn=@(d,aprime,a,z,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+            V_final=zeros([n_a,n_z,N_j],'gpuArray'); Policy_final=ones([4,n_a,n_z,N_j],'gpuArray');
+            n_z_cc=n_z; z_grid_cc=z_grid; pi_z_cc=pi_z;
+        elseif ss==2
+            ReturnFn=@(d,aprime,a,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_noz_noe_nosemiz(d,aprime,a,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+            V_final=zeros([n_a,N_j],'gpuArray'); Policy_final=ones([4,n_a,N_j],'gpuArray');
+            n_z_cc=0; z_grid_cc=[]; pi_z_cc=[];
+        elseif ss==3
+            ReturnFn=@(d,aprime,a,z,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_z_e_nosemiz(d,aprime,a,z,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+            V_final=zeros([n_a,n_z,n_e,N_j],'gpuArray'); Policy_final=ones([4,n_a,n_z,n_e,N_j],'gpuArray');
+            n_z_cc=n_z; z_grid_cc=z_grid; pi_z_cc=pi_z;
+            vfoptions.n_e=n_e; vfoptions.e_grid=e_grid; vfoptions.pi_e=pi_e;
+        else
+            ReturnFn=@(d,aprime,a,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_noz_e_nosemiz(d,aprime,a,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+            V_final=zeros([n_a,n_e,N_j],'gpuArray'); Policy_final=ones([4,n_a,n_e,N_j],'gpuArray');
+            n_z_cc=0; z_grid_cc=[]; pi_z_cc=[];
+            vfoptions.n_e=n_e; vfoptions.e_grid=e_grid; vfoptions.pi_e=pi_e;
+        end
+        lab=['single d point (C2a, ',layoutname{ll},', ',shockname{ss},', DC+GI)'];
+        VPath0=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, 1, n_a, n_z_cc, N_j, d_grid1, a_grid,z_grid_cc, pi_z_cc, DiscountFactorParamNames, ReturnFn, transpathoptionsC, vfoptions);
+        for lm=0:1
+            vfoptionsD=vfoptions; vfoptionsD.divideandconquer=1; vfoptionsD.lowmemory=lm;
+            try
+                VPathD=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, 1, n_a, n_z_cc, N_j, d_grid1, a_grid,z_grid_cc, pi_z_cc, DiscountFactorParamNames, ReturnFn, transpathoptionsC, vfoptionsD);
+                fprintf('%s: lowmemory=%i, DC+GI against GI, V, this should be zero: %.3e \n',lab,lm,max(abs(VPathD(:)-VPath0(:))))
+            catch ME
+                fprintf('%s: lowmemory=%i, DC+GI errored (%s), this should be zero: %.3e \n',lab,lm,ME.message,1)
+            end
+        end
+    end
+    % (C2b) quasi-hyperbolic discounting, Naive and Sophisticated, with z (lowmemory 0 and 1), without z, and with e but no z
+    ParamsQH=Params; ParamsQH.beta0=0.9;
+    qhname={'Naive','Sophisticated'};
+    for qq=1:2
+        for ss=[1,2,4]
+            for gi=0:1
+                vfoptions=struct(); vfoptions.exoticpreferences='QuasiHyperbolic'; vfoptions.quasi_hyperbolic=qhname{qq}; vfoptions.QHadditionaldiscount='beta0';
+                if gi==1
+                    vfoptions.gridinterplayer=1; vfoptions.ngridinterp=5;
+                end
+                if ss==1
+                    ReturnFn=@(d,aprime,a,z,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+                    V_final=zeros([n_a,n_z,N_j],'gpuArray'); Policy_final=ones([2+2*gi,n_a,n_z,N_j],'gpuArray');
+                    n_z_cc=n_z; z_grid_cc=z_grid; pi_z_cc=pi_z;
+                elseif ss==2
+                    ReturnFn=@(d,aprime,a,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_noz_noe_nosemiz(d,aprime,a,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+                    V_final=zeros([n_a,N_j],'gpuArray'); Policy_final=ones([2+2*gi,n_a,N_j],'gpuArray');
+                    n_z_cc=0; z_grid_cc=[]; pi_z_cc=[];
+                else
+                    ReturnFn=@(d,aprime,a,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_noz_e_nosemiz(d,aprime,a,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
+                    V_final=zeros([n_a,n_e,N_j],'gpuArray'); Policy_final=ones([2+2*gi,n_a,n_e,N_j],'gpuArray');
+                    n_z_cc=0; z_grid_cc=[]; pi_z_cc=[];
+                    vfoptions.n_e=n_e; vfoptions.e_grid=e_grid; vfoptions.pi_e=pi_e;
+                end
+                VPath0=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, ParamsQH, 1, n_a, n_z_cc, N_j, d_grid1, a_grid,z_grid_cc, pi_z_cc, DiscountFactorParamNames, ReturnFn, transpathoptionsC, vfoptions);
+                for lm=0:(ss==1) % lowmemory=1 loops over z, so only with z
+                    lab=sprintf('single d point (C2b, %s, QH %s, %s, GI%i, DC, lowmemory=%i)',layoutname{ll},qhname{qq},shockname{ss},gi,lm);
+                    vfoptionsD=vfoptions; vfoptionsD.divideandconquer=1; vfoptionsD.lowmemory=lm;
+                    try
+                        VPathD=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, ParamsQH, 1, n_a, n_z_cc, N_j, d_grid1, a_grid,z_grid_cc, pi_z_cc, DiscountFactorParamNames, ReturnFn, transpathoptionsC, vfoptionsD);
+                        fprintf('%s: DC against no DC, V, this should be zero: %.3e \n',lab,max(abs(VPathD(:)-VPath0(:))))
+                    catch ME
+                        fprintf('%s: DC errored (%s), this should be zero: %.3e \n',lab,ME.message,1)
+                    end
+                end
+            end
+        end
+    end
+    % (C2c) a semi-exogenous state, with a single d1 point and the binary d2 that drives it
+    d_grid_semiz1=[d_grid1; 0; 1];
+    for ss=1:2
+        for gi=0:1
+            vfoptions=struct();
+            vfoptions.n_semiz=vfoptionsbaseline.n_semiz; vfoptions.semiz_grid=vfoptionsbaseline.semiz_grid; vfoptions.SemiExoStateFn=vfoptionsbaseline.SemiExoStateFn;
+            if gi==1
+                vfoptions.gridinterplayer=1; vfoptions.ngridinterp=5;
+            end
+            if ss==1
+                ReturnFn=@(d1,d2,aprime,a,semiz,z,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost) ReturnFn_d1_z_noe_semiz(d1,d2,aprime,a,semiz,z,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost);
+                V_final=zeros([n_a,vfoptions.n_semiz,n_z,N_j],'gpuArray'); Policy_final=ones([3+2*gi,n_a,vfoptions.n_semiz,n_z,N_j],'gpuArray');
+                n_z_cc=n_z; z_grid_cc=z_grid; pi_z_cc=pi_z; lab0='semiz, z';
+            else
+                ReturnFn=@(d1,d2,aprime,a,semiz,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost) ReturnFn_d1_noz_noe_semiz(d1,d2,aprime,a,semiz,r,w,kappa_j,sigma,agej,Jr,pension,eta,varphi,uempbenefit,searcheffortcost);
+                V_final=zeros([n_a,vfoptions.n_semiz,N_j],'gpuArray'); Policy_final=ones([3+2*gi,n_a,vfoptions.n_semiz,N_j],'gpuArray');
+                n_z_cc=0; z_grid_cc=[]; pi_z_cc=[]; lab0='semiz, noz';
+            end
+            lab=sprintf('single d1 point (C2c, %s, %s, GI%i, DC)',layoutname{ll},lab0,gi);
+            VPath0=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, [1,2], n_a, n_z_cc, N_j, d_grid_semiz1, a_grid,z_grid_cc, pi_z_cc, DiscountFactorParamNames, ReturnFn, transpathoptionsC, vfoptions);
+            vfoptionsD=vfoptions; vfoptionsD.divideandconquer=1;
+            try
+                VPathD=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, [1,2], n_a, n_z_cc, N_j, d_grid_semiz1, a_grid,z_grid_cc, pi_z_cc, DiscountFactorParamNames, ReturnFn, transpathoptionsC, vfoptionsD);
+                fprintf('%s: DC against no DC, V, this should be zero: %.3e \n',lab,max(abs(VPathD(:)-VPath0(:))))
+            catch ME
+                fprintf('%s: DC errored (%s), this should be zero: %.3e \n',lab,ME.message,1)
             end
         end
     end
