@@ -95,44 +95,34 @@ for cc=1:4
     Params_ii.w=ParamPath.w(end);
     [V_final,Policy_final]=ValueFnIter_InfHorz(n_d,n_a,n_zc,d_grid,a_grid,z_gridT,pi_zc,ReturnFn,Params_ii,DiscountFactorParamNames,[],vfoptionsT);
 
-    try
-        % The standalone commands
-        [VPathF,PolicyPathF]=ValueFnOnTransPath_InfHorz(PricePath, ParamPathF, T, V_final, Policy_final, Params, n_d,n_a,n_zc, d_grid,a_grid,z_grid, pi_zc, DiscountFactorParamNames, ReturnFn, transpathoptions_sa, vfoptionsF);
-        AgentDistPathF=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPathF, PolicyPathF, n_d,n_a,n_zc, pi_zc, T, Params, transpathoptions_sa, simoptionsF);
-        AggVarsPathF=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathF, PolicyPathF, PricePath, ParamPathF, Params, T, n_d, n_a, n_zc, d_grid, a_grid,z_grid, transpathoptions_sa, simoptionsF);
-        [VPathG,PolicyPathG]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_zc, d_grid,a_grid,z_gridG, pi_zc, DiscountFactorParamNames, ReturnFn, transpathoptions_sa, vfoptionsG);
-        AgentDistPathG=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathG, n_d,n_a,n_zc, pi_zc, T, Params, transpathoptions_sa, simoptionsG);
-        AggVarsPathG=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathG, PolicyPathG, PricePath, ParamPath, Params, T, n_d, n_a, n_zc, d_grid, a_grid,z_gridG, transpathoptions_sa, simoptionsG);
-        fprintf('Shock fns on the path, %s, vs explicit grids, VPath, this should be zero: %.3e \n',casename,max(abs(gather(VPathF(:))-gather(VPathG(:)))))
-        fprintf('Shock fns on the path, %s, vs explicit grids, PolicyPath, this should be zero: %.3e \n',casename,max(abs(gather(PolicyPathF(:))-gather(PolicyPathG(:)))))
-        fprintf('Shock fns on the path, %s, vs explicit grids, AgentDistPath, this should be zero: %.3e \n',casename,max(abs(gather(AgentDistPathF(:))-gather(AgentDistPathG(:)))))
-        fprintf('Shock fns on the path, %s, vs explicit grids, AggVarsPath earnings, this should be zero: %.3e \n',casename,max(abs(gather(AggVarsPathF.earnings.Mean(:))-gather(AggVarsPathG.earnings.Mean(:)))))
-    catch ME
-        fprintf('ERROR in shock fns on the path, %s, standalone commands: %s \n',casename,ME.message)
-        fprintf('Shock fns on the path, %s, standalone commands ran without error, this should be zero: %.3e \n',casename,1)
-    end
-    try
-        % The general eqm path
-        [PricePathF,GEcondnPathF]=TransitionPath_InfHorz(PricePath, ParamPathF, T, V_final, AgentDist_initial, n_d,n_a,n_zc, d_grid,a_grid,z_grid, pi_zc, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, simoptionsF, vfoptionsF, []);
-        [PricePathG,GEcondnPathG]=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, n_d,n_a,n_zc, d_grid,a_grid,z_gridG, pi_zc, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, simoptionsG, vfoptionsG, []);
-        GEF=gather(GEcondnPathF.CapitalMarket(:));
-        GEG=gather(GEcondnPathG.CapitalMarket(:));
-        fprintf('Shock fns on the path, %s, vs explicit grids, general eqm, PricePath r, this should be zero: %.3e \n',casename,max(abs(gather(PricePathF.r(:))-gather(PricePathG.r(:)))))
-        fprintf('Shock fns on the path, %s, vs explicit grids, general eqm, GEcondnPath, this should be zero: %.3e \n',casename,max(abs(GEF(1:T-1)-GEG(1:T-1))))
-        if cc==2 || cc==4
-            % for scale: the explicit grid held at its final value, which is what a shock fn whose
-            % parameter on the path was ignored would give
-            if cc==2
-                [~,GEcondnPathC]=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, n_d,n_a,n_zc, d_grid,a_grid,z_gridT, pi_zc, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, struct(), struct(), []);
-            else
-                [~,GEcondnPathC]=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, n_d,n_a,n_zc, d_grid,a_grid,z_gridT, pi_zc, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, vfoptionsT, vfoptionsT, []);
-            end
-            GEC=gather(GEcondnPathC.CapitalMarket(:));
-            fprintf('Shock fns on the path, %s, for scale a constant grid would move GEcondnPath by %.3e (must not be zero) \n',casename,max(abs(GEC(1:T-1)-GEG(1:T-1))))
+    % The standalone commands
+    [VPathF,PolicyPathF]=ValueFnOnTransPath_InfHorz(PricePath, ParamPathF, T, V_final, Policy_final, Params, n_d,n_a,n_zc, d_grid,a_grid,z_grid, pi_zc, DiscountFactorParamNames, ReturnFn, transpathoptions_sa, vfoptionsF);
+    AgentDistPathF=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPathF, PolicyPathF, n_d,n_a,n_zc, pi_zc, T, Params, transpathoptions_sa, simoptionsF);
+    AggVarsPathF=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathF, PolicyPathF, PricePath, ParamPathF, Params, T, n_d, n_a, n_zc, d_grid, a_grid,z_grid, transpathoptions_sa, simoptionsF);
+    [VPathG,PolicyPathG]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d,n_a,n_zc, d_grid,a_grid,z_gridG, pi_zc, DiscountFactorParamNames, ReturnFn, transpathoptions_sa, vfoptionsG);
+    AgentDistPathG=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath, ParamPath, PolicyPathG, n_d,n_a,n_zc, pi_zc, T, Params, transpathoptions_sa, simoptionsG);
+    AggVarsPathG=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, AgentDistPathG, PolicyPathG, PricePath, ParamPath, Params, T, n_d, n_a, n_zc, d_grid, a_grid,z_gridG, transpathoptions_sa, simoptionsG);
+    fprintf('Shock fns on the path, %s, vs explicit grids, VPath, this should be zero: %.3e \n',casename,max(abs(gather(VPathF(:))-gather(VPathG(:)))))
+    fprintf('Shock fns on the path, %s, vs explicit grids, PolicyPath, this should be zero: %.3e \n',casename,max(abs(gather(PolicyPathF(:))-gather(PolicyPathG(:)))))
+    fprintf('Shock fns on the path, %s, vs explicit grids, AgentDistPath, this should be zero: %.3e \n',casename,max(abs(gather(AgentDistPathF(:))-gather(AgentDistPathG(:)))))
+    fprintf('Shock fns on the path, %s, vs explicit grids, AggVarsPath earnings, this should be zero: %.3e \n',casename,max(abs(gather(AggVarsPathF.earnings.Mean(:))-gather(AggVarsPathG.earnings.Mean(:)))))
+    % The general eqm path
+    [PricePathF,GEcondnPathF]=TransitionPath_InfHorz(PricePath, ParamPathF, T, V_final, AgentDist_initial, n_d,n_a,n_zc, d_grid,a_grid,z_grid, pi_zc, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, simoptionsF, vfoptionsF, []);
+    [PricePathG,GEcondnPathG]=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, n_d,n_a,n_zc, d_grid,a_grid,z_gridG, pi_zc, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, simoptionsG, vfoptionsG, []);
+    GEF=gather(GEcondnPathF.CapitalMarket(:));
+    GEG=gather(GEcondnPathG.CapitalMarket(:));
+    fprintf('Shock fns on the path, %s, vs explicit grids, general eqm, PricePath r, this should be zero: %.3e \n',casename,max(abs(gather(PricePathF.r(:))-gather(PricePathG.r(:)))))
+    fprintf('Shock fns on the path, %s, vs explicit grids, general eqm, GEcondnPath, this should be zero: %.3e \n',casename,max(abs(GEF(1:T-1)-GEG(1:T-1))))
+    if cc==2 || cc==4
+        % for scale: the explicit grid held at its final value, which is what a shock fn whose
+        % parameter on the path was ignored would give
+        if cc==2
+            [~,GEcondnPathC]=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, n_d,n_a,n_zc, d_grid,a_grid,z_gridT, pi_zc, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, struct(), struct(), []);
+        else
+            [~,GEcondnPathC]=TransitionPath_InfHorz(PricePath, ParamPath, T, V_final, AgentDist_initial, n_d,n_a,n_zc, d_grid,a_grid,z_gridT, pi_zc, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, vfoptionsT, vfoptionsT, []);
         end
-    catch ME
-        fprintf('ERROR in shock fns on the path, %s, general eqm: %s \n',casename,ME.message)
-        fprintf('Shock fns on the path, %s, general eqm ran without error, this should be zero: %.3e \n',casename,1)
+        GEC=gather(GEcondnPathC.CapitalMarket(:));
+        fprintf('Shock fns on the path, %s, for scale a constant grid would move GEcondnPath by %.3e (must not be zero) \n',casename,max(abs(GEC(1:T-1)-GEG(1:T-1))))
     end
 end
 
