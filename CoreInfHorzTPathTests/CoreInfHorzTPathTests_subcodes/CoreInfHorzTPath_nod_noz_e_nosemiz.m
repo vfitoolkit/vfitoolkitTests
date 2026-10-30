@@ -75,9 +75,8 @@ simoptions2=simoptions;
 fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath2(:))))
 fprintf('Divide-and-conquer, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath2(:))))
 
-% With an iid e and no z: lowmemory=1 loops over e, and lowmemory=2 (the FHorz convention: loop over z
-% and e) has only e to loop over, so it should take the same route as lowmemory=1. The lowmemory=2
-% lines below are kept to check that the no-z case does not break lowmemory=2, not as separate evidence.
+% With an iid e and no z: lowmemory=1 loops over e. There is no lowmemory=2 here: it loops over z and e,
+% so without a z it is refused (by name, checked below), not taken as a synonym for lowmemory=1.
 % lowmemory should give same answer
 vfoptions1.lowmemory=1;
 [VPath1B,PolicyPath1B]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
@@ -92,19 +91,16 @@ fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-Policy
 fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath2(:)-VPath2B(:))))
 fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath2(:)-PolicyPath2B(:))))
 
-% lowmemory 2 should give same answer
+% lowmemory=2 loops over z and e, so with no z it is refused by name
 vfoptions1.lowmemory=2;
-[VPath1C,PolicyPath1C]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+lowmem2refused=0;
+try
+    ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions1);
+catch ME
+    lowmem2refused=contains(ME.message,'only possible in models with both z and e');
+end
 vfoptions1.lowmemory=0;
-
-vfoptions2.lowmemory=2;
-[VPath2C,PolicyPath2C]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final, Policy_final, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);
-vfoptions2.lowmemory=0;
-
-fprintf('low memory 2, this should be zero: %.3e \n',max(abs(VPath1(:)-VPath1C(:))))
-fprintf('low memory 2, this should be zero: %.3e \n',max(abs(PolicyPath1(:)-PolicyPath1C(:))))
-fprintf('low memory 2, this should be zero: %.3e \n',max(abs(VPath2(:)-VPath2C(:))))
-fprintf('low memory 2, this should be zero: %.3e \n',max(abs(PolicyPath2(:)-PolicyPath2C(:))))
+fprintf('low memory 2 without z is refused by name, should be one: %i \n',lowmem2refused)
 
 %% ValueFnFromPolicy along the path: recomputing V from the policy must reproduce VPath
 % ValueFnFromPolicyOnTransPath_InfHorz evaluates the Bellman at the given PolicyPath instead of
@@ -311,7 +307,7 @@ end
 clear lambdae pi_e_T e_grid_T vfoptionsE VPathE PolicyPathE ParamsFHE vfoptionsFHE V_FHE Policy_FHE simoptionsE simoptionsFHE AgentDistPathE StatDist_FHE AggVarsPathE AllStatsPathE AgeCondStats_FHE temp1 temp2 dev
 
 %%
-clear VPath1 VPath2 PolicyPath1 PolicyPath2 VPath1B VPath2B PolicyPath1B PolicyPath2B VPath1C VPath2C PolicyPath1C PolicyPath2C
+clear VPath1 VPath2 PolicyPath1 PolicyPath2 VPath1B VPath2B PolicyPath1B PolicyPath2B
 
 %% Solve with grid-interpolation. With and without divide-and-conquer
 vfoptions3=vfoptions1_GI;
@@ -326,9 +322,8 @@ simoptions4=simoptions3;
 fprintf('Divide-and-conquer (with GI), this should be zero: %.3e \n',max(abs(VPath3(:)-VPath4(:))))
 fprintf('Divide-and-conquer (with GI), this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath4(:))))
 
-% With an iid e and no z: lowmemory=1 loops over e, and lowmemory=2 (the FHorz convention: loop over z
-% and e) has only e to loop over, so it should take the same route as lowmemory=1. The lowmemory=2
-% lines below are kept to check that the no-z case does not break lowmemory=2, not as separate evidence.
+% With an iid e and no z: lowmemory=1 loops over e. There is no lowmemory=2 here: it loops over z and e,
+% so without a z it is refused (by name, checked below), not taken as a synonym for lowmemory=1.
 % lowmemory should give same answer
 vfoptions3.lowmemory=1;
 [VPath3B,PolicyPath3B]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions3);
@@ -343,19 +338,6 @@ fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath3(:)-Policy
 fprintf('low memory, this should be zero: %.3e \n',max(abs(VPath4(:)-VPath4B(:))))
 fprintf('low memory, this should be zero: %.3e \n',max(abs(PolicyPath4(:)-PolicyPath4B(:))))
 
-% lowmemory 2 should give same answer
-vfoptions3.lowmemory=2;
-[VPath3C,PolicyPath3C]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions3);
-vfoptions3.lowmemory=0;
-
-vfoptions4.lowmemory=2;
-[VPath4C,PolicyPath4C]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_GI, Policy_final_GI, Params, n_d, n_a, n_z, d_grid, a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions4);
-vfoptions4.lowmemory=0;
-
-fprintf('low memory 2, this should be zero: %.3e \n',max(abs(VPath3(:)-VPath3C(:))))
-fprintf('low memory 2, this should be zero: %.3e \n',max(abs(PolicyPath3(:)-PolicyPath3C(:))))
-fprintf('low memory 2, this should be zero: %.3e \n',max(abs(VPath4(:)-VPath4C(:))))
-fprintf('low memory 2, this should be zero: %.3e \n',max(abs(PolicyPath4(:)-PolicyPath4C(:))))
 
 %% ValueFnFromPolicy along the path, grid-interpolation tier
 VfromPolicyPath=ValueFnFromPolicyOnTransPath_InfHorz(PolicyPath4,V_final_GI,ParamPath,PricePath,T,n_d,n_a,n_z,d_grid,a_grid,z_grid, pi_z, ReturnFn, Params, DiscountFactorParamNames, vfoptions4);
@@ -435,7 +417,7 @@ end
 clear V_FH Policy_FH ParamsFH vfoptionsFH_GI temp1 temp2 dev AgentDistPathFH StatDist_FH AggVarsPathFH AllStatsPathFH AgeCondStats_FH simoptionsFH
 
 %%
-clear VPath3 VPath4 PolicyPath3 PolicyPath4 VPath3B VPath4B PolicyPath3B PolicyPath4B VPath3C VPath4C PolicyPath3C PolicyPath4C
+clear VPath3 VPath4 PolicyPath3 PolicyPath4 VPath3B VPath4B PolicyPath3B PolicyPath4B
 
 %% Big a_grid: moments along path should be close with/without grid interp
 [VPath2b,PolicyPath2b]=ValueFnOnTransPath_InfHorz(PricePath, ParamPath, T, V_final_big, Policy_final_big, Params, n_d, n_a_big, n_z, d_grid, a_grid_big,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptionsbaseline, vfoptions2);

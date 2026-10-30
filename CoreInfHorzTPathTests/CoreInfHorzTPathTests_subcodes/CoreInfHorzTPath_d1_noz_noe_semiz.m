@@ -751,6 +751,17 @@ GeneralEqmEqnsGE.CapitalMarket=@(r,K,N,firmalpha,firmdelta,firmA) r-(firmalpha*f
 GeneralEqmEqnsGE.LabourMarket=@(w,K,N,firmalpha,firmA) w-((1-firmalpha)*firmA*(K^firmalpha)*(N^(-firmalpha)));
 
 heteroagentoptionsGE=struct(); % default fminalgo, and no constraints on r or w
+% A STARTING GUESS CONSISTENT WITH THE FIRM, not Params (r=0.05, w=1): from w=1 (and from w=0.67) fminsearch
+% stalled on 2026-10-30 at w=0.72-0.73, a residual of about 6e-2, r just above 1/beta-1 and 15% of the mass on
+% the top point of a_grid_GE, though it had got through on 2026-10-28. The firm FOCs tie w to r (K/N is a
+% function of r alone), so in equilibrium r near 0.052 means w near 0.44 (where the nod1 sibling, fig 9, solves).
+% Too high a w makes households save up to the top of a_grid_GE, where the objective goes flat. So guess r and
+% take w from the firm FOCs at that r. maxiter is raised as well, so a slow approach is not cut off. The GI-first
+% start below then begins from here too.
+ParamsGEguess=Params;
+ParamsGEguess.r=0.052;
+ParamsGEguess.w=(1-Params.firmalpha)*Params.firmA*((Params.firmalpha*Params.firmA/(ParamsGEguess.r+Params.firmdelta))^(Params.firmalpha/(1-Params.firmalpha)));
+heteroagentoptionsGE.maxiter=2000;
 
 % THE NO-GI STATIONARY SOLVE IS STARTED FROM THE GI ANSWER, as in the with-d nosemiz subcodes: on coarse
 % grids K=E[a] and N are step functions of the prices (here d2 is a discrete choice whether or not there
@@ -763,7 +774,7 @@ vfoptionsGEstart.ngridinterp=5;
 simoptionsGEstart=simoptions1GE;
 simoptionsGEstart.gridinterplayer=1;
 simoptionsGEstart.ngridinterp=5;
-[p_eqmstart,~]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGEstart, vfoptionsGEstart);
+[p_eqmstart,~]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGEguess, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGEstart, vfoptionsGEstart);
 ParamsGEstart=Params;
 ParamsGEstart.r=p_eqmstart.r;
 ParamsGEstart.w=p_eqmstart.w;
@@ -836,7 +847,7 @@ simoptionsGE_GI=simoptions1GE;
 simoptionsGE_GI.gridinterplayer=1;
 simoptionsGE_GI.ngridinterp=5;
 
-[p_eqm_GI,GEcondns_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, Params, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGE_GI, vfoptionsGEstat_GI);
+[p_eqm_GI,GEcondns_GI]=HeteroAgentStationaryEqm_InfHorz(n_d_GE, n_a_GE, n_z, 0, pi_z, d_grid_GE, a_grid_GE, z_grid, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGEguess, DiscountFactorParamNames, [], [], [], {'r','w'}, heteroagentoptionsGE, simoptionsGE_GI, vfoptionsGEstat_GI);
 fprintf('Stationary GE (with GI): r=%2.8f, w=%2.8f \n',p_eqm_GI.r,p_eqm_GI.w)
 fprintf('Stationary GE conditions (with GI), these should be close to zero: CapitalMarket=%.3e, LabourMarket=%.3e \n',GEcondns_GI.CapitalMarket,GEcondns_GI.LabourMarket)
 % THE TWO TIERS MUST AGREE ON THE EQUILIBRIUM, as a counted check. Not an identity: the two tiers
@@ -869,7 +880,7 @@ fprintf('Null-reform GE (with DC and GI) bumped guess, max initial deviation: r 
 fprintf('Null-reform GE (with DC and GI) from a bumped guess, deviation in r over the stationary CapitalMarket residual, this should be about one: %2.4f \n',max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r))/abs(GEcondns_GI.CapitalMarket))
 fprintf('Null-reform GE (with DC and GI) from a bumped guess, deviation from p_eqm, r: %2.10f, w: %2.10f \n',max(abs(PricePathBumpedOut_GI.r-p_eqm_GI.r)),max(abs(PricePathBumpedOut_GI.w-p_eqm_GI.w)))
 
-clear FnsToEvaluateGE vfoptionsGEstat_GI vfoptionsGE_GI simoptionsGE_GI simoptions1GE vfoptionsGEstart simoptionsGEstart p_eqmstart ParamsGEstart p_eqm_GI GEcondns_GI ParamsGE_GI V_finalGE_GI Policy_finalGE_GI AgentDist_initialGE_GI PricePathGE_GI PricePathGEOut_GI PricePathBumped_GI PricePathBumpedOut_GI GeneralEqmEqnsGE heteroagentoptionsGE p_eqm GEcondns ParamsGE V_finalGE Policy_finalGE AgentDist_initialGE PricePathGE ParamPathGE transpathoptionsGE PricePathGEOut PricePathBumped PricePathBumpedOut bumpr bumpw Tbump
+clear FnsToEvaluateGE ParamsGEguess vfoptionsGEstat_GI vfoptionsGE_GI simoptionsGE_GI simoptions1GE vfoptionsGEstart simoptionsGEstart p_eqmstart ParamsGEstart p_eqm_GI GEcondns_GI ParamsGE_GI V_finalGE_GI Policy_finalGE_GI AgentDist_initialGE_GI PricePathGE_GI PricePathGEOut_GI PricePathBumped_GI PricePathBumpedOut_GI GeneralEqmEqnsGE heteroagentoptionsGE p_eqm GEcondns ParamsGE V_finalGE Policy_finalGE AgentDist_initialGE PricePathGE ParamPathGE transpathoptionsGE PricePathGEOut PricePathBumped PricePathBumpedOut bumpr bumpw Tbump
 
 %% Run the GE transition path, but with transpathoptions.maxiter=1, so it ends after one iteration -- just a shape-check (the core is tested elsewhere)
 transpathoptions.maxiter=1;
