@@ -174,6 +174,24 @@ for ii=1:N_i
     fprintf('Two types vs two solo solves, r by ptype (structure), AggVarsPath assets (type %s), this should be zero: %.3e \n',nm,max(abs(gather(AggVarsPath_E.assets.(nm).Mean(:))-gather(AggVarsPath_ii.assets.Mean(:)))))
 end
 
+%% (F) FnsToEvaluate that apply to only one of the types (the AACP2022 FnsToEvaluate_Cpath case)
+% Until 2026-11-01 a type that NONE of the FnsToEvaluate apply to crashed EvalFnOnTransPath_AggVars_InfHorz_PType
+% (PType_FnsToEvaluate returns an empty cell for it, and fieldnames({}) errors). It is now skipped, as the other PType
+% commands do: it adds nothing to the aggregate, and has no field of its own. Uses the policy and distribution of (A).
+FnsToEvaluate_one=struct();
+FnsToEvaluate_one.assetslow.low=@(aprime,a,z) a; % a function of the low type only, so the high type has none
+AggVarsPath_one=EvalFnOnTransPath_AggVars_InfHorz_PType(FnsToEvaluate_one, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params_PT, T, n_d, n_a, n_z, Names_i, d_grid, a_grid, z_grid, transpathoptions_sa, simoptions);
+fprintf('Fns of one type only: the aggregate is the low type''s own path times its ptweight, this should be zero: %.3e \n',max(abs(gather(reshape(AggVarsPath_one.assetslow.Mean,1,T))-ptweights(1)*gather(reshape(AggVarsPath_PT.assets.low.Mean,1,T)))))
+fprintf('Fns of one type only: and the low type''s conditional path is its own, this should be zero: %.3e \n',max(abs(gather(AggVarsPath_one.assetslow.low.Mean(:))-gather(AggVarsPath_PT.assets.low.Mean(:)))))
+fprintf('Fns of one type only: the high type, which no function applies to, has no field, should be one: %i \n',~isfield(AggVarsPath_one.assetslow,'high'))
+% And mixed: one function of both types and one of the high type only, so each type has at least one
+FnsToEvaluate_mix=struct();
+FnsToEvaluate_mix.assets=FnsToEvaluate.assets;
+FnsToEvaluate_mix.earningshigh.high=FnsToEvaluate.earnings;
+AggVarsPath_mix=EvalFnOnTransPath_AggVars_InfHorz_PType(FnsToEvaluate_mix, AgentDistPath_PT, PolicyPath_PT, PricePath, ParamPath, Params_PT, T, n_d, n_a, n_z, Names_i, d_grid, a_grid, z_grid, transpathoptions_sa, simoptions);
+fprintf('Fns of mixed types: the common function is unchanged, this should be zero: %.3e \n',max(abs(gather(AggVarsPath_mix.assets.Mean(:))-gather(AggVarsPath_PT.assets.Mean(:)))))
+fprintf('Fns of mixed types: the high-only function is the high type''s path times its ptweight, this should be zero: %.3e \n',max(abs(gather(reshape(AggVarsPath_mix.earningshigh.Mean,1,T))-ptweights(2)*gather(reshape(AggVarsPath_PT.earnings.high.Mean,1,T)))))
+
 output=struct();
 
 end
