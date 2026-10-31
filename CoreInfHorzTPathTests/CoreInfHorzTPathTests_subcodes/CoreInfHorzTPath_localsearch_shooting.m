@@ -210,12 +210,10 @@ try
 catch ME
     err(1)=contains(ME.message,'GEnewprice=3 (shooting) or 2 (Anderson)');
 end
-vfoptionsE=vfoptionsB; vfoptionsE.n_e=3; vfoptionsE.e_grid=linspace(0.9,1.1,3)'; vfoptionsE.pi_e=ones(3,1)/3;
-try
-    TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptionsE, []);
-catch ME
-    err(2)=contains(ME.message,'not implemented with an e variable');
-end
+% LOCAL SEARCH WITH AN e VARIABLE USED TO BE REFUSED HERE, and err(2) checked that refusal. With z and e it is now
+% implemented (2026-10-30) and tested in doPart(11), CoreInfHorzTPath_localsearch_e, so the check is gone and err(2)
+% is left unused rather than renumbering the others. Found by auditing the bank's refusal strings as a set when the
+% refusal was lifted, not by a run.
 vfoptionsE=vfoptionsB; vfoptionsE.experienceasset=1;
 try
     TransitionPath_InfHorz(PricePathBumped, ParamPathGE, T, V_finalGE, AgentDist_initialGE, n_d, n_a_GE, n_z, d_grid,a_grid_GE,z_grid, pi_z, ReturnFn, FnsToEvaluateGE, GeneralEqmEqnsGE, ParamsGE, DiscountFactorParamNames, transpathoptionsS, simoptions, vfoptionsE, []);
@@ -223,7 +221,6 @@ catch ME
     err(3)=contains(ME.message,'not implemented with an experience asset');
 end
 fprintf('localsearch shooting: (5) local search with quasi-Newton is refused by name, should be one: %i \n',err(1))
-fprintf('localsearch shooting: (5) local search with an e variable is refused by name, should be one: %i \n',err(2))
 fprintf('localsearch shooting: (5) local search with an experience asset is refused by name, should be one: %i \n',err(3))
 
 %% (6) The ratchet options are validated
