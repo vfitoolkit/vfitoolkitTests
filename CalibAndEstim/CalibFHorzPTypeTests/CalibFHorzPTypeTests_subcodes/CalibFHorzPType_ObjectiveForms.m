@@ -12,6 +12,8 @@ function output=CalibFHorzPType_ObjectiveForms(n_d,n_a,n_z,N_j,Names_i,d_grid,a_
 %   (j) logmoments by name, including a four-level name (restriction.fn.type.stat) and a per-type age-conditional name
 %   (k) a non-uniform weights vector of the right length; one of the wrong length must error
 %   (l) caliboptions.whichcombos=0 gives the same current moments as =1, exactly
+%   (m) MethodOfMoments with a weight matrix W under lsqnonlin, perturbed targets: calibsummary.objvalue equals (m-t)'*W*(m-t) at the
+%       returned point (the driver hands lsqnonlin chol(W)); the old elementwise sqrt(W) would not
 
 N_i=length(Names_i);
 FnsToEvaluate.assets=@(aprime,a,z) a;
@@ -195,6 +197,34 @@ caliboptions_l=caliboptions_g; caliboptions_l.whichcombos=0;
 [~,calibsummary_l]=CalibrateLifeCycleModel_PType(CalibParamNames1,TMpos,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,caliboptions_l,vfoptions,simoptions);
 [~,calibsummary_1]=CalibrateLifeCycleModel_PType(CalibParamNames1,TMpos,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,caliboptions_g,vfoptions,simoptions);
 fprintf('ObjectiveForms PType (l) whichcombos=0 vs =1 through CalibrateLifeCycleModel_PType: current moments, this should be zero: %.3e; objectives, this should be zero: %.3e \n',max(abs(calibsummary_l.currentmomentvec(:)-calibsummary_1.currentmomentvec(:))),abs(calibsummary_l.objvalue-calibsummary_1.objvalue))
+
+% (m) MethodOfMoments with a weight matrix through the driver under lsqnonlin: the driver hands lsqnonlin R=chol(W) as the weights, so
+% the residual is R*(m-t) and lsqnonlin's resnorm (returned as calibsummary.objvalue) is (m-t)'*R'*R*(m-t)=(m-t)'*W*(m-t). Perturbed
+% targets so m~=t at the returned point. Under the old elementwise sqrt(W) the resnorm is (m-t)'*S'*S*(m-t) with S=sqrt(W), which
+% differs from (m-t)'*W*(m-t) as W is not diagonal: the inverted check confirms this W tells the two apart.
+Wm=diag(linspace(0.5,1.5,nT))+0.1*(ones(nT)-eye(nT))/nT; % symmetric, positive definite (diagonally dominant)
+caliboptions_m=caliboptions_g; caliboptions_m.metric='MethodOfMoments'; caliboptions_m.weights=Wm;
+ranm=0;
+try
+    [~,calibsummary_m]=CalibrateLifeCycleModel_PType(CalibParamNames1,TMpert,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,PTypeDistParamNames,[],FnsToEvaluate,caliboptions_m,vfoptions,simoptions);
+    ranm=1;
+catch err
+    fprintf('ObjectiveForms PType (m) MethodOfMoments through CalibrateLifeCycleModel_PType errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+end
+if ranm==1
+    cm=calibsummary_m.currentmomentvec(:); tm=calibsummary_m.targetmomentvec(:);
+    if length(cm)==nT && length(tm)==nT
+        dm=cm-tm;
+        handObj=dm'*Wm*dm;
+        Sm=sqrt(Wm);
+        oldObj=dm'*(Sm'*Sm)*dm;
+        fprintf('ObjectiveForms PType (m) MethodOfMoments with a weight matrix through CalibrateLifeCycleModel_PType (lsqnonlin, perturbed targets): did not run, this should be zero: %.3e; calibsummary.objvalue vs (m-t)''*W*(m-t) at the returned point, relative, this should be zero: %.3e; the old elementwise sqrt(W) resnorm vs (m-t)''*W*(m-t), relative, should NOT be zero: %.3e \n',0,abs(calibsummary_m.objvalue-handObj)/abs(handObj),abs(oldObj-handObj)/abs(handObj))
+    else
+        fprintf('ObjectiveForms PType (m) MethodOfMoments through CalibrateLifeCycleModel_PType: calibsummary has %i current and %i target entries, not nT=%i, this should be zero: %.3e \n',length(cm),length(tm),nT,1)
+    end
+else
+    fprintf('ObjectiveForms PType (m) MethodOfMoments with a weight matrix through CalibrateLifeCycleModel_PType: did not run, this should be zero: %.3e \n',1)
+end
 
 output=struct();
 output.m=m;
