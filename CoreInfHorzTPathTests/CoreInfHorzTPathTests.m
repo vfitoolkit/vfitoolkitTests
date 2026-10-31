@@ -22,7 +22,7 @@
 % doPart(8): ExogShockFn and EiidShockFn on the path, vs explicit grids (no figures)
 % doPart(9): constraints on the prices of a general eqm transition path (no figures)
 % doPart(10): two endogenous states (figs 17-18)
-% doPart(11): localsearch with z and e, without and with d: the value fn step, the seed sweeps, and a general eqm path (no figures)
+% doPart(11): localsearch with the other shock structures (z and e; no z; no z with e), without and with d: the value fn step, the seed sweeps, and a general eqm path (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -260,15 +260,21 @@ if doPart(10)==1
     exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 end % doPart(10): two endogenous states (figs 17-18)
 
-%% ===== doPart(11): localsearch with z and e =====
+%% ===== doPart(11): localsearch with the other shock structures =====
 if doPart(11)==1
-    fprintf('\n===== doPart(11): localsearch with z and e =====\n')
+    fprintf('\n===== doPart(11): localsearch with the other shock structures =====\n')
     %% vfoptions.localsearch=1 with z and an iid e, without and with d (stage L1 of InfHorzTPath_localsearch_noz_e_proposal.md)
     % The reference is per (d,a,z,e): one window per current e. Sections (1)-(7) and (9) are the value fn step and the
     % seed sweeps (including their DC and lowmemory 1 and 2 versions), section (8) is a general eqm path by shooting and
-    % by Anderson. No figures. Without z (with and without e) local search is still refused, and comes in stages L2, L3.
+    % by Anderson. No figures.
     output=CoreInfHorzTPath_localsearch_e(T,PricePath,ParamPath,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,n_d_GE,n_a_GE,d_grid_GE,a_grid_GE);
-end % doPart(11): localsearch with z and e
+
+    %% vfoptions.localsearch=1 without z: no z and no e (stage L2), and no z with an iid e (stage L3), without and with d
+    % The same sections as above, with the reference [N_dref,N_a] (no e) or [N_dref,N_a,N_e] (with e). The general eqm
+    % section is run with e only: with neither z nor e there is no uncertainty and the stationary eqm is degenerate.
+    % Once L1-L3 are green, this part is to be merged into doPart(6) and doPart(7) (user, 2026-11-01).
+    output=CoreInfHorzTPath_localsearch_noz(T,PricePath,ParamPath,n_d,n_a,d_grid,a_grid,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,n_d_GE,n_a_GE,d_grid_GE,a_grid_GE);
+end % doPart(11): localsearch with the other shock structures
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
