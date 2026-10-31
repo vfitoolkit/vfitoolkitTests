@@ -16,7 +16,7 @@ function output=UncertainTPath_GE(T,n_a,n_z,a_grid,z_grid,pi_z,Params,DiscountFa
 %       tolerance and are the ones reported; period T is the final eqm of each S; the possibility of S=2 moves
 %       the prices before any switch (should NOT be zero)
 %   (d) restarting from the solution (transpathoptions.PricePathTree0) converges at once to the same prices
-%   (e) refusals, each by its message
+%   (e) refusals, each by its message (Anderson and price constraints are stage U3, CoreInfHorzUncertainTPathTests doPart(8))
 % Shooting is a fixed point, so (a) and (b) are equal only up to the convergence tolerance (the two solvers stop at
 % different iterations, and evaluate the conditions on CPU and on GPU); they are checked against 10 times
 % toleranceGEprices.
@@ -181,11 +181,13 @@ try
 catch ME
     err(2)=contains(ME.message,'GEnewprice=1 (quasi-Newton) is not implemented');
 end
+% Anderson (GEnewprice=2) USED TO BE REFUSED here (stage U2); it is implemented in U3, so this now checks the refusal
+% that remains, Anderson without its update instructions
 tpE=transpathoptions; tpE.GEnewprice=2;
 try
     UncertainTransitionPath_InfHorz(PricePathShaper, ParamPathC, T, T1, T2, pi_SC, 1, AgentDist_initial, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, GeneralEqmEqns, Params, DiscountFactorParamNames, tpE, simoptions, vfoptions);
 catch ME
-    err(3)=contains(ME.message,'GEnewprice=2 (Anderson acceleration) is not yet implemented');
+    err(3)=contains(ME.message,'requires transpathoptions.GEnewprice2.howtoupdate');
 end
 tpE=transpathoptions; tpE.GEnewprice3=rmfield(tpE.GEnewprice3,'howtoupdate');
 try
@@ -193,11 +195,13 @@ try
 catch ME
     err(4)=contains(ME.message,'requires transpathoptions.GEnewprice3.howtoupdate');
 end
-tpE=transpathoptions; tpE.constrainpositive={'w'};
+% Price constraints USED TO BE REFUSED here (stage U2); they are implemented in U3, so this now checks the refusal
+% that remains, an initial guess outside the bounds
+tpE=transpathoptions; tpE.constrainAtoB={'w'}; tpE.constrainAtoBlimits.w=[0,0.1];
 try
     UncertainTransitionPath_InfHorz(PricePathShaper, ParamPathC, T, T1, T2, pi_SC, 1, AgentDist_initial, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, GeneralEqmEqns, Params, DiscountFactorParamNames, tpE, simoptions, vfoptions);
 catch ME
-    err(5)=contains(ME.message,'price constraints');
+    err(5)=contains(ME.message,'is not strictly inside its constraint');
 end
 GeneralEqmEqnsE=GeneralEqmEqns;
 GeneralEqmEqnsE.CapitalMarket=@(r,K_tminus1,N,firmalpha,firmdelta,firmA) r-(firmalpha*firmA*(K_tminus1^(firmalpha-1))*(N^(1-firmalpha))-firmdelta);
@@ -214,9 +218,9 @@ catch ME
 end
 fprintf('Uncertain GE (e): GEnewprice unset is refused by name, should be one: %i \n',err(1))
 fprintf('Uncertain GE (e): GEnewprice=1 is refused by name, should be one: %i \n',err(2))
-fprintf('Uncertain GE (e): GEnewprice=2 is refused by name (not yet), should be one: %i \n',err(3))
+fprintf('Uncertain GE (e): GEnewprice=2 without GEnewprice2.howtoupdate is refused by name, should be one: %i \n',err(3))
 fprintf('Uncertain GE (e): GEnewprice=3 without howtoupdate is refused by name, should be one: %i \n',err(4))
-fprintf('Uncertain GE (e): price constraints are refused by name (not yet), should be one: %i \n',err(5))
+fprintf('Uncertain GE (e): price constraints whose bounds exclude the initial guess are refused by name, should be one: %i \n',err(5))
 fprintf('Uncertain GE (e): a _tminus1 in the transition general eqm conditions is refused by name (not yet), should be one: %i \n',err(6))
 fprintf('Uncertain GE (e): local search is refused by name (not yet), should be one: %i \n',err(7))
 

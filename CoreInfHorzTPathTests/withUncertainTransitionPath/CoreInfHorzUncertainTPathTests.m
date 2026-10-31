@@ -28,9 +28,10 @@
 % doPart(5): local consistency on a full support tree with d
 % doPart(6): refusals, each by its message
 % doPart(7): UncertainTransitionPath_InfHorz, general eqm on the tree by shooting (stage U2)
+% doPart(8): UncertainTransitionPath_InfHorz with Anderson acceleration and with price constraints (stage U3)
 %
 % Parts are independent: the setup and the addpaths sit OUTSIDE the if-blocks.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('../TestOutput','dir')
@@ -97,6 +98,12 @@ if doPart(7)==1
     fprintf('\n===== doPart(7): general eqm on the tree, by shooting =====\n')
     % The general eqm grid of the parent bank (its n_a=101 grid makes K a step function of the prices)
     output=UncertainTPath_GE(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end
+
+%% ===== doPart(8): Anderson and price constraints =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): Anderson acceleration and price constraints on the tree =====\n')
+    output=UncertainTPath_AndersonConstraints(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end
 
 %% One verdict for the whole run
