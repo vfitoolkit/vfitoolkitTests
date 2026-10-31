@@ -5,7 +5,7 @@ function output=UncertainTPath_IdenticalRegimes(T,PricePath,ParamPath,n_d,n_a,n_
 % (each history carries the whole distribution, it is not split by probability), and for the numbering, on a tree
 % that really branches. It is run on each kind of model the deterministic commands handle, since the tree reaches
 % all of them through the deterministic commands:
-%   nod z, d z, nod noz, nod z e, nod z with the grid interpolation layer, d z with divide-and-conquer, nod z with n_S=3
+%   nod z, d z, nod noz, nod z e, nod z with the grid interpolation layer, d z with divide-and-conquer, nod z with N_S=3
 % The probabilities are DYADIC (0.5; and 0.5, 0.25, 0.25) so the expectation over identical children is the child's
 % value exactly in floating point: sum_i p_i*V=V holds exactly only then, and a ULP could flip a Policy tie.
 % Finally, for scale, the same tree with different regimes must NOT equal the deterministic path.
@@ -57,22 +57,22 @@ for vv=1:7
         FnsToEvaluate.assets=@(d,aprime,a,z) a;
         FnsToEvaluate.earnings=@(d,aprime,a,z,w) w*d*z;
     elseif vv==7
-        lab='nod z, n_S=3';
+        lab='nod z, N_S=3';
         pi_S=[0.5,0.25,0.25;0.25,0.5,0.25;0.25,0.25,0.5];
         ReturnFn=@(aprime,a,z,r,w,sigma) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,sigma);
         FnsToEvaluate.assets=@(aprime,a,z) a;
         FnsToEvaluate.nextassets=@(aprime,a,z) aprime;
     end
-    n_S=size(pi_S,1);
+    N_S=size(pi_S,1);
 
-    % The same economy in every S. r is given n_S-by-T (identical rows), w as 1-by-T, so both readings are used.
-    PricePathU.r=repmat(PricePath.r,n_S,1);
+    % The same economy in every S. r is given N_S-by-T (identical rows), w as 1-by-T, so both readings are used.
+    PricePathU.r=repmat(PricePath.r,N_S,1);
     ParamPathU.w=ParamPath.w;
 
     ParamsF=Params; ParamsF.r=PricePath.r(T); ParamsF.w=ParamPath.w(T);
     [V_finalD,Policy_finalD]=ValueFnIter_InfHorz(n_dV,n_a,n_zV,d_gridV,a_grid,z_gridV,pi_zV,ReturnFn,ParamsF,DiscountFactorParamNames,[],vfoptions);
     V_final=struct(); Policy_final=struct();
-    for SS=1:n_S
+    for SS=1:N_S
         V_final.(['S',num2str(SS)])=V_finalD;
         Policy_final.(['S',num2str(SS)])=Policy_finalD;
     end
@@ -92,7 +92,7 @@ for vv=1:7
 
     Tree=UncertainTransPathTree(T,T1,T2,pi_S,1);
     nNodes=Tree.nNodes;
-    fprintf('Identical regimes %s: the tree has n_S^3 histories, should be one: %i \n',lab,Tree.nHist==n_S^3)
+    fprintf('Identical regimes %s: the tree has N_S^3 histories, should be one: %i \n',lab,Tree.nHist==N_S^3)
 
     % Node k against period nodedate(k) of the deterministic path
     A=gather(reshape(VPathU,[],nNodes)); B=gather(reshape(VPathD,[],T)); B=B(:,Tree.nodedate);

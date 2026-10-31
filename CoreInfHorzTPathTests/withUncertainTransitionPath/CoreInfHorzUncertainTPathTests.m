@@ -1,5 +1,6 @@
 % Tests of the VFI Toolkit uncertain transition path commands, InfHorz.
-% The aggregate shock S: S_t=S_initial before T1, drawn from pi_S(S_{t-1},:) in periods T1,...,T2, frozen after T2;
+% The aggregate shock S: T1,...,T2 are the periods in which agents face uncertainty, in each S_{t+1} is drawn from
+% pi_S(S_t,:); S_t=S_initial up to T1, frozen from T2+1 on;
 % prices depend on the history of S, so everything lives on a TREE of histories (see UncertainTransPathTree).
 %
 % This is a sub-bank of CoreInfHorzTPathTests and reuses its setup and return functions. Written test-first,
@@ -21,14 +22,15 @@
 %% Which parts to run
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
 % doPart(1): the tree itself: counts, probabilities, numbering, segments, prices on the tree (no solves)
-% doPart(2): a single history is a deterministic transition (n_S=1, and a sure switch of S, with 2-D and 3-D pi_S)
+% doPart(2): a single history is a deterministic transition (N_S=1, and a sure switch of S, with 2-D and 3-D pi_S)
 % doPart(3): identical regimes, every history is the deterministic path: nod z, d z, nod noz, nod z e, GI, DC
 % doPart(4): the tree built by hand (absorbing S, one branch per switch date, as in ABCP2024)
 % doPart(5): local consistency on a full support tree with d
 % doPart(6): refusals, each by its message
+% doPart(7): UncertainTransitionPath_InfHorz, general eqm on the tree by shooting (stage U2)
 %
 % Parts are independent: the setup and the addpaths sit OUTSIDE the if-blocks.
-doPart=[1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('../TestOutput','dir')
@@ -88,6 +90,13 @@ end
 if doPart(6)==1
     fprintf('\n===== doPart(6): refusals =====\n')
     output=UncertainTPath_Refusals(T,rS,wS,n_a,n_z,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end
+
+%% ===== doPart(7): general eqm on the tree =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): general eqm on the tree, by shooting =====\n')
+    % The general eqm grid of the parent bank (its n_a=101 grid makes K a step function of the prices)
+    output=UncertainTPath_GE(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end
 
 %% One verdict for the whole run

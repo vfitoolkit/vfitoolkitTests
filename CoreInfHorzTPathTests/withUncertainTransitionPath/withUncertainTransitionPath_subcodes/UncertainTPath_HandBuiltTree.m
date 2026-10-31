@@ -1,10 +1,10 @@
 function output=UncertainTPath_HandBuiltTree(T,rS,wS,n_a,n_z,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptions)
 % The tree built BY HAND from the deterministic commands, the way the ABCP2024 replication's stopgap (ABCP2024_Tree.m)
 % does it, against the uncertain commands. Absorbing S: pi_S=[P,1-P;0,1], S=1 until it switches to 2 for good, which
-% can happen in any period T1,...,T2. So there is path 0 (never switches) and one branch per switch date s.
+% can land in any period D1,...,D2 (agents face the uncertainty in T1=D1-1,...,T2=D2-1). So there is path 0 (never switches) and one branch per switch date s.
 %   Branch s: periods s,...,T, the S=2 prices and parameters, a deterministic transition to the S=2 final eqm, starting
 %     from path 0's agent dist in period s (which is fixed by path 0's policy in s-1, before S_s is known).
-%   Path 0: from T2 on a deterministic transition to the S=1 final eqm; in each period t=T2-1,...,T1-1, one period
+%   Path 0: from D2 on a deterministic transition to the S=1 final eqm; in each period t=D2-1,...,D1-1, one period
 %     with next period value fn P*V0_{t+1}+(1-P)*Vbranch(t+1)_{t+1}; before that, deterministic.
 % Nothing here uses the tree's numbering except to look up the histories at the end, so this checks the segments,
 % the expectation at branching nodes, the starting distribution of each branch, and the numbering, independently.
@@ -22,7 +22,8 @@ N_a=prod(n_a); N_z=prod(n_z);
 
 P=0.75;
 pi_S=[P,1-P;0,1];
-T1=3; T2=6;
+D1=3; D2=6; % the periods the switch can land in
+T1=D1-1; T2=D2-1; % the periods in which agents face the uncertainty
 
 V_final=struct(); Policy_final=struct();
 for SS=1:2
@@ -34,8 +35,8 @@ ParamsI=Params; ParamsI.r=rS(1,1); ParamsI.w=wS(1,1);
 AgentDist_initial=StationaryDist_InfHorz(Policy_initial,n_d,n_a,n_z,pi_z,simoptions,ParamsI,[]);
 
 %% By hand: backward, the branches
-VBr=cell(T2,1); PolicyBr=cell(T2,1);
-for s=T1:T2
+VBr=cell(D2,1); PolicyBr=cell(D2,1);
+for s=D1:D2
     clear PricePathB ParamPathB
     PricePathB.r=rS(2,s:T);
     ParamPathB.w=wS(2,s:T);
@@ -46,13 +47,13 @@ end
 %% By hand: backward, path 0
 V0=zeros(N_a*N_z,T); Policy0=zeros(1,N_a*N_z,T);
 clear PricePathB ParamPathB
-PricePathB.r=rS(1,T2:T);
-ParamPathB.w=wS(1,T2:T);
-[Vtemp,Policytemp]=ValueFnOnTransPath_InfHorz(PricePathB, ParamPathB, T-T2+1, V_final.S1, Policy_final.S1, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptions, vfoptions);
-V0(:,T2:T)=gather(reshape(Vtemp,[N_a*N_z,T-T2+1]));
-Policy0(:,:,T2:T)=gather(reshape(Policytemp,[1,N_a*N_z,T-T2+1]));
-for tt=T2-1:-1:1
-    if tt+1>=T1
+PricePathB.r=rS(1,D2:T);
+ParamPathB.w=wS(1,D2:T);
+[Vtemp,Policytemp]=ValueFnOnTransPath_InfHorz(PricePathB, ParamPathB, T-D2+1, V_final.S1, Policy_final.S1, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptions, vfoptions);
+V0(:,D2:T)=gather(reshape(Vtemp,[N_a*N_z,T-D2+1]));
+Policy0(:,:,D2:T)=gather(reshape(Policytemp,[1,N_a*N_z,T-D2+1]));
+for tt=D2-1:-1:1
+    if tt+1>=D1
         Vnext=P*V0(:,tt+1)+(1-P)*VBr{tt+1}(:,1); % same order as the command: the S=1 child, then the S=2 child
     else
         Vnext=V0(:,tt+1);
@@ -73,8 +74,8 @@ ParamPath0.w=wS(1,:);
 AgentDist0=AgentDistOnTransPath_InfHorz(AgentDist_initial, PricePath0, ParamPath0, reshape(Policy0,[1,N_a,N_z,T]), n_d,n_a,n_z,pi_z,T,Params,transpathoptions,simoptions);
 AgentDist0=gather(reshape(AgentDist0,[N_a*N_z,T]));
 AggVars0=EvalFnOnTransPath_AggVars_InfHorz(FnsToEvaluate, gpuArray(reshape(AgentDist0,[N_a,N_z,T])), gpuArray(reshape(Policy0,[1,N_a,N_z,T])), PricePath0, ParamPath0, Params, T, n_d, n_a, n_z, d_grid, a_grid, z_grid, transpathoptions, simoptions);
-AgentDistBr=cell(T2,1); AggVarsBr=cell(T2,1);
-for s=T1:T2
+AgentDistBr=cell(D2,1); AggVarsBr=cell(D2,1);
+for s=D1:D2
     clear PricePathB ParamPathB
     PricePathB.r=rS(2,s:T);
     ParamPathB.w=wS(2,s:T);
@@ -97,7 +98,7 @@ DU=gather(reshape(AgentDistPathU,[N_a*N_z,nNodes]));
 AggNames=fieldnames(FnsToEvaluate);
 
 %% Compare, history by history
-fprintf('Hand-built tree: the tree has T2-T1+2 histories, should be one: %i \n',Tree.nHist==T2-T1+2)
+fprintf('Hand-built tree: the tree has D2-D1+2 histories, should be one: %i \n',Tree.nHist==D2-D1+2)
 hh0=find(all(Tree.historyS==1,2));
 nodes0=Tree.histories(hh0,:);
 dd=abs(VU(:,nodes0)-V0); dd(VU(:,nodes0)==V0)=0; dd(isnan(dd))=Inf;
@@ -110,9 +111,9 @@ for ff=1:length(AggNames)
 end
 fprintf('Hand-built tree: path 0, AggVars, this should be zero: %.3e \n',aggerr)
 Verr=0; Perr=0; Derr=0; aggerr=0; probok=1;
-for s=T1:T2
+for s=D1:D2
     hh=find(Tree.historyS(:,s)==2 & Tree.historyS(:,s-1)==1);
-    probok=probok*(abs(Tree.historyprob(hh)-P^(s-T1)*(1-P))<10^(-15));
+    probok=probok*(abs(Tree.historyprob(hh)-P^(s-D1)*(1-P))<10^(-15));
     nodesb=Tree.histories(hh,s:T);
     dd=abs(VU(:,nodesb)-VBr{s}); dd(VU(:,nodesb)==VBr{s})=0; dd(isnan(dd))=Inf;
     Verr=max(Verr,max(dd,[],'all'));
@@ -128,14 +129,14 @@ fprintf('Hand-built tree: every branch, V, this should be zero: %.3e \n',Verr)
 fprintf('Hand-built tree: every branch, Policy, this should be zero: %.3e \n',Perr)
 fprintf('Hand-built tree: every branch, AgentDist, this should be zero: %.3e \n',Derr)
 fprintf('Hand-built tree: every branch, AggVars, this should be zero: %.3e \n',aggerr)
-fprintf('Hand-built tree: each branch has probability P^(s-T1)*(1-P) and shares path 0''s nodes before s, should be one: %i \n',probok)
+fprintf('Hand-built tree: each branch has probability P^(s-D1)*(1-P) and shares path 0''s nodes before s, should be one: %i \n',probok)
 % For scale: the possibility of the switch moves path 0 away from the deterministic S=1 path before T2
 [VD,~]=ValueFnOnTransPath_InfHorz(PricePath0, ParamPath0, T, V_final.S1, Policy_final.S1, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptions, vfoptions);
 VD=gather(reshape(VD,[N_a*N_z,T]));
-dd=abs(V0(:,1:T2-1)-VD(:,1:T2-1)); dd(V0(:,1:T2-1)==VD(:,1:T2-1))=0;
-fprintf('Hand-built tree: for scale, path 0 vs the deterministic S=1 path before T2, V, should NOT be zero: %.3e \n',max(dd,[],'all'))
-dd=abs(V0(:,T2:T)-VD(:,T2:T)); dd(V0(:,T2:T)==VD(:,T2:T))=0;
-fprintf('Hand-built tree: and from T2 on they are the same deterministic path, this should be zero: %.3e \n',max(dd,[],'all'))
+dd=abs(V0(:,1:D2-1)-VD(:,1:D2-1)); dd(V0(:,1:D2-1)==VD(:,1:D2-1))=0;
+fprintf('Hand-built tree: for scale, path 0 vs the deterministic S=1 path before D2, V, should NOT be zero: %.3e \n',max(dd,[],'all'))
+dd=abs(V0(:,D2:T)-VD(:,D2:T)); dd(V0(:,D2:T)==VD(:,D2:T))=0;
+fprintf('Hand-built tree: and from D2 on they are the same deterministic path, this should be zero: %.3e \n',max(dd,[],'all'))
 
 output=struct();
 

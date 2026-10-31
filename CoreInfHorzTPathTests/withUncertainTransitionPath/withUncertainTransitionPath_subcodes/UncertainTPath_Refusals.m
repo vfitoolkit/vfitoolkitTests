@@ -23,14 +23,14 @@ catch ME
     err(1)=contains(ME.message,'every row of pi_S must sum to one');
 end
 try
-    UncertainTransPathTree(T,T1,T,pi_S,1);
+    UncertainTransPathTree(T,T1,T-1,pi_S,1); % the last draw would land in period T
 catch ME
-    err(2)=contains(ME.message,'1<=T1<=T2<T');
+    err(2)=contains(ME.message,'1<=T1<=T2<=T-2');
 end
 try
     UncertainTransPathTree(T,0,T2,pi_S,1);
 catch ME
-    err(3)=contains(ME.message,'1<=T1<=T2<T');
+    err(3)=contains(ME.message,'1<=T1<=T2<=T-2');
 end
 try
     UncertainTransPathTree(T,3,13,[0.5,0.5;0.5,0.5],1); % 2^11=2048 histories
@@ -45,13 +45,13 @@ end
 try
     UncertainTransPathTree(T,T1,T2,repmat(pi_S,1,1,2),1);
 catch ME
-    err(6)=contains(ME.message,'n_S-by-n_S-by-(T2-T1+1)');
+    err(6)=contains(ME.message,'N_S-by-N_S-by-(T2-T1+1)');
 end
 ParamPathE.w=wS(:,1:T-1);
 try
     UncertainTransPathTree(T,T1,T2,pi_S,1,PricePathU,ParamPathE);
 catch ME
-    err(7)=contains(ME.message,'ParamPath.w must be n_S-by-T');
+    err(7)=contains(ME.message,'ParamPath.w must be N_S-by-T');
 end
 PricePathE.r=[rS;rS];
 try
@@ -95,12 +95,12 @@ catch ME
 end
 
 fprintf('Refusals: pi_S rows that do not sum to one, should be one: %i \n',err(1))
-fprintf('Refusals: T2 not before T, should be one: %i \n',err(2))
+fprintf('Refusals: T2=T-1 (the last draw would land in the final period), should be one: %i \n',err(2))
 fprintf('Refusals: T1 below one, should be one: %i \n',err(3))
 fprintf('Refusals: more histories than transpathoptions.maxnhistories, should be one: %i \n',err(4))
 fprintf('Refusals: S_initial out of range, should be one: %i \n',err(5))
 fprintf('Refusals: a 3-D pi_S whose third dimension is not T2-T1+1, should be one: %i \n',err(6))
-fprintf('Refusals: a ParamPath entry neither n_S-by-T nor 1-by-T, should be one: %i \n',err(7))
+fprintf('Refusals: a ParamPath entry neither N_S-by-T nor 1-by-T, should be one: %i \n',err(7))
 fprintf('Refusals: a PricePath entry of none of the three forms, should be one: %i \n',err(8))
 fprintf('Refusals: raising transpathoptions.maxnhistories lets the 2048-history tree through, should be one: %i \n',err(9))
 fprintf('Refusals: vfoptions.localsearch, should be one: %i \n',err(10))
