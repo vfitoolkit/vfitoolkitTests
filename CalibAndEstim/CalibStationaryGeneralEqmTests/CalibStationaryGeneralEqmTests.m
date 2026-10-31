@@ -50,9 +50,27 @@
 %           (default 1) with its selectors, restricted AutoCorr/CrossSec targets, _horizonK horizons, and an omit mask of any length (was 1-by-1);
 %           its objectives take CalibrateInfHorzAgentModel_objectivefn's stats and moment-vector blocks. Part 7 checks whichcombos 1 vs 0.
 %
-% Not covered yet: the PType versions (CalibrateOLGModel_PType, CalibrateBIHAModel_PType) - they go into this same bank later, with a
-% round trip for a per-type parameter given as a matrix; the full InfHorz target battery (quantiles, restricted AutoCorr/CrossSec,
-% horizons) is CalibInfHorzTests' job and is not repeated here; CMA-ES (fminalgo=4).
+%   2026-10-29: the PType versions, parts 12-21 (parts 1-11 with N_i=2 permanent types). CalibrateOLGModel_PType and
+%           CalibrateBIHAModel_PType (with their four objectives) rewritten onto the target and stats machinery of
+%           CalibrateLifeCycleModel_PType / CalibrateInfHorzAgentModel_PType and the general eqm structure of CalibrateOLGModel /
+%           CalibrateBIHAModel. What the PType parts pin (found by reading, fixed in the same change, none seen failing on a GPU run first):
+%         - nested mode could never run: the inner GE solve used variables that do not exist in the objective (OLG: Params, pi_z,
+%           z_grid, AgeWeightsParamNames; BIHA: Params, z_grid)
+%         - joint mode put the GE price names at CalibParamNames{nCalibParams+pp}, counting (parameter, ptype) blocks instead of names:
+%           with a per-type parameter, gaps in the names
+%         - the scalar objective divided by length(CalibParamNames), the GE prices included; now by the number of calibrated names (a
+%           per-type parameter counts once), as the non-PType commands do
+%         - the type masses (PTypeDistParamNames) calibrated directly were split into one scalar per type (taken for a per-type matrix)
+%         - no whichcombos, no AutoCorrTransProbs/cross-section targets (OLG), calibsummary without the moment vectors and GE conditions,
+%           nested GE prices not returned in CalibParams; logmoments by name read the wrong kind's names (as in the non-PType ones)
+%         - a row omit mask was never transposed (OLG); a per-type (struct) ExogShockFn crashed the shock-dependence detection;
+%           calibrateshocks=1 left the shock grids undefined (OLG) or empty (BIHA); CalibParams undefined when the first calibrated
+%           parameter is a per-type matrix
+%
+% Not covered yet: general eqm conditions by ptype (heteroagentoptions.GEptype) in the PType calibrations (to be added once the rest is
+% green); jequaloneDist as a function in the PType parts (StationaryDist_Case1_FHorz_PType, which the calibration objectives use, does
+% not take one); the full InfHorz target battery (quantiles, restricted AutoCorr/CrossSec, horizons) is CalibInfHorzTests' job and is not
+% repeated here; CMA-ES (fminalgo=4).
 %
 % No figures are drawn anywhere in this bank, so only the diary is saved.
 
@@ -69,10 +87,20 @@
 % doPart(9):  InfHorz (BIHA): joint vs nested at the same prices; the inner GE solve; constraints reach the inner solver; GE prices in CalibParams
 % doPart(10): InfHorz (BIHA): round trips, joint (three prices) and nested (one price), lsqnonlin and fminsearch, constraints
 % doPart(11): InfHorz (BIHA): ExogShockFn with a calibrated parameter, CustomModelStats (caliboptions, both usergrids; heteroagentoptions), intermediateEqns
+% doPart(12): FHorz PType (OLG): the objective's moment vector and GE conditions vs hand-built (grouped, per type, restricted per type), whichcombos 1 and 0
+% doPart(13): FHorz PType (OLG): objective forms with a per-type calibrated parameter (divisor = number of names), multiGEweights, logmoments by per-type name, verbose
+% doPart(14): FHorz PType (OLG): joint vs nested; the inner GE solve; constraints reach the inner solver; GE prices in CalibParams; the type masses calibrated directly
+% doPart(15): FHorz PType (OLG): round trips (one price): varphi per type as a matrix, joint and nested; the type masses through ParametrizeParamsFn; omitcalibparam
+% doPart(16): FHorz PType (OLG): ExogShockFn (shared and per type), CustomModelStats (caliboptions, both usergrids; heteroagentoptions), intermediateEqns
+% doPart(17): InfHorz PType (BIHA): the objective's moment vector and GE conditions vs hand-built (grouped, per type, restricted per type), whichcombos 1 and 0
+% doPart(18): InfHorz PType (BIHA): objective forms with a per-type calibrated parameter, multiGEweights, logmoments by per-type name, verbose
+% doPart(19): InfHorz PType (BIHA): joint vs nested; the inner GE solve; constraints reach the inner solver; GE prices in CalibParams; the type masses calibrated directly
+% doPart(20): InfHorz PType (BIHA): round trips (one price): varphi per type as a matrix, joint and nested; the type masses through ParametrizeParamsFn
+% doPart(21): InfHorz PType (BIHA): ExogShockFn (shared and per type), CustomModelStats (caliboptions, both usergrids; heteroagentoptions), intermediateEqns
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -150,6 +178,18 @@ vfoptions.ngridinterp=15;
 simoptions=struct();
 simoptions.gridinterplayer=vfoptions.gridinterplayer;
 simoptions.ngridinterp=vfoptions.ngridinterp;
+
+% PType (parts 12-21): the same models with N_i=2 permanent types differing in sigma (2.2 and 1.8, as in CoreStationaryGeneralEqm),
+% masses 0.6 and 0.4. Every other parameter is common to both types; the parts that calibrate a per-type parameter (varphi as a column
+% over the types: parts 13, 15, 18, 20) set it themselves.
+Names_i={'typeA','typeB'};
+PTypeDistParamNames={'ptypemass'};
+Params_PType=Params;
+Params_PType.sigma=[2.2,1.8];
+Params_PType.ptypemass=[0.6;0.4];
+Params_InfHorz_PType=Params_InfHorz;
+Params_InfHorz_PType.sigma=[2.2,1.8];
+Params_InfHorz_PType.ptypemass=[0.6;0.4];
 
 %% ===== doPart(1): FHorz moment vector =====
 if doPart(1)==1
@@ -237,6 +277,72 @@ if doPart(11)==1
     fprintf('\n===== doPart(11): InfHorz (BIHA) ExogShockFn, CustomModelStats, intermediateEqns =====\n')
     output=CalibSGE_InfHorz_Extras(n_d_InfHorz,n_a,n_z,d_grid_InfHorz,a_grid,z_grid_InfHorz,pi_z_InfHorz,Params_InfHorz,DiscountFactorParamNames,GEPriceParamNames,vfoptions,simoptions);
 end % doPart(11)
+
+%% ===================== FHorz (OLG) with PType ===================
+% Parts 1-5 again, with N_i=2 permanent types differing in sigma (2.2 and 1.8): CalibrateOLGModel_PType.
+
+%% ===== doPart(12): FHorz PType moment vector =====
+if doPart(12)==1
+    fprintf('\n===== doPart(12): FHorz PType (OLG) objective moment vector and GE conditions vs hand-built =====\n')
+    output=CalibSGE_FHorzPType_MomentVector(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params_PType,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,jequaloneDist,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(12)
+
+%% ===== doPart(13): FHorz PType objective forms =====
+if doPart(13)==1
+    fprintf('\n===== doPart(13): FHorz PType (OLG) objective forms, divisor, multiGEweights, logmoments, verbose =====\n')
+    output=CalibSGE_FHorzPType_ObjectiveForms(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params_PType,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,jequaloneDist,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(13)
+
+%% ===== doPart(14): FHorz PType joint vs nested =====
+if doPart(14)==1
+    fprintf('\n===== doPart(14): FHorz PType (OLG) joint vs nested; the inner GE solve; GE prices in CalibParams; type masses =====\n')
+    output=CalibSGE_FHorzPType_JointNested(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params_PType,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,jequaloneDist,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(14)
+
+%% ===== doPart(15): FHorz PType round trips =====
+if doPart(15)==1
+    fprintf('\n===== doPart(15): FHorz PType (OLG) round trips through CalibrateOLGModel_PType =====\n')
+    output=CalibSGE_FHorzPType_RoundTrips(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params_PType,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,jequaloneDist,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(15)
+
+%% ===== doPart(16): FHorz PType shocks, CustomModelStats, intermediateEqns =====
+if doPart(16)==1
+    fprintf('\n===== doPart(16): FHorz PType (OLG) ExogShockFn, CustomModelStats, intermediateEqns =====\n')
+    output=CalibSGE_FHorzPType_Extras(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params_PType,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,jequaloneDist,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(16)
+
+%% ===================== InfHorz (BIHA) with PType ===================
+% Parts 7-11 again, with N_i=2 permanent types differing in sigma (2.2 and 1.8): CalibrateBIHAModel_PType.
+
+%% ===== doPart(17): InfHorz PType moment vector =====
+if doPart(17)==1
+    fprintf('\n===== doPart(17): InfHorz PType (BIHA) objective moment vector and GE conditions vs hand-built =====\n')
+    output=CalibSGE_InfHorzPType_MomentVector(n_d_InfHorz,n_a,n_z,Names_i,d_grid_InfHorz,a_grid,z_grid_InfHorz,pi_z_InfHorz,Params_InfHorz_PType,DiscountFactorParamNames,PTypeDistParamNames,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(17)
+
+%% ===== doPart(18): InfHorz PType objective forms =====
+if doPart(18)==1
+    fprintf('\n===== doPart(18): InfHorz PType (BIHA) objective forms, divisor, multiGEweights, logmoments, verbose =====\n')
+    output=CalibSGE_InfHorzPType_ObjectiveForms(n_d_InfHorz,n_a,n_z,Names_i,d_grid_InfHorz,a_grid,z_grid_InfHorz,pi_z_InfHorz,Params_InfHorz_PType,DiscountFactorParamNames,PTypeDistParamNames,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(18)
+
+%% ===== doPart(19): InfHorz PType joint vs nested =====
+if doPart(19)==1
+    fprintf('\n===== doPart(19): InfHorz PType (BIHA) joint vs nested; the inner GE solve; GE prices in CalibParams; type masses =====\n')
+    output=CalibSGE_InfHorzPType_JointNested(n_d_InfHorz,n_a,n_z,Names_i,d_grid_InfHorz,a_grid,z_grid_InfHorz,pi_z_InfHorz,Params_InfHorz_PType,DiscountFactorParamNames,PTypeDistParamNames,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(19)
+
+%% ===== doPart(20): InfHorz PType round trips =====
+if doPart(20)==1
+    fprintf('\n===== doPart(20): InfHorz PType (BIHA) round trips through CalibrateBIHAModel_PType =====\n')
+    output=CalibSGE_InfHorzPType_RoundTrips(n_d_InfHorz,n_a,n_z,Names_i,d_grid_InfHorz,a_grid,z_grid_InfHorz,pi_z_InfHorz,Params_InfHorz_PType,DiscountFactorParamNames,PTypeDistParamNames,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(20)
+
+%% ===== doPart(21): InfHorz PType shocks, CustomModelStats, intermediateEqns =====
+if doPart(21)==1
+    fprintf('\n===== doPart(21): InfHorz PType (BIHA) ExogShockFn, CustomModelStats, intermediateEqns =====\n')
+    output=CalibSGE_InfHorzPType_Extras(n_d_InfHorz,n_a,n_z,Names_i,d_grid_InfHorz,a_grid,z_grid_InfHorz,pi_z_InfHorz,Params_InfHorz_PType,DiscountFactorParamNames,PTypeDistParamNames,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(21)
 
 % All looks good!
 
