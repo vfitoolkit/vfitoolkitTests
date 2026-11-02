@@ -47,11 +47,12 @@
 % doPart(19): every stats command, without d1, with z and semiz (the PType counterpart of TestFnsToEvaluate config 2)
 % doPart(20): grouped CrossSection and AutoCorr commands, via z-identity
 % doPart(21): simoptions.whichcombos (and per-combination whichstats) across the PType commands: LifeCycleProfiles, AllStats, AggVars, AutoCorr, CrossSection, AgeConditional CrossSection, vs their full runs; every command also with the trailing type dimension (N_i+1 slots: types, then grouped; a grouped slot forces every type)
+% doPart(22): a ptype with no applicable FnsToEvaluate (absent equals zero): AggVars, ValuesOnGrid, SimPanel, general eqm (pooled and GEptype)
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -253,6 +254,14 @@ if doPart(21)==1
     % structs), RestrictedSampleMass is always filled, broadcast inputs equal their expansions, invalid inputs error.
     output=CoreFHorzPType_WhichCombos(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(21): simoptions.whichcombos across the PType commands
+
+%% ===== doPart(22): a ptype with no applicable FnsToEvaluate (absent equals zero) =====
+if doPart(22)==1
+    fprintf('\n===== doPart(22): a ptype with no applicable FnsToEvaluate (absent equals zero) =====\n')
+    %% 22. FnsToEvaluate that apply to the low type only, against the same with the high type's functions defined as zero:
+    % AggVars, ValuesOnGrid, SimPanelValues (also a mixed case) and HeteroAgentStationaryEqm_Case1_FHorz_PType must agree
+    output=CoreFHorzPType_NoApplicableFns(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+end % doPart(22): a ptype with no applicable FnsToEvaluate (absent equals zero)
 
 % All looks good!
 

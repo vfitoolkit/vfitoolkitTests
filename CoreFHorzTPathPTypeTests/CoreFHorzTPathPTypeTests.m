@@ -77,6 +77,7 @@
 % doPart(11): permanent type masses changing over the path (no figures)
 % doPart(12): z and e grids varying over the path by ptype (no figures)
 % doPart(13): experience assets and grid interpolation by ptype (no figures)
+% doPart(14): a ptype with no applicable FnsToEvaluate: AggVars, AllStats, LifeCycleProfiles on the path (no figures)
 % doPart(15): constraints on the prices (constrainpositive, constrain0to1, constrainAtoB), shooting and Anderson (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
@@ -255,6 +256,12 @@ if doPart(13)==1
     fprintf('\n===== doPart(13): experience assets and grid interpolation by ptype (no figures) =====\n')
     output=CoreFHorzTPathPType_ExpAsset(T,PricePath,ParamPath,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
 end % doPart(13): experience assets and grid interpolation by ptype (no figures)
+
+%% ===== doPart(14): a ptype with no applicable FnsToEvaluate (no figures) =====
+if doPart(14)==1
+    fprintf('\n===== doPart(14): a ptype with no applicable FnsToEvaluate (no figures) =====\n')
+    output=CoreFHorzTPathPType_NoApplicableFns(T,PricePath,ParamPath,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,transpathoptionsbaseline);
+end % doPart(14): a ptype with no applicable FnsToEvaluate (no figures)
 
 %% ===== doPart(15): constraints on the prices (no figures) =====
 if doPart(15)==1
