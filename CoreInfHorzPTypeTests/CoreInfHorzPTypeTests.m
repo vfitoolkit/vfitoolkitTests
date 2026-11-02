@@ -30,12 +30,13 @@
 % doPart(13): SimPanelValues PType (new command)
 % doPart(14): grouped CrossSection and AutoCorr PType, via z-identity
 % doPart(15): simoptions.whichcombos (and per-combination whichstats) in AllStats, AggVars, AutoCorr and CrossSection PType, with the type dimension
+% doPart(16): a ptype with no applicable FnsToEvaluate (absent equals zero): the general eqm, pooled and with GEptype; AllStats grouped Mean and StdDeviation
 % Parts 10-14 test the four commands new 2026-10-07 (written test first).
 %
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -177,6 +178,14 @@ if doPart(15)==1
     % expansions; invalid inputs error. The InfHorz counterpart of CoreFHorzPTypeTests part 21.
     output=CoreInfHorzPType_WhichCombos(n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,PTypeDistParamNames,simoptionsPT);
 end % doPart(15): whichcombos
+
+%% ===== doPart(16): a ptype with no applicable FnsToEvaluate =====
+if doPart(16)==1
+    fprintf('\n===== doPart(16): a ptype with no applicable FnsToEvaluate =====\n')
+    %% 16. HeteroAgentStationaryEqm_InfHorz_PType with FnsToEvaluate of the low type only, against the same with the high type's
+    % function defined as zero: a short solve (the pooled subfn) and the conditions with GEptype (the by-ptype subfn) must agree
+    output=CoreInfHorzPType_NoApplicableFns(n_a,n_z,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,PTypeDistParamNames,simoptionsPT);
+end % doPart(16): a ptype with no applicable FnsToEvaluate
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
