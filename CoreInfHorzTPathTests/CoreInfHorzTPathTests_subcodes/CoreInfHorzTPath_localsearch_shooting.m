@@ -211,7 +211,7 @@ catch ME
     err(1)=contains(ME.message,'GEnewprice=3 (shooting) or 2 (Anderson)');
 end
 % LOCAL SEARCH WITH AN e VARIABLE USED TO BE REFUSED HERE, and err(2) checked that refusal. With z and e it is now
-% implemented (2026-10-30) and tested in doPart(11), CoreInfHorzTPath_localsearch_e, so the check is gone and err(2)
+% implemented (2026-10-30) and tested in doPart(6) and (7), CoreInfHorzTPath_localsearch_e(_shooting), so the check is gone and err(2)
 % is left unused rather than renumbering the others. Found by auditing the bank's refusal strings as a set when the
 % refusal was lifted, not by a run.
 vfoptionsE=vfoptionsB; vfoptionsE.experienceasset=1;

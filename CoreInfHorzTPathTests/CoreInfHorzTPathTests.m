@@ -17,12 +17,13 @@
 % doPart(3): e cross-tests, the same path two ways: (D) e-as-z, (E) trivial e, (G) z and e as one 2-dim z (no figures)
 % doPart(4): semiz cross-tests, a semiz that is really a markov vs the same process as z: alone, with z, with e, with z and e (no figures)
 % doPart(5): _tminus1 and _tplus1 (no figures)
-% doPart(6): localsearch, the local-search value fn step, without and with a decision variable (no figures, no general eqm)
-% doPart(7): localsearch inside a real general eqm transition path, by shooting (no figures)
+% doPart(6): localsearch, the local-search value fn step, without and with a decision variable, with z, with z and e,
+%            without z, and without z with e (no figures, no general eqm)
+% doPart(7): localsearch inside a real general eqm transition path, by shooting and by Anderson, with z, with z and e,
+%            and without z with e (no figures)
 % doPart(8): ExogShockFn and EiidShockFn on the path, vs explicit grids (no figures)
 % doPart(9): constraints on the prices of a general eqm transition path (no figures)
 % doPart(10): two endogenous states (figs 17-18)
-% doPart(11): localsearch with the other shock structures (z and e; no z; no z with e), without and with d: the value fn step, the seed sweeps, and a general eqm path (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -31,7 +32,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -207,11 +208,18 @@ if doPart(6)==1
     % Also the only coverage of the raws' third output, the aprime chosen for EACH d, which no other
     % raw in the toolkit produces and which is what a warm start from a previous pass would use.
     output=CoreInfHorzTPath_localsearch_d(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+
+    %% vfoptions.localsearch=1 with the other shock structures, without and with d
+    % With z and an iid e (stage L1), the reference per (d,a,z,e): one window per current e. Then without z, with no e
+    % (stage L2) and with an iid e (stage L3), the reference [N_dref,N_a] or [N_dref,N_a,N_e]. Each the value fn step and
+    % the seed sweeps, including their divide-and-conquer and lowmemory versions. (Formerly a part of its own, merged here 2026-11-01.)
+    output=CoreInfHorzTPath_localsearch_e(T,PricePath,ParamPath,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline);
+    output=CoreInfHorzTPath_localsearch_noz(T,PricePath,ParamPath,n_d,n_a,d_grid,a_grid,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline);
 end % doPart(6): localsearch, the local-search value fn step, without and with a decision variable
 
-%% ===== doPart(7): localsearch inside a general eqm transition path, by shooting =====
+%% ===== doPart(7): localsearch inside a general eqm transition path, by shooting and Anderson =====
 if doPart(7)==1
-    fprintf('\n===== doPart(7): localsearch inside a general eqm transition path, by shooting =====\n')
+    fprintf('\n===== doPart(7): localsearch inside a general eqm transition path, by shooting and Anderson =====\n')
     %% The first part where the restricted search sits inside a general eqm solve and so could change the answer
     % Iteration 1 is a standard sweep and seeds the reference; later iterations restrict the search
     % around the previous answer; on convergence one standard sweep re-evaluates the same path, and
@@ -219,7 +227,13 @@ if doPart(7)==1
     % Anderson and quasi-Newton are refused by name, which is checked here, because neither can carry
     % the reference across iterations and both would silently return a wrong path if allowed to try.
     output=CoreInfHorzTPath_localsearch_shooting(T,n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
-end % doPart(7): localsearch inside a general eqm transition path, by shooting
+
+    %% The same with the other shock structures, without and with d: shooting and Anderson with local search land where
+    % the standard solves land, and an exact re-evaluation of each answer is within tolerance. With z and an iid e, and
+    % without z with an iid e (without z and without e the stationary eqm is degenerate). (Formerly a part of its own, merged here 2026-11-01.)
+    output=CoreInfHorzTPath_localsearch_e_shooting(T,n_d_GE,n_a_GE,n_z,d_grid_GE,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline);
+    output=CoreInfHorzTPath_localsearch_noz_shooting(T,n_d_GE,n_a_GE,d_grid_GE,a_grid_GE,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end % doPart(7): localsearch inside a general eqm transition path, by shooting and Anderson
 
 %% ===== doPart(8): ExogShockFn and EiidShockFn on the path =====
 if doPart(8)==1
@@ -259,22 +273,6 @@ if doPart(10)==1
     output=CoreInfHorzTPath_d_z_noe_nosemiz_with2A(T,PricePath_2A,ParamPath_2A,n_d_2A,n_a_2A,n_a_2A_big,n_z_2A,d_grid_2A,a_grid_2A,a_grid_2A_big,z_grid_2A,pi_z_2A,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,n_d_2A,n_a_2A_GE,d_grid_2A,a_grid_2A_GE,figure_c);
     exportgraphics(figure(figure_c),['./TestOutput/CoreInfHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 end % doPart(10): two endogenous states (figs 17-18)
-
-%% ===== doPart(11): localsearch with the other shock structures =====
-if doPart(11)==1
-    fprintf('\n===== doPart(11): localsearch with the other shock structures =====\n')
-    %% vfoptions.localsearch=1 with z and an iid e, without and with d (stage L1 of InfHorzTPath_localsearch_noz_e_proposal.md)
-    % The reference is per (d,a,z,e): one window per current e. Sections (1)-(7) and (9) are the value fn step and the
-    % seed sweeps (including their DC and lowmemory 1 and 2 versions), section (8) is a general eqm path by shooting and
-    % by Anderson. No figures.
-    output=CoreInfHorzTPath_localsearch_e(T,PricePath,ParamPath,n_d,n_a,n_z,d_grid,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,n_d_GE,n_a_GE,d_grid_GE,a_grid_GE);
-
-    %% vfoptions.localsearch=1 without z: no z and no e (stage L2), and no z with an iid e (stage L3), without and with d
-    % The same sections as above, with the reference [N_dref,N_a] (no e) or [N_dref,N_a,N_e] (with e). The general eqm
-    % section is run with e only: with neither z nor e there is no uncertainty and the stationary eqm is degenerate.
-    % Once L1-L3 are green, this part is to be merged into doPart(6) and doPart(7) (user, 2026-11-01).
-    output=CoreInfHorzTPath_localsearch_noz(T,PricePath,ParamPath,n_d,n_a,d_grid,a_grid,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,n_d_GE,n_a_GE,d_grid_GE,a_grid_GE);
-end % doPart(11): localsearch with the other shock structures
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
