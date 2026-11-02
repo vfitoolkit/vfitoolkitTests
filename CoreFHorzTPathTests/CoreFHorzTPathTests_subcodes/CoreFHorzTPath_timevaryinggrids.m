@@ -33,6 +33,9 @@ function output=CoreFHorzTPath_timevaryinggrids(T,PricePath,ParamPath,n_a,n_z,N_
 %        one GE iteration), and with them held fixed (not in ParamPath) reproduce the plain run
 %   (V10) transpathoptions.fastOLG=0 with simoptions.fastOLG=1 (the default in TransitionPath_Case1_FHorz):
 %        the agent dist path, and one GE iteration, against both fastOLG=0
+%   (V11) models with e: one GE iteration's own general eqm conditions against the same conditions built from
+%        ValueFnOnTransPath, AgentDistOnTransPath and EvalFnOnTransPath_AggVars (the only check that sees the GE
+%        path's value fn step ignore a moving e grid in both layouts at once); fastOLG=0 and 1
 
 OutputTypes={'Mean','Median','Variance','LorenzCurve','Gini','QuantileCutoffs','QuantileMeans'};
 scalarstat=[1,1,1,0,1,0,0]; % Mean, Median, Variance, Gini are one number per age
@@ -409,7 +412,7 @@ for mm=1:5
             vfoptionsGF.n_e=n_e; vfoptionsGF.e_grid=e_gridG(:,end); vfoptionsGF.pi_e=pi_e;
             simoptionsG.n_e=n_e; simoptionsG.e_grid=e_gridG; simoptionsG.pi_e=pi_e;
         end
-        V_finalG=ValueFnIter_Case1_FHorz(n_d,n_a,n_zm,N_j,d_grid,a_grid,z_gridGF,pi_zm,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsGF);
+        [V_finalG,Policy_finalG]=ValueFnIter_Case1_FHorz(n_d,n_a,n_zm,N_j,d_grid,a_grid,z_gridGF,pi_zm,ReturnFn,Params,DiscountFactorParamNames,[],vfoptionsGF);
         transpathoptionsG=transpathoptionsbaseline;
         transpathoptionsG.maxiter=1;
         transpathoptionsG.GEnewprice=2; % Anderson acceleration
@@ -426,6 +429,32 @@ for mm=1:5
         simoptionsG=rmfield(simoptionsG,'fastOLG');
         PricePathGS=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_finalG, AgentDist_initial, jequaloneDist, n_d, n_a, n_zm, N_j, d_grid,a_grid,z_gridG, pi_zm, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsG, simoptionsG, vfoptionsG);
         fprintf('Shocks over the path, %s: (V10) one iteration of the GE path, %s, transpathoptions.fastOLG=0 with the default simoptions.fastOLG vs both 0, this should be zero: %.3e \n',modelname,GEcasename,max(abs(PricePathGS.r-PricePathG0.r)))
+        % (V11) The GE path's own general eqm conditions after one shooting iteration (evaluated at the input path),
+        % against the same conditions built independently: ValueFnOnTransPath, AgentDistOnTransPath and
+        % EvalFnOnTransPath_AggVars at the same prices. (V6) and (V10) compare the GE path with itself, so they
+        % cannot see a value fn step that ignores a moving e grid in BOTH layouts, which is what Step1 did with e
+        % but no z (it switched to the path-varying e arrays on zpathtrivial; only epathtrivial is set then).
+        % Periods 1 to T-1, so as not to depend on how either side handles the last period.
+        if usee==1
+            transpathoptionsV=transpathoptionsbaseline;
+            transpathoptionsV.maxiter=1;
+            transpathoptionsV.GEnewprice=3; % shooting: returns the conditions of the one sweep, at the input path
+            transpathoptionsV.GEnewprice3.howtoupdate={'earningsgap','r',0,0.1};
+            transpathoptionsV.verbose=0;
+            for fo=0:1
+                transpathoptionsV.fastOLG=fo;
+                simoptionsV=simoptionsG;
+                simoptionsV.fastOLG=fo;
+                [~,GEcondnPathV]=TransitionPath_Case1_FHorz(PricePath, ParamPath, T, V_finalG, AgentDist_initial, jequaloneDist, n_d, n_a, n_zm, N_j, d_grid,a_grid,z_gridG, pi_zm, ReturnFn, FnsToEvaluate, GeneralEqmEqns, Params, DiscountFactorParamNames, AgeWeightParamNames, transpathoptionsV, simoptionsV, vfoptionsG);
+                [~,PolicyPathV]=ValueFnOnTransPath_Case1_FHorz(PricePath, ParamPath, T, V_finalG, Policy_finalG, Params, n_d, n_a, n_zm, N_j, d_grid, a_grid,z_gridG, pi_zm, DiscountFactorParamNames, ReturnFn, transpathoptionsV, vfoptionsG);
+                AgentDistPathV=AgentDistOnTransPath_Case1_FHorz(AgentDist_initial, jequaloneDist, PricePath, ParamPath, PolicyPathV, AgeWeightParamNames,n_d,n_a,n_zm,N_j,pi_zm, T,Params, transpathoptionsV, simoptionsV);
+                AggVarsPathV=EvalFnOnTransPath_AggVars_Case1_FHorz(FnsToEvaluate, AgentDistPathV, PolicyPathV, PricePath, ParamPath, Params, T, n_d, n_a, n_zm, N_j, d_grid, a_grid,z_gridG, transpathoptionsV, simoptionsV);
+                gapV=reshape(AggVarsPathV.earnings.Mean,1,[])-0.5;
+                gapGE=reshape(GEcondnPathV.earningsgap,1,[]);
+                fprintf('Shocks over the path, %s: (V11) one iteration of the GE path, %s, fastOLG=%i, its general eqm conditions vs those from ValueFnOnTransPath, AgentDistOnTransPath and AggVars, periods 1 to T-1, this should be zero: %.3e \n',modelname,GEcasename,fo,max(abs(gapGE(1:T-1)-gapV(1:T-1))))
+            end
+            clear PolicyPathV AgentDistPathV AggVarsPathV GEcondnPathV gapV gapGE
+        end
         if gg==1 % kept for (V8)
             V_finalGD=V_finalG;
             PricePathGD1=PricePathG1;

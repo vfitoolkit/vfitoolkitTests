@@ -27,6 +27,8 @@
 % doPart(11): shocks that vary by age, and four raw fixes (no figures)
 % doPart(12): two endogenous states, without e (figs 17-20; was CoreFHorzTPathTwoEndoTests)
 % doPart(13): two endogenous states, with e (figs 21-24; was CoreFHorzTPathTwoEndoTests)
+% doPart(14): transpathoptions.fastOLG=2 (fastOLG for the local search sweeps, slowOLG for the full ones) (no figures)
+% doPart(15): constraints on the prices (constrainpositive, constrain0to1, constrainAtoB): shooting, Anderson, quasi-Newton (every Jacobianmethod) (no figures; with permanent types it is CoreFHorzTPathPTypeTests doPart(15))
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -35,7 +37,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -342,6 +344,25 @@ if doPart(13)==1
     output=CoreFHorzTPathTwoEndo_d_z_e_nosemiz(T,PricePath,ParamPath,n_d,n_a_2A,n_a_notsobig_2A,n_z,N_j,d_grid,a_grid_2A,a_grid_notsobig_2A,z_grid,pi_z,Params_2A,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,figure_c);
     exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzTPathTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 end % doPart(13): two endogenous states, with e (figs 21-24)
+
+%% ===== doPart(14): transpathoptions.fastOLG=2 =====
+if doPart(14)==1
+    fprintf('\n===== doPart(14): transpathoptions.fastOLG=2 =====\n')
+    %% The doPart(10) firm model, solved with local search by fastOLG=1 and by fastOLG=2 (fastOLG for the local
+    % search sweeps, slowOLG for the full sweeps): the same answer exactly, and the full sweeps were solved age
+    % by age; then ValueFnOnTransPath with fastOLG=2, and the refusals as a set. See the header of the subcode.
+    output=CoreFHorzTPath_fastOLG2(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(14): transpathoptions.fastOLG=2
+
+%% ===== doPart(15): constraints on the prices =====
+if doPart(15)==1
+    fprintf('\n===== doPart(15): constraints on the prices =====\n')
+    %% transpathoptions.constrainpositive, constrain0to1 and constrainAtoB: a fraction-to-the-boundary rule on each
+    % update. Never-binding bounds bit-identical, one binding update against the rule by hand, refusals as a set,
+    % for shooting, Anderson (Type-II, Type-I, with local search) and quasi-Newton (every Jacobianmethod). Permanent types are in
+    % CoreFHorzTPathPTypeTests doPart(15). See the header of the subcode.
+    output=CoreFHorzTPath_constraints(T,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(15): constraints on the prices
 
 %% Done! Damn that was a lot of tests. Glad that is over.
 
