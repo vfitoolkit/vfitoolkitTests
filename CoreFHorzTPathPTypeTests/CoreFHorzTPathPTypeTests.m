@@ -77,6 +77,7 @@
 % doPart(11): permanent type masses changing over the path (no figures)
 % doPart(12): z and e grids varying over the path by ptype (no figures)
 % doPart(13): experience assets and grid interpolation by ptype (no figures)
+% doPart(15): constraints on the prices (constrainpositive, constrain0to1, constrainAtoB), shooting and Anderson (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -85,7 +86,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -254,6 +255,12 @@ if doPart(13)==1
     fprintf('\n===== doPart(13): experience assets and grid interpolation by ptype (no figures) =====\n')
     output=CoreFHorzTPathPType_ExpAsset(T,PricePath,ParamPath,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
 end % doPart(13): experience assets and grid interpolation by ptype (no figures)
+
+%% ===== doPart(15): constraints on the prices (no figures) =====
+if doPart(15)==1
+    fprintf('\n===== doPart(15): constraints on the prices (no figures) =====\n')
+    output=CoreFHorzTPathPType_constraints(T,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(15): constraints on the prices (no figures)
 
 % All looks good!
 
