@@ -56,13 +56,7 @@ if doPart(1)==1
     output=CoreInfHorzTPathAlgo_d_z_noe_nosemiz(T,PricePath,ParamPath,n_d,n_a,n_a_big,n_z,d_grid,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,n_d_GE,n_a_GE,d_grid_GE,a_grid_GE,figure_c);
 end % doPart(1): one endogenous state (figs 1-2)
 
-% %% Two endogenous states, without d
-% figure_c=3;
-% output=CoreInfHorzTPathAlgo_nod_z_noe_nosemiz_with2A(T,PricePath_2A,ParamPath_2A,n_d_2A,n_a_2A,n_a_2A_big,n_z_2A,d_grid_2A,a_grid_2A,a_grid_2A_big,z_grid_2A,pi_z_2A,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,n_d_2A,n_a_2A_GE,d_grid_2A,a_grid_2A_GE,figure_c);
-% 
-% %% Two endogenous states, with d
-% figure_c=4;
-% output=CoreInfHorzTPathAlgo_d_z_noe_nosemiz_with2A(T,PricePath_2A,ParamPath_2A,n_d_2A,n_a_2A,n_a_2A_big,n_z_2A,d_grid_2A,a_grid_2A,a_grid_2A_big,z_grid_2A,pi_z_2A,Params,DiscountFactorParamNames,transpathoptionsbaseline,vfoptionsbaseline,simoptionsbaseline,n_d_2A,n_a_2A_GE,d_grid_2A,a_grid_2A_GE,figure_c);
+
 
 %% Diagnostic: is the Jacobian ill-conditioned because of the discrete d, or intrinsically?
 % One Jacobian per (n_d_GE, epsprice) cell at maxiter=1, rather than four full Newton solves.
