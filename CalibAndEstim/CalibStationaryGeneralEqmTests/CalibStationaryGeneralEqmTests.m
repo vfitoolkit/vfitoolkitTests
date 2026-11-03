@@ -67,8 +67,12 @@
 %           calibrateshocks=1 left the shock grids undefined (OLG) or empty (BIHA); CalibParams undefined when the first calibrated
 %           parameter is a per-type matrix
 %
-% Not covered yet: general eqm conditions by ptype (heteroagentoptions.GEptype) in the PType calibrations (to be added once the rest is
-% green); jequaloneDist as a function in the PType parts (StationaryDist_Case1_FHorz_PType, which the calibration objectives use, does
+%   2026-11-01: general eqm conditions by ptype (heteroagentoptions.GEptype, and intermediateEqnsptype) in the PType calibrations,
+%           parts 22-23: before, the joint objective ignored GEptype and a GE price given per ptype crashed it; now joint evaluates the
+%           conditions by ptype as HeteroAgentStationaryEqm does ('_name' AggVars and parameters) and calibrates a per-ptype GE price as one
+%           parameter per ptype; nested returns a per-ptype GE price in the form it was given
+%
+% Not covered yet: jequaloneDist as a function in the PType parts (StationaryDist_Case1_FHorz_PType, which the calibration objectives use, does
 % not take one); the full InfHorz target battery (quantiles, restricted AutoCorr/CrossSec, horizons) is CalibInfHorzTests' job and is not
 % repeated here; CMA-ES (fminalgo=4).
 %
@@ -97,10 +101,12 @@
 % doPart(19): InfHorz PType (BIHA): joint vs nested; the inner GE solve; constraints reach the inner solver; GE prices in CalibParams; the type masses calibrated directly
 % doPart(20): InfHorz PType (BIHA): round trips (one price): varphi per type as a matrix, joint and nested; the type masses through ParametrizeParamsFn
 % doPart(21): InfHorz PType (BIHA): ExogShockFn (shared and per type), CustomModelStats (caliboptions, both usergrids; heteroagentoptions), intermediateEqns
+% doPart(22): FHorz PType (OLG): general eqm conditions by ptype (GEptype) with Tr per ptype: identical-types equivalence, vs HeteroAgentStationaryEqm with GEptype, per-type intermediateEqn, nested, joint round trip, Tr as a vector, multiGEweights expansion
+% doPart(23): InfHorz PType (BIHA): the same
 %
 % Parts are independent: the setup, the addpaths and the model preamble all sit OUTSIDE the if-blocks and so always run, and no
 % part reads another part's output. Any subset can be run, in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1, 1,1,1,1,1, 1,1];
 
 %% Diary of the command window output
 if ~exist('./TestOutput','dir')
@@ -343,6 +349,20 @@ if doPart(21)==1
     fprintf('\n===== doPart(21): InfHorz PType (BIHA) ExogShockFn, CustomModelStats, intermediateEqns =====\n')
     output=CalibSGE_InfHorzPType_Extras(n_d_InfHorz,n_a,n_z,Names_i,d_grid_InfHorz,a_grid,z_grid_InfHorz,pi_z_InfHorz,Params_InfHorz_PType,DiscountFactorParamNames,PTypeDistParamNames,GEPriceParamNames,vfoptions,simoptions);
 end % doPart(21)
+
+%% ===================== General eqm conditions by permanent type (GEptype) ===================
+
+%% ===== doPart(22): FHorz PType GEptype =====
+if doPart(22)==1
+    fprintf('\n===== doPart(22): FHorz PType (OLG) general eqm conditions by ptype (GEptype), GE prices by ptype =====\n')
+    output=CalibSGE_FHorzPType_GEptype(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,Params_PType,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames,jequaloneDist,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(22)
+
+%% ===== doPart(23): InfHorz PType GEptype =====
+if doPart(23)==1
+    fprintf('\n===== doPart(23): InfHorz PType (BIHA) general eqm conditions by ptype (GEptype), GE prices by ptype =====\n')
+    output=CalibSGE_InfHorzPType_GEptype(n_d_InfHorz,n_a,n_z,Names_i,d_grid_InfHorz,a_grid,z_grid_InfHorz,pi_z_InfHorz,Params_InfHorz_PType,DiscountFactorParamNames,PTypeDistParamNames,GEPriceParamNames,vfoptions,simoptions);
+end % doPart(23)
 
 % All looks good!
 
