@@ -3,12 +3,7 @@
 % pi_S(S_t,:); S_t=S_initial up to T1, frozen from T2+1 on;
 % prices depend on the history of S, so everything lives on a TREE of histories (see UncertainTransPathTree).
 %
-% This is a sub-bank of CoreInfHorzTPathTests and reuses its setup and return functions. Written test-first,
-% 2026-10-30, with stage U1 of UncertainTransitionPath_InfHorz_proposal.md: the tree and the three commands that
-% evaluate things on it AT GIVEN PRICES
-%   UncertainTransPathTree, ValueFnOnUncertainTransPath_InfHorz, AgentDistOnUncertainTransPath_InfHorz,
-%   EvalFnOnUncertainTransPath_AggVars_InfHorz
-% No general eqm yet (UncertainTransitionPath_InfHorz is stage U2).
+% This is a sub-bank of CoreInfHorzTPathTests and reuses its setup and return functions.
 %
 % THE ORACLES, strongest first
 %   - a tree with a single history IS a deterministic transition: ValueFnOnTransPath_InfHorz etc. on the same path
@@ -27,11 +22,12 @@
 % doPart(4): the tree built by hand (absorbing S, one branch per switch date, as in ABCP2024)
 % doPart(5): local consistency on a full support tree with d
 % doPart(6): refusals, each by its message
-% doPart(7): UncertainTransitionPath_InfHorz, general eqm on the tree by shooting (stage U2)
-% doPart(8): UncertainTransitionPath_InfHorz with Anderson acceleration and with price constraints (stage U3)
+% doPart(7): UncertainTransitionPath_InfHorz, general eqm on the tree by shooting
+% doPart(8): UncertainTransitionPath_InfHorz with Anderson acceleration and with price constraints
+% doPart(9): _tplus1 and _tminus1 on the tree: at a branching node a condition that uses _tplus1 holds in expectation
 %
 % Parts are independent: the setup and the addpaths sit OUTSIDE the if-blocks.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('../TestOutput','dir')
@@ -104,6 +100,12 @@ end
 if doPart(8)==1
     fprintf('\n===== doPart(8): Anderson acceleration and price constraints on the tree =====\n')
     output=UncertainTPath_AndersonConstraints(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end
+
+%% ===== doPart(9): _tplus1 and _tminus1 =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): _tplus1 and _tminus1 on the tree =====\n')
+    output=UncertainTPath_tplus1(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end
 
 %% One verdict for the whole run

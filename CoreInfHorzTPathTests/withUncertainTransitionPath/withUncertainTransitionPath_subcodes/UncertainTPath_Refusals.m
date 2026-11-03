@@ -81,12 +81,14 @@ try
 catch ME
     err(12)=contains(ME.message,'need a field S2');
 end
+% _tminus1 and _tplus1 inputs USED TO BE REFUSED here; they are implemented (CoreInfHorzUncertainTPathTests doPart(9)),
+% so this now checks the refusal that remains for this input, a _tminus1 without transpathoptions.initialvalues
 FnsToEvaluateE.lagged=@(aprime,a,z,r_tminus1) r_tminus1*a;
 Tree=UncertainTransPathTree(T,T1,T2,pi_S,1);
 try
     EvalFnOnUncertainTransPath_AggVars_InfHorz(FnsToEvaluateE, zeros(n_a,n_z,Tree.nNodes), ones(1,n_a,n_z,Tree.nNodes), PricePathU, ParamPathU, Params, T, T1, T2, pi_S, 1, n_d,n_a,n_z, d_grid,a_grid,z_grid, transpathoptions, struct());
 catch ME
-    err(13)=contains(ME.message,'_tminus1 and _tplus1 inputs are not implemented');
+    err(13)=contains(ME.message,'a _tminus1 input is used, so transpathoptions.initialvalues must be given');
 end
 try
     AgentDistOnUncertainTransPath_InfHorz(ones(n_a,n_z)/(n_a*n_z), PricePathU, ParamPathU, ones(1,n_a,n_z,T), T, T1, T2, pi_S, 1, n_d,n_a,n_z,pi_z, Params, transpathoptions, struct());
@@ -106,7 +108,7 @@ fprintf('Refusals: raising transpathoptions.maxnhistories lets the 2048-history 
 fprintf('Refusals: vfoptions.localsearch, should be one: %i \n',err(10))
 fprintf('Refusals: a pi_z that varies over the path, should be one: %i \n',err(11))
 fprintf('Refusals: a V_final without a field for an S that can be reached in period T, should be one: %i \n',err(12))
-fprintf('Refusals: a _tminus1 input to FnsToEvaluate, should be one: %i \n',err(13))
+fprintf('Refusals: a _tminus1 input to FnsToEvaluate without transpathoptions.initialvalues, should be one: %i \n',err(13))
 fprintf('Refusals: a PolicyPathTree with T periods instead of the nodes, should be one: %i \n',err(14))
 
 output=struct();
