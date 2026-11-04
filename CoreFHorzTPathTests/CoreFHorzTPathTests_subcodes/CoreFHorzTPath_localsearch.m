@@ -2,9 +2,9 @@ function output=CoreFHorzTPath_localsearch(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z
 % vfoptions.localsearch=1 as a VALUE FUNCTION STEP. No general eqm and no figures: direct calls to the
 % single-step dispatchers, on every combination of
 %   layout:   slowOLG (transpathoptions.fastOLG=0) and fastOLG (=1)
-%   shocks:   z, no z, z and e, e without z
-%   corner:   without/with d, without/with the grid interpolation layer
-% 8 x 4 = 32 cases. The general eqm path is doPart(10).
+%   shocks:   z, no z, z and e, e without z, and z with n_z=1, z and e with n_z=n_e=1
+%   corner:   without/with d, without/with the grid interpolation layer, and d with n_d=1 without/with GI
+% 12 x 6 = 72 cases. The general eqm path is doPart(10).
 % The grids are built by ExogShockSetup_FHorz_TPath, exactly as TransitionPath_Case1_FHorz builds them,
 % so each dispatcher sees the shapes it sees on a real path; V is shaped as that command shapes V_final.
 %
@@ -16,26 +16,46 @@ function output=CoreFHorzTPath_localsearch(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z
 % default) must give a DIFFERENT V.
 % (9) is the divide-and-conquer SEED route: a DC seed sweep must give the unrestricted V and a reference
 % that makes (5) hold again. (10) is lowmemory on the fastOLG seed sweeps.
+% (11) and (12), added 2026-11-03 with the fix to the chosen-d lookups (which broke when n_d=1 made the per-d
+% arrays vectors): n_d=1 against the no-d model with that d as a parameter, V, Policy and seed reference exactly;
+% and lowmemory on the slowOLG seed sweeps (reached only by a direct call). Before the fix the n_d=1 corners with
+% n_z=1 (ss=5), n_z=n_e=1 (ss=6) and (12) stopped the run with a dimension error.
 % References are compared FLATTENED (N_dref-by-the rest): each raw keeps its own Policy dim order.
 
 N_a=prod(n_a);
-N_z=prod(n_z);
-N_e=prod(n_e);
+% The shocks as passed in; the single-point cases (ss=5,6) replace them inside the loop
+n_z0=n_z; z_grid0=z_grid; pi_z0=pi_z;
+n_e0=n_e; e_grid0=e_grid; pi_e0=pi_e;
 nC=(N_a-1)/2; % the cap: 2*nC+1=N_a, so the window is the whole grid (n_a is odd here)
 a_grid=gpuArray(a_grid);
 Params.r=0.05;
 Params.w=1;
+Params.dfix=d_grid(ceil(n_d/2)); % for (11): the n_d=1 models' single d, as a parameter of the no-d model
 DiscountFactorParamNames={'beta'};
 level1n=floor(sqrt(N_a));
 
 layoutname={'slowOLG','fastOLG'};
-shockname={'z','noz','e','noz_e'};
-cornername={'nod, GI0','nod, GI1','d, GI0','d, GI1'};
+shockname={'z','noz','e','noz_e','z with n_z=1','e with n_z=1 and n_e=1'};
+cornername={'nod, GI0','nod, GI1','d, GI0','d, GI1','d with n_d=1, GI0','d with n_d=1, GI1'};
 for ll=1:2
     fastOLG=ll-1;
-    for ss=1:4
-        hasz=(ss==1 || ss==3);
-        hase=(ss==3 || ss==4);
+    for ss=1:6
+        % ss=5,6 are the shapes of ss=1,3 with single-point shocks: with n_d=1 too, every per-d array the raws
+        % read at the chosen d is then a vector, the case the lookups must reshape (2026-11-03)
+        sh=ss; % the shape
+        n_z=n_z0; z_grid=z_grid0; pi_z=pi_z0; n_e=n_e0; e_grid=e_grid0; pi_e=pi_e0;
+        if ss==5
+            sh=1;
+            n_z=1; z_grid=z_grid0(ceil(n_z0/2)); pi_z=1;
+        elseif ss==6
+            sh=3;
+            n_z=1; z_grid=z_grid0(ceil(n_z0/2)); pi_z=1;
+            n_e=1; e_grid=e_grid0(ceil(n_e0/2)); pi_e=1;
+        end
+        N_z=prod(n_z);
+        N_e=prod(n_e);
+        hasz=(sh==1 || sh==3);
+        hase=(sh==3 || sh==4);
         % The exogenous shocks, set up exactly as TransitionPath_Case1_FHorz does
         transpathoptions=struct();
         transpathoptions.fastOLG=fastOLG;
@@ -54,21 +74,21 @@ for ll=1:2
         [z_gridvals_J, pi_z_J, ~, e_gridvals_J, pi_e_J]=ExogShockSetup_FHorz_TPath(n_z_ss,z_grid_ss,pi_z_ss,N_a,N_j,T,Params,{},[],{},[],transpathoptions,simoptions,4);
         % V as TransitionPath_Case1_FHorz shapes V_final
         if fastOLG==0
-            if ss==1
+            if sh==1
                 V0=zeros(N_a,N_z,N_j,'gpuArray');
-            elseif ss==2
+            elseif sh==2
                 V0=zeros(N_a,N_j,'gpuArray');
-            elseif ss==3
+            elseif sh==3
                 V0=zeros(N_a,N_z,N_e,N_j,'gpuArray');
             else
                 V0=zeros(N_a,N_e,N_j,'gpuArray');
             end
         else
-            if ss==1
+            if sh==1
                 V0=zeros(N_a*N_j,N_z,'gpuArray');
-            elseif ss==2
+            elseif sh==2
                 V0=zeros(N_a,N_j,'gpuArray');
-            elseif ss==3
+            elseif sh==3
                 V0=zeros(N_a*N_j,N_z,N_e,'gpuArray');
             else
                 V0=zeros(N_a*N_j,N_e,'gpuArray');
@@ -76,11 +96,16 @@ for ll=1:2
         end
         N_rest=N_a*N_j*max(N_z*hasz,1)*max(N_e*hase,1);
 
-        for cc=1:4
+        for cc=1:6
             hasd=(cc>=3);
-            useGI=(cc==2 || cc==4);
+            useGI=(cc==2 || cc==4 || cc==6);
             lab=['localsearch FHorz step (',layoutname{ll},', ',shockname{ss},', ',cornername{cc},')'];
-            if hasd
+            if cc>=5
+                % a single d: the middle point of d_grid
+                n_d_cc=1;
+                N_dref=1;
+                d_gridvals=gpuArray(d_grid(ceil(n_d/2)));
+            elseif hasd
                 n_d_cc=n_d;
                 N_dref=prod(n_d);
                 d_gridvals=gpuArray(d_grid);
@@ -91,22 +116,22 @@ for ll=1:2
             end
             % The return fn for this model, from the bank's set
             if hasd
-                if ss==1
+                if sh==1
                     ReturnFn=@(d,aprime,a,z,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_z_noe_nosemiz(d,aprime,a,z,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
-                elseif ss==2
+                elseif sh==2
                     ReturnFn=@(d,aprime,a,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_noz_noe_nosemiz(d,aprime,a,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
-                elseif ss==3
+                elseif sh==3
                     ReturnFn=@(d,aprime,a,z,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_z_e_nosemiz(d,aprime,a,z,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
                 else
                     ReturnFn=@(d,aprime,a,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension) ReturnFn_d_noz_e_nosemiz(d,aprime,a,e,r,w,kappa_j,sigma,eta,varphi,agej,Jr,pension);
                 end
                 ReturnFnParamNames={'r','w','kappa_j','sigma','eta','varphi','agej','Jr','pension'};
             else
-                if ss==1
+                if sh==1
                     ReturnFn=@(aprime,a,z,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod_z_noe_nosemiz(aprime,a,z,r,w,kappa_j,sigma,agej,Jr,pension);
-                elseif ss==2
+                elseif sh==2
                     ReturnFn=@(aprime,a,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod_noz_noe_nosemiz(aprime,a,r,w,kappa_j,sigma,agej,Jr,pension);
-                elseif ss==3
+                elseif sh==3
                     ReturnFn=@(aprime,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod_z_e_nosemiz(aprime,a,z,e,r,w,kappa_j,sigma,agej,Jr,pension);
                 else
                     ReturnFn=@(aprime,a,e,r,w,kappa_j,sigma,agej,Jr,pension) ReturnFn_nod_noz_e_nosemiz(aprime,a,e,r,w,kappa_j,sigma,agej,Jr,pension);
@@ -115,26 +140,29 @@ for ll=1:2
             end
             % The dispatcher for this layout and these shocks, with its own argument list
             if fastOLG==0
-                if ss==1
-                    disp_fn=@(V,ref,vfo) ValueFnIter_FHorz_TPath_SingleStep(V,n_d_cc,n_a,n_z,N_j,d_gridvals,a_grid,z_gridvals_J,pi_z_J,ReturnFn,Params,DiscountFactorParamNames,ReturnFnParamNames,ref,vfo);
-                elseif ss==2
-                    disp_fn=@(V,ref,vfo) ValueFnIter_FHorz_TPath_SingleStep_noz(V,n_d_cc,n_a,N_j,d_gridvals,a_grid,ReturnFn,Params,DiscountFactorParamNames,ReturnFnParamNames,ref,vfo);
-                elseif ss==3
-                    disp_fn=@(V,ref,vfo) ValueFnIter_FHorz_TPath_SingleStep_e(V,n_d_cc,n_a,n_z,n_e,N_j,d_gridvals,a_grid,z_gridvals_J,e_gridvals_J,pi_z_J,pi_e_J,ReturnFn,Params,DiscountFactorParamNames,ReturnFnParamNames,ref,vfo);
+                if sh==1
+                    disp_fnX=@(V,ref,vfo,nd,dg,RF,RFN) ValueFnIter_FHorz_TPath_SingleStep(V,nd,n_a,n_z,N_j,dg,a_grid,z_gridvals_J,pi_z_J,RF,Params,DiscountFactorParamNames,RFN,ref,vfo);
+                elseif sh==2
+                    disp_fnX=@(V,ref,vfo,nd,dg,RF,RFN) ValueFnIter_FHorz_TPath_SingleStep_noz(V,nd,n_a,N_j,dg,a_grid,RF,Params,DiscountFactorParamNames,RFN,ref,vfo);
+                elseif sh==3
+                    disp_fnX=@(V,ref,vfo,nd,dg,RF,RFN) ValueFnIter_FHorz_TPath_SingleStep_e(V,nd,n_a,n_z,n_e,N_j,dg,a_grid,z_gridvals_J,e_gridvals_J,pi_z_J,pi_e_J,RF,Params,DiscountFactorParamNames,RFN,ref,vfo);
                 else
-                    disp_fn=@(V,ref,vfo) ValueFnIter_FHorz_TPath_SingleStep_noz_e(V,n_d_cc,n_a,n_e,N_j,d_gridvals,a_grid,e_gridvals_J,pi_e_J,ReturnFn,Params,DiscountFactorParamNames,ReturnFnParamNames,ref,vfo);
+                    disp_fnX=@(V,ref,vfo,nd,dg,RF,RFN) ValueFnIter_FHorz_TPath_SingleStep_noz_e(V,nd,n_a,n_e,N_j,dg,a_grid,e_gridvals_J,pi_e_J,RF,Params,DiscountFactorParamNames,RFN,ref,vfo);
                 end
             else
-                if ss==1
-                    disp_fn=@(V,ref,vfo) ValueFnIter_FHorz_TPath_SingleStep_fastOLG(V,n_d_cc,n_a,n_z,N_j,d_gridvals,a_grid,z_gridvals_J,pi_z_J,ReturnFn,Params,DiscountFactorParamNames,ReturnFnParamNames,ref,vfo);
-                elseif ss==2
-                    disp_fn=@(V,ref,vfo) ValueFnIter_FHorz_TPath_SingleStep_fastOLG_noz(V,n_d_cc,n_a,N_j,d_gridvals,a_grid,ReturnFn,Params,DiscountFactorParamNames,ReturnFnParamNames,ref,vfo);
-                elseif ss==3
-                    disp_fn=@(V,ref,vfo) ValueFnIter_FHorz_TPath_SingleStep_fastOLG_e(V,n_d_cc,n_a,n_z,n_e,N_j,d_gridvals,a_grid,z_gridvals_J,e_gridvals_J,pi_z_J,pi_e_J,ReturnFn,Params,DiscountFactorParamNames,ReturnFnParamNames,ref,vfo);
+                if sh==1
+                    disp_fnX=@(V,ref,vfo,nd,dg,RF,RFN) ValueFnIter_FHorz_TPath_SingleStep_fastOLG(V,nd,n_a,n_z,N_j,dg,a_grid,z_gridvals_J,pi_z_J,RF,Params,DiscountFactorParamNames,RFN,ref,vfo);
+                elseif sh==2
+                    disp_fnX=@(V,ref,vfo,nd,dg,RF,RFN) ValueFnIter_FHorz_TPath_SingleStep_fastOLG_noz(V,nd,n_a,N_j,dg,a_grid,RF,Params,DiscountFactorParamNames,RFN,ref,vfo);
+                elseif sh==3
+                    disp_fnX=@(V,ref,vfo,nd,dg,RF,RFN) ValueFnIter_FHorz_TPath_SingleStep_fastOLG_e(V,nd,n_a,n_z,n_e,N_j,dg,a_grid,z_gridvals_J,e_gridvals_J,pi_z_J,pi_e_J,RF,Params,DiscountFactorParamNames,RFN,ref,vfo);
                 else
-                    disp_fn=@(V,ref,vfo) ValueFnIter_FHorz_TPath_SingleStep_fastOLG_noz_e(V,n_d_cc,n_a,n_e,N_j,d_gridvals,a_grid,e_gridvals_J,pi_e_J,ReturnFn,Params,DiscountFactorParamNames,ReturnFnParamNames,ref,vfo);
+                    disp_fnX=@(V,ref,vfo,nd,dg,RF,RFN) ValueFnIter_FHorz_TPath_SingleStep_fastOLG_noz_e(V,nd,n_a,n_e,N_j,dg,a_grid,e_gridvals_J,pi_e_J,RF,Params,DiscountFactorParamNames,RFN,ref,vfo);
                 end
             end
+
+            disp_fn=@(V,ref,vfo) disp_fnX(V,ref,vfo,n_d_cc,d_gridvals,ReturnFn,ReturnFnParamNames);
+
 
             vfoptions=struct();
             vfoptions.exoticpreferences='None';
@@ -254,6 +282,53 @@ for ll=1:2
                 [Vlm,~,Reflm]=disp_fn(Vnext,[],vfoptionsM);
                 fprintf('%s: (10) seed sweep with lowmemory=1 against lowmemory=0, V, this should be zero: %.3e \n',lab,gather(max(abs(Vlm(:)-Vseed(:)))))
                 fprintf('%s: (10) seed sweep with lowmemory=1 against lowmemory=0, reference, this should be zero: %.3e \n',lab,gather(max(abs(Reflm(:)-Ref(:)))))
+            end
+
+            %% (11) n_d=1 against the no-d model with that d as a parameter: the same problem, so the same answer.
+            % A discriminator for the n_d=1 corners, not just a no-crash test: a lookup that read the wrong d or the
+            % wrong state would give a different Policy or reference.
+            if cc>=5
+                nodstates={'aprime','a'};
+                zn='noz'; en='noe';
+                if hasz
+                    nodstates{end+1}='z'; zn='z';
+                end
+                if hase
+                    nodstates{end+1}='e'; en='e';
+                end
+                fname=['ReturnFn_d_',zn,'_',en,'_nosemiz'];
+                ReturnFnFix=str2func(['@(',strjoin([nodstates,ReturnFnParamNames,{'dfix'}],','),') ',fname,'(dfix,',strjoin([nodstates,ReturnFnParamNames],','),')']);
+                [Vn,Pn]=disp_fnX(Vnext,[],vfoptions,0,[],ReturnFnFix,[ReturnFnParamNames,{'dfix'}]);
+                [~,~,Refn]=disp_fnX(Vnext,[],vfoptionsS,0,[],ReturnFnFix,[ReturnFnParamNames,{'dfix'}]);
+                fprintf('%s: (11) n_d=1 against the no-d model with d as a parameter, V, this should be zero: %.3e \n',lab,gather(max(abs(Vstd(:)-Vn(:)))))
+                % Policy: with d it has a leading d row (always 1) where the no-d Policy has none, or folds d in (d+N_d*(aprime-1)=aprime)
+                Pd=reshape(Pstd,size(Pstd,1),[]);
+                Pn=reshape(Pn,size(Pn,1),[]);
+                if size(Pd,1)==size(Pn,1)+1
+                    fprintf('%s: (11) n_d=1, the d row of Policy is all ones, should be one: %i \n',lab,gather(all(Pd(1,:)==1)))
+                    Pd=Pd(2:end,:);
+                end
+                fprintf('%s: (11) n_d=1 against the no-d model with d as a parameter, Policy, this should be zero: %.3e \n',lab,gather(max(abs(Pd(:)-Pn(:)))))
+                fprintf('%s: (11) n_d=1 against the no-d model with d as a parameter, seed reference, this should be zero: %.3e \n',lab,gather(max(abs(Ref(:)-Refn(:)))))
+            end
+
+            %% (12) lowmemory on the slowOLG seed sweeps with d, without GI or DC (the LSseed raws' per-e and per-(z,e) loops)
+            % Reached only by a direct call: TransitionPath_Case1_FHorz refuses lowmemory>0 with slowOLG, and the seed sweep is
+            % only ever run by it. The loops are kept (as in the stationary raws) and must agree with the whole sweep.
+            if fastOLG==0 && hasd && ~useGI && hase
+                if hasz
+                    lowmemlist=[1,2];
+                else
+                    lowmemlist=1;
+                end
+                for lm=lowmemlist
+                    vfoptionsM=vfoptionsS;
+                    vfoptionsM.lowmemory=lm;
+                    [Vlm,Plm,Reflm]=disp_fn(Vnext,[],vfoptionsM);
+                    fprintf('%s: (12) slowOLG seed sweep with lowmemory=%i against lowmemory=0, V, this should be zero: %.3e \n',lab,lm,gather(max(abs(Vlm(:)-Vseed(:)))))
+                    fprintf('%s: (12) slowOLG seed sweep with lowmemory=%i against lowmemory=0, Policy, this should be zero: %.3e \n',lab,lm,gather(max(abs(Plm(:)-Pseed(:)))))
+                    fprintf('%s: (12) slowOLG seed sweep with lowmemory=%i against lowmemory=0, reference, this should be zero: %.3e \n',lab,lm,gather(max(abs(Reflm(:)-Ref(:)))))
+                end
             end
         end
     end
