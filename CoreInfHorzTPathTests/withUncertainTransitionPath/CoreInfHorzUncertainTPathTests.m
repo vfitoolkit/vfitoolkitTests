@@ -25,9 +25,10 @@
 % doPart(7): UncertainTransitionPath_InfHorz, general eqm on the tree by shooting
 % doPart(8): UncertainTransitionPath_InfHorz with Anderson acceleration and with price constraints
 % doPart(9): _tplus1 and _tminus1 on the tree: at a branching node a condition that uses _tplus1 holds in expectation
+% doPart(10): a stochastic discount factor, name_tplus1 in DiscountFactorParamNames, read at the child
 %
 % Parts are independent: the setup and the addpaths sit OUTSIDE the if-blocks.
-doPart=[1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('../TestOutput','dir')
@@ -106,6 +107,12 @@ end
 if doPart(9)==1
     fprintf('\n===== doPart(9): _tplus1 and _tminus1 on the tree =====\n')
     output=UncertainTPath_tplus1(T,n_a_GE,n_z,a_grid_GE,z_grid,pi_z,Params,DiscountFactorParamNames,transpathoptionsbaseline);
+end
+
+%% ===== doPart(10): a stochastic discount factor =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): a stochastic discount factor, name_tplus1 in DiscountFactorParamNames =====\n')
+    output=UncertainTPath_SDF(T,rS,wS,n_a,n_z,a_grid,z_grid,pi_z,n_a_GE,a_grid_GE,Params,DiscountFactorParamNames,transpathoptionsbaseline);
 end
 
 %% One verdict for the whole run
