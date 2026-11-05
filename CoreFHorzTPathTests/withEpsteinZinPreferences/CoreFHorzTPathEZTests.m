@@ -41,6 +41,7 @@
 % doPart(4): feasibility conventions: -Inf states and zero returns, on the path (no figures)
 % doPart(5): refusals (no figures)
 % doPart(6): local search, the value fn step: seed and restricted sweeps against the unrestricted EZ sweep (no figures)
+% doPart(7): local search inside a general eqm transition path, against the same solve without (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -49,7 +50,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('../TestOutput','dir')
@@ -179,6 +180,13 @@ if doPart(6)==1
     output=EZFHorzTPath_localsearch(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params);
 end % doPart(6): local search, the value fn step
 
+%% ===== doPart(7): local search inside a general eqm transition path =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): local search inside a general eqm transition path =====\n')
+    % The EZ mirror of CoreFHorzTPathTests doPart(10). See the header of the subcode.
+    output=EZFHorzTPath_localsearch_shooting(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(7): local search inside a general eqm transition path
+
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
@@ -190,4 +198,4 @@ diary off
 %% THINGS NOT CHECKED
 % semiz and experienceasset with Epstein-Zin on a transition path (refused, doPart(5))
 % Epstein-Zin with permanent types on a transition path (to come: stage 5)
-% local search inside a general eqm transition path, and the general eqm solves with Epstein-Zin (to come: stages 3 and 4)
+% the general eqm solves with Epstein-Zin beyond doPart(7) (to come: stage 4)
