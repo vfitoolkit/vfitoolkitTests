@@ -19,9 +19,11 @@
 % doPart(5): local consistency on a full support tree with d
 % doPart(6): demographics that depend on S (age weights and newborns per S): the children of a node start apart
 % doPart(7): refusals, as a set, and the warning on a square (N_j=T) entry
+% doPart(8): general eqm on the tree by shooting, UncertainTransitionPath_FHorz (stage F2): a sure switch and identical
+%            regimes against TransitionPath_Case1_FHorz, an absorbing tree checked by hand, a restart, its refusals
 %
 % Parts are independent: the setup and the addpaths sit OUTSIDE the if-blocks.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('../TestOutput','dir')
@@ -86,6 +88,12 @@ end
 if doPart(7)==1
     fprintf('\n===== doPart(7): refusals, and the warning on a square entry =====\n')
     output=UncertainTPathFHorz_Refusals(T,rS,wS,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline,vfoptionsbaseline);
+end
+
+%% ===== doPart(8): general eqm on the tree =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): general eqm on the tree, by shooting =====\n')
+    output=UncertainTPathFHorz_GE(T,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
 end
 
 %% One verdict for the whole run
