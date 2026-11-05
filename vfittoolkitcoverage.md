@@ -7,7 +7,7 @@ detailed sections, which cover the FHorz stationary banks, the InfHorz stationar
 general-equilibrium banks and the transition-path banks (FHorz and InfHorz). The calibration,
 estimation and discretization banks have index rows only.
 
-Last updated: 2026-10-27
+Last updated: 2026-11-05 (the withUncertainTransitionPath rows and section; everything else was surveyed 2026-10-27)
 
 ## Suite index
 
@@ -85,7 +85,8 @@ This is a static count: a check inside a loop runs more than once.
 | | with_CoreFHorzTPathPTypeAlgoTests | 3 | 30 | 2 | all 3, 2026-10-27: 84, 0 | committed |
 | CoreInfHorzTPathTests | — | 6 (5 on) | 737 | 97 | parts 4–5, 2026-10-13: 117, 0 | committed |
 | | with_CoreInfHorzTPathAlgoTests | 2 | 57 | 5 | both, 2026-10-06: 96, **12** (part 1) | driver modified |
-| **total** | | | **3287** | **235** | | |
+| | withUncertainTransitionPath | 11 | 194 | 0 | all 11, 2026-11-05: 261, 0 | committed |
+| **total** | | | **3481** | **235** | | |
 
 ### Calibration and estimation
 
@@ -1536,7 +1537,8 @@ files. *Subcodes* counts the bank's subcode files, excluding cross-tests.
 | └ with_CoreFHorzTPathPTypeAlgoTests | 3 | 3 | — | 30 | 2 | **all 3, 2026-10-27: 84, 0** |
 | CoreInfHorzTPathTests | 6 (part 3 off) | 14 | — | 737 | 97 | parts 4–5, 2026-10-13: 117, 0 |
 | └ with_CoreInfHorzTPathAlgoTests | 2 | 7 | 1 | 57 | 5 | both, 2026-10-06: 96, **12** (part 1) |
-| **total** | | | | **3287** | **235** | |
+| └ withUncertainTransitionPath | 11 | 11 | — | 194 | 0 | **all 11, 2026-11-05: 261, 0** |
+| **total** | | | | **3481** | **235** | |
 
 Four of the eleven have a clean, complete latest run: the main FHorz bank, its QH mirror,
 PTypeAlgo, and (if its run finishes green) PType.
@@ -1649,6 +1651,40 @@ the driver says is deliberate for this build. Only parts 4–5 have a current di
 Parts 1, 2 and 6 have no surviving CoreSummary line. The Algo sub-bank compares the GE algorithms
 and cross-tests a stacked `d_grid` against a joint one. Its last run (10-06) had **12 failures in
 part 1, not yet diagnosed**.
+
+### CoreInfHorzTPathTests / withUncertainTransitionPath
+
+The bank for `UncertainTransitionPath_InfHorz`: a transition with an aggregate shock S, where agents face uncertainty
+about next period's S in periods T1,...,T2, solved on the TREE of histories. Companion commands:
+`ValueFnOnUncertainTransPath_InfHorz`, `AgentDistOnUncertainTransPath_InfHorz`,
+`EvalFnOnUncertainTransPath_AggVars_InfHorz`. The tree is set up by `UncertainTransPathTree`. It has its own driver
+and subcodes, and reuses the parent bank's setup and return functions.
+
+| parts | what |
+|---|---|
+| 1 | the tree itself: counts, probabilities, date-major numbering, segments, prices and parameters on the tree (no solves) |
+| 2 | a single history is a deterministic transition (N_S=1, a sure switch, 2-D and 3-D `pi_S`) |
+| 3 | identical regimes: every history is the deterministic path; nod z, d z, nod noz, nod z e, GI, DC |
+| 4 | the tree built by hand from the deterministic commands, as the ABCP2024 stopgap does it |
+| 5 | local consistency on a full-support tree with d |
+| 6 | refusals, each by its message |
+| 7 | general eqm on the tree by shooting (against `TransitionPath_InfHorz` on a single history and on identical regimes) |
+| 8 | Anderson acceleration and price constraints |
+| 9 | `_tplus1` and `_tminus1`: at a branching node a condition that uses `_tplus1` holds in expectation over the children |
+| 10 | a stochastic discount factor, `name_tplus1` in `DiscountFactorParamNames`, read at the child |
+| 11 | local search (shooting and Anderson, certified by a standard sweep) and `transpathoptions.intermediateEqns` |
+
+The strongest oracles are the identities. A single history is `ValueFnOnTransPath_InfHorz` / `TransitionPath_InfHorz`.
+Identical regimes give the deterministic path. Every node is one step from its children, rebuilt by hand. Each of
+these is paired with a discriminator, so that an identity can't pass because both sides ignore the feature. Two
+general eqm solves of the same model are held to 10 times `toleranceGEprices`.
+
+All 11 parts ran green 2026-11-05 (261, 0). Part 11 goes with toolkit changes that include an internal
+reference-path option in `ValueFnOnTransPath_InfHorz`, which nearly every part of the parent bank calls, so the
+parent bank was re-run in full (3105, 0, 2026-11-05) before they were committed.
+
+Not covered (refused by the command): stockvars, permanent types, z and e that vary over the path as grids, semiz with
+local search. There is no FHorz version.
 
 ### Guards: combinations that used to give silently wrong answers
 

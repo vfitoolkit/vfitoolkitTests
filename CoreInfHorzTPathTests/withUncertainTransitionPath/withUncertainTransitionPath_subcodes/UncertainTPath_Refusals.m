@@ -64,11 +64,13 @@ transpathoptionsH=transpathoptions; transpathoptionsH.maxnhistories=4096;
 TreeH=UncertainTransPathTree(T,3,13,[0.5,0.5;0.5,0.5],1,[],[],transpathoptionsH);
 err(9)=(TreeH.nHist==2048);
 % The commands
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1;
+% vfoptions.localsearch USED TO BE REFUSED here; 1 is now ignored with a warning and 2 forced, as in
+% ValueFnOnTransPath_InfHorz (CoreInfHorzUncertainTPathTests doPart(11)), so this checks the refusal that remains
+vfoptionsE=vfoptions; vfoptionsE.localsearch=3; vfoptionsE.nlocalsearch=1;
 try
     ValueFnOnUncertainTransPath_InfHorz(PricePathU, ParamPathU, T, T1, T2, pi_S, 1, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, DiscountFactorParamNames, ReturnFn, transpathoptions, vfoptionsE);
 catch ME
-    err(10)=contains(ME.message,'localsearch is not implemented for uncertain transition paths');
+    err(10)=contains(ME.message,'vfoptions.localsearch must be 0, 1 (ignored here, with a warning) or 2 (forced)');
 end
 try
     ValueFnOnUncertainTransPath_InfHorz(PricePathU, ParamPathU, T, T1, T2, pi_S, 1, V_final, Policy_final, Params, n_d,n_a,n_z, d_grid,a_grid,z_grid, repmat(pi_z,1,1,T), DiscountFactorParamNames, ReturnFn, transpathoptions, vfoptions);
@@ -105,7 +107,7 @@ fprintf('Refusals: a 3-D pi_S whose third dimension is not T2-T1+1, should be on
 fprintf('Refusals: a ParamPath entry neither N_S-by-T nor 1-by-T, should be one: %i \n',err(7))
 fprintf('Refusals: a PricePath entry of none of the three forms, should be one: %i \n',err(8))
 fprintf('Refusals: raising transpathoptions.maxnhistories lets the 2048-history tree through, should be one: %i \n',err(9))
-fprintf('Refusals: vfoptions.localsearch, should be one: %i \n',err(10))
+fprintf('Refusals: vfoptions.localsearch=3, should be one: %i \n',err(10))
 fprintf('Refusals: a pi_z that varies over the path, should be one: %i \n',err(11))
 fprintf('Refusals: a V_final without a field for an S that can be reached in period T, should be one: %i \n',err(12))
 fprintf('Refusals: a _tminus1 input to FnsToEvaluate without transpathoptions.initialvalues, should be one: %i \n',err(13))

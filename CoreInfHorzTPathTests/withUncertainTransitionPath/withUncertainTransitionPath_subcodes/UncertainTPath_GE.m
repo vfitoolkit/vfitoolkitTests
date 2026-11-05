@@ -212,11 +212,13 @@ try
 catch ME
     err(6)=contains(ME.message,'a _tminus1 input is used, so transpathoptions.initialvalues must be given');
 end
-vfoptionsE=vfoptions; vfoptionsE.localsearch=1; vfoptionsE.nlocalsearch=1;
+% Local search USED TO BE REFUSED here; it is implemented (CoreInfHorzUncertainTPathTests doPart(11)), so this checks
+% the refusal that remains, localsearch=2 (only meaningful to the value fn commands)
+vfoptionsE=vfoptions; vfoptionsE.localsearch=2; vfoptionsE.nlocalsearch=1;
 try
     UncertainTransitionPath_InfHorz(PricePathShaper, ParamPathC, T, T1, T2, pi_SC, 1, AgentDist_initial, n_d,n_a,n_z, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsToEvaluate, GeneralEqmEqns, GeneralEqmEqns, Params, DiscountFactorParamNames, transpathoptions, simoptions, vfoptionsE);
 catch ME
-    err(7)=contains(ME.message,'localsearch is not yet implemented');
+    err(7)=contains(ME.message,'the value 2 is only meaningful to ValueFnOnTransPath_InfHorz and ValueFnOnUncertainTransPath_InfHorz');
 end
 fprintf('Uncertain GE (e): GEnewprice unset is refused by name, should be one: %i \n',err(1))
 fprintf('Uncertain GE (e): GEnewprice=1 is refused by name, should be one: %i \n',err(2))
@@ -224,7 +226,7 @@ fprintf('Uncertain GE (e): GEnewprice=2 without GEnewprice2.howtoupdate is refus
 fprintf('Uncertain GE (e): GEnewprice=3 without howtoupdate is refused by name, should be one: %i \n',err(4))
 fprintf('Uncertain GE (e): price constraints whose bounds exclude the initial guess are refused by name, should be one: %i \n',err(5))
 fprintf('Uncertain GE (e): a _tminus1 in the transition general eqm conditions without transpathoptions.initialvalues is refused by name, should be one: %i \n',err(6))
-fprintf('Uncertain GE (e): local search is refused by name (not yet), should be one: %i \n',err(7))
+fprintf('Uncertain GE (e): vfoptions.localsearch=2 is refused by name, should be one: %i \n',err(7))
 
 output=struct();
 
