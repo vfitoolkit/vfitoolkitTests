@@ -21,9 +21,12 @@
 % doPart(7): refusals, as a set, and the warning on a square (N_j=T) entry
 % doPart(8): general eqm on the tree by shooting, UncertainTransitionPath_FHorz (stage F2): a sure switch and identical
 %            regimes against TransitionPath_Case1_FHorz, an absorbing tree checked by hand, a restart, its refusals
+% doPart(9): Anderson acceleration and price constraints on the tree (stage F3)
+% doPart(10): _tplus1 and _tminus1 (in expectation over the children at a branching node), and intermediateEqns (F3)
+% doPart(11): a stochastic discount factor, name_tplus1 in DiscountFactorParamNames, given prices and in general eqm (F3)
 %
 % Parts are independent: the setup and the addpaths sit OUTSIDE the if-blocks.
-doPart=[1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('../TestOutput','dir')
@@ -94,6 +97,24 @@ end
 if doPart(8)==1
     fprintf('\n===== doPart(8): general eqm on the tree, by shooting =====\n')
     output=UncertainTPathFHorz_GE(T,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end
+
+%% ===== doPart(9): Anderson and price constraints =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): Anderson acceleration and price constraints on the tree =====\n')
+    output=UncertainTPathFHorz_AndersonConstraints(T,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end
+
+%% ===== doPart(10): _tplus1, _tminus1 and intermediateEqns =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): _tplus1, _tminus1 and intermediateEqns on the tree =====\n')
+    output=UncertainTPathFHorz_tplus1IntEqns(T,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end
+
+%% ===== doPart(11): a stochastic discount factor =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): a stochastic discount factor on the tree =====\n')
+    output=UncertainTPathFHorz_SDF(T,rS,wS,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
 end
 
 %% One verdict for the whole run

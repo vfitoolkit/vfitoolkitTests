@@ -13,7 +13,8 @@ function output=UncertainTPathFHorz_GE(T,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,D
 %       reported; period T is the final eqm of each S; the possibility of S=2 moves the prices before any switch
 %       (should NOT be zero)
 %   (d) restarting from the solution (transpathoptions.PricePathTree0) converges at once to the same prices
-%   (e) refusals, each by its message: the options of stage F2, and the features of stages F3 and F4 not yet built
+%   (e) refusals, each by its message: the options, what remains refused of the stage F3 features, and the features
+%       of stage F4 not yet built
 % Shooting is a fixed point, so (a) and (b) are equal only up to the convergence tolerance (the two solvers stop at
 % different iterations); they are checked against 10 times toleranceGEprices.
 
@@ -152,7 +153,7 @@ transpathoptionsD.PricePathTree0=PricePathTreeC;
 fprintf('Uncertain FHorz GE (d): restarted from the solution it converges in one iteration, should be one: %i \n',SummaryC2.iterations==1)
 fprintf('Uncertain FHorz GE (d): to the same prices, this should be zero: %.3e \n',max([abs(PricePathTreeC2.r-PricePathTreeC.r),abs(PricePathTreeC2.w-PricePathTreeC.w)]))
 
-%% (e) Refusals, each by its message (all are refused before the final eqms are solved)
+%% (e) Refusals, each by its message (all but the constraint one are refused before the final eqms are solved)
 GEcall=@(tpo,vfo,GEtrans,FnsE,DFn) UncertainTransitionPath_FHorz(PricePathShaper, ParamPathC, T, T1, T2, pi_SC, 1, AgentDist_initial, jequaloneDist, n_d,n_a,n_z,N_j, d_grid,a_grid,z_grid, pi_z, ReturnFn, FnsE, GeneralEqmEqns, GEtrans, Params, DFn, AgeWeightParamNames, tpo, simoptions, vfo, heteroagentoptions);
 nE=12;
 err=zeros(1,nE);
@@ -163,27 +164,30 @@ msg{1}='GEnewprice unset';
 tpE=transpathoptions; tpE.GEnewprice=1;
 try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(2)=contains(ME.message,'GEnewprice=1 (quasi-Newton) is not implemented'); end
 msg{2}='GEnewprice=1 (quasi-Newton)';
+% Anderson, price constraints, _tminus1, _tplus1, intermediateEqns and discount factors read at the child USED TO BE
+% REFUSED here (stage F2); they are implemented in F3 (parts 9-11), so these now check the refusals that remain for them
 tpE=transpathoptions; tpE.GEnewprice=2;
-try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(3)=contains(ME.message,'GEnewprice=2 (Anderson acceleration) is not yet implemented'); end
-msg{3}='GEnewprice=2 (Anderson, stage F3)';
+try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(3)=contains(ME.message,'requires transpathoptions.GEnewprice2.howtoupdate'); end
+msg{3}='GEnewprice=2 without GEnewprice2.howtoupdate';
 tpE=transpathoptions; tpE.GEnewprice3=rmfield(tpE.GEnewprice3,'howtoupdate');
 try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(4)=contains(ME.message,'requires transpathoptions.GEnewprice3.howtoupdate'); end
 msg{4}='GEnewprice=3 without howtoupdate';
-tpE=transpathoptions; tpE.constrainpositive={'r'};
-try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(5)=contains(ME.message,'constraints on the prices (transpathoptions.constrainpositive, constrain0to1, constrainAtoB) are not yet implemented'); end
-msg{5}='price constraints (stage F3)';
+tpE=transpathoptions; tpE.constrainAtoB={'w'}; tpE.constrainAtoBlimits.w=[0,0.1];
+try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(5)=contains(ME.message,'is not strictly inside its constraint'); end
+msg{5}='price constraints whose bounds exclude the initial guess';
 GeneralEqmEqnsE=GeneralEqmEqns;
 GeneralEqmEqnsE.CapitalMarket=@(r,K_tminus1,N,firmalpha,firmdelta,firmA) r-(firmalpha*firmA*(K_tminus1^(firmalpha-1))*(N^(1-firmalpha))-firmdelta);
-try; GEcall(transpathoptions,vfoptions,GeneralEqmEqnsE,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(6)=contains(ME.message,'GeneralEqmEqns_Transition.CapitalMarket uses a _tplus1 or _tminus1 input, which is not yet implemented'); end
-msg{6}='_tminus1 in a transition general eqm condition (stage F3)';
-FnsE=FnsToEvaluate; FnsE.Kr=@(aprime,a,z,r_tplus1) a*r_tplus1;
-try; GEcall(transpathoptions,vfoptions,GeneralEqmEqns,FnsE,DiscountFactorParamNames); catch ME; err(7)=contains(ME.message,'FnsToEvaluate.Kr uses a _tplus1 or _tminus1 input, which is not yet implemented'); end
-msg{7}='_tplus1 in FnsToEvaluate (stage F3)';
-tpE=transpathoptions; tpE.intermediateEqns.Y=@(K,N,firmA,firmalpha) firmA*K^firmalpha*N^(1-firmalpha);
-try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(8)=contains(ME.message,'transpathoptions.intermediateEqns is not yet implemented'); end
-msg{8}='intermediateEqns (stage F3)';
-try; GEcall(transpathoptions,vfoptions,GeneralEqmEqns,FnsToEvaluate,{'beta','r_tplus1'}); catch ME; err(9)=contains(ME.message,'a discount factor read at the child (r_tplus1 in DiscountFactorParamNames) is not yet implemented'); end
-msg{9}='a discount factor read at the child (stage F3)';
+try; GEcall(transpathoptions,vfoptions,GeneralEqmEqnsE,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(6)=contains(ME.message,'a _tminus1 input is used, so transpathoptions.initialvalues must be given'); end
+msg{6}='a _tminus1 without transpathoptions.initialvalues';
+FnsE=FnsToEvaluate; FnsE.D=@(aprime,a,z,r_tplus1) r_tplus1*aprime;
+GeneralEqmEqnsE=GeneralEqmEqns; GeneralEqmEqnsE.CapitalMarket=@(r,K,N,D_tminus1,firmalpha,firmdelta,firmA) r-(firmalpha*firmA*(K^(firmalpha-1))*(N^(1-firmalpha))-firmdelta)+0*D_tminus1;
+tpE=transpathoptions; tpE.initialvalues.D=0;
+try; GEcall(tpE,vfoptions,GeneralEqmEqnsE,FnsE,DiscountFactorParamNames); catch ME; err(7)=contains(ME.message,'D_tminus1 is used, but FnsToEvaluate.D uses _tplus1'); end
+msg{7}='D_tminus1 of a FnsToEvaluate D that uses _tplus1';
+try; GEcall(transpathoptions,vfoptions,GeneralEqmEqns,FnsToEvaluate,{'beta','r','r_tplus1'}); catch ME; err(8)=contains(ME.message,'would be applied twice, at the node and at the child'); end
+msg{8}='r and r_tplus1 together in DiscountFactorParamNames';
+try; GEcall(transpathoptions,vfoptions,GeneralEqmEqns,FnsToEvaluate,{'beta','sigma_tplus1'}); catch ME; err(9)=contains(ME.message,'is not a price in PricePathShaper or a parameter in ParamPath'); end
+msg{9}='sigma_tplus1 (sigma is not on the path) in DiscountFactorParamNames';
 vfoE=vfoptions; vfoE.localsearch=1; vfoE.nlocalsearch=1;
 try; GEcall(transpathoptions,vfoE,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(10)=contains(ME.message,'vfoptions.localsearch is not yet implemented'); end
 msg{10}='local search (stage F4)';
