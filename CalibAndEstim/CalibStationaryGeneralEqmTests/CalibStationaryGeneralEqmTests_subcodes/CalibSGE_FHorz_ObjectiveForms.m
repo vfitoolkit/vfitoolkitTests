@@ -16,6 +16,8 @@ function output=CalibSGE_FHorz_ObjectiveForms(n_d,n_a,n_z,N_j,d_grid,a_grid,z_gr
 %     sqrt, right only for a diagonal W) end to end.
 % (b) CalibrateOLGModel_Nested_objectivefn at the truth (inner GE solve): its scalar objective equals the targets part of the joint
 %     scalar objective at the nested objective's own GE prices (the two now divide by the same number of parameters). Exact.
+% (b2) The nested objective's lsqnonlin residual (vectoroutput=2) at the same point: its sum of squares equals the nested scalar objective
+%     (it lacked the square root of the divisor before 2026-11-04). Exact.
 % (c) Through CalibrateOLGModel, each run stopped after fminsearch's initial simplex (so it returns its start, the truth): multiGEweights
 %     as a column gives exactly what the row gives (it used to make a matrix); caliboptions.logmoments as a scalar, one entry per
 %     target, one entry per target name, and by name (incl. AgeConditionalStats, which read the AllStats names) becomes the expected
@@ -215,6 +217,17 @@ co=caliboptions; co.vectoroutput=0; co.metric='sum_squared'; co.weights=w;
 Ojn=gather(CalibrateOLGModel_Joint_objectivefn(calibparamsvecJn,jointargs{:},co,heteroagentoptionsJ,vfoptionsJ,simoptionsJ));
 Ojn_targets=Ojn-7*sum(mw(:).*vn(nmom+1:end).^2);
 fprintf('ObjectiveForms (b) nested scalar objective vs the targets part of joint at the same GE prices, this should be zero: %.3e (nested %.6e; nested GE prices vs equilibrium, should be near zero: %.3e) \n',abs(On-Ojn_targets),On,max(abs(GEn.prices-[Params.r;Params.Tr;Params.tau_c])))
+
+%% (b2) the nested objective's lsqnonlin residual (vectoroutput=2): its sum of squares is the nested scalar objective (the appended penalty slot is zero here)
+co=caliboptionsN; co.vectoroutput=2; co.metric='sum_squared'; co.weights=sqrt(w);
+try
+    rn=gather(CalibrateOLGModel_Nested_objectivefn(calibparamsvec0,nestedargs{:},co,GEinner,vfoptionsJ,simoptionsJ));
+    d2=abs(sum(rn.^2)-On); failed2=0;
+catch err
+    fprintf('ObjectiveForms (b2) errored: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+    d2=1; failed2=1;
+end
+fprintf('ObjectiveForms (b2) nested lsqnonlin residual did not run, this should be zero: %.3e; its sum of squares vs the nested scalar objective, this should be zero: %.3e \n',failed2,d2)
 
 %% (c) through CalibrateOLGModel: multiGEweights as a column, and the four forms of caliboptions.logmoments
 % Each run stops after fminsearch's initial simplex (tolerances far above any change), so it returns its start, the truth.

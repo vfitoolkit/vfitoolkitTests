@@ -9,6 +9,8 @@ function output=CalibSGE_InfHorzPType_ObjectiveForms(n_d,n_a,n_z,Names_i,d_grid,
 %     equals the scalar formula at the solution; exact
 % (b) the nested objective (which could never run: undefined Params and z_grid in its inner solve) equals the targets part of the joint
 %     objective at the nested objective's own GE prices; exact
+% (b2) The nested objective's lsqnonlin residual (vectoroutput=2) at the same point: its sum of squares equals the nested scalar objective
+%     (it lacked the square root of the divisor before 2026-11-04). Exact.
 % (c) through CalibrateBIHAModel_PType, runs stopped after fminsearch's initial simplex: multiGEweights as a column gives exactly what the
 %     row gives; caliboptions.logmoments as a scalar, one entry per target, one per target name, and by name (incl. a per-type name,
 %     four levels deep) becomes the expected vector; the per-type varphi comes back as a column over the types
@@ -204,6 +206,17 @@ catch err
     d=1; dGE=1; On=NaN; failed=1;
 end
 fprintf('ObjectiveForms InfHorz PType (b) nested objective did not run, this should be zero: %.3e; nested scalar objective vs the targets part of joint at the same GE prices, this should be zero: %.3e (nested %.6e); nested GE prices vs equilibrium, should be near zero: %.3e \n',failed,d,On,dGE)
+
+%% (b2) the nested objective's lsqnonlin residual (vectoroutput=2): its sum of squares is the nested scalar objective (the appended penalty slot is zero here)
+co=caliboptionsN; co.vectoroutput=2; co.metric='sum_squared'; co.weights=sqrt(w);
+try
+    rn=gather(CalibrateBIHAModel_PType_Nested_objectivefn(calibparamsvec0,nestedargs{:},co,GEinner,vfoptionsJ,simoptionsJ));
+    d2=abs(sum(rn.^2)-On); failed2=0;
+catch err
+    fprintf('ObjectiveForms InfHorz PType (b2) errored: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+    d2=1; failed2=1;
+end
+fprintf('ObjectiveForms InfHorz PType (b2) nested lsqnonlin residual did not run, this should be zero: %.3e; its sum of squares vs the nested scalar objective, this should be zero: %.3e \n',failed2,d2)
 
 %% (c) through CalibrateBIHAModel_PType: multiGEweights as a column, and the four forms of caliboptions.logmoments
 caliboptionsC=struct();

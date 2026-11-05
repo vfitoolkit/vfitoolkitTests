@@ -115,16 +115,16 @@ fprintf('TargetParsing PType (d) per-type agegroupings (low 4 groups, high 2): s
 simoptions_s=simoptions; simoptions_s=rmfield(simoptions_s,'agegroupings'); % default: each age separately, N_j groups
 simoptions_s.agejshifter=struct(); simoptions_s.agejshifter.low=0; simoptions_s.agejshifter.high=2; % the high type starts two ages later on the common axis
 TMs=struct();
-TMs.AgeConditionalStats.assets.high.Mean=ones(1,N_j); % its N_j ages sit at positions 3..N_j+2, the last two beyond the axis
+TMs.AgeConditionalStats.assets.high.Mean=ones(1,N_j); % its N_j ages sit at positions 3..N_j+2, so the common axis has N_j+2 positions
 TMs.AgeConditionalStats.assets.low.Mean=ones(1,N_j);
 [~,~,~,~,~,~,~,~,~,~,~,~,~,~,selectors_s]=SetupTargetMoments_FHorz(TMs,FnsToEvaluate,1,N_j,simoptions_s,Names_i);
-wcs=zeros(1,N_j,npages,N_i+1); wcs(1,:,1,ilow)=1; wcs(1,3:N_j,1,ihigh)=1;
+wcs=zeros(1,N_j+2,npages,N_i+1); wcs(1,1:N_j,1,ilow)=1; wcs(1,3:N_j+2,1,ihigh)=1;
 if isequal(size(selectors_s.ACStats.whichcombos),size(wcs))
     dd=max(abs(selectors_s.ACStats.whichcombos(:)-wcs(:)));
 else
     dd=1;
 end
-fprintf('TargetParsing PType (d) agejshifter (high shifted by two ages): the high slot is on from age three on the common axis, whichcombos vs hand, this should be zero: %.3e \n',dd)
+fprintf('TargetParsing PType (d) agejshifter (high shifted by two ages): the common axis has N_j+2 ages, the high slot is on at ages 3 to N_j+2, whichcombos vs hand, this should be zero: %.3e \n',dd)
 
 %% (e) the union 7-vectors
 fprintf('TargetParsing PType (e) union whichstats vs hand ([1 1 1 1 1 1 1] for AllStats; [1 0 1 2 0 1 0] for AgeConditionalStats, quantiles being entry six): AllStats, this should be zero: %.3e; AgeConditionalStats, this should be zero: %.3e \n',max(abs(AllStats_whichstats(:)-[1;1;1;1;1;1;1])),max(abs(ACStats_whichstats(:)-[1;0;1;2;0;1;0])))

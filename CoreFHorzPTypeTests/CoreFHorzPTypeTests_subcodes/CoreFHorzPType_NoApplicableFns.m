@@ -14,6 +14,8 @@ function output=CoreFHorzPType_NoApplicableFns(n_a,n_z,N_j,a_grid,z_grid,pi_z,Pa
 %   HeteroAgentStationaryEqm_Case1_FHorz_PType       the general eqm (an economy where only the low type supplies
 %       capital and labour) identical with the high type's functions absent and zero, in p_eqm and the conditions; and
 %       with a condition conditional on ptype (heteroagentoptions.GEptype, the GEptype subfn) at the initial prices
+%   AutoCorr, CrossSection and AgeConditional CrossSection PType   the restricted sample masses (.ByPType, .Total, .ByAge) of the type
+%       with no function equal those of LifeCycleProfiles_FHorz_Case1_PType (was zero in AutoCorr, NaN in the other two)
 % The two types are those of part 4 (per-type kappa_j_pt), no d, with z.
 
 Names_i={'low','high'};
@@ -129,6 +131,27 @@ fprintf('No applicable fns, GEptype: the by-ptype condition (both types), this s
 fprintf('No applicable fns, GEptype: the by-ptype condition has one value per type, should be one: %i \n',numel(GEcPT_Absent.KReport)==2)
 fprintf('No applicable fns, GEptype: the high type''s K is zero, so its condition is -Kbar, this should be zero: %.3e \n',abs(GEcPT_Absent.KReport(2)+ParamsGE.Kbar))
 fprintf('No applicable fns, GEptype: the low type''s K is not zero, should NOT be zero: %.3e \n',abs(GEcPT_Absent.KReport(1)+ParamsGE.Kbar))
+
+%% Restricted sample masses of a type that evaluates nothing (2026-11-04): AutoCorr counted it as zero, the two cross-section commands
+% made .ByPType/.Total NaN. LifeCycleProfiles_FHorz_Case1_PType computes every type's restricted mass whatever its functions, so it is the
+% reference: the high type (no function) must have its true restricted mass in all three commands.
+ParamsR=Params;
+ParamsR.athresh=gather(a_grid(ceil(n_a/2)));
+simoptionsR=simoptions;
+simoptionsR.conditionalrestrictions.rich=@(aprime,a,z,athresh) (a>athresh);
+LCPR=LifeCycleProfiles_FHorz_Case1_PType(StationaryDist,Policy,FnsAbsent,ParamsR,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptionsR);
+ACR=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist,Policy,FnsAbsent,ParamsR,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,pi_z,simoptionsR);
+CSR=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsAbsent,ParamsR,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptionsR);
+AXR=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist,Policy,FnsAbsent,ParamsR,n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid,z_grid,simoptionsR);
+refByPType=gather(LCPR.rich.RestrictedSampleMass.ByPType(:));
+refTotal=gather(LCPR.rich.RestrictedSampleMass.Total);
+refByAge=gather(LCPR.rich.RestrictedSampleMass.ByAge(:));
+fprintf('No applicable fns, restricted masses: AutoCorr .ByPType vs LifeCycleProfiles, this should be zero: %.3e; .Total, this should be zero: %.3e; .ByAge, this should be zero: %.3e \n',max(abs(gather(ACR.rich.RestrictedSampleMass.ByPType(:))-refByPType)),abs(gather(ACR.rich.RestrictedSampleMass.Total)-refTotal),max(abs(gather(ACR.rich.RestrictedSampleMass.ByAge(:))-refByAge)))
+fprintf('No applicable fns, restricted masses: CrossSection .ByPType vs LifeCycleProfiles, this should be zero: %.3e; .Total, this should be zero: %.3e \n',max(abs(gather(CSR.rich.RestrictedSampleMass.ByPType(:))-refByPType)),abs(gather(CSR.rich.RestrictedSampleMass.Total)-refTotal))
+fprintf('No applicable fns, restricted masses: AgeConditional CrossSection .ByPType vs LifeCycleProfiles, this should be zero: %.3e; .Total, this should be zero: %.3e; .ByAge, this should be zero: %.3e \n',max(abs(gather(AXR.rich.RestrictedSampleMass.ByPType(:))-refByPType)),abs(gather(AXR.rich.RestrictedSampleMass.Total)-refTotal),max(abs(gather(AXR.rich.RestrictedSampleMass.ByAge(:))-refByAge)))
+fprintf('No applicable fns, restricted masses: the high type''s own field is there in all three commands, should be one: %i \n',isfield(ACR.rich.RestrictedSampleMass,'high') && isfield(CSR.rich.RestrictedSampleMass,'high') && isfield(AXR.rich.RestrictedSampleMass,'high'))
+fprintf('No applicable fns, restricted masses: for scale, the high type''s restricted mass (LifeCycleProfiles) is not zero, should NOT be zero: %.3e \n',refByPType(2))
+
 
 output=struct();
 

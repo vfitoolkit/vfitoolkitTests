@@ -6,7 +6,8 @@ function output=CalibFHorzPType_Extensions(n_d,n_a,n_z,N_j,Names_i,d_grid,a_grid
 %       the truth and away; (1b) the weight vector itself as the calibrated parameter, started at the truth: it must stay a vector over
 %       the types rather than be split into per-type scalars (it was, before 2026-10-07, and the distribution command then errored)
 %   (2) per-type N_j (low 20 ages, high 15; age weights, agej and kappa_j_pt per type): beta and pension from the truth and from away,
-%       with per-type profile targets of different lengths; then the same with agejshifter (the high type two ages later)
+%       with per-type profile targets of different lengths; then the same with agejshifter (the high type two ages later); and the AutoCorr
+%       and age-conditional cross-section PType commands with that per-type N_j (own lengths, grouped = the low type where only it has the age)
 %   (3) an iid shock e with EiidShockFn and sigma_e calibrated; then both shock functions with rho_z and sigma_e calibrated together
 %       (either alone must trigger the per-evaluation rebuild of the grids)
 %   (4) a semi-exogenous employment state with the job-finding probability calibrated: SemiExoStateFn common to the types, and as a
@@ -99,6 +100,30 @@ catch err
     fprintf('Extensions PType (2) per-type N_j: the model solve or the stats commands errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
 end
 fprintf('Extensions PType (2) per-type N_j (low %i, high %i): the stats commands ran, did not run, this should be zero: %.3e \n',N_j2.low,N_j2.high,1-ran)
+if ran==1
+    % The AutoCorr and age-conditional cross-section PType commands with per-type N_j (2026-11-04): each type's output has its own
+    % length; at the ages only the low type has (16 to 20) the grouped output is the low type's; the grouped auto-covariance starting
+    % at age 15 (the high type's last) is the low type's too, as the high type has no age 16 to pair with
+    ranx=0; dlen=NaN; dAC=NaN; dAX=NaN;
+    try
+        simoptions_AC2=simoptions; simoptions_AC2.timehorizons=[1,2];
+        AC_2=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz_PType(StationaryDist_2,Policy_2,FnsToEvaluate,Params_2,n_d,n_a,n_z,N_j2,Names_i,d_grid,a_grid,z_grid,pi_z,simoptions_AC2);
+        AX_2=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz_PType(StationaryDist_2,Policy_2,FnsToEvaluate,Params_2,n_d,n_a,n_z,N_j2,Names_i,d_grid,a_grid,z_grid,simoptions);
+        ranx=1;
+        dlen=double(numel(AC_2.assets.high.Mean)~=N_j2.high)+double(numel(AC_2.assets.low.Mean)~=N_j2.low)+double(numel(AC_2.assets.Mean)~=N_j2.low)...
+            +double(numel(AX_2.assets.high.Mean)~=N_j2.high)+double(numel(AX_2.assets.low.Mean)~=N_j2.low)+double(numel(AX_2.assets.Mean)~=N_j2.low);
+        jlow=N_j2.high+1:N_j2.low;
+        dAC=max([max(abs(gather(AC_2.earnings.Mean(jlow))-gather(AC_2.earnings.low.Mean(jlow)))),...
+            max(abs(gather(AC_2.earnings.StdDeviation(jlow))-gather(AC_2.earnings.low.StdDeviation(jlow)))),...
+            max(abs(gather(AC_2.earnings.AutoCovariance(N_j2.high:N_j2.low-1))-gather(AC_2.earnings.low.AutoCovariance(N_j2.high:N_j2.low-1)))),...
+            max(abs(gather(AC_2.earnings.AutoCovariance_horizon2(N_j2.high-1:N_j2.low-2))-gather(AC_2.earnings.low.AutoCovariance_horizon2(N_j2.high-1:N_j2.low-2))))]);
+        dAX=max([max(abs(gather(AX_2.assets.Mean(jlow))-gather(AX_2.assets.low.Mean(jlow)))),...
+            max(abs(gather(AX_2.assets.CovarianceWith.earnings(jlow))-gather(AX_2.assets.low.CovarianceWith.earnings(jlow))))]);
+    catch err
+        fprintf('Extensions PType (2) per-type N_j: the AutoCorr or age-conditional cross-section PType command errored with: %s \n',[err.message,' [in ',err.stack(1).name,' line ',num2str(err.stack(1).line),']'])
+    end
+    fprintf('Extensions PType (2) per-type N_j, AutoCorr and age-conditional cross-section PType: did not run, this should be zero: %.3e; wrong output lengths, this should be zero: %.3e; AutoCorr grouped vs low type where only it has the age (pair), this should be zero: %.3e; age-conditional cross-section grouped vs low type there, this should be zero: %.3e \n',1-ranx,dlen,dAC,dAX)
+end
 if ran==1
     TM2=struct();
     t=gather(LCPFull_2.assets.low.Mean); t(1)=NaN; TM2.AgeConditionalStats.assets.low.Mean=t;

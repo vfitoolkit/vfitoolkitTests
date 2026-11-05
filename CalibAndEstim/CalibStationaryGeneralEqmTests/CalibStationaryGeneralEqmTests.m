@@ -80,7 +80,7 @@
 
 %% Which parts to run
 % One entry per part, in the order they appear below. Set an entry to zero to skip that part.
-% doPart(1):  FHorz (OLG): the objective's moment vector and GE conditions vs hand-built (joint), whichcombos 1 and 0
+% doPart(1):  FHorz (OLG): the objective's moment vector and GE conditions vs hand-built (joint), whichcombos 1 and 0; window targets of every kind, joint and nested
 % doPart(2):  FHorz (OLG): objective forms vs their formulas, joint and nested scaling, multiGEweights as row/column, logmoments plumbing, verbose prints
 % doPart(3):  FHorz (OLG): joint vs nested at the same prices; the inner GE solve; constraints reach the inner solver; GE prices in CalibParams
 % doPart(4):  FHorz (OLG): round trips, joint (three prices) and nested (one price), lsqnonlin and fminsearch, constraints, omitcalibparam

@@ -9,7 +9,7 @@ function output=CalibFHorzPType_AutoCorrCrossSec(n_d,n_a,n_z,N_j,Names_i,d_grid,
 %       ones with the type slots (AutoCorr [nFns,N_j,1+nRestr,N_i+1], CrossSec [nFns,nFns,1+nRestr,N_i+1], AgeCrossSec
 %       [nFns,nFns,ngroups,1+nRestr,N_i+1]; the cross-section targets take conditional restrictions as pages, up to five names);
 %       another field order gives the same vector and selectors; a call without the new fields gives empty new outputs; the legacy call
-%       with the new fields and fourteen invalid inputs error (incl. the self-correlation, the per-type matrices, per-type N_j, agejshifter)
+%       with the new fields and thirteen invalid inputs error (incl. the self-correlation, the per-type matrices, agejshifter); per-type N_j (equal) gives the scalar selectors
 %   (b) one solve at the truth, full runs of the three PType commands; targets from them in every layout with NaN omissions, with
 %       simoptions.agegroupings for the age-conditional kinds and a user simoptions.timehorizons; the objective's moment vector under
 %       caliboptions.whichcombos=1 and =0 equals the hand-built one and the targets
@@ -208,12 +208,10 @@ try
 catch
     errored=errored+1;
 end
-N_j_struct=struct(); N_j_struct.low=N_j; N_j_struct.high=N_j; % per-type N_j: the AutoCorr PType command has no whichcombos then
-try
-    SetupTargetMoments_FHorz(TM,FnsToEvaluate,1,N_j_struct,simoptions,Names_i);
-catch
-    errored=errored+1;
-end
+N_j_struct=struct(); N_j_struct.low=N_j; N_j_struct.high=N_j; % per-type N_j (here equal): accepted, the same selectors as the scalar N_j
+[~,~,~,~,~,~,~,~,~,~,~,~,~,~,selectors_Njs]=SetupTargetMoments_FHorz(TM,FnsToEvaluate,1,N_j_struct,simoptions,Names_i);
+dNjs=max([max(abs(selectors_Njs.AutoCorr.whichcombos(:)-selectors.AutoCorr.whichcombos(:))),max(abs(selectors_Njs.AgeCrossSec.whichcombos(:)-selectors.AgeCrossSec.whichcombos(:))),double(~isequal(size(selectors_Njs.AutoCorr.whichcombos),size(selectors.AutoCorr.whichcombos))),double(~isequal(size(selectors_Njs.AgeCrossSec.whichcombos),size(selectors.AgeCrossSec.whichcombos)))]);
+fprintf('AutoCorrCrossSec PType (a) per-type N_j (equal across the types) gives the selectors of the scalar N_j (AutoCorr and AgeCrossSec), this should be zero: %.3e \n',dNjs)
 TMbad=TM; TMbad.CrossSectionCovarCorr.rich.assets=1; % a restriction, then a function with no statistic
 try
     SetupTargetMoments_FHorz(TMbad,FnsToEvaluate,1,N_j,simoptions,Names_i);
@@ -232,7 +230,7 @@ try
 catch
     errored=errored+1;
 end
-fprintf('AutoCorrCrossSec PType (a) the legacy call with the new fields and fourteen invalid inputs must all error, this should be zero: %.3e \n',15-errored)
+fprintf('AutoCorrCrossSec PType (a) the legacy call with the new fields and thirteen invalid inputs must all error, this should be zero: %.3e \n',14-errored)
 
 %% (b) one solve at the truth, full runs of the three PType commands, the objective's moment vector
 vfoptions=struct();

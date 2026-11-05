@@ -11,6 +11,12 @@ function output=CalibSGE_FHorz_MomentVector(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid
 %   (b) the moment block equals the targets (the targets are the model)
 %   (c) the GE block equals HeteroAgentStationaryEqm_Case1_FHorz with maxiter=0 (the GE conditions evaluated at the prices in Params)
 %   (d) the second output of the objective: the GE prices are the equilibrium prices it was handed, the GE conditions the GE block
+%   (e) window targets (simoptions.ntimeperiods) of AgeConditionalStats, AutoCorrTransProbs, CrossSectionCovarCorr and
+%       AgeConditionalCrossSectionCovarCorr, with a restriction: the joint moment block equals the hand walk through full runs with
+%       the windows and the targets, whichcombos=1 and =0, with the default agegroupings (one call per command) and with
+%       agegroupings=1:5:N_j (the windows in second LifeCycleProfiles and age-conditional cross-section calls); the nested moment
+%       vector equals the joint one at the nested GE prices (added 2026-11-05: the OLG objectives passed the windows only to
+%       AutoCorrTransProbs)
 
 ReturnFn=@(d,aprime,a,z,r,tau,Tr,tau_c,kappa_j,alpha,delta,A,sigma,eta,varphi) ReturnFn_FHorz(d,aprime,a,z,r,tau,Tr,tau_c,kappa_j,alpha,delta,A,sigma,eta,varphi);
 FnsToEvaluate.K=@(d,aprime,a,z) a; % aggregate capital (assets)
@@ -199,6 +205,155 @@ fprintf('MomentVector (c): GE block vs HeteroAgentStationaryEqm maxiter=0 at the
 
 %% (d) the second output
 fprintf('MomentVector (d): GEout.prices vs the prices handed in, this should be zero: %.3e; GEout.conditions vs the GE block, this should be zero: %.3e \n',max(abs(GEout1.prices-[Params.r;Params.Tr;Params.tau_c])),max(abs(GEout1.conditions-mg1)))
+
+%% (e) window targets (simoptions.ntimeperiods) of every kind, joint and nested
+% Full runs with the windows at the equilibrium; window targets of AgeConditionalStats, AutoCorrTransProbs, CrossSectionCovarCorr and
+% AgeConditionalCrossSectionCovarCorr (one under the restriction), plus a single-period target of each age-conditional kind. Scenario 1
+% has the default agegroupings (one call per command); scenario 2 agegroupings=1:5:N_j, the single-period age-conditional targets by
+% age group, so the windows (by start age) are a second LifeCycleProfiles and a second age-conditional cross-section call.
+simoptions_W=simoptionsJ; simoptions_W.whichstats=ones(1,7); simoptions_W.ntimeperiods=[1,2,3]; simoptions_W.pi_z=pi_z_J;
+LCPW=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_W);
+CSW=EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_W);
+simoptions_W.ntimeperiods=[1,2];
+ACXW=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_W);
+simoptions_W.timehorizons=[1,2];
+ACW=EvalFnOnAgentDist_AutoCorrTransProbs_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,simoptions_W);
+simoptions_G=simoptionsJ; simoptions_G.whichstats=ones(1,7); simoptions_G.agegroupings=1:5:N_j;
+LCPG=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_G); % the single period by age groups
+ACXG=EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz(StationaryDist,Policy,FnsToEvaluate,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_G);
+kindsW={'AllStats','AgeConditionalStats','AutoCorrTransProbs','CrossSectionCovarCorr','AgeConditionalCrossSectionCovarCorr'};
+% the nested objective: its inner GE solve (from the equilibrium) lands within tolerance of the equilibrium, not on it, so its moments
+% are checked against the joint objective at the nested GE prices (exact), the joint objective against the full runs as above
+caliboptionsN=struct();
+caliboptionsN.verbose=0;
+caliboptionsN.constrainpositive={};
+caliboptionsN.constrainpositivemethod='softplus';
+caliboptionsN.constrain0to1={};
+caliboptionsN.constrainAtoB={};
+caliboptionsN.relativeGEweight=10;
+caliboptionsN.useCustomModelStats=0;
+caliboptionsN.calibrateshocks=0;
+caliboptionsN.nCalibParamsNonGE=2;
+caliboptionsN.metric='sum_squared';
+caliboptionsN.vectoroutput=1;
+[calibparamsvecN,caliboptionsN]=ParameterConstraints_TransformParamsToUnconstrained([Params.beta; Params.varphi],[0;1;2],CalibParamNames,caliboptionsN,1);
+GEinner=struct();
+GEinner.heteroagentoptions=heteroagentoptions;
+GEinner.heteroagentoptions.outputGEstruct=2;
+GEinner.z_grid=z_grid;
+GEinner.pi_z=pi_z;
+GEinner.vfoptions=vfoptions;
+GEinner.simoptions=simoptions;
+for scen=1:2
+    LCPFullW=LCPW; ACXFullW=ACXW;
+    simoptions_s=simoptions; simoptionsJ_s=simoptionsJ;
+    if scen==1
+        scenstr='one call each (default agegroupings)';
+    else
+        scenstr='second calls for the windows (agegroupings 1:5:N_j)';
+        LCPFullW.H=LCPG.H; % the single-period age-conditional fields by age groups
+        ACXFullW.earnings=ACXG.earnings;
+        simoptions_s.agegroupings=1:5:N_j;
+        simoptionsJ_s.agegroupings=1:5:N_j;
+    end
+    % the targets, the values from the full runs, NaN where omitted
+    TMW=struct();
+    TMW.AllStats.K.Mean=gather(AllFull.K.Mean);
+    TMW.AgeConditionalStats.H.Mean=gather(LCPFullW.H.Mean);
+    t=gather(LCPFullW.earnings_2periodAverage.StdDeviation); t([1,N_j])=NaN; TMW.AgeConditionalStats.earnings_2periodAverage.StdDeviation=t;
+    t=gather(LCPFullW.rich.C_3periodAverage.Mean); t([1:5,N_j-1:N_j])=NaN; TMW.AgeConditionalStats.rich.C_3periodAverage.Mean=t;
+    t=gather(ACW.earnings_2periodAverage.AutoCorrelation_horizon2); t(1)=NaN; TMW.AutoCorrTransProbs.earnings_2periodAverage.AutoCorrelation_horizon2=t;
+    TMW.CrossSectionCovarCorr.H.Mean=gather(CSW.H.Mean);
+    TMW.CrossSectionCovarCorr.earnings_2periodAverage.CorrelationWith.K_2periodAverage=gather(CSW.earnings_2periodAverage.CorrelationWith.K_2periodAverage);
+    TMW.CrossSectionCovarCorr.rich.H_3periodAverage.Mean=gather(CSW.rich.H_3periodAverage.Mean);
+    t=gather(ACXFullW.earnings.Mean); t(2)=NaN; TMW.AgeConditionalCrossSectionCovarCorr.earnings.Mean=t;
+    t=gather(ACXFullW.K_2periodAverage.CovarianceWith.earnings_2periodAverage); t([1,11:end])=NaN; TMW.AgeConditionalCrossSectionCovarCorr.K_2periodAverage.CovarianceWith.earnings_2periodAverage=t;
+    % the hand walk: every leaf of the targets in depth-first fieldnames order (as SetupTargetMoments reads them), the same path in the full runs
+    hand=[]; tvec=[];
+    for kk=1:length(kindsW)
+        if kk==1
+            Full=AllFull;
+        elseif kk==2
+            Full=LCPFullW;
+        elseif kk==3
+            Full=ACW;
+        elseif kk==4
+            Full=CSW;
+        else
+            Full=ACXFullW;
+        end
+        paths={{}};
+        while ~isempty(paths)
+            p=paths{1}; paths(1)=[];
+            node=TMW.(kindsW{kk}); v=Full;
+            for ll=1:length(p)
+                node=node.(p{ll}); v=v.(p{ll});
+            end
+            if isstruct(node)
+                fn=fieldnames(node);
+                children=cell(1,length(fn));
+                for ll=1:length(fn)
+                    children{ll}=[p,fn(ll)];
+                end
+                paths=[children,paths];
+            else
+                v=gather(v); hand=[hand; v(:)]; tvec=[tvec; node(:)];
+            end
+        end
+    end
+    actual=~isnan(tvec);
+    fprintf('MomentVector (e) %s: %i target entries, %i of them targeted; the model is NaN at a targeted entry, this should be zero: %i \n',scenstr,length(tvec),sum(actual),sum(isnan(hand(actual))))
+
+    [targetmomentvec,usingallstats,usinglcp,usingcustomstats,allstatmomentnames,allstatcummomentsizes,AllStats_whichstats,FnsToEvaluate_AllStats,acsmomentnames,acscummomentsizes,ACStats_whichstats,FnsToEvaluate_ACStats,cmsmomentnames,cmscummomentsizes,selectors,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec]=SetupTargetMoments_FHorz(TMW,FnsToEvaluate,0,N_j,simoptions_s);
+    if length(targetmomentvec)==length(tvec)
+        d=abs(targetmomentvec-tvec); d=d(~isnan(d));
+        patternbad=sum(isnan(targetmomentvec)~=isnan(tvec));
+    else
+        d=1; patternbad=abs(length(targetmomentvec)-length(tvec));
+    end
+    if scen==1
+        splitbad=~(selectors.ACStats.split==0 && selectors.AgeCrossSec.split==0);
+    else
+        splitbad=~(selectors.ACStats.split==1 && isfield(selectors,'ACStatsW') && selectors.AgeCrossSec.split==1 && isfield(selectors,'AgeCrossSecW'));
+    end
+    fprintf('MomentVector (e) %s: SetupTargetMoments targetmomentvec vs the hand walk, this should be zero: %.3e; length + NaN-pattern mismatches, this should be zero: %i; split as expected, this should be zero: %i \n',scenstr,max([d;0]),patternbad,splitbad)
+    caliboptionsW=caliboptions;
+    caliboptionsW.selectors=selectors;
+    caliboptionsW.logmoments=zeros(length(targetmomentvec),1);
+    caliboptionsW.weights=ones(sum(~isnan(targetmomentvec)),1);
+    nmomW=sum(~isnan(targetmomentvec));
+    handA=hand(actual);
+    tA=targetmomentvec(~isnan(targetmomentvec));
+    for wc=1:-1:0
+        caliboptions_wc=caliboptionsW;
+        caliboptions_wc.whichcombos=wc;
+        m=CalibrateOLGModel_Joint_objectivefn(calibparamsvec0,CalibParamNamesJ,n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,GEPriceParamNames,[],FnsToEvaluate,GeneralEqmEqnsCell,GEeqnNames,GeneralEqmEqnParamNames,usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec,5,calibparamsvecindex,calibomitparams_counter,calibomitparamsmatrix,caliboptions_wc,heteroagentoptionsJ,vfoptionsJ,simoptionsJ_s);
+        m=gather(m);
+        if length(m)==nmomW+3
+            mm=m(1:nmomW);
+            d=max(abs(mm-handA)); dt=max(abs(mm-tA));
+        else
+            mm=m; d=1; dt=1;
+        end
+        fprintf('MomentVector (e) %s, joint, whichcombos=%i: moment block vs hand-built, this should be zero: %.3e; vs the targets, this should be zero: %.3e; NaN entries + length mismatch, this should be zero: %i \n',scenstr,wc,d,dt,sum(isnan(mm))+abs(length(m)-(nmomW+3)))
+        caliboptionsN_wc=caliboptionsN;
+        caliboptionsN_wc.selectors=selectors;
+        caliboptionsN_wc.logmoments=caliboptionsW.logmoments;
+        caliboptionsN_wc.weights=caliboptionsW.weights;
+        caliboptionsN_wc.whichcombos=wc;
+        [mn,GEn]=CalibrateOLGModel_Nested_objectivefn(calibparamsvecN,CalibParamNames,n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,GEPriceParamNames,[],FnsToEvaluate,GeneralEqmEqns,usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec,2,[0;1;2],zeros(2,1),zeros(N_j,1),caliboptionsN_wc,GEinner,vfoptionsJ,simoptionsJ_s);
+        mn=gather(mn);
+        pN=GEn.prices; % (no GE price is constrained here, so the transformed prices are the prices)
+        mj=CalibrateOLGModel_Joint_objectivefn([calibparamsvec0(1:2); pN],CalibParamNamesJ,n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,pi_z_J,ReturnFn,Params,DiscountFactorParamNames,jequaloneDist,AgeWeightParamNames,GEPriceParamNames,[],FnsToEvaluate,GeneralEqmEqnsCell,GEeqnNames,GeneralEqmEqnParamNames,usingallstats,usinglcp,usingcustomstats,targetmomentvec,allstatmomentnames,acsmomentnames,cmsmomentnames,allstatcummomentsizes,acscummomentsizes,cmscummomentsizes,AllStats_whichstats,ACStats_whichstats,FnsToEvaluate_AllStats,FnsToEvaluate_ACStats,usingautocorr,autocorrmomentnames,autocorrcummomentsizes,FnsToEvaluate_AutoCorr,autocorrtimehorizons,usingcrosssec,crosssecmomentnames,crossseccummomentsizes,FnsToEvaluate_CrossSec,usingagecrosssec,agecrosssecmomentnames,agecrossseccummomentsizes,FnsToEvaluate_AgeCrossSec,5,calibparamsvecindex,calibomitparams_counter,calibomitparamsmatrix,caliboptions_wc,heteroagentoptionsJ,vfoptionsJ,simoptionsJ_s);
+        mj=gather(mj);
+        if length(mn)==nmomW && length(mj)==nmomW+3
+            dn=max(abs(mn-mj(1:nmomW))); dnt=max(abs(mn-tA));
+        else
+            dn=1; dnt=1;
+        end
+        fprintf('MomentVector (e) %s, nested, whichcombos=%i: moment vector vs the joint one at the nested GE prices, this should be zero: %.3e; NaN entries + length mismatch, this should be zero: %i; (vs the targets, should be near zero: %.3e; inner GE prices vs the equilibrium, should be near zero: %.3e) \n',scenstr,wc,dn,sum(isnan(mn))+abs(length(mn)-nmomW),dnt,max(abs(GEn.prices-[Params.r;Params.Tr;Params.tau_c])))
+    end
+end
 
 output=struct();
 output.TargetMoments=TM;
