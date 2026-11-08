@@ -13,8 +13,7 @@ function output=UncertainTPathFHorz_GE(T,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,D
 %       reported; period T is the final eqm of each S; the possibility of S=2 moves the prices before any switch
 %       (should NOT be zero)
 %   (d) restarting from the solution (transpathoptions.PricePathTree0) converges at once to the same prices
-%   (e) refusals, each by its message: the options, what remains refused of the stage F3 features, and the features
-%       of stage F4 not yet built
+%   (e) refusals, each by its message: the options, and what remains refused of the stage F3 and F4 features
 % Shooting is a fixed point, so (a) and (b) are equal only up to the convergence tolerance (the two solvers stop at
 % different iterations); they are checked against 10 times toleranceGEprices.
 
@@ -188,12 +187,14 @@ try; GEcall(transpathoptions,vfoptions,GeneralEqmEqns,FnsToEvaluate,{'beta','r',
 msg{8}='r and r_tplus1 together in DiscountFactorParamNames';
 try; GEcall(transpathoptions,vfoptions,GeneralEqmEqns,FnsToEvaluate,{'beta','sigma_tplus1'}); catch ME; err(9)=contains(ME.message,'is not a price in PricePathShaper or a parameter in ParamPath'); end
 msg{9}='sigma_tplus1 (sigma is not on the path) in DiscountFactorParamNames';
-vfoE=vfoptions; vfoE.localsearch=1; vfoE.nlocalsearch=1;
-try; GEcall(transpathoptions,vfoE,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(10)=contains(ME.message,'vfoptions.localsearch is not yet implemented'); end
-msg{10}='local search (stage F4)';
+% Local search and fastOLG=2 USED TO BE REFUSED here (stages F2, F3); they are implemented in F4 (part 12), so these
+% now check the refusals that remain for them
+vfoE=vfoptions; vfoE.localsearch=1;
+try; GEcall(transpathoptions,vfoE,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(10)=contains(ME.message,'When using vfoptions.localsearch=1 you must set vfoptions.nlocalsearch'); end
+msg{10}='local search without nlocalsearch';
 tpE=transpathoptions; tpE.fastOLG=2;
-try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(11)=contains(ME.message,'transpathoptions.fastOLG=2 is not yet implemented'); end
-msg{11}='fastOLG=2 (stage F4)';
+try; GEcall(tpE,vfoptions,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(11)=contains(ME.message,'so it requires vfoptions.localsearch=1'); end
+msg{11}='fastOLG=2 without local search';
 vfoE=vfoptions; vfoE.exoticpreferences='QuasiHyperbolic';
 try; GEcall(transpathoptions,vfoE,GeneralEqmEqns,FnsToEvaluate,DiscountFactorParamNames); catch ME; err(12)=contains(ME.message,'vfoptions.exoticpreferences is not yet implemented for uncertain transition paths'); end
 msg{12}='exoticpreferences';

@@ -7,7 +7,7 @@ detailed sections, which cover the FHorz stationary banks, the InfHorz stationar
 general-equilibrium banks and the transition-path banks (FHorz and InfHorz). The calibration,
 estimation and discretization banks have index rows only.
 
-Last updated: 2026-11-05 (the withUncertainTransitionPath rows and section; everything else was surveyed 2026-10-27)
+Last updated: 2026-11-06 (the FHorz withUncertainTransitionPath rows and section; 2026-11-05 the InfHorz ones; everything else was surveyed 2026-10-27)
 
 ## Suite index
 
@@ -78,6 +78,7 @@ This is a static count: a check inside a loop runs more than once.
 | | withQuasiHyperbolicDiscounting | 3 | 446 | 32 | all 3, 2026-10-23: 486, 0 | committed |
 | | with_CoreFHorzTPathAlgoTests | 2 | 29 | 2 | both, 2026-10-26: 101, **1** (part 1) | committed |
 | | doParts 12-13 (was CoreFHorzTPathTwoEndoTests) | 2 | 256 | 16 | first run 2026-10-28, again in the full run 2026-10-29: 256, 0 | committed |
+| | withUncertainTransitionPath | 12 | 186 | 0 | all 12, 2026-11-06: 235, 1 (part 12, a missing option default, fixed); part 12 again 2026-11-09: 33, 0 | committed |
 | CoreFHorzTPathExpAssetTests | — | 2 | 261 | 16 | 2026-10-23: **dies in doPart(1)**, GPU OOM in `AgentDistOnTransPath_Case1_FHorz` (`repelem` of `a2primeIndexesPath`) | committed |
 | CoreFHorzTPathExpAssetzTests | — | 3 | 173 | 8 | 2026-10-23: **dies in doPart(1)**, the same OOM | committed |
 | CoreFHorzTPathRiskyAssetTests | — | 5 | 422 | 16 | **never run** | **untracked** |
@@ -86,7 +87,7 @@ This is a static count: a check inside a loop runs more than once.
 | CoreInfHorzTPathTests | — | 6 (5 on) | 737 | 97 | parts 4–5, 2026-10-13: 117, 0 | committed |
 | | with_CoreInfHorzTPathAlgoTests | 2 | 57 | 5 | both, 2026-10-06: 96, **12** (part 1) | driver modified |
 | | withUncertainTransitionPath | 11 | 194 | 0 | all 11, 2026-11-05: 261, 0 | committed |
-| **total** | | | **3481** | **235** | | |
+| **total** | | | **3667** | **235** | | |
 
 ### Calibration and estimation
 
@@ -1530,6 +1531,7 @@ files. *Subcodes* counts the bank's subcode files, excluding cross-tests.
 | └ withQuasiHyperbolicDiscounting | 3 | 8 | 2 | 446 | 32 | **all 3, 2026-10-23: 486, 0** |
 | └ with_CoreFHorzTPathAlgoTests | 2 | 2 | — | 29 | 2 | both, 2026-10-26: 101, **1** (part 1) |
 | └ doParts 12-13 (was CoreFHorzTPathTwoEndoTests, merged 2026-10-28) | 2 | 8 | — | 256 | 16 | **256, 0** (2026-10-29, inside the full run) |
+| └ withUncertainTransitionPath | 12 | 12 | — | 186 | 0 | **all 12, 2026-11-06: 234 of 235** (the one fixed and re-run 2026-11-09: part 12, 33, 0) |
 | CoreFHorzTPathExpAssetTests | 2 | 9 | — | 261 | 16 | 2026-10-23: **dies in doPart(1)**, GPU OOM |
 | CoreFHorzTPathExpAssetzTests | 3 | 5 | 2 | 173 | 8 | 2026-10-23: **dies in doPart(1)**, the same OOM |
 | CoreFHorzTPathRiskyAssetTests | 5 | 16 | 5 | 422 | 16 | **never run**: test-first, and the toolkit refuses `riskyasset` on a path; untracked |
@@ -1538,7 +1540,7 @@ files. *Subcodes* counts the bank's subcode files, excluding cross-tests.
 | CoreInfHorzTPathTests | 6 (part 3 off) | 14 | — | 737 | 97 | parts 4–5, 2026-10-13: 117, 0 |
 | └ with_CoreInfHorzTPathAlgoTests | 2 | 7 | 1 | 57 | 5 | both, 2026-10-06: 96, **12** (part 1) |
 | └ withUncertainTransitionPath | 11 | 11 | — | 194 | 0 | **all 11, 2026-11-05: 261, 0** |
-| **total** | | | | **3481** | **235** | |
+| **total** | | | | **3667** | **235** | |
 
 Four of the eleven have a clean, complete latest run: the main FHorz bank, its QH mirror,
 PTypeAlgo, and (if its run finishes green) PType.
@@ -1684,7 +1686,42 @@ reference-path option in `ValueFnOnTransPath_InfHorz`, which nearly every part o
 parent bank was re-run in full (3105, 0, 2026-11-05) before they were committed.
 
 Not covered (refused by the command): stockvars, permanent types, z and e that vary over the path as grids, semiz with
-local search. There is no FHorz version.
+local search. The FHorz version is CoreFHorzTPathTests / withUncertainTransitionPath, below.
+
+### CoreFHorzTPathTests / withUncertainTransitionPath
+
+The bank for `UncertainTransitionPath_FHorz`, the finite horizon (OLG) counterpart of the InfHorz bank above. Companion
+commands: `ValueFnOnUncertainTransPath_FHorz`, `AgentDistOnUncertainTransPath_FHorz`,
+`EvalFnOnUncertainTransPath_AggVars_FHorz`. The tree is the same `UncertainTransPathTree`, shared by both horizons, with
+parameters that depend on age (N_j-by-T) and on S (`ParamPath.(name).S1, .S2, ...`). It has its own driver
+(`CoreFHorzUncertainTPathTests.m`) and subcodes, and reuses the parent bank's setup and return functions.
+
+| parts | what |
+|---|---|
+| 1 | the tree with vector (age-dependent) and per-S parameters (no solves) |
+| 2 | a single history is a deterministic transition (N_S=1, a sure switch with an age-dependent per-S parameter, 3-D `pi_S`, fastOLG 0 against 1) |
+| 3 | identical regimes: every history is the deterministic path; nod z (fastOLG 1 and 0), d z, nod noz, nod z e, GI, DC |
+| 4 | the tree built by hand, cohorts aging across every branch |
+| 5 | local consistency on a full-support tree with d, every age |
+| 6 | demographics that depend on S (age weights and newborns per S): the children of a node start apart |
+| 7 | refusals, and the warning on a square (N_j=T) ParamPath entry |
+| 8 | general eqm on the tree by shooting (against `TransitionPath_Case1_FHorz` on a single history and on identical regimes) |
+| 9 | Anderson acceleration and price constraints |
+| 10 | `_tplus1` and `_tminus1` (in expectation over the children at a branching node), and `transpathoptions.intermediateEqns` |
+| 11 | a stochastic discount factor, `name_tplus1` in `DiscountFactorParamNames`, given prices and in general eqm |
+| 12 | local search (shooting and Anderson, certified by a standard sweep), `transpathoptions.fastOLG=2`, and the internal reference option of `ValueFnOnTransPath_Case1_FHorz` |
+
+The oracles are those of the InfHorz bank, each with a discriminator, plus the FHorz ones: every age of a branching
+node is one step from its children, each child's start is its parent moved on one period with the child's newborns and
+age weights, and the mass of each age is its age weight at every node.
+
+All 12 parts ran 2026-11-06: 234 of 235, the one failure a missing option default in `ValueFnOnTransPath_Case1_FHorz`,
+fixed, after which part 12 ran green 2026-11-09 (33, 0). Part 12 (stage F4) goes with an internal reference-path option
+in `ValueFnOnTransPath_Case1_FHorz`, which parts of the parent bank call, so the parent bank was re-run in full
+(2787, 0, 2026-11-06) before it was committed.
+
+Not covered (refused by the command): stockvars, permanent types, semiz, experience assets, exoticpreferences, and z
+and e that vary over the path as grids (age-dependent ones are fine).
 
 ### Guards: combinations that used to give silently wrong answers
 

@@ -24,9 +24,11 @@
 % doPart(9): Anderson acceleration and price constraints on the tree (stage F3)
 % doPart(10): _tplus1 and _tminus1 (in expectation over the children at a branching node), and intermediateEqns (F3)
 % doPart(11): a stochastic discount factor, name_tplus1 in DiscountFactorParamNames, given prices and in general eqm (F3)
+% doPart(12): local search on the tree (shooting and Anderson), transpathoptions.fastOLG=2, and the internal reference
+%            option of ValueFnOnTransPath_Case1_FHorz (stage F4)
 %
 % Parts are independent: the setup and the addpaths sit OUTSIDE the if-blocks.
-doPart=[1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output
 if ~exist('../TestOutput','dir')
@@ -115,6 +117,12 @@ end
 if doPart(11)==1
     fprintf('\n===== doPart(11): a stochastic discount factor on the tree =====\n')
     output=UncertainTPathFHorz_SDF(T,rS,wS,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end
+
+%% ===== doPart(12): local search and fastOLG=2 =====
+if doPart(12)==1
+    fprintf('\n===== doPart(12): local search and fastOLG=2 on the tree =====\n')
+    output=UncertainTPathFHorz_LocalSearch(T,rS,wS,n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
 end
 
 %% One verdict for the whole run
