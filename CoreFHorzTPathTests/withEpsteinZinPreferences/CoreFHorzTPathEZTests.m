@@ -42,6 +42,8 @@
 % doPart(5): refusals (no figures)
 % doPart(6): local search, the value fn step: seed and restricted sweeps against the unrestricted EZ sweep (no figures)
 % doPart(7): local search inside a general eqm transition path, against the same solve without (no figures)
+% doPart(8): transpathoptions.fastOLG=2 (fastOLG for the local search sweeps, slowOLG for the full ones) (no figures)
+% doPart(9): an actual reform, a permanent rise in risk aversion on the ParamPath, with and without local search (no figures)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -50,7 +52,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('../TestOutput','dir')
@@ -187,6 +189,20 @@ if doPart(7)==1
     output=EZFHorzTPath_localsearch_shooting(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
 end % doPart(7): local search inside a general eqm transition path
 
+%% ===== doPart(8): transpathoptions.fastOLG=2 =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): transpathoptions.fastOLG=2 =====\n')
+    % The EZ mirror of CoreFHorzTPathTests doPart(14). See the header of the subcode.
+    output=EZFHorzTPath_fastOLG2(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(8): transpathoptions.fastOLG=2
+
+%% ===== doPart(9): an actual reform, a permanent rise in risk aversion =====
+if doPart(9)==1
+    fprintf('\n===== doPart(9): an actual reform, a permanent rise in risk aversion =====\n')
+    % Every other general eqm path in this bank is a null reform. See the header of the subcode.
+    output=EZFHorzTPath_reform(T,n_d,n_a,n_z,n_e,N_j,d_grid,a_grid,z_grid,pi_z,e_grid,pi_e,Params,DiscountFactorParamNames,AgeWeightParamNames,transpathoptionsbaseline);
+end % doPart(9): an actual reform, a permanent rise in risk aversion
+
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
@@ -198,4 +214,4 @@ diary off
 %% THINGS NOT CHECKED
 % semiz and experienceasset with Epstein-Zin on a transition path (refused, doPart(5))
 % Epstein-Zin with permanent types on a transition path (to come: stage 5)
-% the general eqm solves with Epstein-Zin beyond doPart(7) (to come: stage 4)
+% quasi-Newton (transpathoptions.GEnewprice=1) with Epstein-Zin: not tested (LudwigSSJ and FullJacobianReuseVpath=1 are refused for exotic preferences)
