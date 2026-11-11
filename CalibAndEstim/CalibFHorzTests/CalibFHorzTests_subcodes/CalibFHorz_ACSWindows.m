@@ -10,6 +10,8 @@ function output=CalibFHorz_ACSWindows(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,
 %   (b) one solve at the truth, full LifeCycleProfiles runs at the level and at the log; targets from them with NaN omissions; the
 %       objective's moment vector (vectoroutput=1) under caliboptions.whichcombos=1 and =0 equals the hand walk of the targets through
 %       the full runs and the targets themselves; with the default agegroupings (one call) and with agegroupings=1:5:N_j (two calls)
+%   (c) LifeCycleProfiles itself: a restricted 3-period window that every path leaves (mid-window and at its last age) gives
+%       RestrictedSampleMass 0 and NaN stats, with the unrestricted page in the same list and without it
 % Each objective run is wrapped so an error in the plumbing is reported as a failed check.
 
 FnsToEvaluate.assets=@(aprime,a,z) a;
@@ -211,6 +213,59 @@ for scen=1:2
         end
         fprintf('ACSWindows (b) %s, whichcombos=%i: did not run, this should be zero: %i; moment vector vs hand-built, this should be zero: %.3e; vs the targets, this should be zero: %.3e; NaN entries or length mismatch, this should be zero: %i \n',scenstr,wcc,1-ran,d,dt,nanbad)
     end
+end
+
+%% (c) a restricted window that every path leaves (added 2026-11-07)
+% young (agej<Jr) holds at every state before Jr and at none from Jr on. A 3-period window of assets starting at Jr-1 loses every path at
+% its middle age Jr; one starting at Jr-2 loses them all at its last age. Both must give RestrictedSampleMass 0 and NaN stats, with no
+% error. Run (i): both pages, so the unrestricted page keeps the list alive while the young page empties. Run (ii): the unrestricted page
+% off (whichcombos), so the whole list empties mid-window (the merge of an empty list used to error) and is then extended while empty.
+FnsC.assets=FnsToEvaluate.assets;
+simoptions_C=simoptions;
+simoptions_C.conditionalrestrictions=struct();
+simoptions_C.conditionalrestrictions.young=@(aprime,a,z,agej,Jr) (agej<Jr);
+simoptions_C.ntimeperiods=3;
+simoptions_C.pi_z=pi_z_J;
+simoptions_C.whichstats=[1,1,0,0,0,0,0];
+simoptions_C0=simoptions_C;
+simoptions_C0=rmfield(simoptions_C0,'conditionalrestrictions'); % the same run without the restriction
+nrun=0; % the runs that completed
+try
+    ACC1=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsC,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_C);
+    simoptions_C2=simoptions_C;
+    simoptions_C2.whichcombos=cat(3,zeros(1,N_j),ones(1,N_j)); % [nFns, N_j, 1+nRestr]: only the young page
+    ACC2=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsC,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_C2);
+    ACC0=LifeCycleProfiles_FHorz_Case1(StationaryDist,Policy,FnsC,Params,[],n_d,n_a,n_z,N_j,d_grid,a_grid,z_gridvals_J,simoptions_C0);
+    nrun=3;
+catch ME
+    fprintf('   (the error was: %s) \n',ME.message);
+end
+fprintf('ACSWindows (c) restricted window that every path leaves: runs errored, this should be zero: %i \n',3-nrun)
+if nrun==3
+    Y1=ACC1.young.assets_3periodAverage;
+    Y2=ACC2.young.assets_3periodAverage;
+    U1=ACC1.assets_3periodAverage;
+    U0=ACC0.assets_3periodAverage;
+    StationaryDist=reshape(StationaryDist,[numel(StationaryDist)/N_j,N_j]); % for the start-age masses below
+    dead=[Jr-2,Jr-1]; % start ages whose window every path leaves (mid-window for Jr-1, at the last age for Jr-2)
+    for rr=1:2
+        if rr==1
+            Y=Y1; runstr='(i) both pages';
+        else
+            Y=Y2; runstr='(ii) young page only';
+        end
+        m=gather(Y.RestrictedSampleMass(dead)); mn=gather(Y.Mean(dead)); md=gather(Y.Median(dead));
+        fprintf('ACSWindows (c) %s, start ages Jr-2, Jr-1: RestrictedSampleMass, this should be zero: %.3e; Mean and Median not NaN, this should be zero: %i \n',runstr,max(abs(m)),sum(~isnan([mn,md])))
+        % non-vacuous: at Jr-3 the window ends at Jr-1, so every path stays young: the young stats are the unrestricted ones, and the mass is the start-age mass
+        j0=Jr-3;
+        fprintf('ACSWindows (c) %s, start age Jr-3 (all paths stay young): Mean vs unrestricted, this should be zero: %.3e; Median vs unrestricted, this should be zero: %.3e; RestrictedSampleMass vs the start-age mass, this should be zero: %.3e \n',runstr,abs(gather(Y.Mean(j0)-U0.Mean(j0))),abs(gather(Y.Median(j0)-U0.Median(j0))),abs(gather(Y.RestrictedSampleMass(j0))-gather(sum(StationaryDist(:,j0)))))
+        fprintf('ACSWindows (c) %s, start age Jr-3: RestrictedSampleMass is positive (else the checks above are vacuous), this should NOT be zero: %.3e \n',runstr,gather(Y.RestrictedSampleMass(j0)))
+    end
+    % the two runs agree on the young page, and the unrestricted page of run (i) is unaffected by the dead young page in its list
+    % (the Means are NaN by design at the dead start ages and past N_j-2, so the NaN pattern is compared on its own and the values where both are finite)
+    dY=abs(gather(Y1.Mean(:))-gather(Y2.Mean(:))); dU=abs(gather(U1.Mean(:))-gather(U0.Mean(:))); dUm=abs(gather(U1.Median(:))-gather(U0.Median(:)));
+    fprintf('ACSWindows (c) young page, run (i) vs (ii): Mean, this should be zero: %.3e, NaN-pattern mismatches %i; RestrictedSampleMass, this should be zero: %.3e \n',max([0;dY(~isnan(dY))]),sum(isnan(gather(Y1.Mean(:)))~=isnan(gather(Y2.Mean(:)))),CoreMaxAbs(gather(Y1.RestrictedSampleMass(1:N_j-2))-gather(Y2.RestrictedSampleMass(1:N_j-2))))
+    fprintf('ACSWindows (c) unrestricted page of run (i) vs the run without the restriction: Mean, this should be zero: %.3e, NaN-pattern mismatches %i; Median, this should be zero: %.3e, NaN-pattern mismatches %i \n',max([0;dU(~isnan(dU))]),sum(isnan(gather(U1.Mean(:)))~=isnan(gather(U0.Mean(:)))),max([0;dUm(~isnan(dUm))]),sum(isnan(gather(U1.Median(:)))~=isnan(gather(U0.Median(:)))))
 end
 
 output.selectors=selectors;

@@ -38,7 +38,7 @@
 % doPart(10): every grouped statistic, via z-identity
 % doPart(11): a ptype of zero mass
 % doPart(12): standard decision variable d
-% doPart(13): z and e grids per type, struct vs trailing dim, age-dependent
+% doPart(13): z and e grids per type, struct vs trailing dim, age-dependent; plus n_z==N_i, shared 2D pi_z vs struct vs [n_z,n_z,N_i]
 % doPart(14): ExogShockFn and EiidShockFn per type
 % doPart(15): DiscountFactorParamNames per type
 % doPart(16): ValuesOnGrid with per-type n_z
@@ -171,6 +171,8 @@ if doPart(13)==1
     fprintf('\n===== doPart(13): z and e grids per type, struct vs trailing dim, age-dependent =====\n')
     %% 13. z_grid/pi_z/e_grid/pi_e per type as struct and as a trailing N_i dimension, age-independent and age-dependent
     output=CoreFHorzPType_ShockGridForms(n_a,n_z,vfoptionsbaseline.n_e,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
+    %% 13b. n_z==N_i: a shared 2D pi_z is not sliced by ptype; a [n_z,n_z,N_i] pi_z still is
+    output=CoreFHorzPType_SharedPiZNzEqNi(n_a,N_j,a_grid,Params,DiscountFactorParamNames,AgeWeightParamNames,PTypeDistParamNames);
 end % doPart(13): z and e grids per type, struct vs trailing dim, age-dependent
 
 %% ===== doPart(14): ExogShockFn and EiidShockFn per type =====
