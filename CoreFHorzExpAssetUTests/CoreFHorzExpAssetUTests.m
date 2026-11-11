@@ -36,6 +36,10 @@
 % doPart(17): with2A2 WITH a1 figs 65-72     (a1 + two experience assets, nosemiz)
 % doPart(18): with2A2 WITH a1 semiz figs 73-80
 % doPart(19): with2A2 cross-tests            (the machine-precision checks of the tier)
+% doPart(20): multi-period statistics, experienceassetu option checks (AutoCorrTransProbs, and the M>1 windows of
+%             CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and LifeCycleProfiles: runs, both flags, missing n_u/u_grid/pi_u)
+% doPart(21): multi-period statistics, experienceassetu with a degenerate u (u_grid=[1;1], pi_u=[0.3;0.7]) vs experienceasset (+ PType)
+% doPart(22): multi-period statistics, genuine u vs a brute-force transition matrix (d1 a1 z e; with GI; semiz; noa1 with2A2)
 %             in the toolkit yet, so this part is here test-first. It is left at 1 because that is
 %             what the bank does today; set it to 0 to get a clean run of everything else.
 %
@@ -83,7 +87,7 @@
 % on 2026-10-12/13, BEFORE those edits, so nothing has actually demonstrated it. That is what this
 % guard is for. Parts are independent (no part reads another's output and nothing is passed through
 % a .mat), so running this subset is safe.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -838,6 +842,27 @@ output=CoreFHorzExpAssetU_CrossTests7_d1_with2A2(n_d_withd1,n_a,n_a_big,n_z,N_j,
 output=CoreFHorzExpAssetU_CrossTests5_nod1_noa1_with2A2(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssetU_CrossTests5_d1_noa1_with2A2(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(19): with2A2 cross-tests
+
+%% ================= Multi-period statistics (AutoCorrTransProbs, and the M>1 windows of the cross-section commands and LifeCycleProfiles) =================
+addpath('./CoreFHorzExpAssetUTests_subcodes/MultiPeriodStats_subcodes/')
+
+%% ===== doPart(20): multi-period statistics, experienceassetu option checks =====
+if doPart(20)==1
+    fprintf('\n===== doPart(20): multi-period statistics, experienceassetu option checks =====\n')
+    output=CoreFHorzExpAssetU_MultiPeriodStats_Controls(n_d2,d2_grid,n_a,a_grid,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(20): multi-period statistics, experienceassetu option checks
+
+%% ===== doPart(21): multi-period statistics, degenerate u vs experienceasset =====
+if doPart(21)==1
+    fprintf('\n===== doPart(21): multi-period statistics, degenerate u vs experienceasset =====\n')
+    output=CoreFHorzExpAssetU_MultiPeriodStats_DegenerateU(n_d2,d2_grid,n_a,a_grid,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(21): multi-period statistics, degenerate u vs experienceasset
+
+%% ===== doPart(22): multi-period statistics, genuine u vs brute force =====
+if doPart(22)==1
+    fprintf('\n===== doPart(22): multi-period statistics, genuine u vs brute force =====\n')
+    output=CoreFHorzExpAssetU_MultiPeriodStats_BruteForce(n_d1,n_d2,n_d3,d1_grid,d2_grid,d3_grid,n_a,a1_grid,a2_grid,n_a2_1,n_a2_2,a2_1_grid,a2_2_grid,n_z,z_grid,pi_z,N_j,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(22): multi-period statistics, genuine u vs brute force
 
 
 %% One verdict for the whole run
