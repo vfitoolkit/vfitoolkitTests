@@ -36,6 +36,12 @@
 % doPart(17): 2A2 noa1 semiz (figs 57-64)
 % doPart(18): 2A2 a1 nosemiz (figs 65-72)   - DIES HERE, see below
 % doPart(19): 2A2 a1 semiz (figs 73-80)     - never reached
+% doPart(20): multi-period statistics, the refusal set (AutoCorrTransProbs, and the M>1 windows of CrossSectionCovarCorr,
+%             AgeConditionalStats_CrossSectionCovarCorr and LifeCycleProfiles, refuse the assets they do not handle)
+% doPart(21): multi-period statistics with a fake experience asset, all four commands vs the standard-asset model (+ PType)
+% doPart(22): multi-period statistics with a genuine experience asset vs a brute-force transition matrix
+%             (d1 a1 z e; the same with grid interpolation; semiz; noa1 with2A2)
+% Parts 20-22 come after part 18, which dies (see below): to run them, set parts 18 and 19 to zero.
 %
 % THE RUN OF 2026-09-21 STOPPED IN PART 18, at the first fig-65 solve:
 %   Arrays have incompatible sizes of 202 and 303 in dimension 1
@@ -56,7 +62,7 @@
 %
 % NOTE: figs 40, 44, 46 and 48 remain commented out INSIDE parts 12 and 14 - they out-of-memory on
 % this machine. doPart is for whole tiers; an individual call that cannot run stays commented.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 % The 2A2 tiers (parts 15-19) have been checked mechanically for this: every identifier they read
 % resolves to the setup file, to code outside all the if-blocks, or to their own block -- so they
 % can be run on their own, in any subset. Checked for 17-19 vs 1-16, for 18/19 vs 17, and for 19
@@ -764,6 +770,27 @@ if doPart(19)==1
     output=CoreFHorzExpAsset_d1_z_e_semiz_with2A2(n_d_withd1semiz,n_a_2A2,n_a_2A2_notsobig,n_z,N_j,d_grid_withd1semiz,a_grid_2A2,a_grid_2A2_notsobig,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
     exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzExpAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 end % doPart(19): 2A2 a1 semiz (figs 73-80)
+
+%% ================= Multi-period statistics (AutoCorrTransProbs, and the M>1 windows of the cross-section commands and LifeCycleProfiles) =================
+addpath('./CoreFHorzExpAssetTests_subcodes/MultiPeriodStats_subcodes/')
+
+%% ===== doPart(20): multi-period statistics, the refusal set =====
+if doPart(20)==1
+    fprintf('\n===== doPart(20): multi-period statistics, the refusal set =====\n')
+    output=CoreFHorzExpAsset_MultiPeriodStats_Refusals(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(20): multi-period statistics, the refusal set
+
+%% ===== doPart(21): multi-period statistics, fake experience asset vs standard asset =====
+if doPart(21)==1
+    fprintf('\n===== doPart(21): multi-period statistics, fake experience asset vs standard asset =====\n')
+    output=CoreFHorzExpAsset_MultiPeriodStats_FakeExpAsset(n_a,n_z,N_j,a_grid,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(21): multi-period statistics, fake experience asset vs standard asset
+
+%% ===== doPart(22): multi-period statistics, genuine experience asset vs brute force =====
+if doPart(22)==1
+    fprintf('\n===== doPart(22): multi-period statistics, genuine experience asset vs brute force =====\n')
+    output=CoreFHorzExpAsset_MultiPeriodStats_BruteForce(n_d1,n_d2,n_d3,d1_grid,d2_grid,d3_grid,n_a,a1_grid,a2_grid,n_a2_1,n_a2_2,a2_1_grid,a2_2_grid,n_z,z_grid,pi_z,N_j,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(22): multi-period statistics, genuine experience asset vs brute force
 
 
 %% One verdict for the whole run
