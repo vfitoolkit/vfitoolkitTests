@@ -2,8 +2,8 @@ function output=CoreFHorzExpAsset_MultiPeriodStats_Refusals(n_a,n_z,N_j,a_grid,z
 % The refusal set of the multi-period statistics: EvalFnOnAgentDist_AutoCorrTransProbs_FHorz, and the M>1 windows of
 % EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz, EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz and
 % LifeCycleProfiles_FHorz_Case1, must each refuse (with their 'not yet implemented' error) every asset whose next-period value
-% is not read from the Policy and that they do not yet handle: experienceassetu, experienceassetz, experienceassete,
-% experienceassetze, experienceassetsemiz, riskyasset, residualasset, inheritanceasset. Checked as a set (every command with
+% is not read from the Policy and that they do not yet handle: residualasset and inheritanceasset (the experience assets and
+% riskyasset are handled, and checked in their own banks: ExpAssetU, z, e, ze, semiz and RiskyAsset). Checked as a set (every command with
 % every flag), because a refusal that is missing for one of them is the case that silently gives wrong numbers (before these
 % refusals, AutoCorrTransProbs with gridinterplayer read the L2 index row of the Policy as a2').
 % The experienceasset itself is handled by all four (CoreFHorzExpAsset_MultiPeriodStats_FakeExpAsset and _BruteForce check
@@ -47,7 +47,7 @@ StationaryDist0=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Pol
 [~,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn1,Params,DiscountFactorParamNames,[],vfoptions1);
 StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy1,n_d,n_a,n_z,N_j,pi_z,Params,simoptions1);
 
-flags={'riskyasset','residualasset','inheritanceasset'};
+flags={'residualasset','inheritanceasset'};
 cmds={'AutoCorrTransProbs_FHorz','CrossSectionCovarCorr_FHorz (M=2)','AgeConditionalStats_CrossSectionCovarCorr_FHorz (M=2)','LifeCycleProfiles_FHorz_Case1 (M=2)'};
 nchecks=0;
 for kk=0:length(flags)

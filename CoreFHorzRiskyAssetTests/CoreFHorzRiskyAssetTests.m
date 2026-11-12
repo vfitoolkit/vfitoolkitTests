@@ -26,6 +26,9 @@
 % doPart(4): figs 25-32
 % doPart(5): figs 33-40
 % doPart(6): figs 41-48
+% doPart(7): multi-period statistics, riskyasset option checks (AutoCorrTransProbs, and the M>1 windows of
+%             CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and LifeCycleProfiles: runs, with experienceasset, no u, semiz without refine_d) + PType
+% doPart(8): multi-period statistics, riskyasset vs a brute-force transition matrix
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -34,7 +37,7 @@
 % Parts are independent: the setup, the addpaths and the grid/parameter preambles all sit OUTSIDE
 % the if-blocks and so always run, and no part reads another part's output. Any subset can be run,
 % in any combination. Anything added to this bank later must keep that true.
-doPart=[1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -458,6 +461,21 @@ if doPart(6)==1
     output=CoreFHorzRiskyAsset_d1_z_e_semiz_with2A1(n_d_withd1semiz,n_a_withA1,n_a_big_withA1,n_z,N_j,d_grid_withd1semiz,a_grid_withA1,a_grid_big_withA1,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline,figure_c);
     exportgraphics(figure(figure_c),['./TestOutput/CoreFHorzRiskyAssetTests_Fig',num2str(figure_c),'.png'],'Resolution',150)
 end % doPart(6): figs 41-48
+
+%% ================= Multi-period statistics (AutoCorrTransProbs, and the M>1 windows of the cross-section commands and LifeCycleProfiles) =================
+addpath('./CoreFHorzRiskyAssetTests_subcodes/MultiPeriodStats_subcodes/')
+
+%% ===== doPart(7): multi-period statistics, riskyasset option checks =====
+if doPart(7)==1
+    fprintf('\n===== doPart(7): multi-period statistics, riskyasset option checks =====\n')
+    output=CoreFHorzRiskyAsset_MultiPeriodStats_Controls(n_d_withoutd1,d_grid_withoutd1,n_a,a_grid,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(7): multi-period statistics, riskyasset option checks
+
+%% ===== doPart(8): multi-period statistics, riskyasset vs brute force =====
+if doPart(8)==1
+    fprintf('\n===== doPart(8): multi-period statistics, riskyasset vs brute force =====\n')
+    output=CoreFHorzRiskyAsset_MultiPeriodStats_BruteForce(n_d1,n_d2,n_d3,n_d4,d1_grid,d2_grid,d3_grid,d4_grid,n_a,a_grid,n_a1,n_a2,a1_grid,a2_grid,n_z,z_grid,pi_z,N_j,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(8): multi-period statistics, riskyasset vs brute force
 
 
 %% One verdict for the whole run
