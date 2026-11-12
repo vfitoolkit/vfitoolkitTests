@@ -44,6 +44,9 @@
 % doPart(15): with2A2 WITH a1 figs 33-36    (a1 + two experience assets, nosemiz)
 % doPart(16): with2A2 WITH a1 figs 37-40    (a1 + two experience assets, semiz)
 % doPart(17): with2A2 cross-tests           (the machine-precision checks of the tier)
+% doPart(18): multi-period statistics, experienceassetz option checks (AutoCorrTransProbs, and the M>1 windows of
+%             CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and LifeCycleProfiles: runs, two flags, no z) + PType
+% doPart(19): multi-period statistics, experienceassetz vs a brute-force transition matrix (d1 a1 z e; with GI; semiz; noa1 with2A2)
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -60,7 +63,7 @@
 % toolkit edits have landed since (the GI per-e accumulation guard, and relocating 160 l_a2==1
 % setup lines inside their guard in the SemiExo raws). Both are no-ops at l_a2==1 by inspection,
 % but 15 of the touched files are exercised by parts 3,4,7,8,11,12, so measure rather than argue.
-doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+doPart=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -501,6 +504,21 @@ if doPart(17)==1
     output=CoreFHorzExpAssetz_CrossTests5_nod1_noa1_with2A2(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
     output=CoreFHorzExpAssetz_CrossTests5_d1_noa1_with2A2(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(17): with2A2 cross-tests
+
+%% ================= Multi-period statistics (AutoCorrTransProbs, and the M>1 windows of the cross-section commands and LifeCycleProfiles) =================
+addpath('./CoreFHorzExpAssetzTests_subcodes/MultiPeriodStats_subcodes/')
+
+%% ===== doPart(18): multi-period statistics, experienceassetz option checks =====
+if doPart(18)==1
+    fprintf('\n===== doPart(18): multi-period statistics, experienceassetz option checks =====\n')
+    output=CoreFHorzExpAssetz_MultiPeriodStats_Controls(n_d2,d2_grid,n_a,a_grid,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(18): multi-period statistics, experienceassetz option checks
+
+%% ===== doPart(19): multi-period statistics, experienceassetz vs brute force =====
+if doPart(19)==1
+    fprintf('\n===== doPart(19): multi-period statistics, experienceassetz vs brute force =====\n')
+    output=CoreFHorzExpAssetz_MultiPeriodStats_BruteForce(n_d1,n_d2,n_d3,d1_grid,d2_grid,d3_grid,n_a,a1_grid,a2_grid,n_a2_1,n_a2_2,a2_1_grid,a2_2_grid,n_z,z_grid,pi_z,N_j,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(19): multi-period statistics, experienceassetz vs brute force
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run

@@ -36,6 +36,9 @@
 % doPart(14): with2A2 WITH a1 figs 33-36    (a1 + two experience assets, nosemiz)
 % doPart(15): with2A2 WITH a1 figs 37-40    (a1 + two experience assets, semiz)
 % doPart(16): with2A2 cross-tests           (the machine-precision checks of the tier)
+% doPart(17): multi-period statistics, experienceassete option checks (AutoCorrTransProbs, and the M>1 windows of
+%             CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and LifeCycleProfiles: runs, two flags, no shock) + PType
+% doPart(18): multi-period statistics, experienceassete vs a brute-force transition matrix
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -53,7 +56,7 @@
 % count / a1primeKron construction, so there is no reason to pay for it again. Parts are
 % independent (no part reads another's output and nothing is passed through a .mat), so running
 % this subset is safe.
-doPart=[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1];
+doPart=[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -523,6 +526,21 @@ output=CoreFHorzExpAssete_CrossTests7_d1_with2A2(n_d_withd1,n_a,n_a_big,n_z,N_j,
 output=CoreFHorzExpAssete_CrossTests5_nod1_noa1_with2A2(n_d_withoutd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withoutd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 output=CoreFHorzExpAssete_CrossTests5_d1_noa1_with2A2(n_d_withd1,n_a_justexpasset,n_a_justexpasset,n_z,N_j,d_grid_withd1,a_grid_justexpasset,a_grid_justexpasset,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 end %% doPart(16): with2A2 cross-tests
+
+%% ================= Multi-period statistics (AutoCorrTransProbs, and the M>1 windows of the cross-section commands and LifeCycleProfiles) =================
+addpath('./CoreFHorzExpAsseteTests_subcodes/MultiPeriodStats_subcodes/')
+
+%% ===== doPart(17): multi-period statistics, experienceassete option checks =====
+if doPart(17)==1
+    fprintf('\n===== doPart(17): multi-period statistics, experienceassete option checks =====\n')
+    output=CoreFHorzExpAssete_MultiPeriodStats_Controls(n_d2,d2_grid,n_d3,d3_grid,n_a,a_grid,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(17): multi-period statistics, experienceassete option checks
+
+%% ===== doPart(18): multi-period statistics, experienceassete vs brute force =====
+if doPart(18)==1
+    fprintf('\n===== doPart(18): multi-period statistics, experienceassete vs brute force =====\n')
+    output=CoreFHorzExpAssete_MultiPeriodStats_BruteForce(n_d1,n_d2,n_d3,d1_grid,d2_grid,d3_grid,n_a,a1_grid,a2_grid,n_a2_1,n_a2_2,a2_1_grid,a2_2_grid,n_z,z_grid,pi_z,N_j,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(18): multi-period statistics, experienceassete vs brute force
 
 
 %% One verdict for the whole run

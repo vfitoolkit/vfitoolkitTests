@@ -3,7 +3,7 @@ function output=CoreFHorzExpAssetU_MultiPeriodStats_Controls(n_d2,d2_grid,n_a,a_
 % M>1 windows of EvalFnOnAgentDist_CrossSectionCovarCorr_FHorz, EvalFnOnAgentDist_AgeConditionalStats_CrossSectionCovarCorr_FHorz
 % and LifeCycleProfiles_FHorz_Case1, checked as a set (every command):
 %   positive control: experienceassetu (with n_u, u_grid, pi_u) runs;
-%   experienceasset and experienceassetu both set: refused ('cannot both');
+%   experienceasset and experienceassetu both set: refused ('only one of');
 %   experienceassetu without n_u (or u_grid, or pi_u): refused (says n_u, u_grid and pi_u are needed).
 % (That the other unhandled assets are refused is checked in CoreFHorzExpAssetTests doPart(20).)
 % The model is the baseline experienceassetu one (no d1, a1, z and e), on the bank's grids.
@@ -35,7 +35,7 @@ jequaloneDist(1,ceil(n_a(2)/2),ceil(n_z/2),ceil(vfoptions.n_e/2))=1;
 StationaryDist=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy,n_d,n_a,n_z,N_j,pi_z,Params,simoptions);
 
 cases={'experienceassetu runs (positive control)','experienceasset and experienceassetu both set','experienceassetu without n_u','experienceassetu without u_grid','experienceassetu without pi_u'};
-expected={'','cannot both','n_u, simoptions.u_grid and simoptions.pi_u','n_u, simoptions.u_grid and simoptions.pi_u','n_u, simoptions.u_grid and simoptions.pi_u'};
+expected={'','only one of','n_u, simoptions.u_grid and simoptions.pi_u','n_u, simoptions.u_grid and simoptions.pi_u','n_u, simoptions.u_grid and simoptions.pi_u'};
 cmds={'AutoCorrTransProbs_FHorz','CrossSectionCovarCorr_FHorz (M=2)','AgeConditionalStats_CrossSectionCovarCorr_FHorz (M=2)','LifeCycleProfiles_FHorz_Case1 (M=2)'};
 nchecks=0;
 for kk=1:length(cases)

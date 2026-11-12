@@ -47,7 +47,7 @@ StationaryDist0=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Pol
 [~,Policy1]=ValueFnIter_Case1_FHorz(n_d,n_a,n_z,N_j,d_grid,a_grid,z_grid,pi_z,ReturnFn1,Params,DiscountFactorParamNames,[],vfoptions1);
 StationaryDist1=StationaryDist_FHorz_Case1(jequaloneDist,AgeWeightParamNames,Policy1,n_d,n_a,n_z,N_j,pi_z,Params,simoptions1);
 
-flags={'experienceassetz','experienceassete','experienceassetze','experienceassetsemiz','riskyasset','residualasset','inheritanceasset'};
+flags={'riskyasset','residualasset','inheritanceasset'};
 cmds={'AutoCorrTransProbs_FHorz','CrossSectionCovarCorr_FHorz (M=2)','AgeConditionalStats_CrossSectionCovarCorr_FHorz (M=2)','LifeCycleProfiles_FHorz_Case1 (M=2)'};
 nchecks=0;
 for kk=0:length(flags)

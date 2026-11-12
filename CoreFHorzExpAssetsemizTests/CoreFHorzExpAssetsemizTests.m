@@ -28,6 +28,9 @@
 % doPart(7): with2A2 noa1 figs 25-32          (TWO experience assets, no standard asset)
 % doPart(8): with2A2 WITH a1 figs 33-40       (a1 alongside the two experience assets)
 % doPart(9): with2A2 cross-tests
+% doPart(10): multi-period statistics, experienceassetsemiz option checks (AutoCorrTransProbs, and the M>1 windows of
+%             CrossSectionCovarCorr, AgeConditionalStats_CrossSectionCovarCorr and LifeCycleProfiles: runs, two flags, no shock) + PType
+% doPart(11): multi-period statistics, experienceassetsemiz vs a brute-force transition matrix
 %
 % Skipping a part does NOT renumber the figures. figure_c is a literal in every block, so a given
 % Fig number is the same test whatever doPart says, and a png from a previous run is never
@@ -124,7 +127,7 @@
 % Part 5 is the tier with TWO standard endogenous assets, i.e. the with-a1 raws at l_a1==2, which
 % are among the 40 files stage 2 touched, so it is the part most worth confirming. fig 24 stays
 % commented out inside part 5 (it out-of-memories on this machine).
-doPart=[0,0,0,0,1,1,0,0,0];
+doPart=[0,0,0,0,1,1,0,0,0,1,1];
 
 %% Diary of the command window output (figures are saved into the same folder as they are created)
 if ~exist('./TestOutput','dir')
@@ -512,6 +515,21 @@ if doPart(9)==1
     output=CoreFHorzExpAssetsemiz_CrossTests8_nod1_with2A2(n_d_withoutd1,n_a,n_a_big,n_z,N_j,d_grid_withoutd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
     output=CoreFHorzExpAssetsemiz_CrossTests8_d1_with2A2(n_d_withd1,n_a,n_a_big,n_z,N_j,d_grid_withd1,a_grid,a_grid_big,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline,simoptionsbaseline);
 end % doPart(9): with2A2 cross-tests
+
+%% ================= Multi-period statistics (AutoCorrTransProbs, and the M>1 windows of the cross-section commands and LifeCycleProfiles) =================
+addpath('./CoreFHorzExpAssetsemizTests_subcodes/MultiPeriodStats_subcodes/')
+
+%% ===== doPart(10): multi-period statistics, experienceassetsemiz option checks =====
+if doPart(10)==1
+    fprintf('\n===== doPart(10): multi-period statistics, experienceassetsemiz option checks =====\n')
+    output=CoreFHorzExpAssetsemiz_MultiPeriodStats_Controls(n_d2,d2_grid,n_d3,d3_grid,n_a,a_grid,n_z,N_j,z_grid,pi_z,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(10): multi-period statistics, experienceassetsemiz option checks
+
+%% ===== doPart(11): multi-period statistics, experienceassetsemiz vs brute force =====
+if doPart(11)==1
+    fprintf('\n===== doPart(11): multi-period statistics, experienceassetsemiz vs brute force =====\n')
+    output=CoreFHorzExpAssetsemiz_MultiPeriodStats_BruteForce(n_d1,n_d2,n_d3,d1_grid,d2_grid,d3_grid,n_a,a1_grid,a2_grid,n_a2_1,n_a2_2,a2_1_grid,a2_2_grid,n_z,z_grid,pi_z,N_j,Params,DiscountFactorParamNames,AgeWeightParamNames,vfoptionsbaseline);
+end % doPart(11): multi-period statistics, experienceassetsemiz vs brute force
 
 %% One verdict for the whole run
 % The bank prints a lot of checks; this reads the diary back and says plainly whether the run
